@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { DictionaryEntry, BookPage, BookCatalog } from '../src/lib/types';
 import { SEED_ENTRIES } from './seed-entries';
+import { EXPANDED_PAGES } from './expanded-entries';
 
 const OUTPUT_DIR = path.join(process.cwd(), 'data', 'book');
 const CATALOG_FILE = path.join(OUTPUT_DIR, 'catalog.json');
@@ -452,6 +453,14 @@ export function buildCatalog(): BookCatalog {
     const pageNum = Number(pageNumStr);
     if (!pages[pageNum]) {
       commitPage(pageNum, companionEntries);
+    }
+  }
+
+  // 2b. Commit expanded consecutive multi-page spreads
+  for (const [pageNumStr, expandedEntries] of Object.entries(EXPANDED_PAGES)) {
+    const pageNum = Number(pageNumStr);
+    if (!pages[pageNum]) {
+      commitPage(pageNum, expandedEntries);
     }
   }
 

@@ -6,7 +6,8 @@ import { MobilePage } from '@/components/book/MobilePage';
 import { LookupBar } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { BookmarksModal } from '@/components/modals/BookmarksModal';
-import { BookPage, BookCatalog, DictionaryEntry } from '@/lib/types';
+import { CoverCinematic } from '@/components/book/CoverCinematic';
+import { BookPage, BookCatalog, DictionaryEntry, MarginNote } from '@/lib/types';
 import { soundEngine } from '@/lib/audio';
 import catalogData from '../../data/book/catalog.json';
 
@@ -22,10 +23,14 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
   const [currentPage, setCurrentPage] = useState<number>(initialPage || 92);
   const [highlightedWord, setHighlightedWord] = useState<string>(initialWord || 'Ceremony');
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [showCover, setShowCover] = useState<boolean>(false);
+  const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isLampLit, setIsLampLit] = useState<boolean>(false);
   const [speedMode, setSpeedMode] = useState<'realistic' | 'brisk' | 'slow'>('realistic');
+
+  // Dog-Eared Pages & Handwritten Pencil Marginalia State
+  const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
+  const [marginNotes, setMarginNotes] = useState<MarginNote[]>([]);
 
   // Word Detail Drawer & Bookmarks State
   const initialWordData = useMemo(() => {
@@ -79,7 +84,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load saved bookmarks from localStorage
+  // Load saved bookmarks, dog-ears, and marginalia from localStorage
   useEffect(() => {
     try {
       const savedPages = localStorage.getItem('panna_bookmarks');
@@ -87,6 +92,12 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
 
       const savedWords = localStorage.getItem('panna_saved_words');
       if (savedWords) setBookmarkedWords(JSON.parse(savedWords));
+
+      const savedDogEars = localStorage.getItem('panna_dog_ears');
+      if (savedDogEars) setDogEaredPages(JSON.parse(savedDogEars));
+
+      const savedNotes = localStorage.getItem('panna_marginalia');
+      if (savedNotes) setMarginNotes(JSON.parse(savedNotes));
     } catch (e) {
       console.warn('LocalStorage not available:', e);
     }
@@ -275,6 +286,49 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
     });
   };
 
+  // Dog-ear corner fold toggle handler
+  const handleToggleDogEar = useCallback((pageNum: number) => {
+    soundEngine.playPageTurn();
+    setDogEaredPages(prev => {
+      const exists = prev.includes(pageNum);
+      const updated = exists ? prev.filter(p => p !== pageNum) : [...prev, pageNum].sort((a, b) => a - b);
+      try { localStorage.setItem('panna_dog_ears', JSON.stringify(updated)); } catch(e){}
+      return updated;
+    });
+  }, []);
+
+  // Handwritten margin note add & delete handlers
+  const handleAddMarginNote = useCallback((
+    pageNum: number,
+    text: string,
+    color: 'blue' | 'graphite' | 'crimson',
+    topPct: number
+  ) => {
+    soundEngine.playPaperSlide();
+    const newNote: MarginNote = {
+      id: `note_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      page_number: pageNum,
+      text,
+      color,
+      created_at: Date.now(),
+      top_pct: topPct,
+    };
+    setMarginNotes(prev => {
+      const updated = [...prev, newNote];
+      try { localStorage.setItem('panna_marginalia', JSON.stringify(updated)); } catch(e){}
+      return updated;
+    });
+  }, []);
+
+  const handleDeleteMarginNote = useCallback((noteId: string) => {
+    soundEngine.playPaperSlide();
+    setMarginNotes(prev => {
+      const updated = prev.filter(n => n.id !== noteId);
+      try { localStorage.setItem('panna_marginalia', JSON.stringify(updated)); } catch(e){}
+      return updated;
+    });
+  }, []);
+
   // Random Explore action
   const handleRandomExplore = () => {
     if (isFlipping) return;
@@ -407,7 +461,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
             style={{
               height: '48px',
               padding: '0 14px',
-              background: bookmarkedPages.length > 0 || bookmarkedWords.length > 0 ? '#5b1f19' : '#3e2a1b',
+              background: (bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length) > 0 ? '#5b1f19' : '#3e2a1b',
               border: '1px solid #c9a24a',
               borderRadius: '4px',
               color: '#e0bd68',
@@ -418,14 +472,15 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
               boxShadow: '0 2px 8px rgba(0,0,0,.4)',
               transition: 'all 0.2s',
             }}
-            title="View saved bookmarked spreads and vocabulary"
+            title="View saved bookmarked spreads, dog-ears, notes, and vocabulary"
           >
-            📑 Bookmarks ({bookmarkedPages.length + bookmarkedWords.length})
+            📑 Bookmarks ({bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length})
           </button>
 
           {/* Book Cover toggle button */}
           <button
-            onClick={() => setShowCover(prev => !prev)}
+            id="cover-toggle-btn"
+            onClick={() => setIsBookOpen(prev => !prev)}
             style={{
               height: '48px',
               padding: '0 14px',
@@ -440,9 +495,9 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
               boxShadow: '0 2px 8px rgba(0,0,0,.4)',
               transition: 'all 0.2s',
             }}
-            title="View original cloth cover"
+            title="View closed antique cover with 3D opening animation"
           >
-            {showCover ? 'Open Spread' : 'Cover'}
+            {isBookOpen ? '📕 Close Book' : '📖 Open Book'}
           </button>
 
           {/* Lamp-lit Night Mode toggle button */}
@@ -531,69 +586,12 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
       </header>
 
       {/* Main Reading Canvas */}
-      {showCover ? (
-        /* VINTAGE HARDCOVER PRESENTATION (Matching Cover.dc.html) */
-        <div
-          onClick={() => setShowCover(false)}
-          style={{
-            cursor: 'pointer',
-            width: '640px',
-            maxWidth: '92vw',
-            height: '860px',
-            maxHeight: '80vh',
-            boxSizing: 'border-box',
-            padding: '48px',
-            background: 'radial-gradient(ellipse at 30% 20%, #7a2b22, #4a1712 85%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '22px',
-            position: 'relative',
-            boxShadow: '0 30px 60px rgba(0,0,0,.8)',
-            borderRadius: '4px',
-            transition: 'transform 0.3s ease',
-          }}
-        >
-          {/* Gilt Double Border */}
-          <div style={{ position: 'absolute', inset: '26px', border: '3px double #c9a24a', pointerEvents: 'none' }} />
-          {/* Leather spine edge */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: '46px',
-              background: 'linear-gradient(to right, #2f0d0a, #5b1f19)',
-              borderRight: '2px solid #2f0d0a',
-              pointerEvents: 'none',
-            }}
-          />
-          <p style={{ margin: 0, font: '14px "IM Fell English SC", serif', letterSpacing: '.3em', color: '#c9a24a' }}>
-            A POCKET DICTIONARY
-          </p>
-          <h1
-            style={{
-              margin: 0,
-              font: '400 130px/1 "Tiro Devanagari Hindi", serif',
-              color: '#e0bd68',
-              textShadow: '0 2px 0 #2f0d0a',
-            }}
-          >
-            पन्ना
-          </h1>
-          <h2 style={{ margin: 0, font: '400 56px "IM Fell English", serif', fontStyle: 'italic', color: '#e0bd68' }}>
-            Panna
-          </h2>
-          <div style={{ width: '160px', height: '2px', background: '#c9a24a' }} />
-          <p style={{ margin: 0, font: '22px "IM Fell English", serif', color: '#e8d3a0', textAlign: 'center' }}>
-            English into Hindi<br />with the words around them
-          </p>
-          <p style={{ position: 'absolute', bottom: '40px', margin: 0, font: '13px "IM Fell English SC", serif', letterSpacing: '.2em', color: '#c9a24a' }}>
-            CLICK TO OPEN SPREAD
-          </p>
-        </div>
+      {!isBookOpen ? (
+        /* VINTAGE HARDCOVER PRESENTATION WITH 3D OPENING CINEMATIC */
+        <CoverCinematic
+          isOpen={isBookOpen}
+          onOpen={() => setIsBookOpen(true)}
+        />
       ) : isMobile ? (
         /* Mobile single-page layout */
         <MobilePage
@@ -624,7 +622,12 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
             canPrev={canPrev}
             canNext={canNext}
             isBookmarked={isSpreadBookmarked}
+            dogEaredPages={dogEaredPages}
+            marginNotes={marginNotes}
             onToggleBookmark={handleToggleSpreadBookmark}
+            onToggleDogEar={handleToggleDogEar}
+            onAddMarginNote={handleAddMarginNote}
+            onDeleteMarginNote={handleDeleteMarginNote}
             onFlipComplete={handleFlipComplete}
             onInteractiveDragEnd={(completed) => {
               if (completed) handleNextSpread();
@@ -656,6 +659,8 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
         isOpen={showBookmarksModal}
         onClose={() => setShowBookmarksModal(false)}
         bookmarkedPages={bookmarkedPages}
+        dogEaredPages={dogEaredPages}
+        marginNotes={marginNotes}
         bookmarkedWords={bookmarkedWords}
         onSelectPage={(pNum) => turnToPage(pNum)}
         onSelectWord={(word, destPage) => turnToPage(destPage, word)}
@@ -666,6 +671,10 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
             return next;
           });
         }}
+        onRemoveDogEar={(pNum) => {
+          handleToggleDogEar(pNum);
+        }}
+        onDeleteMarginNote={handleDeleteMarginNote}
         onRemoveWordBookmark={(headword) => {
           const norm = headword.toLowerCase().trim();
           setBookmarkedWords(prev => {

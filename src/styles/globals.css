@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap');
 
 :root {
   --color-desk-center: #4a3322;
@@ -127,3 +127,33 @@ html, body {
   background: var(--color-rule);
   border-radius: 3px;
 }
+
+/* Handwritten marginalia cursive font */
+.font-handwritten {
+  font-family: 'Caveat', cursive;
+  line-height: 1.15;
+}
+
+/* Dog-ear corner fold styling */
+.dog-ear-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  z-index: 25;
+  transition: transform 0.2s ease;
+}
+
+.dog-ear-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  z-index: 25;
+  transition: transform 0.2s ease;
+}
+

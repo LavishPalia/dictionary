@@ -39,3 +39,13 @@ export interface BookCatalog {
   word_to_page: Record<string, number>; // lowercase normalized headword -> page number
   pages: Record<number, BookPage>;
 }
+
+export interface MarginNote {
+  id: string;
+  page_number: number;
+  text: string;
+  color: 'blue' | 'graphite' | 'crimson';
+  created_at: number;
+  top_pct?: number;
+}
+

@@ -14,13 +14,15 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BookPage } from '@/lib/types';
+import { BookPage, MarginNote } from '@/lib/types';
 import { GuideWords } from './GuideWords';
 import { PageColumn } from './PageColumn';
 import { PronunciationFooter } from './PronunciationFooter';
 import { ThumbIndex } from './ThumbIndex';
 import { PageFace, PageFlipLeaf } from './PageFlipLeaf';
 import { SilkRibbon } from './SilkRibbon';
+import { DogEar } from './DogEar';
+import { Marginalia } from './Marginalia';
 import { soundEngine } from '@/lib/audio';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +44,12 @@ interface BookSpreadProps {
   canPrev?: boolean;
   canNext?: boolean;
   isBookmarked?: boolean;
+  dogEaredPages?: number[];
+  marginNotes?: MarginNote[];
   onToggleBookmark?: () => void;
+  onToggleDogEar?: (pageNum: number) => void;
+  onAddMarginNote?: (pageNum: number, text: string, color: 'blue' | 'graphite' | 'crimson', topPct: number) => void;
+  onDeleteMarginNote?: (noteId: string) => void;
   onFlipComplete?: () => void;
   onInteractiveDragEnd?: (completed: boolean) => void;
   onSelectWord?: (headword: string) => void;
@@ -70,7 +77,12 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
   canPrev = true,
   canNext = true,
   isBookmarked = false,
+  dogEaredPages = [],
+  marginNotes = [],
   onToggleBookmark,
+  onToggleDogEar = () => {},
+  onAddMarginNote = () => {},
+  onDeleteMarginNote = () => {},
   onFlipComplete = () => {},
   onSelectWord,
   onSelectLetter,
@@ -139,6 +151,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
 
   return (
     <div
+      id="book-spread-container"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       style={{
@@ -241,6 +254,19 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           >
             {leftPage ? (
               <>
+                <DogEar
+                  pageNumber={leftPage.page_number}
+                  isLeftPage={true}
+                  isDogEared={dogEaredPages.includes(leftPage.page_number)}
+                  onToggle={onToggleDogEar}
+                />
+                <Marginalia
+                  pageNumber={leftPage.page_number}
+                  isLeftPage={true}
+                  notes={marginNotes.filter(n => n.page_number === leftPage.page_number)}
+                  onAddNote={onAddMarginNote}
+                  onDeleteNote={onDeleteMarginNote}
+                />
                 <GuideWords
                   guideLeft={leftPage.guide_left}
                   pageNumber={leftPage.page_number}
@@ -276,6 +302,19 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           >
             {rightPage ? (
               <>
+                <DogEar
+                  pageNumber={rightPage.page_number}
+                  isLeftPage={false}
+                  isDogEared={dogEaredPages.includes(rightPage.page_number)}
+                  onToggle={onToggleDogEar}
+                />
+                <Marginalia
+                  pageNumber={rightPage.page_number}
+                  isLeftPage={false}
+                  notes={marginNotes.filter(n => n.page_number === rightPage.page_number)}
+                  onAddNote={onAddMarginNote}
+                  onDeleteNote={onDeleteMarginNote}
+                />
                 <GuideWords
                   guideLeft={rightPage.guide_left}
                   pageNumber={rightPage.page_number}
