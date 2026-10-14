@@ -5,3 +5,8 @@ node_modules/
 build-prompt
 
 design-docs
+
+.test_profile*
+.temp_edge_profile*
+.test_edge_suite*
+*.png

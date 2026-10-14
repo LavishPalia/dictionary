@@ -20,6 +20,7 @@ import { PageColumn } from './PageColumn';
 import { PronunciationFooter } from './PronunciationFooter';
 import { ThumbIndex } from './ThumbIndex';
 import { PageFace, PageFlipLeaf } from './PageFlipLeaf';
+import { SilkRibbon } from './SilkRibbon';
 import { soundEngine } from '@/lib/audio';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,6 +39,10 @@ interface BookSpreadProps {
   isRiffle?: boolean;
   jumpDistance?: number;
   flipDuration?: number;
+  canPrev?: boolean;
+  canNext?: boolean;
+  isBookmarked?: boolean;
+  onToggleBookmark?: () => void;
   onFlipComplete?: () => void;
   onInteractiveDragEnd?: (completed: boolean) => void;
   onSelectWord?: (headword: string) => void;
@@ -62,6 +67,10 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
   isRiffle = false,
   jumpDistance = 1,
   flipDuration = 1000,
+  canPrev = true,
+  canNext = true,
+  isBookmarked = false,
+  onToggleBookmark,
   onFlipComplete = () => {},
   onSelectWord,
   onSelectLetter,
@@ -108,8 +117,30 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
   const leafDuration = Math.max(450, Math.min(flipDuration * 0.75, 900));
   const stagger = 130; // ms between leaf liftoffs
 
+  // ── Touch swipe navigation (tablets / touch laptops) ─────────────────────
+  const touchStartXRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || isFlipping) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (Math.abs(deltaX) > 48) {
+      if (deltaX < 0 && canNext) {
+        onNextPage();
+      } else if (deltaX > 0 && canPrev) {
+        onPrevPage();
+      }
+    }
+  };
+
   return (
     <div
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       style={{
         position: 'relative',
         width: '1120px',
@@ -202,7 +233,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
               width: '560px', height: '640px',
               boxSizing: 'border-box',
               padding: '26px 38px',
-              background: 'linear-gradient(to right, #e6d5ae 0%, #ecdfba 12%, #efe3c0 100%)',
+              background: 'linear-gradient(to right, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)',
               boxShadow: 'inset 0 0 70px rgba(120,80,30,.28)',
               display: 'flex',
               flexDirection: 'column',
@@ -237,7 +268,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
               width: '560px', height: '640px',
               boxSizing: 'border-box',
               padding: '26px 38px',
-              background: 'linear-gradient(to left, #e6d5ae 0%, #ecdfba 12%, #efe3c0 100%)',
+              background: 'linear-gradient(to left, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)',
               boxShadow: 'inset 0 0 70px rgba(120,80,30,.28)',
               display: 'flex',
               flexDirection: 'column',
@@ -275,14 +306,65 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
             }}
           />
 
-          {/* A-Z Thumb Index */}
-          <ThumbIndex
-            activeLetter={activeLetter}
-            thumbMap={thumbMap}
-            onSelectLetter={onSelectLetter}
-          />
+          {/* Bottom-right corner peel trigger */}
+          {canNext && (
+            <div
+              onClick={onNextPage}
+              title="Click page corner to turn forward"
+              style={{
+                position: 'absolute',
+                right: 0,
+                bottom: 0,
+                width: '60px',
+                height: '60px',
+                cursor: 'pointer',
+                zIndex: 22,
+                background: 'linear-gradient(135deg, transparent 60%, rgba(120,80,30,0.18) 100%)',
+                borderBottomRightRadius: '3px',
+                transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, transparent 50%, rgba(120,80,30,0.32) 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, transparent 60%, rgba(120,80,30,0.18) 100%)';
+              }}
+            />
+          )}
+
+          {/* Bottom-left corner peel trigger */}
+          {canPrev && (
+            <div
+              onClick={onPrevPage}
+              title="Click page corner to turn back"
+              style={{
+                position: 'absolute',
+                left: 0,
+                bottom: 0,
+                width: '60px',
+                height: '60px',
+                cursor: 'pointer',
+                zIndex: 22,
+                background: 'linear-gradient(225deg, transparent 60%, rgba(120,80,30,0.18) 100%)',
+                borderBottomLeftRadius: '3px',
+                transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(225deg, transparent 50%, rgba(120,80,30,0.32) 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(225deg, transparent 60%, rgba(120,80,30,0.18) 100%)';
+              }}
+            />
+          )}
         </div>
       )}
+
+      {/* Silk Ribbon Bookmark hanging from center spine */}
+      <SilkRibbon
+        isBookmarked={!!isBookmarked}
+        onToggleBookmark={onToggleBookmark || (() => {})}
+      />
 
       {/* ================================================================
           FLIP ANIMATION LAYER
@@ -318,14 +400,16 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
                     outgoingPage={
                       flipDirection === 'forward'
                         ? (isFirst ? rightPage : null)
-                        : (isLast ? leftPage : null)
+                        : (isFirst ? leftPage : null)
                     }
                     incomingPage={
                       flipDirection === 'forward'
                         ? (isLast ? targetLeftPage : null)
-                        : (isFirst ? targetRightPage : null)
+                        : (isLast ? targetRightPage : null)
                     }
-                    onMidpoint={() => soundEngine.playPageTurn()}
+                    onMidpoint={() => {
+                      if (isLast) soundEngine.playPageTurn();
+                    }}
                     onComplete={handleRiffleLeafComplete}
                   />
                 );
@@ -347,62 +431,85 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
       )}
 
       {/* ================================================================
-          NAVIGATION BUTTONS
+          A-Z THUMB INDEX — persistent, stays mounted throughout page turns
+          ================================================================ */}
+      <ThumbIndex
+        activeLetter={activeLetter}
+        thumbMap={thumbMap}
+        onSelectLetter={onSelectLetter}
+      />
+
+      {/* ================================================================
+          NAVIGATION BUTTONS — symmetrically aligned & bounds aware
           ================================================================ */}
       <button
         onClick={onPrevPage}
-        disabled={isFlipping}
-        title="Turn to previous spread (Left Arrow)"
+        disabled={isFlipping || !canPrev}
+        title={canPrev ? "Turn to previous spread (Left Arrow)" : "At beginning of book"}
         aria-label="Previous spread"
         style={{
           position: 'absolute',
-          left: '-44px',
+          left: '-52px',
           top: '50%',
           transform: 'translateY(-50%)',
-          width: '36px', height: '60px',
-          background: 'rgba(239, 227, 192, 0.85)',
+          width: '40px',
+          height: '64px',
+          background: canPrev && !isFlipping ? 'rgba(239, 227, 192, 0.92)' : 'rgba(239, 227, 192, 0.45)',
           border: '1px solid #8a7452',
-          borderRadius: '4px 0 0 4px',
+          borderRadius: '5px 0 0 5px',
           color: '#2a1e14',
-          fontSize: '22px',
-          cursor: isFlipping ? 'not-allowed' : 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '-2px 2px 8px rgba(0,0,0,0.3)',
+          fontSize: '24px',
+          cursor: canPrev && !isFlipping ? 'pointer' : 'not-allowed',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '-2px 2px 8px rgba(0,0,0,0.35)',
           transition: 'all 0.2s',
-          zIndex: 25,
-          opacity: isFlipping ? 0.45 : 1,
+          zIndex: 28,
+          opacity: canPrev && !isFlipping ? 1 : 0.35,
         }}
-        onMouseEnter={(e) => { if (!isFlipping) e.currentTarget.style.background = '#efe3c0'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 227, 192, 0.85)'; }}
+        onMouseEnter={(e) => {
+          if (!isFlipping && canPrev) e.currentTarget.style.background = '#efe3c0';
+        }}
+        onMouseLeave={(e) => {
+          if (!isFlipping && canPrev) e.currentTarget.style.background = 'rgba(239, 227, 192, 0.92)';
+        }}
       >
         ‹
       </button>
 
       <button
         onClick={onNextPage}
-        disabled={isFlipping}
-        title="Turn to next spread (Right Arrow)"
+        disabled={isFlipping || !canNext}
+        title={canNext ? "Turn to next spread (Right Arrow)" : "At end of book"}
         aria-label="Next spread"
         style={{
           position: 'absolute',
-          right: '-74px',
-          top: '90%',
+          right: '-106px',
+          top: '50%',
           transform: 'translateY(-50%)',
-          width: '36px', height: '40px',
-          background: 'rgba(239, 227, 192, 0.85)',
+          width: '40px',
+          height: '64px',
+          background: canNext && !isFlipping ? 'rgba(239, 227, 192, 0.92)' : 'rgba(239, 227, 192, 0.45)',
           border: '1px solid #8a7452',
-          borderRadius: '0 4px 4px 0',
+          borderRadius: '0 5px 5px 0',
           color: '#2a1e14',
-          fontSize: '22px',
-          cursor: isFlipping ? 'not-allowed' : 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '2px 2px 8px rgba(0,0,0,0.3)',
+          fontSize: '24px',
+          cursor: canNext && !isFlipping ? 'pointer' : 'not-allowed',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '2px 2px 8px rgba(0,0,0,0.35)',
           transition: 'all 0.2s',
-          zIndex: 25,
-          opacity: isFlipping ? 0.45 : 1,
+          zIndex: 28,
+          opacity: canNext && !isFlipping ? 1 : 0.35,
         }}
-        onMouseEnter={(e) => { if (!isFlipping) e.currentTarget.style.background = '#efe3c0'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 227, 192, 0.85)'; }}
+        onMouseEnter={(e) => {
+          if (!isFlipping && canNext) e.currentTarget.style.background = '#efe3c0';
+        }}
+        onMouseLeave={(e) => {
+          if (!isFlipping && canNext) e.currentTarget.style.background = 'rgba(239, 227, 192, 0.92)';
+        }}
       >
         ›
       </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { BookPage } from '@/lib/types';
 import { GuideWords } from './GuideWords';
 import { PageColumn } from './PageColumn';
@@ -9,6 +9,8 @@ import { PronunciationFooter } from './PronunciationFooter';
 interface MobilePageProps {
   page: BookPage | null;
   highlightedWord?: string;
+  isBookmarked?: boolean;
+  onToggleBookmark?: () => void;
   onSelectWord?: (headword: string) => void;
   onPrevPage: () => void;
   onNextPage: () => void;
@@ -17,10 +19,31 @@ interface MobilePageProps {
 export const MobilePage: React.FC<MobilePageProps> = ({
   page,
   highlightedWord,
+  isBookmarked = false,
+  onToggleBookmark,
   onSelectWord,
   onPrevPage,
   onNextPage,
 }) => {
+  const touchStartXRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (Math.abs(deltaX) > 40) {
+      if (deltaX < 0) {
+        onNextPage();
+      } else {
+        onPrevPage();
+      }
+    }
+  };
+
   if (!page) {
     return (
       <div
@@ -46,6 +69,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
   return (
     <div
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       style={{
         width: '100%',
         maxWidth: '390px',
@@ -60,18 +85,30 @@ export const MobilePage: React.FC<MobilePageProps> = ({
     >
       {/* Hanging silk bookmark ribbon */}
       <div
+        onClick={onToggleBookmark}
+        title={isBookmarked ? 'Page bookmarked! Click to remove' : 'Click to bookmark this page'}
         style={{
           position: 'absolute',
           right: '28px',
           top: 0,
-          width: '22px',
-          height: '60px',
-          background: '#7a2b22',
+          width: '24px',
+          height: isBookmarked ? '90px' : '60px',
+          background: 'linear-gradient(to right, #6b1d16 0%, #8b2b22 45%, #591610 100%)',
           clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)',
           zIndex: 30,
-          boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+          boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
+          cursor: 'pointer',
+          transition: 'height 0.3s ease',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          paddingBottom: '16px',
         }}
-      />
+      >
+        {isBookmarked && (
+          <span style={{ color: '#e0bd68', fontSize: '13px', lineHeight: 1 }}>★</span>
+        )}
+      </div>
 
       {/* Page content */}
       <div style={{ flex: 1, padding: '18px 24px 12px' }}>

@@ -72,12 +72,18 @@ export function searchWords(query: string, limit: number = 8): {
 
       if (norm === q) {
         score = 100;
+      } else if (entry.meaning_hi === q || entry.pronunciation_deva === q) {
+        score = 95;
       } else if (norm.startsWith(q)) {
         score = 80 - (norm.length - q.length);
+      } else if (entry.meaning_hi.startsWith(q) || entry.pronunciation_deva.startsWith(q)) {
+        score = 75;
+      } else if (entry.meaning_hi.includes(q) || entry.pronunciation_deva.includes(q)) {
+        score = 65;
       } else if (norm.includes(q)) {
         score = 50;
-      } else if (entry.definition_en.toLowerCase().includes(q) || entry.meaning_hi.includes(q)) {
-        score = 20;
+      } else if (entry.definition_en.toLowerCase().includes(q)) {
+        score = 25;
       }
 
       if (score > 0) {

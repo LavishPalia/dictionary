@@ -168,7 +168,172 @@ export const SEED_ENTRIES: Omit<DictionaryEntry, 'id' | 'page_number' | 'column'
     license_attribution: "CC BY-SA 3.0"
   },
 
-  // --- C (EXACT SPREAD FROM DESIGN DOC Main.dc.html) ---
+  // --- C (CONSECUTIVE PAGES 90 to 97: SPREADS 90/91, 92/93, 94/95, 96/97) ---
+  // Page 90 (left page)
+  {
+    headword: "Cabin",
+    normalized: "cabin",
+    pos: "n.",
+    pronunciation_deva: "कैबिन",
+    definition_en: "a small wooden shelter or house in a wild area.",
+    meaning_hi: "झोपड़ी, कुटिया",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Cable",
+    normalized: "cable",
+    pos: "n.",
+    pronunciation_deva: "केबल",
+    definition_en: "a thick rope of wire or hemp used for construction.",
+    meaning_hi: "मोटा तार, रस्सा",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Cage",
+    normalized: "cage",
+    pos: "n.",
+    pronunciation_deva: "केज",
+    definition_en: "a structure of bars or wires in which animals are kept.",
+    meaning_hi: "पिंजरा",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Calculate",
+    normalized: "calculate",
+    pos: "v. t.",
+    pronunciation_deva: "कैलकुलेट",
+    definition_en: "to determine mathematically the amount or number.",
+    meaning_hi: "गणना करना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Calendar",
+    normalized: "calendar",
+    pos: "n.",
+    pronunciation_deva: "कैलन्डर",
+    definition_en: "a chart showing days, weeks, and months of a year.",
+    meaning_hi: "पंचांग, कैलेंडर",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Calm",
+    normalized: "calm",
+    pos: "adj.",
+    pronunciation_deva: "काम",
+    definition_en: "not showing or feeling nervousness, anger, or excitement.",
+    meaning_hi: "शांत, स्थिर",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Camel",
+    normalized: "camel",
+    pos: "n.",
+    pronunciation_deva: "कैमल",
+    definition_en: "a large long-necked mammal with one or two humps.",
+    meaning_hi: "ऊँट",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Camera",
+    normalized: "camera",
+    pos: "n.",
+    pronunciation_deva: "कैमरा",
+    definition_en: "a device for recording visual images in photographs.",
+    meaning_hi: "कैमरा",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+
+  // Page 91 (right page)
+  {
+    headword: "Camp",
+    normalized: "camp",
+    pos: "n.",
+    pronunciation_deva: "कैम्प",
+    definition_en: "a place with temporary accommodation of huts or tents.",
+    meaning_hi: "शिविर, पड़ाव",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Canal",
+    normalized: "canal",
+    pos: "n.",
+    pronunciation_deva: "कनाल",
+    definition_en: "an artificial waterway constructed to allow passage of boats.",
+    meaning_hi: "नहर",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Cancel",
+    normalized: "cancel",
+    pos: "v. t.",
+    pronunciation_deva: "कैन्सल",
+    definition_en: "to decide that an agreed event will not take place.",
+    meaning_hi: "रद्द करना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Candle",
+    normalized: "candle",
+    pos: "n.",
+    pronunciation_deva: "कैंडल",
+    definition_en: "a cylinder of wax with a central wick that gives light.",
+    meaning_hi: "मोमबत्ती",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Canvas",
+    normalized: "canvas",
+    pos: "n.",
+    pronunciation_deva: "कैनवस",
+    definition_en: "a strong, unbleached cloth used for making sails or paintings.",
+    meaning_hi: "किरमिच, कैनवास",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Captain",
+    normalized: "captain",
+    pos: "n.",
+    pronunciation_deva: "कैप्टन",
+    definition_en: "the person in command of a ship or team.",
+    meaning_hi: "कप्तान, सेनानायक",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Card",
+    normalized: "card",
+    pos: "n.",
+    pronunciation_deva: "कार्ड",
+    definition_en: "a piece of thick, stiff paper or thin pasteboard.",
+    meaning_hi: "ताश का पत्ता, पत्रक",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Care",
+    normalized: "care",
+    pos: "n.",
+    pronunciation_deva: "केयर",
+    definition_en: "the provision of what is necessary for the health and welfare.",
+    meaning_hi: "देखभाल, चिंता",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+
+  // Page 92 (left page) [from Main.dc.html]
   {
     headword: "Cellar",
     normalized: "cellar",
@@ -249,6 +414,8 @@ export const SEED_ENTRIES: Omit<DictionaryEntry, 'id' | 'page_number' | 'column'
     source: "Open WordNet / Wiktionary",
     license_attribution: "CC BY-SA 3.0"
   },
+
+  // Page 93 (right page) [from Main.dc.html]
   {
     headword: "Chain",
     normalized: "chain",
@@ -326,6 +493,334 @@ export const SEED_ENTRIES: Omit<DictionaryEntry, 'id' | 'page_number' | 'column'
     pronunciation_deva: "चैरिटी",
     definition_en: "kindness in giving to the poor.",
     meaning_hi: "दान",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+
+  // Page 94 (left page)
+  {
+    headword: "Charm",
+    normalized: "charm",
+    pos: "n.",
+    pronunciation_deva: "चार्म",
+    definition_en: "the power or quality of giving delight or arousing admiration.",
+    meaning_hi: "आकर्षण, जादू",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Chase",
+    normalized: "chase",
+    pos: "v. t.",
+    pronunciation_deva: "चेस",
+    definition_en: "to pursue in order to catch or catch up with.",
+    meaning_hi: "पीछा करना, खदेड़ना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Cheap",
+    normalized: "cheap",
+    pos: "adj.",
+    pronunciation_deva: "चीप",
+    definition_en: "low in price, especially in relation to value.",
+    meaning_hi: "सस्ता, किफ़ायती",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Check",
+    normalized: "check",
+    pos: "v. t.",
+    pronunciation_deva: "चेक",
+    definition_en: "to examine something in order to determine accuracy.",
+    meaning_hi: "जांचना, परखना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Cheer",
+    normalized: "cheer",
+    pos: "n.",
+    pronunciation_deva: "चीयर",
+    definition_en: "a shout of encouragement, praise, or joy.",
+    meaning_hi: "जयकार, ढाढ़स",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Cheese",
+    normalized: "cheese",
+    pos: "n.",
+    pronunciation_deva: "चीज़",
+    definition_en: "a food made from the pressed curds of milk.",
+    meaning_hi: "पनीर",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Cherry",
+    normalized: "cherry",
+    pos: "n.",
+    pronunciation_deva: "चेरी",
+    definition_en: "a small, round stone fruit that is typically bright red.",
+    meaning_hi: "चेरी का फल",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Chest",
+    normalized: "chest",
+    pos: "n.",
+    pronunciation_deva: "चेस्ट",
+    definition_en: "the front surface of a person's body between neck and abdomen; a large box.",
+    meaning_hi: "छाती, संदूक",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+
+  // Page 95 (right page)
+  {
+    headword: "Chief",
+    normalized: "chief",
+    pos: "n.",
+    pronunciation_deva: "चीफ़",
+    definition_en: "a leader or ruler of a people, group, or organization.",
+    meaning_hi: "मुखिया, प्रधान",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Child",
+    normalized: "child",
+    pos: "n.",
+    pronunciation_deva: "चाइल्ड",
+    definition_en: "a young human being below the age of puberty.",
+    meaning_hi: "बालक, बच्चा",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Chimney",
+    normalized: "chimney",
+    pos: "n.",
+    pronunciation_deva: "चिम्नी",
+    definition_en: "a vertical pipe through which smoke and gases are carried off.",
+    meaning_hi: "चिमनी",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Choice",
+    normalized: "choice",
+    pos: "n.",
+    pronunciation_deva: "चॉइस",
+    definition_en: "an act of selecting or making a decision when faced with options.",
+    meaning_hi: "पसंद, विकल्प",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Choose",
+    normalized: "choose",
+    pos: "v. t.",
+    pronunciation_deva: "चूज़",
+    definition_en: "to pick out or select as being the best or most appropriate.",
+    meaning_hi: "चुनना, छांटना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Church",
+    normalized: "church",
+    pos: "n.",
+    pronunciation_deva: "चर्च",
+    definition_en: "a building used for public Christian worship.",
+    meaning_hi: "गिरजाघर",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Circle",
+    normalized: "circle",
+    pos: "n.",
+    pronunciation_deva: "सर्कल",
+    definition_en: "a round plane figure whose boundary consists of points equidistant from centre.",
+    meaning_hi: "वृत्त, घेरा",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Circus",
+    normalized: "circus",
+    pos: "n.",
+    pronunciation_deva: "सर्कस",
+    definition_en: "a travelling company of acrobats, clowns, and trained animals.",
+    meaning_hi: "सर्कस, तमाशा",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+
+  // Page 96 (left page)
+  {
+    headword: "Citizen",
+    normalized: "citizen",
+    pos: "n.",
+    pronunciation_deva: "सिटिज़न",
+    definition_en: "a legally recognized subject or national of a state.",
+    meaning_hi: "नागरिक",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "City",
+    normalized: "city",
+    pos: "n.",
+    pronunciation_deva: "सिटी",
+    definition_en: "a large town of significant size and population.",
+    meaning_hi: "शहर, नगर",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Civil",
+    normalized: "civil",
+    pos: "adj.",
+    pronunciation_deva: "सिविल",
+    definition_en: "relating to ordinary citizens and their concerns.",
+    meaning_hi: "नागरिक, असैन्य",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Claim",
+    normalized: "claim",
+    pos: "v. t.",
+    pronunciation_deva: "क्लेम",
+    definition_en: "to state or assert that something is the case.",
+    meaning_hi: "दावा करना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clam",
+    normalized: "clam",
+    pos: "n.",
+    pronunciation_deva: "क्लैम",
+    definition_en: "a marine bivalve mollusc with shells of equal size.",
+    meaning_hi: "सीप, घोंघा",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clap",
+    normalized: "clap",
+    pos: "v. t.",
+    pronunciation_deva: "क्लैप",
+    definition_en: "to strike the palms of the hands together with a sharp sound.",
+    meaning_hi: "ताली बजाना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clarify",
+    normalized: "clarify",
+    pos: "v. t.",
+    pronunciation_deva: "क्लैरिफ़ाई",
+    definition_en: "to make a statement or situation less confused and more comprehensible.",
+    meaning_hi: "स्पष्ट करना",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clarity",
+    normalized: "clarity",
+    pos: "n.",
+    pronunciation_deva: "क्लैरिटी",
+    definition_en: "the quality of being clear, transparent, or easily understood.",
+    meaning_hi: "स्पष्टता, स्वच्छता",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+
+  // Page 97 (right page)
+  {
+    headword: "Clash",
+    normalized: "clash",
+    pos: "n.",
+    pronunciation_deva: "क्लैश",
+    definition_en: "a violent confrontation or disagreement between parties.",
+    meaning_hi: "टकराव, भिड़ंत",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clasp",
+    normalized: "clasp",
+    pos: "n.",
+    pronunciation_deva: "क्लैस्प",
+    definition_en: "a device with interlocking parts used for fastening things.",
+    meaning_hi: "बकल, कुंडी, पकड़",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Class",
+    normalized: "class",
+    pos: "n.",
+    pronunciation_deva: "क्लास",
+    definition_en: "a set or category of things having some property in common.",
+    meaning_hi: "श्रेणी, कक्षा, वर्ग",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Classic",
+    normalized: "classic",
+    pos: "adj.",
+    pronunciation_deva: "क्लासिक",
+    definition_en: "judged over a period of time to be of the highest quality.",
+    meaning_hi: "उत्कृष्ट, कालजयी",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clean",
+    normalized: "clean",
+    pos: "adj.",
+    pronunciation_deva: "क्लीन",
+    definition_en: "free from dirt, marks, or unwanted matter.",
+    meaning_hi: "साफ़, स्वच्छ",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clear",
+    normalized: "clear",
+    pos: "adj.",
+    pronunciation_deva: "क्लियर",
+    definition_en: "easy to perceive, understand, or interpret; transparent.",
+    meaning_hi: "स्पष्ट, साफ़",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clerk",
+    normalized: "clerk",
+    pos: "n.",
+    pronunciation_deva: "क्लर्क",
+    definition_en: "a person employed in an office or bank to keep records.",
+    meaning_hi: "मुंशी, लिपिक",
+    source: "Open WordNet / Wiktionary",
+    license_attribution: "CC BY-SA 3.0"
+  },
+  {
+    headword: "Clever",
+    normalized: "clever",
+    pos: "adj.",
+    pronunciation_deva: "क्लेवर",
+    definition_en: "quick to understand, learn, and devise or apply ideas.",
+    meaning_hi: "चतुर, होशियार",
     source: "Open WordNet / Wiktionary",
     license_attribution: "CC BY-SA 3.0"
   },

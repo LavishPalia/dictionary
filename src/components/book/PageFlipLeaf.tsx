@@ -43,8 +43,8 @@ export const PageFace: React.FC<PageFaceProps> = ({
   style,
 }) => {
   const bg = isLeftPage
-    ? 'linear-gradient(to right, #e0cfa0 0%, #e9dab8 10%, #efe3c0 100%)'
-    : 'linear-gradient(to left,  #e0cfa0 0%, #e9dab8 10%, #efe3c0 100%)';
+    ? 'linear-gradient(to right, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)'
+    : 'linear-gradient(to left,  #efe3c0 0%, #ecdfba 85%, #d8c494 100%)';
 
   return (
     <div
@@ -112,8 +112,8 @@ export const PageFace: React.FC<PageFaceProps> = ({
 // ─────────────────────────────────────────────────────────────────────────────
 const GhostPage: React.FC<{ isLeftPage: boolean }> = ({ isLeftPage }) => {
   const bg = isLeftPage
-    ? 'linear-gradient(to right, #e0cfa0 0%, #e9dab8 10%, #efe3c0 100%)'
-    : 'linear-gradient(to left,  #e0cfa0 0%, #e9dab8 10%, #efe3c0 100%)';
+    ? 'linear-gradient(to right, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)'
+    : 'linear-gradient(to left,  #efe3c0 0%, #ecdfba 85%, #d8c494 100%)';
   return (
     <div
       style={{

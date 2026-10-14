@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { getWordEntry, getSpread, getCatalog } from '@/lib/book-data';
-import { BookSpread } from '@/components/book/BookSpread';
-import { LookupBar } from '@/components/search/LookupBar';
+import { getWordEntry } from '@/lib/book-data';
+import DictionaryApp from '@/components/DictionaryApp';
 
 interface WordPageProps {
   params: {
@@ -34,62 +33,5 @@ export default function WordPage({ params }: WordPageProps) {
     notFound();
   }
 
-  const catalog = getCatalog();
-  const leftPageNum = data.pageNumber % 2 === 0 ? data.pageNumber : data.pageNumber - 1;
-  const spread = getSpread(leftPageNum);
-
-  return (
-    <main
-      style={{
-        minHeight: '100vh',
-        width: '100vw',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '24px 16px 40px',
-        position: 'relative',
-        boxSizing: 'border-box',
-      }}
-    >
-      <header
-        style={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '28px',
-          zIndex: 40,
-        }}
-      >
-        <LookupBar
-          currentPage={data.pageNumber}
-          onSelectWord={(word, page) => {
-            window.location.href = `/word/${encodeURIComponent(word)}`;
-          }}
-          onPageChange={(page) => {
-            window.location.href = `/page/${page}`;
-          }}
-        />
-      </header>
-
-      <BookSpread
-        leftPage={spread.left}
-        rightPage={spread.right}
-        highlightedWord={data.entry.headword}
-        activeLetter={data.entry.headword[0].toUpperCase()}
-        thumbMap={catalog.thumb_index}
-        onSelectWord={(word) => {
-          window.location.href = `/word/${encodeURIComponent(word)}`;
-        }}
-        onSelectLetter={(letter, page) => {
-          window.location.href = `/page/${page}`;
-        }}
-        onPrevPage={() => {
-          window.location.href = `/page/${Math.max(1, leftPageNum - 2)}`;
-        }}
-        onNextPage={() => {
-          window.location.href = `/page/${Math.min(catalog.total_pages, leftPageNum + 2)}`;
-        }}
-      />
-    </main>
-  );
+  return <DictionaryApp initialPage={data.pageNumber} initialWord={data.entry.headword} />;
 }
