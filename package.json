@@ -1,0 +1,27 @@
+{
+  "name": "panna-3d-dictionary",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "paginate": "node --loader ts-node/esm scripts/paginate.ts",
+    "build:data": "tsx scripts/paginate.ts"
+  },
+  "dependencies": {
+    "@types/three": "^0.186.0",
+    "next": "^14.2.23",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4"
+  }
+}
