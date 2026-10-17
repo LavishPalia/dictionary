@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { getSpread } from '@/lib/book-data';
+import { getPage, getSpread } from '@/lib/book-data';
 import DictionaryApp from '@/components/DictionaryApp';
 
 interface PageRouteProps {
@@ -11,18 +11,21 @@ interface PageRouteProps {
 
 export async function generateMetadata({ params }: PageRouteProps): Promise<Metadata> {
   const pageNum = parseInt(params.pageNumber, 10);
-  const leftPageNum = pageNum % 2 === 0 ? pageNum : pageNum - 1;
-  const spread = getSpread(leftPageNum);
 
-  if (!spread.left && !spread.right) {
+  if (!Number.isInteger(pageNum) || !getPage(pageNum)) {
     return {
       title: 'Page Not Found — पन्ना (Panna)',
     };
   }
 
-  const guide = spread.left
-    ? `${spread.left.guide_left} to ${spread.right?.guide_right || spread.left.guide_right}`
-    : 'Dictionary Pages';
+  const leftPageNum = pageNum % 2 === 0 ? pageNum : pageNum - 1;
+  const spread = getSpread(leftPageNum);
+
+  const guide = (spread.left && spread.right)
+    ? `${spread.left.guide_left} to ${spread.right.guide_right}`
+    : (spread.right?.guide_left
+        ? `${spread.right.guide_left} to ${spread.right.guide_right}`
+        : (spread.left?.guide_left || 'Dictionary Pages'));
 
   return {
     title: `Pages ${leftPageNum}–${leftPageNum + 1} (${guide}) — पन्ना (Panna)`,
@@ -32,7 +35,7 @@ export async function generateMetadata({ params }: PageRouteProps): Promise<Meta
 
 export default function DirectPageRoute({ params }: PageRouteProps) {
   const pageNum = parseInt(params.pageNumber, 10);
-  if (isNaN(pageNum)) {
+  if (!Number.isInteger(pageNum) || !getPage(pageNum)) {
     notFound();
   }
 

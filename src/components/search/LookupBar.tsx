@@ -25,14 +25,26 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  // The headword we just inserted ourselves, so our own setQuery() cannot
+  // re-open the dropdown. Cleared by any user edit or by the next search.
+  const justSelectedRef = useRef<string | null>(null);
 
   // Debounced search
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
       setIsOpen(false);
+      justSelectedRef.current = null;
       return;
     }
+
+    if (justSelectedRef.current === query) {
+      // Our own selection filled the box: keep the list closed, don't re-search.
+      justSelectedRef.current = null;
+      setResults([]);
+      return;
+    }
+    justSelectedRef.current = null;
 
     const timer = setTimeout(async () => {
       try {
@@ -63,6 +75,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   }, []);
 
   const handleSelect = (item: SearchResult) => {
+    justSelectedRef.current = item.headword;
     setQuery(item.headword);
     setIsOpen(false);
     onSelectWord(item.headword, item.page_number);
@@ -117,7 +130,10 @@ export const LookupBar: React.FC<LookupBarProps> = ({
         autoComplete="off"
         spellCheck="false"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => {
+          justSelectedRef.current = null;
+          setQuery(e.target.value);
+        }}
         onKeyDown={handleKeyDown}
         placeholder="e.g. Ceremony, Charity, Dairy..."
         style={{

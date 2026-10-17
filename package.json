@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:phase3": "node scripts/test-phase3-browser.mjs",
+    "test:phase4": "node scripts/test-phase4-browser.mjs",
     "paginate": "node --loader ts-node/esm scripts/paginate.ts",
     "build:data": "tsx scripts/paginate.ts"
   },

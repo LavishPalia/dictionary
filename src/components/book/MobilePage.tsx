@@ -14,6 +14,8 @@ interface MobilePageProps {
   onSelectWord?: (headword: string) => void;
   onPrevPage: () => void;
   onNextPage: () => void;
+  canPrev?: boolean;
+  canNext?: boolean;
 }
 
 export const MobilePage: React.FC<MobilePageProps> = ({
@@ -24,6 +26,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   onSelectWord,
   onPrevPage,
   onNextPage,
+  canPrev = true,
+  canNext = true,
 }) => {
   const touchStartXRef = useRef<number | null>(null);
 
@@ -143,6 +147,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
       >
         <button
           onClick={onPrevPage}
+          disabled={!canPrev}
           style={{
             height: '40px',
             minWidth: '40px',
@@ -151,7 +156,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
             borderRadius: '4px',
             font: '20px "IM Fell English", serif',
             color: '#2a1e14',
-            cursor: 'pointer',
+            cursor: canPrev ? 'pointer' : 'not-allowed',
+            opacity: canPrev ? 1 : 0.4,
           }}
           aria-label="Previous page"
         >
@@ -164,6 +170,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
         <button
           onClick={onNextPage}
+          disabled={!canNext}
           style={{
             height: '40px',
             minWidth: '40px',
@@ -172,7 +179,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
             borderRadius: '4px',
             font: '20px "IM Fell English", serif',
             color: '#2a1e14',
-            cursor: 'pointer',
+            cursor: canNext ? 'pointer' : 'not-allowed',
+            opacity: canNext ? 1 : 0.4,
           }}
           aria-label="Next page"
         >

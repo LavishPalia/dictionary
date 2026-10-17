@@ -169,6 +169,14 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           BASE LAYER — the resting book spread (always visible underneath)
           ================================================================ */}
       <div
+        /*
+         * At rest this layer is a pure animation underlay — the DOM overlay
+         * below is the single accessible copy of the text. While a flip is in
+         * flight the overlay is unmounted, so this layer is the one that stays
+         * exposed (and it shows the incoming spread, which is where the reader
+         * is going).
+         */
+        aria-hidden={!isFlipping}
         style={{
           position: 'absolute',
           inset: 0,
@@ -412,6 +420,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           ================================================================ */}
       {isFlipping && (
         <div
+          aria-hidden={true}
           style={{
             position: 'absolute',
             inset: 0,

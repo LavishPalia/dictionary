@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,10 +10,47 @@ async function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+async function portIsFree(port) {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/json/version`);
+    return !res.ok;
+  } catch (e) {
+    return true; // connection refused -> port is free
+  }
+}
+
+async function killTree(child, port) {
+  if (child && child.pid !== undefined) {
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    } else {
+      try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { try { child.kill('SIGKILL'); } catch (e2) {} }
+    }
+  }
+  for (let i = 0; i < 20 && !(await portIsFree(port)); i++) await sleep(250);
+}
+
+let checks = 0;
+let failures = 0;
+function check(label, condition, detail) {
+  checks += 1;
+  if (condition) {
+    console.log(`  ✅ ${label}`);
+  } else {
+    failures += 1;
+    console.error(`  ❌ ${label}${detail !== undefined ? ` — got ${JSON.stringify(detail)}` : ''}`);
+  }
+}
+
 async function main() {
   console.log('=====================================================');
   console.log('📖 STARTING FULL IN-BROWSER PHASE 3 TEST SUITE');
   console.log('=====================================================');
+
+  if (!(await portIsFree(PORT))) {
+    console.error(`❌ DevTools port ${PORT} is already in use — a previous run is still alive.`);
+    process.exit(1);
+  }
 
   if (fs.existsSync(USER_DATA)) {
     try {
@@ -52,11 +89,11 @@ async function main() {
 
   if (!endpoint) {
     console.error('❌ Could not connect to Edge DevTools port');
-    edgeProcess.kill();
+    await killTree(edgeProcess, PORT);
     process.exit(1);
   }
 
-  console.log(' Connected to Edge DevTools Protocol');
+  console.log('🔗 Connected to Edge DevTools Protocol');
 
   const ws = new WebSocket(endpoint);
   await new Promise((resolve) => (ws.onopen = resolve));
@@ -100,27 +137,39 @@ async function main() {
     const res = await send('Page.captureScreenshot', { format: 'png' });
     const data = res?.data;
     if (data) {
-      const outPath = path.join(process.cwd(), name);
+      const outPath = path.join(process.env.TEMP || process.cwd(), name);
       fs.writeFileSync(outPath, Buffer.from(data, 'base64'));
-      console.log(`📸 Screenshot saved: ${name}`);
+      console.log(`📸 Screenshot saved: ${outPath}`);
     }
+  }
+
+  async function waitForHydration(timeoutMs = 20000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const ready = await evaluate(`
+        const el = document.getElementById('lookup-input');
+        if (!el) return false;
+        const hydrated = Object.keys(el).some(k => k.startsWith('__reactFiber$'));
+        return hydrated && document.querySelectorAll('.entry-text').length > 0;
+      `);
+      if (ready === true) return true;
+      await sleep(250);
+    }
+    return false;
   }
 
   try {
     await send('Page.enable');
     await send('Runtime.enable');
 
-    console.log('\n[1/7] Testing Initial Load & Mounting ...');
-    for (let i = 0; i < 30; i++) {
-      await sleep(400);
-      const count = await evaluate(`return document.querySelectorAll('.entry-text').length;`);
-      if (typeof count === 'number' && count > 0) break;
-    }
+    console.log('\n[1/7] Waiting for React Hydration & Initial Render ...');
+    const hydrated = await waitForHydration();
+    check('app hydrated successfully', hydrated === true);
 
     const title = await evaluate(`return document.title;`);
-    console.log('✅ Page Title:', title);
+    check('document title includes Panna', typeof title === 'string' && title.includes('Panna'), title);
     const initialUrl = await evaluate(`return window.location.pathname;`);
-    console.log('✅ Initial URL:', initialUrl);
+    check('initial URL is root or /page/92', initialUrl === '/' || initialUrl === '/page/92', initialUrl);
 
     console.log('\n[2/7] Testing Word Click & WordDetailDrawer ...');
     const clickWord = await evaluate(`
@@ -132,14 +181,14 @@ async function main() {
       }
       return false;
     `);
-    console.log('Clicked "Ceremony" entry:', clickWord);
+    check('clicked "Ceremony" entry', clickWord === true);
     await sleep(700);
 
     const isDrawerOpen = await evaluate('return Boolean(document.querySelector("#word-drawer-backdrop"));');
-    console.log('✅ WordDetailDrawer is open:', isDrawerOpen);
+    check('WordDetailDrawer is open', isDrawerOpen === true);
 
     const wordUrl = await evaluate('return window.location.pathname;');
-    console.log('✅ URL synced on word click:', wordUrl);
+    check('URL synced to /word/Ceremony', wordUrl === '/word/Ceremony', wordUrl);
     await takeScreenshot('phase3_1_drawer_open.png');
 
     console.log('\n[3/7] Testing Word Bookmarking in Drawer ...');
@@ -153,7 +202,7 @@ async function main() {
       const btn = document.querySelector("#save-word-btn");
       return btn ? btn.textContent.includes('Bookmarked') : false;
     `);
-    console.log('✅ Word bookmarked state:', isBookmarked);
+    check('word bookmarked state toggled', isBookmarked === true);
 
     console.log('\n[4/7] Testing Drawer Close & URL Restore ...');
     await evaluate(`
@@ -163,9 +212,9 @@ async function main() {
     `);
     await sleep(600);
     const isDrawerClosed = await evaluate('return !Boolean(document.querySelector("#word-drawer-backdrop"));');
-    console.log('✅ Drawer closed:', isDrawerClosed);
+    check('WordDetailDrawer closed', isDrawerClosed === true);
     const restoredUrl = await evaluate('return window.location.pathname;');
-    console.log('✅ URL restored to page after drawer close:', restoredUrl);
+    check('URL restored after drawer close', restoredUrl === '/page/92' || restoredUrl === '/', restoredUrl);
 
     console.log('\n[5/7] Testing Silk Ribbon Spread Bookmark & Bookmarks Modal ...');
     await evaluate(`
@@ -185,9 +234,9 @@ async function main() {
 
     const modalHasSavedItems = await evaluate(`
       const body = document.body.textContent;
-      return body.includes('Saved Bookmarks & Words') && body.includes('Pages 92–93') && body.includes('Ceremony');
+      return (body.includes('Reading History') || body.includes('SILK RIBBON SPREADS')) && body.includes('Pages 92–93') && body.includes('Ceremony');
     `);
-    console.log('✅ Bookmarks modal shows bookmarked spread (92–93) & word (Ceremony):', modalHasSavedItems);
+    check('Bookmarks modal shows spread 92–93 & Ceremony', modalHasSavedItems === true);
     await takeScreenshot('phase3_2_bookmarks_modal.png');
 
     // Close Bookmarks modal
@@ -206,7 +255,12 @@ async function main() {
     `);
     await sleep(1500); // 3D flip animation completes
     const turnedUrl = await evaluate('return window.location.pathname;');
-    console.log('✅ URL after turning forward:', turnedUrl);
+    check('URL after turning forward is /page/94', turnedUrl === '/page/94', turnedUrl);
+    const turnedFirst = await evaluate(`
+      const el = document.querySelector('.entry-text b');
+      return el ? el.textContent.trim() : null;
+    `);
+    check('target spread rendered Charm', turnedFirst === 'Charm', turnedFirst);
     await takeScreenshot('phase3_3_page_94_turned.png');
 
     console.log('\n[7/7] Testing 🎲 Explore (Random Riffle Jump) ...');
@@ -217,22 +271,23 @@ async function main() {
     `);
     await sleep(2200); // Riffle cascade completes
     const exploreUrl = await evaluate('return window.location.pathname;');
-    console.log('✅ URL after 🎲 Explore jump:', exploreUrl);
+    check('URL after Explore jump changed', typeof exploreUrl === 'string' && exploreUrl !== '/page/94', exploreUrl);
     await takeScreenshot('phase3_4_explore_jump.png');
 
     console.log('\n=====================================================');
-    console.log('🏆 ALL PHASE 3 IN-BROWSER TESTS COMPLETED SUCCESSFULLY!');
+    console.log(`🏁 PHASE 3: ${checks - failures}/${checks} checks passed`);
     console.log('=====================================================');
+    process.exitCode = failures > 0 ? 1 : 0;
   } finally {
     ws.close();
-    edgeProcess.kill();
+    await killTree(edgeProcess, PORT);
     try {
       fs.rmSync(USER_DATA, { recursive: true, force: true });
     } catch (e) {}
   }
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error('Test error:', err);
   process.exit(1);
 });

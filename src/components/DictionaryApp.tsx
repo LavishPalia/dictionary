@@ -13,6 +13,11 @@ import catalogData from '../../data/book/catalog.json';
 
 const catalog = catalogData as unknown as BookCatalog;
 
+// Only real catalog pages are valid entry points; anything else (undefined, 0,
+// out of range) falls back to the default spread.
+const resolveInitialPage = (p?: number): number =>
+  p !== undefined && catalog.pages[p] ? p : 92;
+
 export interface DictionaryAppProps {
   initialPage?: number;
   initialWord?: string;
@@ -20,7 +25,7 @@ export interface DictionaryAppProps {
 
 export default function DictionaryApp({ initialPage, initialWord }: DictionaryAppProps) {
   // Current page state (defaults to Page 92 matching Main.dc.html)
-  const [currentPage, setCurrentPage] = useState<number>(initialPage || 92);
+  const [currentPage, setCurrentPage] = useState<number>(() => resolveInitialPage(initialPage));
   const [highlightedWord, setHighlightedWord] = useState<string>(initialWord || 'Ceremony');
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
@@ -36,7 +41,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
   const initialWordData = useMemo(() => {
     if (!initialWord) return null;
     const norm = initialWord.toLowerCase().trim();
-    const pNum = catalog.word_to_page[norm] || initialPage || 92;
+    const pNum = catalog.word_to_page[norm] || resolveInitialPage(initialPage);
     const pageObj = catalog.pages[pNum];
     if (pageObj) {
       return [...(pageObj.column1 || []), ...(pageObj.column2 || [])].find(e => e.normalized === norm) || null;
@@ -68,7 +73,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
 
   // 3D Flip & Riffle Animation Orchestration State
   const [isFlipping, setIsFlipping] = useState<boolean>(false);
-  const [targetPage, setTargetPage] = useState<number>(initialPage || 92);
+  const [targetPage, setTargetPage] = useState<number>(() => resolveInitialPage(initialPage));
   const [flipDirection, setFlipDirection] = useState<'forward' | 'backward'>('forward');
   const [isRiffle, setIsRiffle] = useState<boolean>(false);
   const [jumpDistance, setJumpDistance] = useState<number>(1);
@@ -154,7 +159,9 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
 
     const dist = Math.abs(clampedTarget - currentPage);
     const direction = clampedTarget > currentPage ? 'forward' : 'backward';
-    const riffleMode = dist > 4;
+    // Mobile has no CSS-3D flip engine (BookSpread is unmounted there), so a
+    // "flip" would never report completion and isFlipping would latch forever.
+    const riffleMode = !isMobile && dist > 4;
 
     if (wordToHighlight !== undefined) {
       setHighlightedWord(wordToHighlight);
@@ -162,15 +169,18 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
 
     setTargetPage(clampedTarget);
     setFlipDirection(direction);
-    setIsRiffle(riffleMode);
     setJumpDistance(dist);
 
     if (riffleMode) {
+      setIsRiffle(true);
       setRiffleInfo({
         from: currentPage,
         to: clampedTarget,
         pages: dist,
       });
+    } else {
+      setIsRiffle(false);
+      setRiffleInfo(null);
     }
 
     // Client-side URL history update without full page reload
@@ -183,14 +193,38 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
       }
     }
 
+    if (isMobile) {
+      // Nothing to animate: apply the page change immediately, and never latch
+      // isFlipping (desktop parity for the paper sound is kept here instead of
+      // in the flip midpoint callback).
+      soundEngine.playPageTurn();
+      setCurrentPage(clampedTarget);
+      setIsFlipping(false);
+      return;
+    }
+
     setIsFlipping(true);
-  }, [currentPage, isFlipping]);
+  }, [currentPage, isFlipping, isMobile]);
 
   const handleFlipComplete = useCallback(() => {
     setCurrentPage(targetPage);
     setIsFlipping(false);
     setRiffleInfo(null);
   }, [targetPage]);
+
+  // Watchdog: if the leaf never reports completion (backgrounded tab with no
+  // rAF frames, cancelled animation, engine unmounted), apply the pending page
+  // anyway so navigation can never freeze.
+  useEffect(() => {
+    if (!isFlipping) return;
+    const timer = setTimeout(() => {
+      setCurrentPage(targetPage);
+      setIsFlipping(false);
+      setIsRiffle(false);
+      setRiffleInfo(null);
+    }, Math.max(flipDuration + 900, 2500));
+    return () => clearTimeout(timer);
+  }, [isFlipping, targetPage, flipDuration]);
 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
@@ -370,6 +404,33 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
       turnToPage(next % 2 === 0 ? next : next - 1);
     }
   }, [isFlipping, rightPageNum, turnToPage]);
+
+  // ── Mobile single-page stepping ─────────────────────────────────────────
+  // The mobile view shows one page, so it must step through existing catalog
+  // pages one at a time (92 → 93 → 94), not jump spread-to-spread (92 → 94).
+  const mobilePageNums = useMemo(
+    () => Object.keys(catalog.pages).map(Number).sort((a, b) => a - b),
+    []
+  );
+
+  const handleMobilePrev = useCallback(() => {
+    const prev = mobilePageNums.slice().reverse().find(p => p < currentPage);
+    if (prev !== undefined) turnToPage(prev);
+  }, [mobilePageNums, currentPage, turnToPage]);
+
+  const handleMobileNext = useCallback(() => {
+    const next = mobilePageNums.find(p => p > currentPage);
+    if (next !== undefined) turnToPage(next);
+  }, [mobilePageNums, currentPage, turnToPage]);
+
+  const canPrevMobile = useMemo(
+    () => mobilePageNums.some(p => p < currentPage),
+    [mobilePageNums, currentPage]
+  );
+  const canNextMobile = useMemo(
+    () => mobilePageNums.some(p => p > currentPage),
+    [mobilePageNums, currentPage]
+  );
 
   const handleToggleSound = () => {
     const next = !isMuted;
@@ -600,8 +661,10 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
           isBookmarked={isSpreadBookmarked}
           onToggleBookmark={handleToggleSpreadBookmark}
           onSelectWord={handleEntryClick}
-          onPrevPage={handlePrevSpread}
-          onNextPage={handleNextSpread}
+          onPrevPage={handleMobilePrev}
+          onNextPage={handleMobileNext}
+          canPrev={canPrevMobile}
+          canNext={canNextMobile}
         />
       ) : (
         /* Desktop Two-Page Spread with 3D Engine & Hybrid Overlay */
@@ -643,7 +706,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
       {/* Word Detail Inspection Drawer */}
       <WordDetailDrawer
         entry={activeWordEntry}
-        pageNumber={currentPage}
+        pageNumber={activeWordEntry?.page_number ?? currentPage}
         isOpen={showWordDrawer}
         onClose={handleCloseWordDrawer}
         onSelectWord={(word, destPage) => {

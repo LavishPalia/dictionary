@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,10 +10,47 @@ async function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+async function portIsFree(port) {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/json/version`);
+    return !res.ok;
+  } catch (e) {
+    return true; // connection refused -> port is free
+  }
+}
+
+async function killTree(child, port) {
+  if (child && child.pid !== undefined) {
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    } else {
+      try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { try { child.kill('SIGKILL'); } catch (e2) {} }
+    }
+  }
+  for (let i = 0; i < 20 && !(await portIsFree(port)); i++) await sleep(250);
+}
+
+let checks = 0;
+let failures = 0;
+function check(label, condition, detail) {
+  checks += 1;
+  if (condition) {
+    console.log(`  ✅ ${label}`);
+  } else {
+    failures += 1;
+    console.error(`  ❌ ${label}${detail !== undefined ? ` — got ${JSON.stringify(detail)}` : ''}`);
+  }
+}
+
 async function main() {
   console.log('=====================================================');
   console.log('📖 STARTING PHASE 4 IN-BROWSER AUTOMATED TEST SUITE');
   console.log('=====================================================');
+
+  if (!(await portIsFree(PORT))) {
+    console.error(`❌ DevTools port ${PORT} is already in use — a previous run is still alive.`);
+    process.exit(1);
+  }
 
   if (fs.existsSync(USER_DATA)) {
     try {
@@ -52,11 +89,11 @@ async function main() {
 
   if (!endpoint) {
     console.error('❌ Could not connect to Edge DevTools port');
-    edgeProcess.kill();
+    await killTree(edgeProcess, PORT);
     process.exit(1);
   }
 
-  console.log(' Connected to Edge DevTools Protocol');
+  console.log('🔗 Connected to Edge DevTools Protocol');
 
   const ws = new WebSocket(endpoint);
   await new Promise((resolve) => (ws.onopen = resolve));
@@ -100,25 +137,37 @@ async function main() {
     const res = await send('Page.captureScreenshot', { format: 'png' });
     const data = res?.data;
     if (data) {
-      const outPath = path.join(process.cwd(), name);
+      const outPath = path.join(process.env.TEMP || process.cwd(), name);
       fs.writeFileSync(outPath, Buffer.from(data, 'base64'));
-      console.log(`📸 Screenshot saved: ${name}`);
+      console.log(`📸 Screenshot saved: ${outPath}`);
     }
+  }
+
+  async function waitForHydration(timeoutMs = 20000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const ready = await evaluate(`
+        const el = document.getElementById('lookup-input');
+        if (!el) return false;
+        const hydrated = Object.keys(el).some(k => k.startsWith('__reactFiber$'));
+        return hydrated && document.querySelectorAll('.entry-text').length > 0;
+      `);
+      if (ready === true) return true;
+      await sleep(250);
+    }
+    return false;
   }
 
   try {
     await send('Page.enable');
     await send('Runtime.enable');
 
-    console.log('\n[1/5] Waiting for Application Mount ...');
-    for (let i = 0; i < 30; i++) {
-      await sleep(400);
-      const count = await evaluate(`return document.querySelectorAll('.entry-text').length;`);
-      if (typeof count === 'number' && count > 0) break;
-    }
+    console.log('\n[1/5] Waiting for Application Hydration ...');
+    const hydrated = await waitForHydration();
+    check('app hydrated successfully', hydrated === true);
 
     const title = await evaluate(`return document.title;`);
-    console.log('✅ Page Title:', title);
+    check('document title includes Panna', typeof title === 'string' && title.includes('Panna'), title);
 
     // ─────────────────────────────────────────────────────────────
     // TEST 1: OPENING BOOK INTRO CINEMATIC
@@ -132,11 +181,11 @@ async function main() {
       }
       return false;
     `);
-    console.log('Clicked "📕 Close Book" button:', closeBtn);
+    check('clicked "Close Book" button', closeBtn === true);
     await sleep(600);
 
     const hasCoverContainer = await evaluate(`return Boolean(document.querySelector("#cover-cinematic-container"));`);
-    console.log('✅ Closed Hardcover Cinematic Container visible:', hasCoverContainer);
+    check('Closed Hardcover Cinematic Container visible', hasCoverContainer === true);
     await takeScreenshot('phase4_1_cover_closed.png');
 
     // Click front cover to trigger 3D opening cinematic swing
@@ -148,12 +197,12 @@ async function main() {
       }
       return false;
     `);
-    console.log('Clicked front cover to swing open:', openedCover);
+    check('clicked front cover to swing open', openedCover === true);
     // Wait for the 0.95s 3D swing-open animation and spread mount
     await sleep(1400);
 
     const spreadOpenAgain = await evaluate(`return Boolean(document.querySelector("#book-spread-container"));`);
-    console.log('✅ 3D Cinematic Opening complete, spread visible:', spreadOpenAgain);
+    check('3D Cinematic Opening complete, spread visible', spreadOpenAgain === true);
     await takeScreenshot('phase4_2_cover_opened.png');
 
     // ─────────────────────────────────────────────────────────────
@@ -168,7 +217,7 @@ async function main() {
       }
       return false;
     `);
-    console.log('Clicked Dog-Ear trigger on Page 93:', dogEarClicked);
+    check('clicked Dog-Ear trigger on Page 93', dogEarClicked === true);
     await sleep(600);
 
     const isFolded = await evaluate(`
@@ -179,8 +228,8 @@ async function main() {
         localStorage: saved,
       };
     `);
-    console.log('✅ Dog-Ear corner fold created:', isFolded.hasElement);
-    console.log('✅ localStorage "panna_dog_ears":', isFolded.localStorage);
+    check('Dog-Ear corner fold created', isFolded?.hasElement === true);
+    check('localStorage "panna_dog_ears" includes 93', typeof isFolded?.localStorage === 'string' && isFolded.localStorage.includes('93'), isFolded?.localStorage);
     await takeScreenshot('phase4_3_dog_ear_folded.png');
 
     // ─────────────────────────────────────────────────────────────
@@ -195,7 +244,7 @@ async function main() {
       }
       return false;
     `);
-    console.log('Clicked Add Marginalia Note trigger on Page 93:', noteBtnClicked);
+    check('clicked Add Marginalia Note trigger on Page 93', noteBtnClicked === true);
     await sleep(500);
 
     // Fill in pencil note text and click save
@@ -213,7 +262,7 @@ async function main() {
       }
       return false;
     `);
-    console.log('Submitted handwritten blue pencil note:', noteSaved);
+    check('submitted handwritten blue pencil note', noteSaved === true);
     await sleep(600);
 
     const marginaliaVerification = await evaluate(`
@@ -225,8 +274,8 @@ async function main() {
         localStorage: saved,
       };
     `);
-    console.log('✅ Cursive handwritten margin note card rendered:', marginaliaVerification.cardFound);
-    console.log('✅ localStorage "panna_marginalia":', marginaliaVerification.localStorage);
+    check('cursive handwritten margin note card rendered', marginaliaVerification?.cardFound === true);
+    check('localStorage "panna_marginalia" saved note', typeof marginaliaVerification?.localStorage === 'string' && marginaliaVerification.localStorage.includes('key reference note'), marginaliaVerification?.localStorage);
     await takeScreenshot('phase4_4_marginalia_saved.png');
 
     // ─────────────────────────────────────────────────────────────
@@ -247,8 +296,8 @@ async function main() {
         hasNotesSection: text.includes('HANDWRITTEN MARGIN NOTES') && text.includes('key reference note: ceremony'),
       };
     `);
-    console.log('✅ Bookmarks Modal lists Dog-Eared Page 93:', modalVerification.hasDogEarSection);
-    console.log('✅ Bookmarks Modal lists Marginalia note:', modalVerification.hasNotesSection);
+    check('Bookmarks Modal lists Dog-Eared Page 93', modalVerification?.hasDogEarSection === true);
+    check('Bookmarks Modal lists Marginalia note', modalVerification?.hasNotesSection === true);
     await takeScreenshot('phase4_5_bookmarks_modal.png');
 
     // Close Bookmarks Modal
@@ -262,9 +311,8 @@ async function main() {
     // ─────────────────────────────────────────────────────────────
     // TEST 5: DATA SCALE EXPANSION (Letter D Jump)
     // ─────────────────────────────────────────────────────────────
-    console.log('\n[Bonus] Testing Data Scale Expansion (Navigating to newly expanded Letter D, Page 212) ...');
+    console.log('\n[Bonus] Testing Data Scale Expansion (Navigating to newly expanded Letter D, Page 211) ...');
     await evaluate(`
-      // Navigate to Page 212
       const thumbD = Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'D');
       if (thumbD) {
         thumbD.click();
@@ -272,7 +320,7 @@ async function main() {
       }
       return false;
     `);
-    await sleep(2200); // Riffle jump to page 212
+    await sleep(2200); // Riffle jump to page 211
 
     const dPageVerification = await evaluate(`
       const body = document.body.textContent;
@@ -282,8 +330,8 @@ async function main() {
         hasDamp: body.includes('Damp') || body.includes('Decide'),
       };
     `);
-    console.log('✅ URL after jumping to Letter D:', dPageVerification.url);
-    console.log('✅ Letter D entries rendered on Page 211 (Dairy, Daisy):', dPageVerification.hasDairy, dPageVerification.hasDamp);
+    check('URL after jumping to Letter D is /page/211', dPageVerification?.url === '/page/211', dPageVerification?.url);
+    check('Letter D entries rendered on Page 211', (dPageVerification?.hasDairy || dPageVerification?.hasDamp) === true);
 
     // Turn next page to newly expanded consecutive spread 212–213
     await evaluate(`
@@ -301,23 +349,24 @@ async function main() {
         hasDelight: body.includes('Delight') || body.includes('Demand'),
       };
     `);
-    console.log('✅ URL after turning to consecutive spread 212–213:', dSpread212Verification.url);
-    console.log('✅ Consecutive expanded entries rendered (Deck, Declare, Delight, Demand):', dSpread212Verification.hasDeck, dSpread212Verification.hasDelight);
+    check('URL after turning to consecutive spread is /page/212', dSpread212Verification?.url === '/page/212', dSpread212Verification?.url);
+    check('consecutive expanded entries rendered (Deck, Delight)', (dSpread212Verification?.hasDeck || dSpread212Verification?.hasDelight) === true);
     await takeScreenshot('phase4_6_expanded_letter_d.png');
 
     console.log('\n=====================================================');
-    console.log('🏆 ALL PHASE 4 IN-BROWSER TESTS COMPLETED SUCCESSFULLY!');
+    console.log(`🏁 PHASE 4: ${checks - failures}/${checks} checks passed`);
     console.log('=====================================================');
+    process.exitCode = failures > 0 ? 1 : 0;
   } finally {
     ws.close();
-    edgeProcess.kill();
+    await killTree(edgeProcess, PORT);
     try {
       fs.rmSync(USER_DATA, { recursive: true, force: true });
     } catch (e) {}
   }
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error('Test error:', err);
   process.exit(1);
 });
