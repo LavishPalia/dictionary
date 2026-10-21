@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DictionaryEntry } from '@/lib/types';
+import { SpeechLang, speechUnavailableReason, useSpeechVoices } from '@/lib/speech';
 
 interface WordDetailDrawerProps {
   entry: DictionaryEntry | null;
@@ -23,6 +24,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   onToggleBookmark,
 }) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const speech = useSpeechVoices();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -36,13 +38,20 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
 
   if (!isOpen || !entry) return null;
 
-  const playSpeech = (lang: 'en' | 'hi') => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  const unavailable: Record<SpeechLang, string | null> = {
+    en: speechUnavailableReason(speech, 'en'),
+    hi: speechUnavailableReason(speech, 'hi'),
+  };
+
+  const playSpeech = (lang: SpeechLang) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis || unavailable[lang]) return;
 
     window.speechSynthesis.cancel();
     const text = lang === 'en' ? entry.headword : entry.meaning_hi;
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === 'en' ? 'en-GB' : 'hi-IN';
+    const voice = speech.voices[lang];
+    if (voice) utterance.voice = voice;
+    utterance.lang = voice?.lang ?? (lang === 'en' ? 'en-IN' : 'hi-IN');
     utterance.rate = 0.9;
 
     setIsPlayingAudio(true);
@@ -175,9 +184,11 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
           {/* Audio & Action Buttons */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' }}>
             <button
+              id="speak-en-btn"
               onClick={() => playSpeech('en')}
-              disabled={isPlayingAudio}
-              title="Pronounce English word"
+              disabled={isPlayingAudio || !!unavailable.en}
+              title={unavailable.en ?? 'Pronounce English word'}
+              aria-label={unavailable.en ? `Pronounce English word (${unavailable.en})` : 'Pronounce English word'}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -188,7 +199,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
                 borderRadius: '4px',
                 color: '#2a1e14',
                 font: '13px "IM Fell English SC", serif',
-                cursor: 'pointer',
+                cursor: unavailable.en ? 'not-allowed' : 'pointer',
+                opacity: unavailable.en ? 0.5 : 1,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
                 transition: 'all 0.15s ease',
               }}
@@ -199,9 +211,11 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
             </button>
 
             <button
+              id="speak-hi-btn"
               onClick={() => playSpeech('hi')}
-              disabled={isPlayingAudio}
-              title="Pronounce Hindi definition"
+              disabled={isPlayingAudio || !!unavailable.hi}
+              title={unavailable.hi ?? 'Pronounce Hindi definition'}
+              aria-label={unavailable.hi ? `Pronounce Hindi definition (${unavailable.hi})` : 'Pronounce Hindi definition'}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -212,7 +226,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
                 borderRadius: '4px',
                 color: '#7a2b22',
                 font: '13px "IM Fell English SC", serif',
-                cursor: 'pointer',
+                cursor: unavailable.hi ? 'not-allowed' : 'pointer',
+                opacity: unavailable.hi ? 0.5 : 1,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
                 transition: 'all 0.15s ease',
               }}

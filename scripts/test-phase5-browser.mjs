@@ -59,7 +59,8 @@ async function main() {
     await send('Page.enable');
     let hydrated = false;
     for (let i = 0; i < 30 && !hydrated; i++) {
-      try { hydrated = await evaluate(`Boolean(document.querySelector('#lookup-input') && document.querySelector('.entry-text'))`); }
+      // The server-rendered input exists before React attaches; wait for the fiber, or typed text is reset.
+      try { hydrated = await evaluate(`(() => { const el = document.querySelector('#lookup-input'); return Boolean(el && document.querySelector('.entry-text') && Object.keys(el).some((k) => k.startsWith('__reactFiber$'))); })()`); }
       catch {}
       if (!hydrated) await sleep(500);
     }
@@ -96,8 +97,11 @@ async function main() {
     let { body } = await typeQuery('ceremonis');
     const typoDebug = await evaluate(`(async () => ({ value: document.querySelector('#lookup-input').value, response: await (await fetch('/api/search?q=ceremonis')).json() }))()`);
     check('desktop typo search shows recovery suggestion', body.includes('No direct entry found for “ceremonis”') && body.includes('Did you mean?') && body.includes('Ceremony'), { value: typoDebug?.value, api: typoDebug?.response?.results, didYouMean: body.includes('Did you mean?'), ceremony: body.includes('Ceremony') });
-    ({ body } = await typeQuery('zzzzqx'));
-    check('desktop unknown word shows useful empty state', body.includes('No direct entry found for “zzzzqx”') && body.includes('Try another spelling'));
+    let value;
+    ({ body, value } = await typeQuery('zzzzqx'));
+    const emptyAt = body.indexOf('No direct entry found');
+    check('desktop unknown word shows useful empty state', body.includes('No direct entry found for “zzzzqx”') && body.includes('Try another spelling'),
+      { value, card: emptyAt >= 0 ? body.slice(emptyAt, emptyAt + 120) : null });
 
     await evaluate(`document.querySelector('#open-credits-btn').click()`);
     body = await evaluate('document.body.innerText');

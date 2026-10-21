@@ -10,6 +10,7 @@ import path from 'path';
 import crypto from 'crypto';
 import Database from 'better-sqlite3';
 import { DictionaryEntry } from '../src/lib/types';
+import { normalizeHindi } from '../src/lib/hindi';
 import { SEED_ENTRIES } from './seed-entries';
 import { COMPANION_PAGES } from './companion-entries';
 import { EXPANDED_PAGES } from './expanded-entries';
@@ -166,6 +167,11 @@ CREATE TABLE entries (
   source TEXT NOT NULL,
   license_attribution TEXT NOT NULL,
   reviewed INTEGER NOT NULL DEFAULT 0,
+  -- Search-only copies with Hindi spelling variants folded (src/lib/hindi.ts); never printed.
+  meaning_hi_search TEXT NOT NULL,
+  pronunciation_search TEXT NOT NULL,
+  -- SUBTLEX-US frequency rank (1 = most common); NULL for words outside the ranked list. Orders Hindi results.
+  freq_rank INTEGER,
   page_number INTEGER NOT NULL,
   col_idx INTEGER NOT NULL,
   position_in_col INTEGER NOT NULL
@@ -200,8 +206,8 @@ CREATE TABLE meta (
 CREATE VIRTUAL TABLE entries_fts USING fts5(
   headword,
   normalized,
-  meaning_hi,
-  pronunciation_deva,
+  meaning_hi_search,
+  pronunciation_search,
   content='entries',
   content_rowid='rowid',
   tokenize = "unicode61 categories 'L* N* Co Mn Mc'"
@@ -212,8 +218,14 @@ CREATE VIRTUAL TABLE entries_fts USING fts5(
 export function buildDatabase(outPath = DB_PATH): BuildReport {
   const { entries, duplicates, overrides, editorial, closed, generated } = collectEntries();
   const { laid, pages, thumbIndex } = layOut(entries);
-  verifyChecksums(['data/sources/infl.txt']);
+  verifyChecksums(['data/sources/infl.txt', 'data/sources/lemmas.jsonl']);
   const agid = loadAgid();
+  const freqRank = new Map<string, number>();
+  for (const line of fs.readFileSync(path.join(SOURCES_DIR, 'lemmas.jsonl'), 'utf8').split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const { lemma, rank } = JSON.parse(line) as { lemma: string; rank: number };
+    if (!freqRank.has(lemma)) freqRank.set(lemma, rank);
+  }
   const entryByWord = new Map(laid.map((e) => [e.normalized, e]));
 
   // Content hash of everything the client can see; used to version /api/page caching.
@@ -229,9 +241,11 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
   try {
     db.exec(SCHEMA);
     const insertEntry = db.prepare(`INSERT INTO entries (rowid, id, headword, normalized, pos, pronunciation_deva,
-      definition_en, meaning_hi, source, license_attribution, reviewed, page_number, col_idx, position_in_col)
+      definition_en, meaning_hi, source, license_attribution, reviewed, meaning_hi_search, pronunciation_search, freq_rank,
+      page_number, col_idx, position_in_col)
       VALUES (@rowid, @id, @headword, @normalized, @pos, @pronunciation_deva, @definition_en, @meaning_hi, @source,
-      @license_attribution, @reviewed, @page_number, @col_idx, @position_in_col)`);
+      @license_attribution, @reviewed, @meaning_hi_search, @pronunciation_search, @freq_rank, @page_number, @col_idx,
+      @position_in_col)`);
     const insertPage = db.prepare(`INSERT INTO pages (page_number, guide_left, guide_right, first_headword,
       last_headword, footer_hints, entry_ids) VALUES (@page_number, @guide_left, @guide_right, @first_headword,
       @last_headword, @footer_hints, @entry_ids)`);
@@ -244,6 +258,8 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
         rowid: i + 1, id: e.id, headword: e.headword, normalized: e.normalized, pos: e.pos,
         pronunciation_deva: e.pronunciation_deva, definition_en: e.definition_en, meaning_hi: e.meaning_hi,
         source: e.source, license_attribution: e.license_attribution, reviewed: e.reviewed,
+        meaning_hi_search: normalizeHindi(e.meaning_hi), pronunciation_search: normalizeHindi(e.pronunciation_deva),
+        freq_rank: freqRank.get(e.normalized) ?? null,
         page_number: e.page_number, col_idx: e.col_idx, position_in_col: e.position_in_col,
       }));
       for (const p of pages) insertPage.run({ ...p, entry_ids: JSON.stringify(p.entry_ids) });

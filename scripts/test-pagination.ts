@@ -3,6 +3,7 @@
 // Usage: npm run test:pagination   (after npm run build:data)
 import Database from 'better-sqlite3';
 import { DB_PATH, ENTRIES_PER_COLUMN, ENTRIES_PER_PAGE, collectEntries } from './init-db';
+import { normalizeHindi } from '../src/lib/hindi';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -17,7 +18,8 @@ console.log('Running pagination & database invariants...');
 const db = new Database(DB_PATH, { readonly: true, fileMustExist: true });
 
 interface Row { rowid: number; id: string; headword: string; normalized: string; pos: string; pronunciation_deva: string;
-  definition_en: string; meaning_hi: string; page_number: number; col_idx: number; position_in_col: number; reviewed: number }
+  definition_en: string; meaning_hi: string; page_number: number; col_idx: number; position_in_col: number; reviewed: number;
+  meaning_hi_search: string; pronunciation_search: string; freq_rank: number | null }
 const entries = db.prepare('SELECT rowid, * FROM entries ORDER BY rowid').all() as Row[];
 const pages = db.prepare('SELECT * FROM pages ORDER BY page_number').all() as Array<{ page_number: number;
   first_headword: string; last_headword: string; guide_left: string; guide_right: string; entry_ids: string }>;
@@ -90,10 +92,21 @@ try {
   check('FTS5 integrity-check passes', false, String(err));
 }
 const sample = entries.find((e) => e.meaning_hi.length >= 3)!;
-const prefix = [...sample.meaning_hi.split(/[ ,]/)[0]].slice(0, 2).join('');
+const prefix = normalizeHindi([...sample.meaning_hi.split(/[ ,]/)[0]].slice(0, 2).join(''));
 const ftsHits = db.prepare(`SELECT rowid FROM entries_fts WHERE entries_fts MATCH ?`)
-  .all(`meaning_hi : "${prefix}"*`) as { rowid: number }[];
+  .all(`meaning_hi_search : "${prefix}"*`) as { rowid: number }[];
 check(`Devanagari prefix "${prefix}" finds "${sample.headword}"`, ftsHits.some((h) => h.rowid === sample.rowid));
+
+// 7b. Search-only columns: Hindi spelling variants are folded, the printed text is untouched, ranks are present.
+const unfolded = entries.filter((e) => e.meaning_hi_search !== normalizeHindi(e.meaning_hi)
+  || e.pronunciation_search !== normalizeHindi(e.pronunciation_deva)).map((e) => e.headword);
+check('search columns hold the folded Hindi meaning and pronunciation', unfolded.length === 0, unfolded.slice(0, 5));
+check('folding removes nukta, chandrabindu and half-nasal variants',
+  entries.every((e) => !/[़ँॉ]|[ङञणनम]्[क-ह]/.test(e.meaning_hi_search)));
+check('printed meanings keep their original spelling', entries.some((e) => e.meaning_hi.includes('ँ')));
+const rankOf = (w: string) => entries.find((e) => e.normalized === w)?.freq_rank;
+check('frequency ranks are populated (on ranks above above)', (rankOf('on') ?? Infinity) < (rankOf('above') ?? Infinity),
+  { on: rankOf('on'), above: rankOf('above') });
 
 // 8. No orphan redirects (forms is populated in Phase 3).
 const orphans = db.prepare('SELECT count(*) AS n FROM forms WHERE lemma_id NOT IN (SELECT id FROM entries)').get() as { n: number };

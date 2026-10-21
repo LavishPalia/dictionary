@@ -202,6 +202,19 @@ async function main() {
     const isDrawerOpen = await evaluate('return Boolean(document.querySelector("#word-drawer-backdrop"));');
     check('WordDetailDrawer is open', isDrawerOpen === true);
 
+    // Voice lists load asynchronously; give the browser a moment before reading button state.
+    await sleep(500);
+    const speakButtons = await evaluate(`
+      return ['en', 'hi'].map((lang) => {
+        const b = document.querySelector('#speak-' + lang + '-btn');
+        return b ? { lang, disabled: b.disabled, title: b.title } : null;
+      });
+    `);
+    check('speak buttons are enabled, or disabled with a reason',
+      Array.isArray(speakButtons) && speakButtons.every((b) => b && (!b.disabled || /No (Hindi|English) voice|cannot speak/.test(b.title))),
+      speakButtons);
+    console.log(`  ℹ️  speech: ${JSON.stringify(speakButtons)}`);
+
     const wordUrl = await evaluate('return window.location.pathname;');
     check('URL synced to /word/Ceremony', wordUrl === '/word/Ceremony', wordUrl);
     await takeScreenshot('phase3_1_drawer_open.png');

@@ -4,6 +4,7 @@ import path from 'path';
 import Database from 'better-sqlite3';
 import { BookMeta, BookPage, DictionaryEntry } from './types';
 import { damerauLevenshtein } from './search-distance';
+import { normalizeHindi } from './hindi';
 
 const DB_FILE = path.join(process.cwd(), 'data', 'dictionary.db');
 
@@ -138,6 +139,29 @@ export function getWordEntry(headword: string): {
 
 const DEVANAGARI = /[ऀ-ॿ]/;
 
+interface HindiSearchRow extends EntryRow {
+  meaning_hi_search: string;
+  pronunciation_search: string;
+  freq_rank: number | null;
+}
+
+/**
+ * How well a (folded) Devanagari query matches an entry; lower is better.
+ * 0: a whole Hindi meaning, or the Devanagari pronunciation, equals the query (ऊपर → Above, स्कूल → School)
+ * 1: a Hindi meaning starts with the query (छोड़ → छोड़ना)
+ * 2: a word inside a Hindi meaning starts with the query (ऊपर → के ऊपर)
+ * 3: only the pronunciation starts with the query
+ */
+function hindiMatchTier(nq: string, row: HindiSearchRow): number {
+  const meanings = row.meaning_hi_search.split(/[,;]/)
+    .map((m) => m.replace(/\([^)]*\)/g, '').trim())
+    .filter(Boolean);
+  if (meanings.includes(nq) || row.pronunciation_search === nq) return 0;
+  if (meanings.some((m) => m.startsWith(nq))) return 1;
+  if (meanings.some((m) => ` ${m}`.includes(` ${nq}`))) return 2;
+  return 3;
+}
+
 function escapeLike(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
@@ -149,7 +173,8 @@ function prefixUpperBound(prefix: string): string {
 
 /**
  * Headword search. Latin: exact match, then prefix (B-tree range on `normalized`), then substring, then
- * definition text. Devanagari: FTS5 prefix match on the Hindi meaning and the Devanagari pronunciation.
+ * definition text. Devanagari: FTS5 prefix match on the variant-folded Hindi meaning and Devanagari
+ * pronunciation, ranked by hindiMatchTier and then by word frequency.
  */
 export function searchWords(query: string, limit: number = 8): SearchResult[] {
   const q = query.toLowerCase().trim();
@@ -166,11 +191,19 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
   };
 
   if (DEVANAGARI.test(q)) {
-    const term = `"${q.replace(/"/g, '""')}"*`;
-    add(db().prepare(`
+    const nq = normalizeHindi(q);
+    if (!nq) return [];
+    const term = `"${nq.replace(/"/g, '""')}"*`;
+    const rows = db().prepare(`
       SELECT e.* FROM entries_fts JOIN entries e ON e.rowid = entries_fts.rowid
-      WHERE entries_fts MATCH ? ORDER BY rank LIMIT ?
-    `).all(`meaning_hi : ${term} OR pronunciation_deva : ${term}`, limit) as EntryRow[]);
+      WHERE entries_fts MATCH ? LIMIT 1000
+    `).all(`meaning_hi_search : ${term} OR pronunciation_search : ${term}`) as HindiSearchRow[];
+    add(rows
+      .map((row) => ({ row, tier: hindiMatchTier(nq, row) }))
+      .sort((a, b) => a.tier - b.tier
+        || (a.row.freq_rank ?? Infinity) - (b.row.freq_rank ?? Infinity)
+        || (a.row.normalized < b.row.normalized ? -1 : 1))
+      .map(({ row }) => row));
     return results;
   }
 
