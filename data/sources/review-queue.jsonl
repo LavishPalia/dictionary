@@ -1,0 +1,4 @@
+{"headword":"sundown","stage":"phase4","reason":"meaning_hi must be Devanagari only"}
+{"headword":"nosy","stage":"phase4","reason":"meaning_hi is 38 characters; it must be at most 35"}
+{"headword":"disposable","stage":"phase4","reason":"meaning_hi is 56 characters; it must be at most 35"}
+{"headword":"panhandle","stage":"phase4","reason":"pos \"v. i.\" is not one of the allowed labels"}
