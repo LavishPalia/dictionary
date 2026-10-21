@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { NoEntryCard } from './NoEntryCard';
 
 interface SearchResult {
   headword: string;
   normalized: string;
   page_number: number;
   preview: string;
+  matched_form?: string;
+  suggestion?: boolean;
 }
 
 interface LookupBarProps {
@@ -154,7 +157,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({
       </span>
 
       {/* Auto-suggest dropdown with vintage parchment styling */}
-      {isOpen && results.length > 0 && (
+      {isOpen && (
         <div
           style={{
             position: 'absolute',
@@ -170,7 +173,11 @@ export const LookupBar: React.FC<LookupBarProps> = ({
             zIndex: 100,
           }}
         >
-          {results.map((item, idx) => (
+          {results.length === 0 ? (
+            <NoEntryCard query={query} suggestions={[]} onSelect={handleSelect} />
+          ) : results[0]?.suggestion ? (
+            <NoEntryCard query={query} suggestions={results} onSelect={handleSelect} />
+          ) : results.map((item, idx) => (
             <div
               key={item.normalized}
               onClick={() => handleSelect(item)}

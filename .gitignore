@@ -10,3 +10,18 @@ design-docs
 .temp_edge_profile*
 .test_edge_suite*
 *.png
+
+# SQLite generated files
+data/dictionary.db
+data/dictionary.db-journal
+data/dictionary.db-wal
+data/dictionary.db-shm
+data/dictionary.db.tmp*
+# Local secrets
+.env*.local
+.env
+
+# Third-party raw downloads (re-fetch with scripts/fetch-sources.sh; pinned in data/sources/checksums.json)
+data/sources/raw/
+
+scratch

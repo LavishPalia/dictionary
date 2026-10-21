@@ -4,6 +4,15 @@ import path from 'path';
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9228;
+const BASE = 'http://localhost:3000';
+// Page numbers come from the API: they change whenever the book is rebuilt.
+async function api(p) {
+  const res = await fetch(`${BASE}${p}`);
+  if (!res.ok) throw new Error(`GET ${p} -> ${res.status}`);
+  return res.json();
+}
+const spreadLeft = (p) => (p % 2 === 0 ? p : p - 1);
+const firstHeadword = (page) => [...page.column1, ...page.column2][0].headword;
 const USER_DATA = path.join(process.cwd(), '.test_edge_suite_phase4');
 
 async function sleep(ms) {
@@ -58,6 +67,16 @@ async function main() {
     } catch (e) {}
   }
 
+  const ceremony = await api('/api/word/Ceremony');
+  const P = ceremony.pageNumber;
+  const R = spreadLeft(P) + 1; // right-hand page of the opening spread
+  const meta = await api('/api/meta');
+  const D = meta.thumb_index.D;
+  const dFirst = firstHeadword(await api(`/api/page/${D}`));
+  const dNext = spreadLeft(D) + 2;
+  const dNextFirst = firstHeadword(await api(`/api/page/${dNext}`));
+  console.log(`Opening at page ${P}; letter D starts on page ${D} (${dFirst}); next spread ${dNext} (${dNextFirst})`);
+
   const edgeProcess = spawn(
     EDGE_PATH,
     [
@@ -66,7 +85,7 @@ async function main() {
       `--user-data-dir=${USER_DATA}`,
       '--disable-gpu',
       '--window-size=1440,900',
-      'http://localhost:3000',
+      `${BASE}/page/${P}`,
     ],
     { stdio: 'ignore' }
   );
@@ -210,18 +229,18 @@ async function main() {
     // ─────────────────────────────────────────────────────────────
     console.log('\n[3/5] Testing Dog-Earing (Page Fold Corners) ...');
     const dogEarClicked = await evaluate(`
-      const trigger = document.querySelector("#dog-ear-trigger-93");
+      const trigger = document.querySelector("#dog-ear-trigger-${R}");
       if (trigger) {
         trigger.click();
         return true;
       }
       return false;
     `);
-    check('clicked Dog-Ear trigger on Page 93', dogEarClicked === true);
+    check(`clicked Dog-Ear trigger on Page ${R}`, dogEarClicked === true);
     await sleep(600);
 
     const isFolded = await evaluate(`
-      const folded = document.querySelector("#dog-ear-corner-93");
+      const folded = document.querySelector("#dog-ear-corner-${R}");
       const saved = localStorage.getItem('panna_dog_ears');
       return {
         hasElement: Boolean(folded),
@@ -229,7 +248,7 @@ async function main() {
       };
     `);
     check('Dog-Ear corner fold created', isFolded?.hasElement === true);
-    check('localStorage "panna_dog_ears" includes 93', typeof isFolded?.localStorage === 'string' && isFolded.localStorage.includes('93'), isFolded?.localStorage);
+    check(`localStorage "panna_dog_ears" includes ${R}`, typeof isFolded?.localStorage === 'string' && JSON.parse(isFolded.localStorage).includes(R), isFolded?.localStorage);
     await takeScreenshot('phase4_3_dog_ear_folded.png');
 
     // ─────────────────────────────────────────────────────────────
@@ -237,14 +256,14 @@ async function main() {
     // ─────────────────────────────────────────────────────────────
     console.log('\n[4/5] Testing Marginalia (Handwritten Pencil Notes) ...');
     const noteBtnClicked = await evaluate(`
-      const btn = document.querySelector("#add-note-trigger-p93");
+      const btn = document.querySelector("#add-note-trigger-p${R}");
       if (btn) {
         btn.click();
         return true;
       }
       return false;
     `);
-    check('clicked Add Marginalia Note trigger on Page 93', noteBtnClicked === true);
+    check(`clicked Add Marginalia Note trigger on Page ${R}`, noteBtnClicked === true);
     await sleep(500);
 
     // Fill in pencil note text and click save
@@ -292,11 +311,11 @@ async function main() {
     const modalVerification = await evaluate(`
       const text = document.body.textContent;
       return {
-        hasDogEarSection: text.includes('DOG-EARED PAGES') && text.includes('Folded Page 93'),
+        hasDogEarSection: text.includes('DOG-EARED PAGES') && text.includes('Folded Page ${R}'),
         hasNotesSection: text.includes('HANDWRITTEN MARGIN NOTES') && text.includes('key reference note: ceremony'),
       };
     `);
-    check('Bookmarks Modal lists Dog-Eared Page 93', modalVerification?.hasDogEarSection === true);
+    check(`Bookmarks Modal lists Dog-Eared Page ${R}`, modalVerification?.hasDogEarSection === true);
     check('Bookmarks Modal lists Marginalia note', modalVerification?.hasNotesSection === true);
     await takeScreenshot('phase4_5_bookmarks_modal.png');
 
@@ -311,7 +330,7 @@ async function main() {
     // ─────────────────────────────────────────────────────────────
     // TEST 5: DATA SCALE EXPANSION (Letter D Jump)
     // ─────────────────────────────────────────────────────────────
-    console.log('\n[Bonus] Testing Data Scale Expansion (Navigating to newly expanded Letter D, Page 211) ...');
+    console.log('\n[Bonus] Testing Data Scale Expansion (Navigating to Letter D via the thumb index) ...');
     await evaluate(`
       const thumbD = Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'D');
       if (thumbD) {
@@ -320,20 +339,19 @@ async function main() {
       }
       return false;
     `);
-    await sleep(2200); // Riffle jump to page 211
+    await sleep(2200); // Riffle jump to letter D
 
     const dPageVerification = await evaluate(`
       const body = document.body.textContent;
       return {
         url: window.location.pathname,
-        hasDairy: body.includes('Dairy') || body.includes('Daisy'),
-        hasDamp: body.includes('Damp') || body.includes('Decide'),
+        hasFirst: body.includes(${JSON.stringify(dFirst)}),
       };
     `);
-    check('URL after jumping to Letter D is /page/211', dPageVerification?.url === '/page/211', dPageVerification?.url);
-    check('Letter D entries rendered on Page 211', (dPageVerification?.hasDairy || dPageVerification?.hasDamp) === true);
+    check(`URL after jumping to Letter D is /page/${D}`, dPageVerification?.url === `/page/${D}`, dPageVerification?.url);
+    check(`Letter D page ${D} rendered (${dFirst})`, dPageVerification?.hasFirst === true);
 
-    // Turn next page to newly expanded consecutive spread 212–213
+    // Turn to the following spread
     await evaluate(`
       const nextBtn = document.querySelector('button[aria-label="Next spread"]');
       if (nextBtn) nextBtn.click();
@@ -341,16 +359,15 @@ async function main() {
     `);
     await sleep(1500);
 
-    const dSpread212Verification = await evaluate(`
+    const dNextVerification = await evaluate(`
       const body = document.body.textContent;
       return {
         url: window.location.pathname,
-        hasDeck: body.includes('Deck') || body.includes('Declare'),
-        hasDelight: body.includes('Delight') || body.includes('Demand'),
+        hasFirst: body.includes(${JSON.stringify(dNextFirst)}),
       };
     `);
-    check('URL after turning to consecutive spread is /page/212', dSpread212Verification?.url === '/page/212', dSpread212Verification?.url);
-    check('consecutive expanded entries rendered (Deck, Delight)', (dSpread212Verification?.hasDeck || dSpread212Verification?.hasDelight) === true);
+    check(`URL after turning to the next spread is /page/${dNext}`, dNextVerification?.url === `/page/${dNext}`, dNextVerification?.url);
+    check(`next spread rendered (${dNextFirst})`, dNextVerification?.hasFirst === true);
     await takeScreenshot('phase4_6_expanded_letter_d.png');
 
     console.log('\n=====================================================');

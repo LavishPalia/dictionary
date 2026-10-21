@@ -4,26 +4,41 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "predev": "npm run build:data",
+    "prebuild": "npm run build:data",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "build:data": "tsx scripts/init-db.ts",
+    "verify:determinism": "tsx scripts/verify-determinism.ts",
+    "test:pagination": "tsx scripts/test-pagination.ts",
+    "test:phonetics": "tsx scripts/test-phonetics.ts",
+    "test:api": "tsx scripts/test-api.ts",
+    "test:search-distance": "tsx scripts/test-search-distance.ts",
     "test:phase3": "node scripts/test-phase3-browser.mjs",
     "test:phase4": "node scripts/test-phase4-browser.mjs",
-    "paginate": "node --loader ts-node/esm scripts/paginate.ts",
-    "build:data": "tsx scripts/paginate.ts"
+    "test:phase5": "node scripts/test-phase5-browser.mjs",
+    "data:lemmas": "tsx scripts/build-lemma-list.ts",
+    "data:pilot": "tsx scripts/pilot-glosses.ts",
+    "data:phase4": "tsx scripts/generate-hindi-glosses.ts",
+    "test:phase4-pipeline": "tsx scripts/test-phase4-pipeline.ts"
   },
   "dependencies": {
     "@types/three": "^0.186.0",
+    "better-sqlite3": "^13.0.3",
     "next": "^14.2.23",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "cmu-pronouncing-dictionary": "^3.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "wordnet-db": "^3.1.14"
   }
 }

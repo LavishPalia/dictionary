@@ -4,6 +4,15 @@ import path from 'path';
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9225;
+const BASE = 'http://localhost:3000';
+// Page numbers come from the API: they change whenever the book is rebuilt.
+async function api(p) {
+  const res = await fetch(`${BASE}${p}`);
+  if (!res.ok) throw new Error(`GET ${p} -> ${res.status}`);
+  return res.json();
+}
+const spreadLeft = (p) => (p % 2 === 0 ? p : p - 1);
+const firstHeadword = (page) => [...page.column1, ...page.column2][0].headword;
 const USER_DATA = path.join(process.cwd(), '.test_edge_suite');
 
 async function sleep(ms) {
@@ -52,6 +61,12 @@ async function main() {
     process.exit(1);
   }
 
+  const ceremony = await api('/api/word/Ceremony');
+  const P = ceremony.pageNumber;
+  const L = spreadLeft(P);
+  const nextFirst = firstHeadword(await api(`/api/page/${L + 2}`));
+  console.log(`Ceremony is on page ${P} (spread ${L}–${L + 1}); next spread starts with ${nextFirst}`);
+
   if (fs.existsSync(USER_DATA)) {
     try {
       fs.rmSync(USER_DATA, { recursive: true, force: true });
@@ -66,7 +81,7 @@ async function main() {
       `--user-data-dir=${USER_DATA}`,
       '--disable-gpu',
       '--window-size=1440,900',
-      'http://localhost:3000',
+      `${BASE}/page/${P}`,
     ],
     { stdio: 'ignore' }
   );
@@ -169,7 +184,7 @@ async function main() {
     const title = await evaluate(`return document.title;`);
     check('document title includes Panna', typeof title === 'string' && title.includes('Panna'), title);
     const initialUrl = await evaluate(`return window.location.pathname;`);
-    check('initial URL is root or /page/92', initialUrl === '/' || initialUrl === '/page/92', initialUrl);
+    check(`initial URL is /page/${P}`, initialUrl === `/page/${P}`, initialUrl);
 
     console.log('\n[2/7] Testing Word Click & WordDetailDrawer ...');
     const clickWord = await evaluate(`
@@ -214,7 +229,7 @@ async function main() {
     const isDrawerClosed = await evaluate('return !Boolean(document.querySelector("#word-drawer-backdrop"));');
     check('WordDetailDrawer closed', isDrawerClosed === true);
     const restoredUrl = await evaluate('return window.location.pathname;');
-    check('URL restored after drawer close', restoredUrl === '/page/92' || restoredUrl === '/', restoredUrl);
+    check('URL restored after drawer close', restoredUrl === `/page/${P}`, restoredUrl);
 
     console.log('\n[5/7] Testing Silk Ribbon Spread Bookmark & Bookmarks Modal ...');
     await evaluate(`
@@ -234,9 +249,9 @@ async function main() {
 
     const modalHasSavedItems = await evaluate(`
       const body = document.body.textContent;
-      return (body.includes('Reading History') || body.includes('SILK RIBBON SPREADS')) && body.includes('Pages 92–93') && body.includes('Ceremony');
+      return (body.includes('Reading History') || body.includes('SILK RIBBON SPREADS')) && body.includes('Pages ${L}–${L + 1}') && body.includes('Ceremony');
     `);
-    check('Bookmarks modal shows spread 92–93 & Ceremony', modalHasSavedItems === true);
+    check(`Bookmarks modal shows spread ${L}–${L + 1} & Ceremony`, modalHasSavedItems === true);
     await takeScreenshot('phase3_2_bookmarks_modal.png');
 
     // Close Bookmarks modal
@@ -255,13 +270,13 @@ async function main() {
     `);
     await sleep(1500); // 3D flip animation completes
     const turnedUrl = await evaluate('return window.location.pathname;');
-    check('URL after turning forward is /page/94', turnedUrl === '/page/94', turnedUrl);
+    check(`URL after turning forward is /page/${L + 2}`, turnedUrl === `/page/${L + 2}`, turnedUrl);
     const turnedFirst = await evaluate(`
       const el = document.querySelector('.entry-text b');
       return el ? el.textContent.trim() : null;
     `);
-    check('target spread rendered Charm', turnedFirst === 'Charm', turnedFirst);
-    await takeScreenshot('phase3_3_page_94_turned.png');
+    check(`target spread rendered ${nextFirst}`, turnedFirst === nextFirst, turnedFirst);
+    await takeScreenshot('phase3_3_next_spread_turned.png');
 
     console.log('\n[7/7] Testing 🎲 Explore (Random Riffle Jump) ...');
     await evaluate(`
@@ -271,7 +286,7 @@ async function main() {
     `);
     await sleep(2200); // Riffle cascade completes
     const exploreUrl = await evaluate('return window.location.pathname;');
-    check('URL after Explore jump changed', typeof exploreUrl === 'string' && exploreUrl !== '/page/94', exploreUrl);
+    check('URL after Explore jump changed', typeof exploreUrl === 'string' && exploreUrl !== `/page/${L + 2}`, exploreUrl);
     await takeScreenshot('phase3_4_explore_jump.png');
 
     console.log('\n=====================================================');

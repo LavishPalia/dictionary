@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { Metadata } from 'next';
-import { getWordEntry } from '@/lib/book-data';
+import { getMeta, getSpreadPages, getWordEntry } from '@/lib/book-data';
 import DictionaryApp from '@/components/DictionaryApp';
 
 interface WordPageProps {
@@ -32,6 +32,16 @@ export default function WordPage({ params }: WordPageProps) {
   if (!data.entry || !data.pageNumber) {
     notFound();
   }
+  if (data.redirectedFrom) {
+    permanentRedirect(`/word/${encodeURIComponent(data.entry.headword)}`);
+  }
 
-  return <DictionaryApp initialPage={data.pageNumber} initialWord={data.entry.headword} />;
+  return (
+    <DictionaryApp
+      initialMeta={getMeta()}
+      initialPages={getSpreadPages(data.pageNumber)}
+      initialPage={data.pageNumber}
+      initialEntry={data.entry}
+    />
+  );
 }

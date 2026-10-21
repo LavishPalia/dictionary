@@ -1,32 +1,36 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { BookSpread } from '@/components/book/BookSpread';
 import { MobilePage } from '@/components/book/MobilePage';
 import { LookupBar } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { BookmarksModal } from '@/components/modals/BookmarksModal';
+import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
-import { BookPage, BookCatalog, DictionaryEntry, MarginNote } from '@/lib/types';
+import { BookMeta, BookPage, DictionaryEntry, MarginNote } from '@/lib/types';
 import { soundEngine } from '@/lib/audio';
-import catalogData from '../../data/book/catalog.json';
 
-const catalog = catalogData as unknown as BookCatalog;
+// Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
+// change, so the pages on screen are never the least recently used.
+const MAX_CACHED_PAGES = 20;
 
-// Only real catalog pages are valid entry points; anything else (undefined, 0,
-// out of range) falls back to the default spread.
-const resolveInitialPage = (p?: number): number =>
-  p !== undefined && catalog.pages[p] ? p : 92;
+// Left pages are even; page 1 is a right-hand page facing the endpaper.
+const spreadLeftOf = (p: number): number => (p % 2 === 0 ? p : p - 1);
 
 export interface DictionaryAppProps {
-  initialPage?: number;
-  initialWord?: string;
+  initialMeta: BookMeta;
+  /** Server-rendered pages of the initial spread. */
+  initialPages: BookPage[];
+  initialPage: number;
+  /** Entry to open in the word drawer (deep link /word/[headword]). */
+  initialEntry?: DictionaryEntry | null;
 }
 
-export default function DictionaryApp({ initialPage, initialWord }: DictionaryAppProps) {
-  // Current page state (defaults to Page 92 matching Main.dc.html)
-  const [currentPage, setCurrentPage] = useState<number>(() => resolveInitialPage(initialPage));
-  const [highlightedWord, setHighlightedWord] = useState<string>(initialWord || 'Ceremony');
+export default function DictionaryApp({ initialMeta, initialPages, initialPage, initialEntry = null }: DictionaryAppProps) {
+  const meta = initialMeta;
+  const [currentPage, setCurrentPage] = useState<number>(initialPage);
+  const [highlightedWord, setHighlightedWord] = useState<string>(initialEntry?.headword || '');
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -38,29 +42,55 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
   const [marginNotes, setMarginNotes] = useState<MarginNote[]>([]);
 
   // Word Detail Drawer & Bookmarks State
-  const initialWordData = useMemo(() => {
-    if (!initialWord) return null;
-    const norm = initialWord.toLowerCase().trim();
-    const pNum = catalog.word_to_page[norm] || resolveInitialPage(initialPage);
-    const pageObj = catalog.pages[pNum];
-    if (pageObj) {
-      return [...(pageObj.column1 || []), ...(pageObj.column2 || [])].find(e => e.normalized === norm) || null;
-    }
-    return null;
-  }, [initialWord, initialPage]);
-
-  const [activeWordEntry, setActiveWordEntry] = useState<DictionaryEntry | null>(initialWordData);
-  const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialWordData));
+  const [activeWordEntry, setActiveWordEntry] = useState<DictionaryEntry | null>(initialEntry);
+  const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialEntry));
   const [showBookmarksModal, setShowBookmarksModal] = useState<boolean>(false);
+  const [showCreditsModal, setShowCreditsModal] = useState<boolean>(false);
   const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
   const [bookmarkedWords, setBookmarkedWords] = useState<DictionaryEntry[]>([]);
 
-  useEffect(() => {
-    if (initialWordData) {
-      setActiveWordEntry(initialWordData);
-      setShowWordDrawer(true);
+  // ── Page cache & prefetching ────────────────────────────────────────────
+  // Pages arrive from /api/page/[n]; the map is LRU-ordered (oldest first) and cacheVersion re-renders on arrival.
+  const pageCacheRef = useRef<Map<number, BookPage>>(new Map(initialPages.map(p => [p.page_number, p])));
+  const inflightRef = useRef<Map<number, Promise<BookPage | null>>>(new Map());
+  const [cacheVersion, setCacheVersion] = useState(0);
+
+  const fetchPage = useCallback((n: number): Promise<BookPage | null> => {
+    if (!Number.isInteger(n) || n < 1 || n > meta.total_pages) return Promise.resolve(null);
+    const cache = pageCacheRef.current;
+    const cached = cache.get(n);
+    if (cached) {
+      cache.delete(n);
+      cache.set(n, cached);
+      return Promise.resolve(cached);
     }
-  }, [initialWordData]);
+    const inflight = inflightRef.current.get(n);
+    if (inflight) return inflight;
+    const request = fetch(`/api/page/${n}?v=${meta.data_version}`)
+      .then(res => (res.ok ? (res.json() as Promise<BookPage>) : null))
+      .then(page => {
+        if (page) {
+          cache.set(n, page);
+          while (cache.size > MAX_CACHED_PAGES) cache.delete(cache.keys().next().value as number);
+          setCacheVersion(v => v + 1);
+        }
+        return page;
+      })
+      .catch(err => {
+        console.warn(`Could not load page ${n}:`, err);
+        return null;
+      })
+      .finally(() => inflightRef.current.delete(n));
+    inflightRef.current.set(n, request);
+    return request;
+  }, [meta.total_pages, meta.data_version]);
+
+  const getCachedPage = useCallback(
+    (n: number): BookPage | null => pageCacheRef.current.get(n) ?? null,
+    // cacheVersion is the signal that the (mutable) cache changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cacheVersion]
+  );
 
   const flipDuration = useMemo(() => {
     switch (speedMode) {
@@ -73,11 +103,13 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
 
   // 3D Flip & Riffle Animation Orchestration State
   const [isFlipping, setIsFlipping] = useState<boolean>(false);
-  const [targetPage, setTargetPage] = useState<number>(() => resolveInitialPage(initialPage));
+  const [targetPage, setTargetPage] = useState<number>(initialPage);
   const [flipDirection, setFlipDirection] = useState<'forward' | 'backward'>('forward');
   const [isRiffle, setIsRiffle] = useState<boolean>(false);
   const [jumpDistance, setJumpDistance] = useState<number>(1);
   const [riffleInfo, setRiffleInfo] = useState<{ from: number; to: number; pages: number } | null>(null);
+  // True while a navigation waits for its target pages to load (blocks a second navigation meanwhile).
+  const loadingTargetRef = useRef<boolean>(false);
 
   // Detect mobile screen
   useEffect(() => {
@@ -109,36 +141,31 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
   }, []);
 
   // Compute active left and right page for current spread
-  const leftPageNum = currentPage % 2 === 0 ? currentPage : currentPage - 1;
+  const leftPageNum = spreadLeftOf(currentPage);
   const rightPageNum = leftPageNum + 1;
 
-  const leftPage = useMemo<BookPage | null>(() => {
-    return catalog.pages[leftPageNum] || null;
-  }, [leftPageNum]);
+  // Prefetch the neighbouring spreads (currentPage ± 2 pages) so the next flip is already in memory.
+  useEffect(() => {
+    for (let p = leftPageNum - 2; p <= rightPageNum + 2; p++) fetchPage(p);
+  }, [leftPageNum, rightPageNum, fetchPage]);
 
-  const rightPage = useMemo<BookPage | null>(() => {
-    return catalog.pages[rightPageNum] || null;
-  }, [rightPageNum]);
+  const leftPage = useMemo(() => getCachedPage(leftPageNum), [getCachedPage, leftPageNum]);
+  const rightPage = useMemo(() => getCachedPage(rightPageNum), [getCachedPage, rightPageNum]);
 
   // Compute target left and right page during flip animation
-  const targetLeftNum = targetPage % 2 === 0 ? targetPage : targetPage - 1;
+  const targetLeftNum = spreadLeftOf(targetPage);
   const targetRightNum = targetLeftNum + 1;
 
-  const targetLeftPage = useMemo<BookPage | null>(() => {
-    return catalog.pages[targetLeftNum] || null;
-  }, [targetLeftNum]);
-
-  const targetRightPage = useMemo<BookPage | null>(() => {
-    return catalog.pages[targetRightNum] || null;
-  }, [targetRightNum]);
+  const targetLeftPage = useMemo(() => getCachedPage(targetLeftNum), [getCachedPage, targetLeftNum]);
+  const targetRightPage = useMemo(() => getCachedPage(targetRightNum), [getCachedPage, targetRightNum]);
 
   const singleMobilePage = useMemo<BookPage | null>(() => {
-    return catalog.pages[currentPage] || leftPage || rightPage;
-  }, [currentPage, leftPage, rightPage]);
+    return getCachedPage(currentPage) || leftPage || rightPage;
+  }, [getCachedPage, currentPage, leftPage, rightPage]);
 
   // Determine active letter based on first headword of spread
   const activeLetter = useMemo<string>(() => {
-    const word = leftPage?.first_headword || rightPage?.first_headword || 'C';
+    const word = leftPage?.first_headword || rightPage?.first_headword || 'A';
     return word[0].toUpperCase();
   }, [leftPage, rightPage]);
 
@@ -147,14 +174,23 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
     return bookmarkedPages.includes(leftPageNum);
   }, [bookmarkedPages, leftPageNum]);
 
-  // Trigger 3D Page Turn / Multi-Page Riffle with URL sync
-  const turnToPage = useCallback((newTarget: number, wordToHighlight?: string) => {
-    if (isFlipping) return;
+  // Trigger 3D Page Turn / Multi-Page Riffle with URL sync. The target pages are loaded before the flip
+  // starts, so the leaf never lands on a blank page.
+  const turnToPage = useCallback(async (newTarget: number, wordToHighlight?: string) => {
+    if (isFlipping || loadingTargetRef.current) return;
 
-    const clampedTarget = Math.max(1, Math.min(catalog.total_pages, newTarget));
+    const clampedTarget = Math.max(1, Math.min(meta.total_pages, newTarget));
     if (clampedTarget === currentPage) {
       if (wordToHighlight) setHighlightedWord(wordToHighlight);
       return;
+    }
+
+    loadingTargetRef.current = true;
+    try {
+      const targetLeft = spreadLeftOf(clampedTarget);
+      await Promise.all(isMobile ? [fetchPage(clampedTarget)] : [fetchPage(targetLeft), fetchPage(targetLeft + 1)]);
+    } finally {
+      loadingTargetRef.current = false;
     }
 
     const dist = Math.abs(clampedTarget - currentPage);
@@ -204,7 +240,19 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
     }
 
     setIsFlipping(true);
-  }, [currentPage, isFlipping, isMobile]);
+  }, [currentPage, isFlipping, isMobile, meta.total_pages, fetchPage]);
+
+  // Looks a headword up on the server (its page changes whenever the book is rebuilt).
+  const fetchWord = useCallback(async (headword: string): Promise<{ entry: DictionaryEntry; pageNumber: number } | null> => {
+    try {
+      const res = await fetch(`/api/word/${encodeURIComponent(headword)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.entry ? { entry: data.entry, pageNumber: data.pageNumber } : null;
+    } catch {
+      return null;
+    }
+  }, []);
 
   const handleFlipComplete = useCallback(() => {
     setCurrentPage(targetPage);
@@ -228,7 +276,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = async () => {
       const path = window.location.pathname;
       if (path.startsWith('/page/')) {
         const pNum = parseInt(path.replace('/page/', ''), 10);
@@ -238,29 +286,33 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
         }
       } else if (path.startsWith('/word/')) {
         const w = decodeURIComponent(path.replace('/word/', '')).trim();
-        const norm = w.toLowerCase();
-        const pNum = catalog.word_to_page[norm];
-        if (pNum) {
-          const pageObj = catalog.pages[pNum];
-          const found = [...(pageObj?.column1 || []), ...(pageObj?.column2 || [])].find(e => e.normalized === norm);
-          if (found) {
-            setActiveWordEntry(found);
-            setShowWordDrawer(true);
-            setHighlightedWord(found.headword);
-          }
-          if (pNum !== currentPage) {
-            turnToPage(pNum, w);
+        const found = await fetchWord(w);
+        if (found) {
+          setActiveWordEntry(found.entry);
+          setShowWordDrawer(true);
+          setHighlightedWord(found.entry.headword);
+          if (found.pageNumber !== currentPage) {
+            turnToPage(found.pageNumber, w);
           }
         }
+      } else if (path === '/') {
+        setShowWordDrawer(false);
+        if (currentPage !== 1) turnToPage(1);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentPage, turnToPage]);
+  }, [currentPage, turnToPage, fetchWord]);
 
   // Search selection handler
   const handleSelectWord = (headword: string, destPage: number) => {
     turnToPage(destPage, headword);
+  };
+
+  // Saved words keep the page number they had when saved, which changes when the book is rebuilt: look them up again.
+  const handleSelectSavedWord = async (headword: string, savedPage: number) => {
+    const found = await fetchWord(headword);
+    turnToPage(found ? found.pageNumber : savedPage, found ? found.entry.headword : headword);
   };
 
   // Thumb tab selection handler
@@ -273,9 +325,8 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
   const handleEntryClick = (headword: string) => {
     setHighlightedWord(headword);
     const norm = headword.toLowerCase().trim();
-    const pNum = catalog.word_to_page[norm] || currentPage;
-    const pageObj = catalog.pages[pNum] || leftPage || rightPage;
-    const found = [...(pageObj?.column1 || []), ...(pageObj?.column2 || [])].find(e => e.normalized === norm);
+    const visible = [leftPage, rightPage, singleMobilePage].flatMap(p => (p ? [...p.column1, ...p.column2] : []));
+    const found = visible.find(e => e.normalized === norm);
     if (found) {
       setActiveWordEntry(found);
       setShowWordDrawer(true);
@@ -364,73 +415,55 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
   }, []);
 
   // Random Explore action
-  const handleRandomExplore = () => {
+  const handleRandomExplore = async () => {
     if (isFlipping) return;
-    const allPages = Object.keys(catalog.pages).map(Number);
-    const candidatePages = allPages.filter(p => p !== leftPageNum && p !== rightPageNum);
+    const candidatePages: number[] = [];
+    for (let p = 1; p <= meta.total_pages; p++) {
+      if (p !== leftPageNum && p !== rightPageNum) candidatePages.push(p);
+    }
     if (candidatePages.length === 0) return;
     const randomPage = candidatePages[Math.floor(Math.random() * candidatePages.length)];
-    const randomPageObj = catalog.pages[randomPage];
-    const randomWord = randomPageObj?.first_headword || '';
-    turnToPage(randomPage, randomWord);
+    const randomPageObj = await fetchPage(randomPage);
+    turnToPage(randomPage, randomPageObj?.first_headword || '');
   };
 
-  const canPrev = useMemo(() => {
-    const allPageNums = Object.keys(catalog.pages).map(Number).sort((a, b) => a - b);
-    return allPageNums.some(p => p < leftPageNum);
-  }, [leftPageNum]);
-
-  const canNext = useMemo(() => {
-    const allPageNums = Object.keys(catalog.pages).map(Number).sort((a, b) => a - b);
-    return allPageNums.some(p => p > rightPageNum);
-  }, [rightPageNum]);
+  const canPrev = leftPageNum > 1;
+  const canNext = rightPageNum < meta.total_pages;
 
   const handlePrevSpread = useCallback(() => {
-    if (isFlipping) return;
-    const allPageNums = Object.keys(catalog.pages).map(Number).sort((a, b) => a - b);
-    const prevPages = allPageNums.filter(p => p < leftPageNum);
-    if (prevPages.length > 0) {
-      const prev = prevPages[prevPages.length - 1];
-      turnToPage(prev % 2 === 0 ? prev : prev - 1);
-    }
+    if (isFlipping || leftPageNum <= 1) return;
+    turnToPage(Math.max(1, leftPageNum - 2));
   }, [isFlipping, leftPageNum, turnToPage]);
 
   const handleNextSpread = useCallback(() => {
-    if (isFlipping) return;
-    const allPageNums = Object.keys(catalog.pages).map(Number).sort((a, b) => a - b);
-    const nextPages = allPageNums.filter(p => p > rightPageNum);
-    if (nextPages.length > 0) {
-      const next = nextPages[0];
-      turnToPage(next % 2 === 0 ? next : next - 1);
-    }
-  }, [isFlipping, rightPageNum, turnToPage]);
+    if (isFlipping || rightPageNum >= meta.total_pages) return;
+    turnToPage(rightPageNum + 1);
+  }, [isFlipping, rightPageNum, meta.total_pages, turnToPage]);
 
   // ── Mobile single-page stepping ─────────────────────────────────────────
-  // The mobile view shows one page, so it must step through existing catalog
-  // pages one at a time (92 → 93 → 94), not jump spread-to-spread (92 → 94).
-  const mobilePageNums = useMemo(
-    () => Object.keys(catalog.pages).map(Number).sort((a, b) => a - b),
-    []
-  );
-
+  // The mobile view shows one page, so it steps one page at a time (92 → 93 → 94).
   const handleMobilePrev = useCallback(() => {
-    const prev = mobilePageNums.slice().reverse().find(p => p < currentPage);
-    if (prev !== undefined) turnToPage(prev);
-  }, [mobilePageNums, currentPage, turnToPage]);
+    if (currentPage > 1) turnToPage(currentPage - 1);
+  }, [currentPage, turnToPage]);
 
   const handleMobileNext = useCallback(() => {
-    const next = mobilePageNums.find(p => p > currentPage);
-    if (next !== undefined) turnToPage(next);
-  }, [mobilePageNums, currentPage, turnToPage]);
+    if (currentPage < meta.total_pages) turnToPage(currentPage + 1);
+  }, [currentPage, meta.total_pages, turnToPage]);
 
-  const canPrevMobile = useMemo(
-    () => mobilePageNums.some(p => p < currentPage),
-    [mobilePageNums, currentPage]
-  );
-  const canNextMobile = useMemo(
-    () => mobilePageNums.some(p => p > currentPage),
-    [mobilePageNums, currentPage]
-  );
+  const canPrevMobile = currentPage > 1;
+  const canNextMobile = currentPage < meta.total_pages;
+
+  // "Go to page" input in the footer
+  const [goToValue, setGoToValue] = useState('');
+  const handleGoToPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const n = parseInt(goToValue, 10);
+    if (Number.isInteger(n)) {
+      setHighlightedWord('');
+      turnToPage(n);
+    }
+    setGoToValue('');
+  };
 
   const handleToggleSound = () => {
     const next = !isMuted;
@@ -536,6 +569,15 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
             title="View saved bookmarked spreads, dog-ears, notes, and vocabulary"
           >
             📑 Bookmarks ({bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length})
+          </button>
+
+          <button
+            id="open-credits-btn"
+            onClick={() => setShowCreditsModal(true)}
+            style={{ height: '48px', padding: '0 12px', background: '#3e2a1b', border: '1px solid #8a7452', borderRadius: '4px', color: '#e8d3a0', font: '13px "IM Fell English SC", serif', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,.4)' }}
+            title="View dictionary sources and review status"
+          >
+            Credits
           </button>
 
           {/* Book Cover toggle button */}
@@ -676,7 +718,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
             targetRightPage={targetRightPage}
             highlightedWord={highlightedWord}
             activeLetter={activeLetter}
-            thumbMap={catalog.thumb_index}
+            thumbMap={meta.thumb_index}
             isFlipping={isFlipping}
             flipDirection={flipDirection}
             isRiffle={isRiffle}
@@ -726,7 +768,7 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
         marginNotes={marginNotes}
         bookmarkedWords={bookmarkedWords}
         onSelectPage={(pNum) => turnToPage(pNum)}
-        onSelectWord={(word, destPage) => turnToPage(destPage, word)}
+        onSelectWord={handleSelectSavedWord}
         onRemovePageBookmark={(pNum) => {
           setBookmarkedPages(prev => {
             const next = prev.filter(p => p !== pNum);
@@ -748,6 +790,8 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
         }}
       />
 
+      <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />
+
       {/* Footer provenance note */}
       <footer
         style={{
@@ -759,7 +803,50 @@ export default function DictionaryApp({ initialPage, initialWord }: DictionaryAp
           letterSpacing: '0.08em',
         }}
       >
-        <span>पन्ना · Vintage Pocket Dictionary · CSS 3D & Hybrid DOM Engine</span>
+        <form
+          id="goto-page-form"
+          onSubmit={handleGoToPage}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}
+        >
+          <label htmlFor="goto-page-input">Go to page</label>
+          <input
+            id="goto-page-input"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={meta.total_pages}
+            value={goToValue}
+            onChange={(e) => setGoToValue(e.target.value)}
+            placeholder={String(currentPage)}
+            style={{
+              width: '64px',
+              padding: '4px 6px',
+              background: '#efe3c0',
+              border: '1px solid #8a7452',
+              borderRadius: '3px',
+              color: '#2a1e14',
+              font: '13px "IM Fell English", serif',
+              textAlign: 'center',
+            }}
+          />
+          <span>of {meta.total_pages}</span>
+          <button
+            type="submit"
+            disabled={isFlipping}
+            style={{
+              padding: '4px 10px',
+              background: '#3e2a1b',
+              border: '1px solid #8a7452',
+              borderRadius: '3px',
+              color: '#e8d3a0',
+              font: '12px "IM Fell English SC", serif',
+              cursor: isFlipping ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Go
+          </button>
+        </form>
+        <div>पन्ना · Vintage Pocket Dictionary · CSS 3D & Hybrid DOM Engine</div>
       </footer>
     </main>
   );
