@@ -1,0 +1,22 @@
+{
+  "models_used": {
+    "gemini-3.6-flash": 57,
+    "null": 143
+  },
+  "sampled": 200,
+  "per_band": {
+    "top 1k": 50,
+    "1k-5k": 50,
+    "5k-15k": 50,
+    "15k-25k": 50
+  },
+  "generated_ok": 57,
+  "sent_to_review_queue": 0,
+  "api_errors_pending_resume": 143,
+  "first_try": 57,
+  "flagged_invalid_headword": [],
+  "chose_none": [],
+  "chose_non_first_sense": 13,
+  "max_def_chars": 74,
+  "max_hi_chars": 26
+}

@@ -1,0 +1,42 @@
+# Terms excluded from the printed headword list (slurs and explicit vulgarity).
+# Ordinary words with a vulgar secondary sense (ass, cock, hell, damn, bloody) are NOT listed:
+# they are kept and the everyday sense is chosen during gloss generation.
+fuck
+fucking
+fucker
+motherfucker
+shit
+shitty
+bullshit
+bitch
+asshole
+cunt
+dick
+dickhead
+pussy
+nigger
+nigga
+slut
+whore
+dildo
+fag
+faggot
+dyke
+retard
+tranny
+twat
+wank
+wanker
+jizz
+cum
+blowjob
+handjob
+tits
+titty
+boob
+spic
+chink
+kike
+wetback
+gook
+coon
