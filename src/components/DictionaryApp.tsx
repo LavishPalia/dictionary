@@ -9,6 +9,7 @@ import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/sa
 import { ReviewScreen } from '@/components/review/ReviewScreen';
 import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, newRecord, saveRecords, statusOf, type ReviewRecords } from '@/lib/review';
 import type { Section } from '@/components/shell/AppChrome';
+import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocateMarks, type MarkAnchors } from '@/lib/marks';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
@@ -68,6 +69,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
   const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
   const [marginNotes, setMarginNotes] = useState<MarginNote[]>([]);
+  // Anchor words for the marks above; null until loaded (and, after a rebuild, relocated).
+  const [markAnchors, setMarkAnchors] = useState<MarkAnchors | null>(null);
 
   // Word Detail Drawer & Bookmarks State
   const [activeWordEntry, setActiveWordEntry] = useState<DictionaryEntry | null>(initialEntry);
@@ -170,24 +173,87 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load saved bookmarks, dog-ears, and marginalia from localStorage
+  // Load saved bookmarks, dog-ears, and marginalia from localStorage. Marks made under an older build of the book
+  // are first moved to the pages their anchor words are on now (src/lib/marks.ts).
   useEffect(() => {
-    try {
-      const savedPages = localStorage.getItem('panna_bookmarks');
-      if (savedPages) setBookmarkedPages(JSON.parse(savedPages));
-
-      const savedWords = localStorage.getItem('panna_saved_words');
-      if (savedWords) setBookmarkedWords(JSON.parse(savedWords));
-
-      const savedDogEars = localStorage.getItem('panna_dog_ears');
-      if (savedDogEars) setDogEaredPages(JSON.parse(savedDogEars));
-
-      const savedNotes = localStorage.getItem('panna_marginalia');
-      if (savedNotes) setMarginNotes(JSON.parse(savedNotes));
-    } catch (e) {
-      console.warn('LocalStorage not available:', e);
+    let live = true;
+    const read = <T,>(key: string, fallback: T): T => {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
+    };
+    const savedWords = read<SavedWord[]>('panna_saved_words', []);
+    if (savedWords.length) setBookmarkedWords(savedWords);
+    const marks = {
+      ribbons: read<number[]>('panna_bookmarks', []),
+      dogEars: read<number[]>('panna_dog_ears', []),
+      notes: read<MarginNote[]>('panna_marginalia', []),
+    };
+    const stored = read<MarkAnchors | null>(ANCHORS_KEY, null);
+    const apply = (m: typeof marks, anchors: MarkAnchors) => {
+      if (!live) return;
+      setBookmarkedPages(m.ribbons);
+      setDogEaredPages(m.dogEars);
+      setMarginNotes(m.notes);
+      setMarkAnchors(anchors);
+    };
+    if (stored && stored.data_version !== meta.data_version) {
+      const words = anchorWords(stored, marks.notes);
+      fetch(`/api/locate?${words.map((w) => `w=${encodeURIComponent(w)}`).join('&')}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+        .then(({ pages }: { pages: Record<string, number> }) => {
+          const moved = relocateMarks(marks, stored, pages, meta.total_pages, meta.data_version);
+          try {
+            localStorage.setItem('panna_bookmarks', JSON.stringify(moved.ribbons));
+            localStorage.setItem('panna_dog_ears', JSON.stringify(moved.dogEars));
+            localStorage.setItem('panna_marginalia', JSON.stringify(moved.notes));
+            localStorage.setItem(ANCHORS_KEY, JSON.stringify(moved.anchors));
+          } catch {}
+          apply({ ribbons: moved.ribbons, dogEars: moved.dogEars, notes: moved.notes }, moved.anchors);
+        })
+        // Offline or failed: show the marks where they were and try again next time (the stored anchors are kept).
+        .catch(() => apply(marks, { ...stored, data_version: '' }));
+    } else {
+      // Same build, or marks from before anchors existed: page numbers are taken as current.
+      apply(marks, stored ?? emptyAnchors(meta.data_version));
     }
+    return () => { live = false; };
+  // meta is fixed for the life of the page
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Give every mark an anchor word (new marks, and marks made before anchors existed), loading pages as needed, and
+  // drop anchors of removed marks. Skipped while anchors are being relocated, or after a failed relocation.
+  useEffect(() => {
+    if (!markAnchors || markAnchors.data_version !== meta.data_version) return;
+    const next: MarkAnchors = { data_version: meta.data_version, ribbons: {}, dogEars: {} };
+    const fill = (pages: number[], from: Record<number, string>, to: Record<number, string>) => {
+      for (const page of pages) {
+        const anchor = from[page] ?? pageAnchor(getCachedPage(page));
+        if (anchor) to[page] = anchor;
+        else fetchPage(page); // arrives later and re-runs this effect
+      }
+    };
+    fill(bookmarkedPages, markAnchors.ribbons, next.ribbons);
+    fill(dogEaredPages, markAnchors.dogEars, next.dogEars);
+    if (JSON.stringify(next) !== JSON.stringify(markAnchors)) {
+      setMarkAnchors(next);
+      try { localStorage.setItem(ANCHORS_KEY, JSON.stringify(next)); } catch {}
+    }
+    const unanchored = marginNotes.filter((n) => !n.anchor);
+    if (unanchored.length) {
+      let changed = false;
+      const notes = marginNotes.map((n) => {
+        if (n.anchor) return n;
+        const anchor = noteAnchor(getCachedPage(n.page_number), n.top_pct);
+        if (!anchor) { fetchPage(n.page_number); return n; }
+        changed = true;
+        return { ...n, anchor };
+      });
+      if (changed) {
+        setMarginNotes(notes);
+        try { localStorage.setItem('panna_marginalia', JSON.stringify(notes)); } catch {}
+      }
+    }
+  }, [markAnchors, bookmarkedPages, dogEaredPages, marginNotes, getCachedPage, fetchPage, meta.data_version]);
 
   // Compute active left and right page for current spread
   const leftPageNum = spreadLeftOf(currentPage);
@@ -461,6 +527,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       color,
       created_at: Date.now(),
       top_pct: topPct,
+      anchor: noteAnchor(pageCacheRef.current.get(pageNum) ?? null, topPct),
     };
     setMarginNotes(prev => {
       const updated = [...prev, newNote];

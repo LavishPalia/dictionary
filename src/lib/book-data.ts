@@ -341,3 +341,12 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
   }
   return cards;
 }
+
+/** Current page of each word (normalized), for moving bookmarks and notes after the book is rebuilt. */
+export function locateWords(words: string[]): Record<string, number> {
+  const unique = [...new Set(words.map((w) => w.toLowerCase().trim()).filter(Boolean))].slice(0, 500);
+  if (!unique.length) return {};
+  const rows = db().prepare(`SELECT normalized, page_number FROM entries WHERE normalized IN (${unique.map(() => '?').join(',')})`)
+    .all(...unique) as { normalized: string; page_number: number }[];
+  return Object.fromEntries(rows.map((r) => [r.normalized, r.page_number]));
+}

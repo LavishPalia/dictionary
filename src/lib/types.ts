@@ -47,5 +47,7 @@ export interface MarginNote {
   color: 'blue' | 'graphite' | 'crimson';
   created_at: number;
   top_pct?: number;
+  /** The word the note was written beside; lets the note follow it when page numbers change (src/lib/marks.ts). */
+  anchor?: string;
 }
 
