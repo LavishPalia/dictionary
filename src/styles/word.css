@@ -12,6 +12,10 @@
 .word-actions + .ui-divider { margin-top: 16px; }
 .word-example { margin: 4px 0 0; font: italic 16px/1.4 var(--font-fell); color: var(--ink); }
 
+.word-related + .word-related { margin-top: 10px; }
+.word-related-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 6px 0 0; padding: 0; list-style: none; }
+.word-related-list .ui-chip { min-height: 36px; }
+
 .word-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-top: 14px; }
 .word-review-note { margin: 8px 0 0; font: 14px var(--font-fell); color: var(--green); }
 .word-provenance { font: italic 13px var(--font-fell); color: var(--ink-soft); }

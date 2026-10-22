@@ -6,6 +6,7 @@ import Database from 'better-sqlite3';
 const TABLES: Array<[table: string, orderBy: string]> = [
   ['entries', 'rowid'],
   ['forms', 'normalized_form, lemma_id'],
+  ['related', 'entry_id, kind, rank'],
   ['pages', 'page_number'],
   ['meta', 'key'],
 ];

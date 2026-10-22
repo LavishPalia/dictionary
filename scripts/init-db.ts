@@ -14,7 +14,8 @@ import { normalizeHindi } from '../src/lib/hindi';
 import { SEED_ENTRIES } from './seed-entries';
 import { COMPANION_PAGES } from './companion-entries';
 import { EXPANDED_PAGES } from './expanded-entries';
-import { SOURCES_DIR, loadAgid, verifyChecksums } from './lib/lexicon';
+import { SOURCES_DIR, WordNet, loadAgid, verifyChecksums } from './lib/lexicon';
+import { findRelated } from './lib/related';
 import { GeneratedGloss, toPhase4Entry } from './lib/phase4';
 
 export const DB_PATH = path.join(process.cwd(), 'data', 'dictionary.db');
@@ -50,6 +51,8 @@ export interface BuildReport {
   editorial_duplicates_dropped: string[];
   /** Headwords defined in both layers; the closed-class (everyday function-word) sense was kept. */
   closed_class_overrides: string[];
+  /** Similar / opposite links stored. */
+  related: number;
   data_version: string;
 }
 
@@ -188,6 +191,15 @@ CREATE TABLE forms (
   PRIMARY KEY (normalized_form, lemma_id)
 );
 
+-- Similar and opposite words (WordNet 3.1, scripts/lib/related.ts); both ends are Panna entries.
+CREATE TABLE related (
+  entry_id TEXT NOT NULL REFERENCES entries(id),
+  kind TEXT NOT NULL CHECK (kind IN ('similar', 'opposite')),
+  rank INTEGER NOT NULL,
+  related_id TEXT NOT NULL REFERENCES entries(id),
+  PRIMARY KEY (entry_id, kind, rank)
+);
+
 CREATE TABLE pages (
   page_number INTEGER PRIMARY KEY,
   guide_left TEXT NOT NULL,
@@ -227,10 +239,14 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     if (!freqRank.has(lemma)) freqRank.set(lemma, rank);
   }
   const entryByWord = new Map(laid.map((e) => [e.normalized, e]));
+  const related = [...findRelated(new WordNet(), new Map(laid.map((e) => [e.normalized, e.pos])), freqRank)]
+    .flatMap(([word, r]) => (['similar', 'opposite'] as const).flatMap((kind) => r[kind].map((other, rank) => ({
+      entry_id: entryByWord.get(word)!.id, kind, rank, related_id: entryByWord.get(other)!.id,
+    }))));
 
   // Content hash of everything the client can see; used to version /api/page caching.
   const dataVersion = crypto.createHash('sha256')
-    .update(JSON.stringify({ laid, pages, thumbIndex }))
+    .update(JSON.stringify({ laid, pages, thumbIndex, related }))
     .digest('hex').slice(0, 12);
 
   // Build into a temp file and swap it in, so a reader never sees a half-written database.
@@ -252,6 +268,8 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     const insertForm = db.prepare(`INSERT OR IGNORE INTO forms (normalized_form, form, lemma_id, lemma_headword, page_number)
       VALUES (?, ?, ?, ?, ?)`);
     const insertMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
+    const insertRelated = db.prepare(`INSERT INTO related (entry_id, kind, rank, related_id)
+      VALUES (@entry_id, @kind, @rank, @related_id)`);
 
     db.transaction(() => {
       laid.forEach((e, i) => insertEntry.run({
@@ -263,6 +281,7 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
         page_number: e.page_number, col_idx: e.col_idx, position_in_col: e.position_in_col,
       }));
       for (const p of pages) insertPage.run({ ...p, entry_ids: JSON.stringify(p.entry_ids) });
+      for (const r of related) insertRelated.run(r);
       for (const [form, parents] of agid.formToParents) {
         for (const { lemma } of parents) {
           const entry = entryByWord.get(lemma);
@@ -287,6 +306,7 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     editorial,
     closed_class: closed,
     generated,
+    related: related.length,
     editorial_duplicates_dropped: duplicates,
     closed_class_overrides: overrides,
     data_version: dataVersion,
@@ -297,7 +317,8 @@ if (require.main === module) {
   try {
     const report = buildDatabase();
     console.log(`✓ Built ${path.relative(process.cwd(), DB_PATH)}: ${report.entries} entries on ${report.pages} pages ` +
-      `(${report.editorial} editorial + ${report.closed_class} closed-class + ${report.generated} generated), data version ${report.data_version}`);
+      `(${report.editorial} editorial + ${report.closed_class} closed-class + ${report.generated} generated), ` +
+      `${report.related} similar/opposite links, data version ${report.data_version}`);
     if (report.editorial_duplicates_dropped.length) {
       console.log(`  ${report.editorial_duplicates_dropped.length} duplicate editorial headwords kept once: ` +
         report.editorial_duplicates_dropped.join(', '));

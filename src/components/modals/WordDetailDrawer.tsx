@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { DictionaryEntry } from '@/lib/types';
+import { DictionaryEntry, RelatedWord } from '@/lib/types';
 import { describePos } from '@/lib/pos';
 import { flyToSaved } from '@/lib/motion';
 import { SpeechLang, speechUnavailableReason, useSpeechVoices } from '@/lib/speech';
-import { Button, IconButton, Sheet } from '@/components/ui';
+import { Button, Chip, IconButton, Sheet } from '@/components/ui';
 import { CloseIcon, SpeakerIcon, StarIcon } from '@/components/ui/icons';
 
 interface WordDetailDrawerProps {
@@ -14,6 +14,8 @@ interface WordDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectWord: (headword: string, destPage?: number) => void;
+  /** Show a similar or opposite word in this sheet. */
+  onOpenRelated: (word: RelatedWord) => void;
   isBookmarked: boolean;
   onToggleBookmark: (entry: DictionaryEntry) => void;
   /** For saved words: when the word next comes up in Review. */
@@ -28,6 +30,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   isOpen,
   onClose,
   onSelectWord,
+  onOpenRelated,
   isBookmarked,
   onToggleBookmark,
   reviewNote,
@@ -65,6 +68,9 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
 
   const pos = describePos(entry.pos);
   const examples = entry.examples?.filter(Boolean) ?? [];
+  const related = ([['similar', 'Similar'], ['opposite', 'Opposite']] as const)
+    .map(([kind, label]) => ({ kind, label, words: entry[kind] ?? [] }))
+    .filter((r) => r.words.length > 0);
   const speakButton = (lang: SpeechLang, label: React.ReactNode, what: string) => (
     <Button
       id={`speak-${lang}-btn`}
@@ -110,6 +116,24 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
           <hr className="ui-divider" />
           <div className="ui-label">Example</div>
           {examples.map((example) => <p key={example} className="word-example">{example}</p>)}
+        </>
+      )}
+
+      {related.length > 0 && (
+        <>
+          <hr className="ui-divider" />
+          {related.map(({ kind, label, words }) => (
+            <div key={kind} className="word-related">
+              <div className="ui-label" id={`word-${kind}-label`}>{label}</div>
+              <ul className="word-related-list" id={`word-${kind}`} aria-labelledby={`word-${kind}-label`}>
+                {words.map((w) => (
+                  <li key={w.headword}>
+                    <Chip onClick={() => onOpenRelated(w)} title={`Open “${w.headword}”`}>{w.headword}</Chip>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </>
       )}
 

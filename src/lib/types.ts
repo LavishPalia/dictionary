@@ -15,6 +15,14 @@ export interface DictionaryEntry {
   page_number?: number;
   column?: 1 | 2;
   position_in_column?: number;
+  /** Similar and opposite words that are themselves in Panna (WordNet), best first. */
+  similar?: RelatedWord[];
+  opposite?: RelatedWord[];
+}
+
+export interface RelatedWord {
+  headword: string;
+  page_number: number;
 }
 
 export interface BookPage {

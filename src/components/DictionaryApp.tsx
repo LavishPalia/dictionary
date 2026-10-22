@@ -17,7 +17,7 @@ import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
 import { BackupManager, lastBackupLabel, type BackupHandle } from '@/components/shell/BackupManager';
 import { LAST_BACKUP_KEY } from '@/lib/backup';
-import { BookMeta, BookPage, DictionaryEntry, MarginNote } from '@/lib/types';
+import { BookMeta, BookPage, DictionaryEntry, MarginNote, RelatedWord } from '@/lib/types';
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
 import { useReducedMotion, visibleElement } from '@/lib/motion';
@@ -679,6 +679,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     'ribbon': [setBookmarkedPages, 'panna_bookmarks'],
     'dog-ear': [setDogEaredPages, 'panna_dog_ears'],
   };
+  // A similar or opposite word takes over the open sheet; the book stays where it is. Opened from the book, the address
+  // follows the sheet without adding a Back step. The tapped chip is gone, so focus goes to the sheet (which reads out
+  // the new word) at its top.
+  const handleOpenRelated = async (word: RelatedWord) => {
+    const found = await fetchWord(word.headword);
+    if (!found) return;
+    setActiveWordEntry(found.entry);
+    if (window.location.pathname.startsWith('/word/')) {
+      window.history.replaceState(window.history.state, '', `/word/${encodeURIComponent(found.entry.headword)}`);
+    }
+    requestAnimationFrame(() => {
+      const sheet = document.getElementById('word-sheet');
+      sheet?.scrollTo({ top: 0 });
+      sheet?.focus();
+    });
+  };
+
   const handleOpenSavedWord = async (word: SavedWord) => {
     const found = await fetchWord(word.headword); // the stored copy may be from an older build of the book
     setActiveWordEntry(found ? found.entry : word);
@@ -945,6 +962,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         pageNumber={activeWordEntry?.page_number ?? currentPage}
         isOpen={showWordDrawer}
         onClose={handleCloseWordDrawer}
+        onOpenRelated={handleOpenRelated}
         onSelectWord={(word, destPage) => {
           if (section !== 'book') showBookForNavigation();
           if (destPage) turnToPage(destPage, word);

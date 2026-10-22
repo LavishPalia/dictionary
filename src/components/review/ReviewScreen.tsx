@@ -35,18 +35,27 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 function buildQuestion(card: QuizCard, kind: QuestionKind, retry: boolean): Question {
+  if (kind === 'opposite' && card.opposite) {
+    const { answer, distractors } = card.opposite;
+    const options = shuffle([
+      { key: answer.normalized, text: answer.headword, correct: true },
+      ...distractors.map((d) => ({ key: d.normalized, text: d.headword, correct: false })),
+    ]);
+    return { card, kind, options, retry };
+  }
   const answerText = (d: { headword: string; meaning_hi: string }) => (kind === 'meaning' ? d.meaning_hi : d.headword);
   const options = shuffle([
     { key: card.entry.normalized, text: answerText(card.entry), correct: true },
     ...card.distractors.map((d) => ({ key: d.normalized, text: answerText(d), correct: false })),
   ]);
-  return { card, kind, options, retry };
+  return { card, kind: kind === 'opposite' ? 'meaning' : kind, options, retry };
 }
 
 const PROMPTS: Record<QuestionKind, string> = {
   'meaning': 'What does this mean?',
   'word-from-hindi': 'Which English word means this?',
   'word-from-definition': 'Which word fits this meaning?',
+  'opposite': 'Which word means the opposite?',
 };
 
 // One review round: up to 20 due words, one calm card at a time, no timer. A word answered wrongly comes back
@@ -81,7 +90,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
       .then((data: { cards: QuizCard[] }) => {
         if (!live) return;
         setQueue(data.cards.filter((c) => c.distractors.length > 0)
-          .map((card, i) => buildQuestion(card, questionKind(records[card.entry.normalized], i + card.entry.normalized.length), false)));
+          .map((card, i) => buildQuestion(card, questionKind(records[card.entry.normalized], i + card.entry.normalized.length, !!card.opposite), false)));
         setIndex(0);
         setChosen(null);
         setFirstTry({});
@@ -209,7 +218,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
         return (
           <div className="ui-card review-card" key={`${entry.normalized}-${index}`}>
             <div className="ui-label review-prompt">{question.retry ? 'One more try' : PROMPTS[question.kind]}</div>
-            {question.kind === 'meaning' && (
+            {(question.kind === 'meaning' || question.kind === 'opposite') && (
               <>
                 <p className="review-word">{entry.headword}</p>
                 <div className="review-meta">
@@ -244,7 +253,12 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
               {answered && (
                 <div className={`review-feedback review-feedback--${pickedCorrect ? 'right' : 'wrong'}`}>
                   <p className="review-feedback-main">
-                    {pickedCorrect
+                    {question.kind === 'opposite' && question.card.opposite ? (() => {
+                      const { answer } = question.card.opposite;
+                      return <>{pickedCorrect ? 'Right!' : 'Not quite.'} The opposite of <b>{entry.headword}</b> (<span lang="hi" className="ui-hi">{entry.meaning_hi}</span>)
+                        is <b>{answer.headword}</b> (<span lang="hi" className="ui-hi">{answer.meaning_hi}</span>).</>;
+                    })()
+                    : pickedCorrect
                       ? <>Right! <b>{entry.headword}</b>: {entry.definition_en}</>
                       : <>Not quite. <b>{entry.headword}</b> means <span lang="hi" className="ui-hi">{entry.meaning_hi}</span>: {entry.definition_en}</>}
                   </p>

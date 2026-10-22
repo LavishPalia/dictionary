@@ -86,6 +86,22 @@ function toEntry(r: EntryRow): DictionaryEntry {
   };
 }
 
+/** Adds each entry's similar and opposite words (one query for the lot). */
+function withRelated(entries: DictionaryEntry[]): DictionaryEntry[] {
+  if (!entries.length) return entries;
+  const rows = db().prepare(`
+    SELECT r.entry_id, r.kind, e.headword, e.page_number FROM related r JOIN entries e ON e.id = r.related_id
+    WHERE r.entry_id IN (${entries.map(() => '?').join(',')}) ORDER BY r.entry_id, r.kind, r.rank
+  `).all(...entries.map((e) => e.id)) as { entry_id: string; kind: 'similar' | 'opposite'; headword: string; page_number: number }[];
+  return entries.map((e) => {
+    const mine = rows.filter((r) => r.entry_id === e.id);
+    if (!mine.length) return e;
+    const pick = (kind: 'similar' | 'opposite') =>
+      mine.filter((r) => r.kind === kind).map(({ headword, page_number }) => ({ headword, page_number }));
+    return { ...e, similar: pick('similar'), opposite: pick('opposite') };
+  });
+}
+
 let cachedMeta: BookMeta | null = null;
 
 export function getMeta(): BookMeta {
@@ -109,6 +125,7 @@ export function getPage(pageNum: number): BookPage | null {
   const entries = (db().prepare(
     'SELECT * FROM entries WHERE page_number = ? ORDER BY col_idx, position_in_col',
   ).all(pageNum) as EntryRow[]).map(toEntry);
+  const withLinks = withRelated(entries);
   return {
     page_number: page.page_number,
     first_headword: page.first_headword,
@@ -116,8 +133,8 @@ export function getPage(pageNum: number): BookPage | null {
     guide_left: page.guide_left,
     guide_right: page.guide_right,
     footer_hints: page.footer_hints,
-    column1: entries.filter((e) => e.column === 1),
-    column2: entries.filter((e) => e.column === 2),
+    column1: withLinks.filter((e) => e.column === 1),
+    column2: withLinks.filter((e) => e.column === 2),
   };
 }
 
@@ -146,7 +163,7 @@ export function getWordEntry(headword: string): {
   if (!row) return { entry: null, pageNumber: null, neighbours: [] };
   const page = getPage(row.page_number);
   return {
-    entry: toEntry(row),
+    entry: withRelated([toEntry(row)])[0],
     pageNumber: row.page_number,
     neighbours: page ? [...page.column1, ...page.column2] : [],
     ...(form ? { redirectedFrom: headword } : {}),
@@ -282,9 +299,44 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
 }
 
 /** One review card: the word, and three wrong options a learner could plausibly confuse with it. */
+type QuizOption = Pick<DictionaryEntry, 'headword' | 'normalized' | 'pos' | 'meaning_hi' | 'definition_en'>;
+
 export interface QuizCard {
   entry: DictionaryEntry;
-  distractors: Array<Pick<DictionaryEntry, 'headword' | 'normalized' | 'pos' | 'meaning_hi' | 'definition_en'>>;
+  distractors: QuizOption[];
+  /** For words with an opposite in Panna: "Which word means the opposite?" */
+  opposite?: { answer: QuizOption; distractors: QuizOption[] };
+}
+
+const toOption = (r: EntryRow): QuizOption =>
+  ({ headword: r.headword, normalized: r.normalized, pos: r.pos, meaning_hi: r.meaning_hi, definition_en: r.definition_en });
+
+function relatedRows(entryId: string, kind: 'similar' | 'opposite'): HindiSearchRow[] {
+  return db().prepare(`SELECT e.* FROM related r JOIN entries e ON e.id = r.related_id
+    WHERE r.entry_id = ? AND r.kind = ? ORDER BY r.rank`).all(entryId, kind) as HindiSearchRow[];
+}
+
+/**
+ * The opposite question for a word, or undefined if it has no opposite. Wrong options are the word's own similar
+ * words first (tempting, and clearly not opposites), then words of the same type and frequency. None is another of
+ * its opposites, or similar to one, so exactly one option is right.
+ */
+function oppositeQuestion(row: HindiSearchRow, nearest: HindiSearchRow[], random: () => number): QuizCard['opposite'] {
+  const opposites = relatedRows(row.id, 'opposite');
+  if (!opposites.length) return undefined;
+  const answer = opposites[0];
+  const excluded = new Set([row.normalized, ...opposites.flatMap((o) => [o.normalized, ...relatedRows(o.id, 'similar').map((s) => s.normalized)])]);
+  const picked: HindiSearchRow[] = [];
+  const similar = relatedRows(row.id, 'similar');
+  const fillers = nearest.slice(0, 12);
+  for (let i = fillers.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [fillers[i], fillers[j]] = [fillers[j], fillers[i]];
+  }
+  for (const c of [...similar, ...fillers]) {
+    if (picked.length < 3 && !excluded.has(c.normalized) && !picked.some((p) => p.normalized === c.normalized)) picked.push(c);
+  }
+  return picked.length === 3 ? { answer: toOption(answer), distractors: picked.map(toOption) } : undefined;
 }
 
 const primaryPos = (pos: string) => pos.split('&')[0].trim();
@@ -334,10 +386,8 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
       for (const c of candidates) if (picked.length < 3 && usable(c)) picked.push(c);
       if (picked.length === 3) break;
     }
-    cards.push({
-      entry: toEntry(row),
-      distractors: picked.map((d) => ({ headword: d.headword, normalized: d.normalized, pos: d.pos, meaning_hi: d.meaning_hi, definition_en: d.definition_en })),
-    });
+    const opposite = oppositeQuestion(row, nearest(true), random);
+    cards.push({ entry: toEntry(row), distractors: picked.map(toOption), ...(opposite ? { opposite } : {}) });
   }
   return cards;
 }
@@ -370,5 +420,5 @@ export function getWordOfDay(date: string): DictionaryEntry | null {
   let hash = 0x811c9dc5;
   for (const ch of date) { hash ^= ch.charCodeAt(0); hash = Math.imul(hash, 0x01000193) >>> 0; }
   const row = db().prepare('SELECT * FROM entries WHERE normalized = ?').get(pool[hash % pool.length].normalized) as EntryRow;
-  return toEntry(row);
+  return withRelated([toEntry(row)])[0];
 }

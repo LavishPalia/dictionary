@@ -135,6 +135,14 @@ export interface Synset {
   verbFrames: number[];
 }
 
+export interface WnPointer {
+  symbol: string; // '!' antonym, '&' similar to, '@' hypernym, …
+  offset: string;
+  pos: WnPos;
+  source: number;
+  target: number;
+}
+
 export class WordNet {
   private index: Record<WnPos, Map<string, string[]>> = { n: new Map(), v: new Map(), a: new Map(), r: new Map() };
   private data: Record<WnPos, Buffer> = {} as Record<WnPos, Buffer>;
@@ -166,11 +174,40 @@ export class WordNet {
     return offsets.slice(0, limit).map((offset, i) => this.readSynset(lemma, pos, offset, i + 1));
   }
 
-  private readSynset(lemma: string, pos: WnPos, offset: string, senseNo: number): Synset {
+  /** The lemma's synset offsets for pos, most frequent sense first. */
+  senseOffsets(lemma: string, pos: WnPos): string[] {
+    return this.index[pos].get(lemma.toLowerCase().replace(/ /g, '_')) ?? [];
+  }
+
+  /**
+   * A synset's words and its pointers (kept apart from Synset, whose shape feeds the Phase 4 prompts).
+   * `source`/`target` are 1-based word numbers for lexical pointers such as antonyms, and 0 for semantic ones.
+   */
+  links(pos: WnPos, offset: string): { satellite: boolean; words: string[]; pointers: WnPointer[] } {
+    const f = this.line(pos, offset).split(' | ')[0].split(' ');
+    const wCnt = parseInt(f[3], 16);
+    const words: string[] = [];
+    for (let i = 0; i < wCnt; i++) words.push(f[4 + i * 2].replace(/\(.*\)$/, '').replace(/_/g, ' '));
+    const pCntIdx = 4 + wCnt * 2;
+    const pointers: WnPointer[] = [];
+    for (let k = 0, i = pCntIdx + 1; k < Number(f[pCntIdx]); k++, i += 4) {
+      const st = f[i + 3];
+      pointers.push({
+        symbol: f[i], offset: f[i + 1], pos: f[i + 2] === 's' ? 'a' : f[i + 2] as WnPos,
+        source: parseInt(st.slice(0, 2), 16), target: parseInt(st.slice(2), 16),
+      });
+    }
+    return { satellite: f[2] === 's', words, pointers };
+  }
+
+  private line(pos: WnPos, offset: string): string {
     const buf = this.data[pos];
     const start = Number(offset);
-    const end = buf.indexOf(0x0a, start);
-    const line = buf.subarray(start, end).toString('utf8');
+    return buf.subarray(start, buf.indexOf(0x0a, start)).toString('utf8');
+  }
+
+  private readSynset(lemma: string, pos: WnPos, offset: string, senseNo: number): Synset {
+    const line = this.line(pos, offset);
     const [head, glossPart = ''] = line.split(' | ');
     const f = head.split(' ');
     const wCnt = parseInt(f[3], 16);

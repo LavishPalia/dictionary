@@ -80,13 +80,16 @@ export function nextDue(saved: string[], records: ReviewRecords, now: number): {
   return { at: day, count: future.filter((at) => startOfDay(at) === day).length };
 }
 
-export type QuestionKind = 'meaning' | 'word-from-hindi' | 'word-from-definition';
+export type QuestionKind = 'meaning' | 'word-from-hindi' | 'word-from-definition' | 'opposite';
 
-/** New and shaky words get the easiest question (English → Hindi); later boxes mix in the reverse directions. */
-export function questionKind(record: ReviewRecord | undefined, seed: number): QuestionKind {
+/**
+ * New and shaky words get the easiest question (English → Hindi); later boxes mix in the reverse directions, and
+ * "which word means the opposite?" for words that have an opposite in Panna.
+ */
+export function questionKind(record: ReviewRecord | undefined, seed: number, hasOpposite = false): QuestionKind {
   const box = record?.box ?? 0;
   if (box < 2) return 'meaning';
-  const kinds: QuestionKind[] = ['meaning', 'word-from-hindi', 'word-from-definition'];
+  const kinds: QuestionKind[] = ['meaning', 'word-from-hindi', 'word-from-definition', ...(hasOpposite ? ['opposite' as const] : [])];
   return kinds[Math.abs(seed) % kinds.length];
 }
 
