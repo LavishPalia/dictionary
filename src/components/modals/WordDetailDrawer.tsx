@@ -150,7 +150,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
             <h2
               style={{
                 margin: 0,
-                fontFamily: '"IM Fell English", serif',
+                fontFamily: 'var(--font-fell)',
                 fontSize: '38px',
                 fontWeight: 700,
                 color: '#2a1e14',
@@ -161,7 +161,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
             </h2>
             <span
               style={{
-                fontFamily: '"Tiro Devanagari Hindi", serif',
+                fontFamily: 'var(--font-deva)',
                 fontSize: '22px',
                 color: '#7a2b22',
                 fontWeight: 500,
@@ -171,7 +171,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
             </span>
             <span
               style={{
-                fontFamily: '"IM Fell English", serif',
+                fontFamily: 'var(--font-fell)',
                 fontStyle: 'italic',
                 fontSize: '18px',
                 color: '#6e5532',
@@ -198,7 +198,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
                 border: '1px solid #8a7452',
                 borderRadius: '4px',
                 color: '#2a1e14',
-                font: '13px "IM Fell English SC", serif',
+                font: '13px var(--font-fell-sc)',
                 cursor: unavailable.en ? 'not-allowed' : 'pointer',
                 opacity: unavailable.en ? 0.5 : 1,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
@@ -225,7 +225,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
                 border: '1px solid #8a7452',
                 borderRadius: '4px',
                 color: '#7a2b22',
-                font: '13px "IM Fell English SC", serif',
+                font: '13px var(--font-fell-sc)',
                 cursor: unavailable.hi ? 'not-allowed' : 'pointer',
                 opacity: unavailable.hi ? 0.5 : 1,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
@@ -250,7 +250,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
                 border: `1px solid ${isBookmarked ? '#5b1f19' : '#8a7452'}`,
                 borderRadius: '4px',
                 color: isBookmarked ? '#f1e4c4' : '#2a1e14',
-                font: '13px "IM Fell English SC", serif',
+                font: '13px var(--font-fell-sc)',
                 cursor: 'pointer',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
                 transition: 'all 0.15s ease',
@@ -273,7 +273,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
             <p
               style={{
                 margin: 0,
-                fontFamily: '"IM Fell English", serif',
+                fontFamily: 'var(--font-fell)',
                 fontSize: '18px',
                 lineHeight: 1.5,
                 color: '#2a1e14',
@@ -293,7 +293,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
             <p
               style={{
                 margin: 0,
-                fontFamily: '"Tiro Devanagari Hindi", serif',
+                fontFamily: 'var(--font-deva)',
                 fontSize: '20px',
                 lineHeight: 1.5,
                 color: '#7a2b22',
@@ -316,7 +316,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
             <p
               style={{
                 margin: 0,
-                fontFamily: '"IM Fell English", serif',
+                fontFamily: 'var(--font-fell)',
                 fontStyle: 'italic',
                 fontSize: '14px',
                 color: '#4a3a2c',

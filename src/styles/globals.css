@@ -1,22 +1,73 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap');
-
+/* Design tokens. Values come from docs/design/panna-redesign-v1.html; components read these instead of
+   hard-coding colours or font names. */
 :root {
+  /* Fonts (self-hosted by next/font in src/app/layout.tsx) */
+  --font-fell: var(--nf-fell), 'IM Fell English', Georgia, serif;
+  --font-fell-sc: var(--nf-fell-sc), 'IM Fell English SC', Georgia, serif;
+  --font-deva: var(--nf-deva), 'Tiro Devanagari Hindi', 'Noto Serif Devanagari', serif;
+  --font-hand: var(--nf-hand), 'Caveat', cursive;
+
+  /* Paper and ink */
+  --parch: #efe3c0;
+  --parch-2: #ecdfba;
+  --parch-3: #e2d2aa;
+  --parch-hi: #f3e8c9;
+  --ink: #2a1e14;
+  --ink-soft: #5e4a33;
+  --crimson: #7a2b22;
+  --binding: #5b1f19;
+  --on-binding: #f4e6c5;
+  --sepia: #8a7452;
+  --rule: #b9a57c;
+  --rule-faint: rgba(138, 116, 82, 0.22);
+  --green: #3d5a2a;
+
+  /* Desk (the dark surround) and brass details on it */
+  --desk: #2a1d14;
+  --desk-2: #3e2a1b;
+  --desk-glow: #4d3626;
+  --desk-bar: #1f150e;
+  --brass: #c9a24a;
+  --brass-soft: #e8d3a0;
+  --brass-muted: #d8c494;
+  --brass-line: rgba(201, 162, 74, 0.55);
+
+  /* Surfaces */
+  --paper-gradient: linear-gradient(135deg, var(--parch) 0%, var(--parch-2) 55%, var(--parch-3) 100%);
+  --paper-inset: inset 0 0 30px rgba(120, 80, 30, 0.12);
+  --lift: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --scrim: rgba(15, 9, 5, 0.62);
+
+  /* Shape and spacing */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --tap: 44px; /* minimum touch target */
+
+  /* Legacy names, still used by the current book components */
   --color-desk-center: #4a3322;
   --color-desk-edge: #2b1d14;
-  --color-cover: #5b1f19;
-  --color-cover-gold: #c9a24a;
-  --color-paper-light: #efe3c0;
-  --color-paper-mid: #ecdfba;
+  --color-cover: var(--binding);
+  --color-cover-gold: var(--brass);
+  --color-paper-light: var(--parch);
+  --color-paper-mid: var(--parch-2);
   --color-paper-shadow: #e6d5ae;
-  --color-ink-primary: #2a1e14;
+  --color-ink-primary: var(--ink);
   --color-ink-secondary: #4a3a2c;
-  --color-ink-hindi: #7a2b22;
+  --color-ink-hindi: var(--crimson);
   --color-pencil: rgba(50, 55, 70, 0.75);
-  --color-rule: #8a7452;
-  --color-col-rule: #b9a57c;
+  --color-rule: var(--sepia);
+  --color-col-rule: var(--rule);
   --color-tab-bg: #a8885a;
   --color-tab-border: #6e5532;
-  --color-tab-active-bg: #7a2b22;
+  --color-tab-active-bg: var(--crimson);
   --color-tab-active-text: #f1e4c4;
 }
 
@@ -30,7 +81,7 @@ html, body {
   min-height: 100vh;
   background: radial-gradient(ellipse at 50% 40%, var(--color-desk-center) 0%, var(--color-desk-edge) 75%);
   color: var(--color-ink-primary);
-  font-family: 'IM Fell English', serif;
+  font-family: var(--font-fell);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -38,21 +89,21 @@ html, body {
 
 /* Typography styles matching design doc */
 .font-fell {
-  font-family: 'IM Fell English', serif;
+  font-family: var(--font-fell);
 }
 
 .font-sc {
-  font-family: 'IM Fell English SC', serif;
+  font-family: var(--font-fell-sc);
   letter-spacing: 0.06em;
 }
 
 .font-deva {
-  font-family: 'Tiro Devanagari Hindi', serif;
+  font-family: var(--font-deva);
 }
 
 .entry-text {
   margin: 0 0 11px;
-  font: 15px/1.4 'IM Fell English', serif;
+  font: 15px/1.4 var(--font-fell);
   color: var(--color-ink-primary);
   text-align: justify;
 }
@@ -64,7 +115,7 @@ html, body {
 }
 
 .entry-pronunciation {
-  font-family: 'Tiro Devanagari Hindi', serif;
+  font-family: var(--font-deva);
   font-size: 13px;
   color: var(--color-ink-secondary);
   font-weight: normal;
@@ -79,7 +130,7 @@ html, body {
 }
 
 .entry-hindi {
-  font-family: 'Tiro Devanagari Hindi', serif;
+  font-family: var(--font-deva);
   color: var(--color-ink-hindi);
   font-size: 14px;
   font-weight: 500;
@@ -95,7 +146,7 @@ html, body {
 }
 
 .guide-word {
-  font: 13px 'IM Fell English SC', serif;
+  font: 13px var(--font-fell-sc);
   letter-spacing: 0.06em;
   color: var(--color-ink-secondary);
 }
@@ -130,7 +181,7 @@ html, body {
 
 /* Handwritten marginalia cursive font */
 .font-handwritten {
-  font-family: 'Caveat', cursive;
+  font-family: var(--font-hand);
   line-height: 1.15;
 }
 

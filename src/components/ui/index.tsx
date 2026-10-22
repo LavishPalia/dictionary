@@ -1,0 +1,151 @@
+'use client';
+
+import { forwardRef, useEffect, useId, useRef } from 'react';
+import type { ButtonHTMLAttributes, HTMLAttributes, KeyboardEvent, ReactNode } from 'react';
+
+// Shared building blocks for the redesign. Styling lives in src/styles/ui.css.
+const cx = (...names: Array<string | false | null | undefined>) => names.filter(Boolean).join(' ');
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: 'paper' | 'primary' | 'desk';
+  size?: 'normal' | 'small';
+  full?: boolean;
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = 'paper', size = 'normal', full, className, type = 'button', ...rest }, ref) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={cx('ui-btn', variant !== 'paper' && `ui-btn--${variant}`, size === 'small' && 'ui-btn--small', full && 'ui-btn--full', className)}
+      {...rest}
+    />
+  );
+});
+
+// Icon-only buttons must say what they do.
+type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { 'aria-label': string; surface?: 'desk' | 'paper' };
+
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  { surface = 'desk', className, type = 'button', ...rest }, ref) {
+  return <button ref={ref} type={type} className={cx('ui-iconbtn', surface === 'paper' && 'ui-iconbtn--paper', className)} {...rest} />;
+});
+
+export function Chip({ className, type = 'button', ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type={type} className={cx('ui-chip', className)} {...rest} />;
+}
+
+export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cx('ui-card', className)} {...rest} />;
+}
+
+export function Badge({ count, label }: { count: number; label: string }) {
+  if (count <= 0) return null;
+  return <span className="ui-badge" aria-label={label}>{count > 99 ? '99+' : count}</span>;
+}
+
+// A radio group drawn as joined pills. Arrow keys move between options, as for native radios.
+export function Segmented<T extends string>({ label, options, value, onChange }: {
+  label: string;
+  options: Array<{ value: T; label: ReactNode }>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const refs = useRef<Array<HTMLButtonElement | null>>([]);
+  const onKeyDown = (event: KeyboardEvent, index: number) => {
+    const step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const next = (index + step + options.length) % options.length;
+    onChange(options[next].value);
+    refs.current[next]?.focus();
+  };
+  return (
+    <div className="ui-seg" role="radiogroup" aria-label={label}>
+      {options.map((option, index) => {
+        const checked = option.value === value;
+        return (
+          <button
+            key={option.value}
+            ref={(el) => { refs.current[index] = el; }}
+            type="button"
+            role="radio"
+            aria-checked={checked}
+            tabIndex={checked ? 0 : -1}
+            onClick={() => onChange(option.value)}
+            onKeyDown={(event) => onKeyDown(event, index)}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Switch({ checked, onChange, label, id }: { checked: boolean; onChange: (checked: boolean) => void; label: string; id?: string }) {
+  return <button id={id} type="button" role="switch" aria-checked={checked} aria-label={label} className="ui-switch" onClick={() => onChange(!checked)} />;
+}
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+// Modal sheet: slides up from the bottom on phones, centred on wider screens. Closes on Escape or a tap
+// outside, keeps Tab inside, locks page scroll, and returns focus to whatever opened it.
+export function Sheet({ open, onClose, title, hideTitle, children, id, className }: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  hideTitle?: boolean;
+  children: ReactNode;
+  id?: string;
+  className?: string;
+}) {
+  const panel = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const first = panel.current?.querySelector<HTMLElement>(FOCUSABLE);
+    (first ?? panel.current)?.focus();
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') { event.stopPropagation(); onCloseRef.current(); return; }
+      if (event.key !== 'Tab' || !panel.current) return;
+      const items = Array.from(panel.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+      if (!items.length) return;
+      const [head, tail] = [items[0], items[items.length - 1]];
+      if (event.shiftKey && document.activeElement === head) { event.preventDefault(); tail.focus(); }
+      else if (!event.shiftKey && document.activeElement === tail) { event.preventDefault(); head.focus(); }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('keydown', onKey, true);
+      document.body.style.overflow = overflow;
+      opener?.focus?.();
+    };
+  }, [open]);
+
+  if (!open) return null;
+  return (
+    <div className="ui-scrim" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div
+        ref={panel}
+        id={id}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className={cx('ui-sheet', className)}
+      >
+        <div className="ui-sheet-grab" aria-hidden="true" />
+        <h2 id={titleId} className={hideTitle ? 'ui-visually-hidden' : 'ui-sheet-title'}>{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
+}

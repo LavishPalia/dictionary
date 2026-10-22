@@ -143,7 +143,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({
           flex: 1,
           border: 0,
           background: 'transparent',
-          font: '20px "IM Fell English", serif',
+          font: '20px var(--font-fell)',
           color: '#2a1e14',
           outline: 0,
           height: '44px',
@@ -200,7 +200,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({
                 <span
                   style={{
                     marginLeft: '8px',
-                    fontFamily: '"Tiro Devanagari Hindi", serif',
+                    fontFamily: 'var(--font-deva)',
                     color: '#7a2b22',
                     fontSize: '13px',
                   }}

@@ -90,7 +90,7 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
             <h3
               style={{
                 margin: 0,
-                fontFamily: '"IM Fell English", serif',
+                fontFamily: 'var(--font-fell)',
                 fontSize: '28px',
                 color: '#2a1e14',
                 fontWeight: 700,
@@ -155,7 +155,7 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      fontFamily: '"IM Fell English", serif',
+                      fontFamily: 'var(--font-fell)',
                       fontSize: '15px',
                       fontWeight: 700,
                       color: '#2a1e14',
@@ -220,7 +220,7 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      fontFamily: '"IM Fell English", serif',
+                      fontFamily: 'var(--font-fell)',
                       fontSize: '15px',
                       fontWeight: 700,
                       color: '#2a1e14',
@@ -291,7 +291,7 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
                       </span>
                       <span
                         style={{
-                          fontFamily: '"Caveat", cursive',
+                          fontFamily: 'var(--font-hand)',
                           fontSize: '22px',
                           color: colorHex,
                           transform: 'rotate(-1deg)',
@@ -354,10 +354,10 @@ export const BookmarksModal: React.FC<BookmarksModalProps> = ({
                     }}
                     style={{ cursor: 'pointer', flex: 1 }}
                   >
-                    <span style={{ fontFamily: '"IM Fell English", serif', fontWeight: 700, fontSize: '18px', color: '#2a1e14' }}>
+                    <span style={{ fontFamily: 'var(--font-fell)', fontWeight: 700, fontSize: '18px', color: '#2a1e14' }}>
                       {item.headword}
                     </span>
-                    <span style={{ fontFamily: '"Tiro Devanagari Hindi", serif', marginLeft: '10px', color: '#7a2b22', fontSize: '15px' }}>
+                    <span style={{ fontFamily: 'var(--font-deva)', marginLeft: '10px', color: '#7a2b22', fontSize: '15px' }}>
                       {item.meaning_hi}
                     </span>
                     <span className="guide-word" style={{ marginLeft: '12px', fontSize: '12px' }}>

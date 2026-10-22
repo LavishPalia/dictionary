@@ -18,7 +18,7 @@ interface NoEntryCardProps {
 
 export const NoEntryCard: React.FC<NoEntryCardProps> = ({ query, suggestions, onSelect }) => (
   <div role="status" aria-live="polite" style={{ padding: '14px 16px' }}>
-    <div style={{ fontFamily: '"IM Fell English", serif', fontSize: '17px', color: '#2a1e14' }}>
+    <div style={{ fontFamily: 'var(--font-fell)', fontSize: '17px', color: '#2a1e14' }}>
       No direct entry found for “{query}”.
     </div>
     {suggestions.length ? (
@@ -35,7 +35,7 @@ export const NoEntryCard: React.FC<NoEntryCardProps> = ({ query, suggestions, on
               style={{
                 border: '1px solid #cbb78c', borderRadius: '3px', padding: '7px 9px',
                 background: '#e5d5ad', color: '#2a1e14', textAlign: 'left', cursor: 'pointer',
-                font: '16px "IM Fell English", serif',
+                font: '16px var(--font-fell)',
               }}
             >
               {item.headword}

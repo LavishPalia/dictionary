@@ -66,7 +66,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               right: isLeftPage ? 'auto' : '6px',
               maxWidth: '68px',
               zIndex: 24,
-              fontFamily: '"Caveat", cursive',
+              fontFamily: 'var(--font-hand)',
               fontSize: '20px',
               lineHeight: 1.1,
               color: colorHex,
@@ -147,7 +147,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
       >
         <span
           style={{
-            fontFamily: '"IM Fell English SC", serif',
+            fontFamily: 'var(--font-fell-sc)',
             fontSize: '14px',
             color: '#8a7452',
             userSelect: 'none',
@@ -179,7 +179,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ font: '11px "IM Fell English SC", serif', color: '#2a1e14', letterSpacing: '0.05em' }}>
+            <span style={{ font: '11px var(--font-fell-sc)', color: '#2a1e14', letterSpacing: '0.05em' }}>
               ✏️ Margin Note (p. {pageNumber})
             </span>
             <button
@@ -204,7 +204,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               border: '1px solid #c4b18e',
               borderRadius: '3px',
               padding: '6px 8px',
-              fontFamily: '"Caveat", cursive',
+              fontFamily: 'var(--font-hand)',
               fontSize: '18px',
               color: getColorHex(selectedColor),
               resize: 'none',
@@ -277,7 +277,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
                 border: '1px solid #8a7452',
                 borderRadius: '3px',
                 padding: '2px 8px',
-                font: '11px "IM Fell English SC", serif',
+                font: '11px var(--font-fell-sc)',
                 color: '#2a1e14',
                 cursor: 'pointer',
               }}
