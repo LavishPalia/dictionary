@@ -292,11 +292,15 @@ async function main() {
     await takeScreenshot('phase3_3_next_spread_turned.png');
 
     console.log('\n[7/7] Testing 🎲 Explore (Random Riffle Jump) ...');
-    await evaluate(`
+    // Random page lives in the ⋯ menu.
+    await evaluate(`document.querySelector("#menu-btn")?.click(); return true;`);
+    await sleep(300);
+    const exploreInMenu = await evaluate(`
       const btn = document.querySelector("#explore-btn");
       if (btn) btn.click();
-      return true;
+      return Boolean(btn);
     `);
+    check('⋯ menu offers "Open a random page"', exploreInMenu === true);
     await sleep(2200); // Riffle cascade completes
     const exploreUrl = await evaluate('return window.location.pathname;');
     check('URL after Explore jump changed', typeof exploreUrl === 'string' && exploreUrl !== `/page/${L + 2}`, exploreUrl);

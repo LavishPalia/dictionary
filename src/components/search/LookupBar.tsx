@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { NoEntryCard } from './NoEntryCard';
+import { SearchIcon } from '@/components/ui/icons';
 
 interface SearchResult {
   headword: string;
@@ -13,21 +14,16 @@ interface SearchResult {
 }
 
 interface LookupBarProps {
-  currentPage: number;
   onSelectWord: (headword: string, pageNumber: number) => void;
-  onPageChange: (pageNum: number) => void;
 }
 
-export const LookupBar: React.FC<LookupBarProps> = ({
-  currentPage,
-  onSelectWord,
-  onPageChange,
-}) => {
+export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   // The headword we just inserted ourselves, so our own setQuery() cannot
   // re-open the dropdown. Cleared by any user edit or by the next search.
   const justSelectedRef = useRef<string | null>(null);
@@ -77,6 +73,20 @@ export const LookupBar: React.FC<LookupBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // "/" jumps to the search box from anywhere, unless the reader is already typing somewhere.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const handleSelect = (item: SearchResult) => {
     justSelectedRef.current = item.headword;
     setQuery(item.headword);
@@ -102,32 +112,11 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   };
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        background: '#efe3c0',
-        border: '1px solid #8a7452',
-        borderRadius: '4px',
-        padding: '0 16px',
-        height: '48px',
-        width: '100%',
-        maxWidth: '480px',
-        boxShadow: '0 2px 8px rgba(0,0,0,.4)',
-        zIndex: 50,
-      }}
-    >
-      <label
-        htmlFor="lookup-input"
-        className="guide-word"
-        style={{ fontSize: '14px', whiteSpace: 'nowrap', userSelect: 'none' }}
-      >
-        Look up
-      </label>
+    <div ref={containerRef} className="app-lookup" style={{ zIndex: 50 }}>
+      <SearchIcon />
+      <label htmlFor="lookup-input" className="ui-visually-hidden">Look up a word in English or Hindi</label>
       <input
+        ref={inputRef}
         id="lookup-input"
         type="text"
         autoComplete="off"
@@ -138,23 +127,11 @@ export const LookupBar: React.FC<LookupBarProps> = ({
           setQuery(e.target.value);
         }}
         onKeyDown={handleKeyDown}
-        placeholder="e.g. Ceremony, Charity, Dairy..."
-        style={{
-          flex: 1,
-          border: 0,
-          background: 'transparent',
-          font: '20px var(--font-fell)',
-          color: '#2a1e14',
-          outline: 0,
-          height: '44px',
-        }}
+        placeholder="Search English or हिंदी…"
       />
-      <span
-        className="guide-word"
-        style={{ fontSize: '13px', whiteSpace: 'nowrap', userSelect: 'none' }}
-      >
-        p. {currentPage}
-      </span>
+      {!query && (
+        <span className="app-lookup-key app-desktop-only" aria-hidden="true">Press <kbd>/</kbd></span>
+      )}
 
       {/* Auto-suggest dropdown with vintage parchment styling */}
       {isOpen && (

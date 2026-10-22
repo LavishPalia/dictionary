@@ -192,6 +192,9 @@ async function main() {
     // TEST 1: OPENING BOOK INTRO CINEMATIC
     // ─────────────────────────────────────────────────────────────
     console.log('\n[2/5] Testing Opening Book Intro Cinematic (Close & 3D Open Swing) ...');
+    // "Close the book" lives in the ⋯ menu.
+    await evaluate(`document.querySelector("#menu-btn")?.click(); return true;`);
+    await sleep(300);
     const closeBtn = await evaluate(`
       const btn = document.querySelector("#cover-toggle-btn");
       if (btn) {

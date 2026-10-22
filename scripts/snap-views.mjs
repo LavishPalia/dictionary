@@ -24,7 +24,8 @@ const VIEWS = [
   { name: 'word', path: '/word/Ceremony' },
   { name: 'typo-search', path: '/page/16', type: 'ceremonis' },
   { name: 'hindi-search', path: '/page/16', type: 'ऊंट' },
-  { name: 'credits', path: '/page/16', click: '#open-credits-btn' },
+  { name: 'menu', path: '/page/16', click: ['#menu-btn'] },
+  { name: 'credits', path: '/page/16', click: ['#menu-btn', '#open-credits-btn'] },
   { name: 'bookmarks', path: '/page/16', click: '#open-bookmarks-btn' },
 ];
 
@@ -78,9 +79,10 @@ async function main() {
           await evaluate(`(() => { const input = document.querySelector('#lookup-input'); input.focus(); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ${JSON.stringify(view.type)}); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
           await sleep(1200);
         }
-        if (view.click) {
-          const clicked = await evaluate(`(() => { const b = document.querySelector(${JSON.stringify(view.click)}); if (!b) return false; b.click(); return true; })()`);
-          if (!clicked) console.warn(`  ! ${sizeName}/${view.name}: ${view.click} not found`);
+        for (const selector of [view.click ?? []].flat()) {
+          const clicked = await evaluate(`(() => { const b = document.querySelector(${JSON.stringify(selector)}); if (!b) return false; b.click(); return true; })()`);
+          if (!clicked) console.warn(`  ! ${sizeName}/${view.name}: ${selector} not found`);
+          await sleep(300);
         }
         // Let drawers, page loads and the caret settle; hide the caret so it cannot cause a diff.
         await evaluate(`(() => { const s = document.createElement('style'); s.textContent = '*{caret-color:transparent !important}'; document.head.appendChild(s); return true; })()`);

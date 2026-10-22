@@ -91,8 +91,9 @@ export function Switch({ checked, onChange, label, id }: { checked: boolean; onC
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // Modal sheet: slides up from the bottom on phones, centred on wider screens. Closes on Escape or a tap
-// outside, keeps Tab inside, locks page scroll, and returns focus to whatever opened it.
-export function Sheet({ open, onClose, title, hideTitle, children, id, className }: {
+// outside, keeps Tab inside, locks page scroll, and returns focus to whatever opened it. Pass returnFocusTo
+// when the opener is known: Safari does not focus a button when it is clicked, so "whatever had focus" is not it.
+export function Sheet({ open, onClose, title, hideTitle, children, id, className, returnFocusTo }: {
   open: boolean;
   onClose: () => void;
   title: string;
@@ -100,11 +101,14 @@ export function Sheet({ open, onClose, title, hideTitle, children, id, className
   children: ReactNode;
   id?: string;
   className?: string;
+  returnFocusTo?: () => HTMLElement | null;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const returnFocusRef = useRef(returnFocusTo);
+  returnFocusRef.current = returnFocusTo;
 
   useEffect(() => {
     if (!open) return;
@@ -126,7 +130,8 @@ export function Sheet({ open, onClose, title, hideTitle, children, id, className
     return () => {
       document.removeEventListener('keydown', onKey, true);
       document.body.style.overflow = overflow;
-      opener?.focus?.();
+      const target = returnFocusRef.current?.() ?? opener;
+      if (target && target !== document.body) target.focus();
     };
   }, [open]);
 

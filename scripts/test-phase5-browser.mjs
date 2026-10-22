@@ -94,6 +94,13 @@ async function main() {
       }
       return { body, value };
     };
+    // Credits lives in the ⋯ menu.
+    const openCredits = async () => {
+      await evaluate(`document.querySelector('#menu-btn').click()`);
+      await sleep(300);
+      await evaluate(`document.querySelector('#open-credits-btn').click()`);
+      await sleep(300);
+    };
     let { body } = await typeQuery('ceremonis');
     const typoDebug = await evaluate(`(async () => ({ value: document.querySelector('#lookup-input').value, response: await (await fetch('/api/search?q=ceremonis')).json() }))()`);
     check('desktop typo search shows recovery suggestion', body.includes('No direct entry found for “ceremonis”') && body.includes('Did you mean?') && body.includes('Ceremony'), { value: typoDebug?.value, api: typoDebug?.response?.results, didYouMean: body.includes('Did you mean?'), ceremony: body.includes('Ceremony') });
@@ -103,13 +110,13 @@ async function main() {
     check('desktop unknown word shows useful empty state', body.includes('No direct entry found for “zzzzqx”') && body.includes('Try another spelling'),
       { value, card: emptyAt >= 0 ? body.slice(emptyAt, emptyAt + 120) : null });
 
-    await evaluate(`document.querySelector('#open-credits-btn').click()`);
+    await openCredits();
     body = await evaluate('document.body.innerText');
     check('Credits dialog shows sources and current review status', body.includes('Sources & acknowledgements') && body.includes('Phase 4 review') && body.includes('20 generated gloss records'));
     await evaluate(`document.querySelector('[aria-label="Close credits"]').click()`);
 
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
-    await evaluate(`document.querySelector('#open-credits-btn').click()`);
+    await openCredits();
     const mobile = await evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); const r = dialog.getBoundingClientRect(); return { width: innerWidth, left: r.left, right: r.right, scrollWidth: document.documentElement.scrollWidth, hasAttribution: dialog.innerText.includes('Princeton WordNet 3.1') }; })()`);
     check('mobile Credits dialog fits viewport and retains attribution', mobile && mobile.width === 390 && mobile.left >= 0 && mobile.right <= mobile.width && mobile.scrollWidth <= mobile.width && mobile.hasAttribution, mobile);
     check('mobile lookup controls remain in the viewport', await evaluate(`document.querySelector('#lookup-input').getBoundingClientRect().width > 0`));

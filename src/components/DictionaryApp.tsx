@@ -8,6 +8,8 @@ import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { BookmarksModal } from '@/components/modals/BookmarksModal';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
+import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
+import { ReadingMenu } from '@/components/shell/ReadingMenu';
 import { BookMeta, BookPage, DictionaryEntry, MarginNote } from '@/lib/types';
 import { soundEngine } from '@/lib/audio';
 
@@ -46,6 +48,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialEntry));
   const [showBookmarksModal, setShowBookmarksModal] = useState<boolean>(false);
   const [showCreditsModal, setShowCreditsModal] = useState<boolean>(false);
+  const [showMenu, setShowMenu] = useState<boolean>(false);
   const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
   const [bookmarkedWords, setBookmarkedWords] = useState<DictionaryEntry[]>([]);
 
@@ -427,6 +430,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     turnToPage(randomPage, randomPageObj?.first_headword || '');
   };
 
+  const savedCount = bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length;
+
   const canPrev = leftPageNum > 1;
   const canNext = rightPageNum < meta.total_pages;
 
@@ -453,28 +458,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const canPrevMobile = currentPage > 1;
   const canNextMobile = currentPage < meta.total_pages;
 
-  // "Go to page" input in the footer
-  const [goToValue, setGoToValue] = useState('');
-  const handleGoToPage = (e: React.FormEvent) => {
-    e.preventDefault();
-    const n = parseInt(goToValue, 10);
-    if (Number.isInteger(n)) {
-      setHighlightedWord('');
-      turnToPage(n);
-    }
-    setGoToValue('');
-  };
-
-  const handleToggleSound = () => {
-    const next = !isMuted;
-    setIsMuted(next);
-    soundEngine.setMuted(next);
-  };
-
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
+      // A control already used the key (e.g. arrows in a segmented control), or a dialog is in front of the book.
+      if (e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
       if (isFlipping) return;
 
       if (e.key === 'ArrowLeft') {
@@ -491,6 +480,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   return (
     <main
+      className="app-main"
       style={{
         minHeight: '100vh',
         width: '100vw',
@@ -506,165 +496,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         transition: 'background 0.5s ease',
       }}
     >
-      {/* Top Header Controls & Search Bar */}
-      <header
-        style={{
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '28px',
-          zIndex: 40,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <LookupBar
-            currentPage={currentPage}
-            onSelectWord={handleSelectWord}
-            onPageChange={turnToPage}
-          />
-
-          {/* Random Explore button */}
-          <button
-            id="explore-btn"
-            onClick={handleRandomExplore}
-            disabled={isFlipping}
-            style={{
-              height: '48px',
-              padding: '0 14px',
-              background: '#3e2a1b',
-              border: '1px solid #8a7452',
-              borderRadius: '4px',
-              color: '#e8d3a0',
-              font: '13px var(--font-fell-sc)',
-              cursor: isFlipping ? 'not-allowed' : 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(0,0,0,.4)',
-              transition: 'all 0.2s',
-            }}
-            title="Explore a random dictionary spread"
-          >
-            🎲 Explore
-          </button>
-
-          {/* Bookmarks manager button */}
-          <button
-            id="open-bookmarks-btn"
-            onClick={() => setShowBookmarksModal(true)}
-            style={{
-              height: '48px',
-              padding: '0 14px',
-              background: (bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length) > 0 ? '#5b1f19' : '#3e2a1b',
-              border: '1px solid #c9a24a',
-              borderRadius: '4px',
-              color: '#e0bd68',
-              font: '13px var(--font-fell-sc)',
-              letterSpacing: '0.06em',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(0,0,0,.4)',
-              transition: 'all 0.2s',
-            }}
-            title="View saved bookmarked spreads, dog-ears, notes, and vocabulary"
-          >
-            📑 Bookmarks ({bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length})
-          </button>
-
-          <button
-            id="open-credits-btn"
-            onClick={() => setShowCreditsModal(true)}
-            style={{ height: '48px', padding: '0 12px', background: '#3e2a1b', border: '1px solid #8a7452', borderRadius: '4px', color: '#e8d3a0', font: '13px var(--font-fell-sc)', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,.4)' }}
-            title="View dictionary sources and review status"
-          >
-            Credits
-          </button>
-
-          {/* Book Cover toggle button */}
-          <button
-            id="cover-toggle-btn"
-            onClick={() => setIsBookOpen(prev => !prev)}
-            style={{
-              height: '48px',
-              padding: '0 14px',
-              background: '#5b1f19',
-              border: '1px solid #c9a24a',
-              borderRadius: '4px',
-              color: '#e0bd68',
-              font: '13px var(--font-fell-sc)',
-              letterSpacing: '0.08em',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(0,0,0,.4)',
-              transition: 'all 0.2s',
-            }}
-            title="View closed antique cover with 3D opening animation"
-          >
-            {isBookOpen ? '📕 Close Book' : '📖 Open Book'}
-          </button>
-
-          {/* Lamp-lit Night Mode toggle button */}
-          <button
-            onClick={() => setIsLampLit(prev => !prev)}
-            style={{
-              height: '48px',
-              padding: '0 14px',
-              background: isLampLit ? '#c9a24a' : '#3e2a1b',
-              border: '1px solid #8a7452',
-              borderRadius: '4px',
-              color: isLampLit ? '#2a1e14' : '#e8d3a0',
-              font: '13px var(--font-fell-sc)',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,.4)',
-              transition: 'all 0.2s',
-            }}
-            title={isLampLit ? 'Switch to daylight desk' : 'Switch to lamp-lit night mode'}
-          >
-            {isLampLit ? '🕯️ Lamp-lit' : '💡 Desk'}
-          </button>
-
-          {/* Reading Pace / Speed Customization Button */}
-          <button
-            onClick={() => {
-              setSpeedMode(prev => prev === 'realistic' ? 'brisk' : prev === 'brisk' ? 'slow' : 'realistic');
-            }}
-            style={{
-              height: '48px',
-              padding: '0 14px',
-              background: '#3e2a1b',
-              border: '1px solid #8a7452',
-              borderRadius: '4px',
-              color: '#e8d3a0',
-              font: '13px var(--font-fell-sc)',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,.4)',
-              transition: 'all 0.2s',
-            }}
-            title="Adjust page turning speed (Realistic 1.0s / Brisk 0.65s / Slow & Tactile 1.4s)"
-          >
-            {speedMode === 'realistic' ? '⏱️ Pace: 1.0s' : speedMode === 'brisk' ? '⚡ Pace: 0.65s' : '🐌 Pace: 1.4s'}
-          </button>
-
-          {/* Sound Mute/Unmute toggle button */}
-          <button
-            onClick={handleToggleSound}
-            style={{
-              height: '48px',
-              padding: '0 12px',
-              background: '#3e2a1b',
-              border: '1px solid #8a7452',
-              borderRadius: '4px',
-              color: isMuted ? '#8a7452' : '#e8d3a0',
-              fontSize: '18px',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,.4)',
-              transition: 'all 0.2s',
-            }}
-            title={isMuted ? 'Unmute paper turning sounds' : 'Mute paper turning sounds'}
-          >
-            {isMuted ? '🔇' : '🔊'}
-          </button>
-        </div>
+      <AppHeader
+        search={<LookupBar onSelectWord={handleSelectWord} />}
+        savedCount={savedCount}
+        onOpenSaved={() => setShowBookmarksModal(true)}
+        onOpenMenu={() => setShowMenu(true)}
+        menuOpen={showMenu}
+      />
 
         {/* Dynamic Riffle indicator banner (Matching Flip.dc.html) */}
         {riffleInfo && (
@@ -686,7 +524,6 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             Page {riffleInfo.from} → {riffleInfo.to} · riffling through {riffleInfo.pages} pages
           </div>
         )}
-      </header>
 
       {/* Main Reading Canvas */}
       {!isBookOpen ? (
@@ -792,62 +629,31 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
       <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />
 
-      {/* Footer provenance note */}
-      <footer
-        style={{
-          marginTop: '36px',
-          textAlign: 'center',
-          fontFamily: 'var(--font-fell-sc)',
-          fontSize: '12px',
-          color: '#8a7452',
-          letterSpacing: '0.08em',
-        }}
-      >
-        <form
-          id="goto-page-form"
-          onSubmit={handleGoToPage}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}
-        >
-          <label htmlFor="goto-page-input">Go to page</label>
-          <input
-            id="goto-page-input"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={meta.total_pages}
-            value={goToValue}
-            onChange={(e) => setGoToValue(e.target.value)}
-            placeholder={String(currentPage)}
-            style={{
-              width: '64px',
-              padding: '4px 6px',
-              background: '#efe3c0',
-              border: '1px solid #8a7452',
-              borderRadius: '3px',
-              color: '#2a1e14',
-              font: '13px var(--font-fell)',
-              textAlign: 'center',
-            }}
-          />
-          <span>of {meta.total_pages}</span>
-          <button
-            type="submit"
-            disabled={isFlipping}
-            style={{
-              padding: '4px 10px',
-              background: '#3e2a1b',
-              border: '1px solid #8a7452',
-              borderRadius: '3px',
-              color: '#e8d3a0',
-              font: '12px var(--font-fell-sc)',
-              cursor: isFlipping ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Go
-          </button>
-        </form>
-        <div>पन्ना · Vintage Pocket Dictionary · CSS 3D & Hybrid DOM Engine</div>
-      </footer>
+      <ReadingMenu
+        open={showMenu}
+        onClose={() => setShowMenu(false)}
+        evening={isLampLit}
+        onEveningChange={setIsLampLit}
+        speed={speedMode}
+        onSpeedChange={setSpeedMode}
+        soundsOn={!isMuted}
+        onSoundsChange={(on) => { setIsMuted(!on); soundEngine.setMuted(!on); }}
+        currentPage={currentPage}
+        totalPages={meta.total_pages}
+        busy={isFlipping}
+        onGoToPage={(n) => { setHighlightedWord(''); turnToPage(n); }}
+        onRandomPage={handleRandomExplore}
+        bookOpen={isBookOpen}
+        onToggleBook={() => setIsBookOpen(prev => !prev)}
+        onOpenCredits={() => setShowCreditsModal(true)}
+      />
+
+      <BottomNav
+        active={showBookmarksModal ? 'saved' : 'book'}
+        savedCount={savedCount}
+        onBook={() => { setShowBookmarksModal(false); if (!isBookOpen) setIsBookOpen(true); }}
+        onSaved={() => setShowBookmarksModal(true)}
+      />
     </main>
   );
 }

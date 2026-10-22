@@ -18,6 +18,8 @@
     "test:phase3": "node scripts/test-phase3-browser.mjs",
     "test:phase4": "node scripts/test-phase4-browser.mjs",
     "test:phase5": "node scripts/test-phase5-browser.mjs",
+    "test:shell": "node scripts/test-shell-browser.mjs",
+    "snap": "node scripts/snap-views.mjs",
     "data:lemmas": "tsx scripts/build-lemma-list.ts",
     "data:pilot": "tsx scripts/pilot-glosses.ts",
     "data:phase4": "tsx scripts/generate-hindi-glosses.ts",
