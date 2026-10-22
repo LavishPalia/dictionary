@@ -350,3 +350,25 @@ export function locateWords(words: string[]): Record<string, number> {
     .all(...unique) as { normalized: string; page_number: number }[];
   return Object.fromEntries(rows.map((r) => [r.normalized, r.page_number]));
 }
+
+// Grammar words (the, of, and…) make poor words of the day: learners know them, and they have no single meaning.
+const GRAMMAR_POS = ['art.', 'prep.', 'pron.', 'det.', 'conj.', 'num.', 'interj.', 'aux. v.', 'modal v.'];
+
+/**
+ * The word of the day for a date (YYYY-MM-DD): the same for everyone that day. Drawn from words outside the 1,500
+ * most frequent (likely already known) that are not grammar words; falls back to any entry in a small book.
+ */
+export function getWordOfDay(date: string): DictionaryEntry | null {
+  const candidates = db().prepare(`
+    SELECT normalized FROM entries
+    WHERE freq_rank > 1500 AND ${GRAMMAR_POS.map(() => 'pos NOT LIKE ?').join(' AND ')}
+    ORDER BY normalized
+  `).all(...GRAMMAR_POS.map((p) => `${p}%`)) as { normalized: string }[];
+  const pool = candidates.length ? candidates : (db().prepare('SELECT normalized FROM entries ORDER BY normalized').all() as { normalized: string }[]);
+  if (!pool.length) return null;
+  // FNV-1a hash of the date picks the same word all day, and a different one tomorrow.
+  let hash = 0x811c9dc5;
+  for (const ch of date) { hash ^= ch.charCodeAt(0); hash = Math.imul(hash, 0x01000193) >>> 0; }
+  const row = db().prepare('SELECT * FROM entries WHERE normalized = ?').get(pool[hash % pool.length].normalized) as EntryRow;
+  return toEntry(row);
+}

@@ -2,12 +2,13 @@
 
 import type { ReactNode } from 'react';
 import { Badge, Button, IconButton } from '@/components/ui';
-import { BookIcon, CardsIcon, MoreIcon, StarIcon } from '@/components/ui/icons';
+import { BookIcon, CardsIcon, MoreIcon, StarIcon, SunIcon } from '@/components/ui/icons';
 
 // Top bar. Desktop: wordmark, search, Saved, ⋯. Phones: search and ⋯ only (Saved lives in the bottom bar).
 // Which layout shows is decided in CSS at the same 1024px breakpoint the book uses.
-export function AppHeader({ search, savedCount, onOpenSaved, onOpenReview, section, dueCount, onOpenMenu, menuOpen }: {
+export function AppHeader({ search, savedCount, onOpenToday, onOpenSaved, onOpenReview, section, dueCount, onOpenMenu, menuOpen }: {
   search: ReactNode;
+  onOpenToday: () => void;
   savedCount: number;
   onOpenSaved: () => void;
   onOpenReview: () => void;
@@ -23,6 +24,9 @@ export function AppHeader({ search, savedCount, onOpenSaved, onOpenReview, secti
         <span className="app-wordmark-en">English → हिंदी</span>
       </div>
       <div className="app-search">{search}</div>
+      <Button variant="desk" id="open-today-btn" className="app-desktop-only" onClick={onOpenToday} aria-pressed={section === 'today'}>
+        <SunIcon /> Today
+      </Button>
       <Button variant="desk" id="open-bookmarks-btn" className="app-desktop-only" onClick={onOpenSaved} aria-pressed={section === 'saved'}
         aria-label={`Saved: ${savedCount} item${savedCount === 1 ? '' : 's'}`}>
         <StarIcon /> Saved{savedCount > 0 && <span className="app-count">{savedCount}</span>}
@@ -38,10 +42,11 @@ export function AppHeader({ search, savedCount, onOpenSaved, onOpenReview, secti
   );
 }
 
-export type Section = 'book' | 'saved' | 'review';
+export type Section = 'today' | 'book' | 'saved' | 'review';
 
-export function BottomNav({ active, savedCount, dueCount, onBook, onSaved, onReview }: {
+export function BottomNav({ active, savedCount, dueCount, onToday, onBook, onSaved, onReview }: {
   active: Section;
+  onToday: () => void;
   savedCount: number;
   dueCount: number;
   onBook: () => void;
@@ -50,6 +55,9 @@ export function BottomNav({ active, savedCount, dueCount, onBook, onSaved, onRev
 }) {
   return (
     <nav className="app-bottomnav" aria-label="Sections">
+      <button type="button" id="nav-today-btn" aria-current={active === 'today' ? 'page' : undefined} onClick={onToday}>
+        <SunIcon />Today
+      </button>
       <button type="button" id="nav-book-btn" aria-current={active === 'book' ? 'page' : undefined} onClick={onBook}>
         <BookIcon />Book
       </button>

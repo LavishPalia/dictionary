@@ -1,5 +1,5 @@
 // Checks the review scheduler (src/lib/review.ts). Usage: npx tsx scripts/test-review.ts
-import { answer, comesBackLabel, daysUntil, dueWords, MASTERED_BOX, newRecord, nextDue, questionKind, statusOf } from '../src/lib/review';
+import { answer, comesBackLabel, daysUntil, dueWords, localDate, MASTERED_BOX, newRecord, nextDue, questionKind, statusOf, streak, withReviewDay } from '../src/lib/review';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -43,6 +43,15 @@ check('nothing in the future → no next review', nextDue(['a'], records, now) =
 check('new and shaky words get English → Hindi', questionKind(undefined, 7) === 'meaning' && questionKind(answer(fresh, true, now), 7) === 'meaning');
 const later = answer(answer(fresh, true, now), true, now);
 check('later boxes mix question directions', new Set([0, 1, 2].map((s) => questionKind(later, s))).size === 3);
+
+const d = (offset: number) => localDate(now + offset * DAY);
+check('no review days, no streak', streak([], now) === 0);
+check('reviewing today starts a streak of 1', streak(withReviewDay([], now), now) === 1);
+check('reviewing again today does not double count', withReviewDay(withReviewDay([], now), now).length === 1);
+check('three days in a row', streak([d(-2), d(-1), d(0)], now) === 3);
+check('a streak survives until today is over', streak([d(-3), d(-2), d(-1)], now) === 3);
+check('a missed day ends the streak', streak([d(-4), d(-3), d(-1), d(0)], now) === 2);
+check('nothing since the day before yesterday: streak over', streak([d(-3), d(-2)], now) === 0);
 
 if (failures) { console.error(`\n${failures} review check(s) failed.`); process.exit(1); }
 console.log('\nReview scheduler checks passed.');

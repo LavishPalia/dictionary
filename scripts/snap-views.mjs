@@ -20,6 +20,7 @@ const SIZES = {
 
 // Each view starts from a fresh navigation, so one failing view cannot leave state behind for the next.
 const VIEWS = [
+  { name: 'today', path: '/' },
   { name: 'page', path: '/page/16' },
   { name: 'word', path: '/word/Ceremony' },
   { name: 'typo-search', path: '/page/16', type: 'ceremonis' },

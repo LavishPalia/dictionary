@@ -104,3 +104,40 @@ export function loadRecords(): ReviewRecords {
 export function saveRecords(records: ReviewRecords): void {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch {}
 }
+
+// ── Streak: days in a row with at least one review answer ─────────────────
+const DAYS_KEY = 'panna_review_days';
+
+/** The reader's local date as YYYY-MM-DD. */
+export function localDate(at: number): string {
+  const d = new Date(at);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Adds today to the list of review days (kept short: only the streak needs it). */
+export function withReviewDay(days: string[], now: number): string[] {
+  const today = localDate(now);
+  return days.includes(today) ? days : [...days, today].sort().slice(-400);
+}
+
+/**
+ * Consecutive review days ending today, or ending yesterday if today's review has not happened yet (the streak is
+ * still alive until the day is over).
+ */
+export function streak(days: string[], now: number): number {
+  const set = new Set(days);
+  const day = new Date(now);
+  day.setHours(12, 0, 0, 0); // noon, so daylight-saving changes cannot skip or repeat a date
+  if (!set.has(localDate(day.getTime()))) day.setDate(day.getDate() - 1);
+  let count = 0;
+  while (set.has(localDate(day.getTime()))) { count++; day.setDate(day.getDate() - 1); }
+  return count;
+}
+
+export function loadReviewDays(): string[] {
+  try { const d = JSON.parse(localStorage.getItem(DAYS_KEY) || '[]'); return Array.isArray(d) ? d.filter((x) => typeof x === 'string') : []; } catch { return []; }
+}
+
+export function saveReviewDays(days: string[]): void {
+  try { localStorage.setItem(DAYS_KEY, JSON.stringify(days)); } catch {}
+}

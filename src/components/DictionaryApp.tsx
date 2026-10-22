@@ -7,7 +7,8 @@ import { LookupBar } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
 import { ReviewScreen } from '@/components/review/ReviewScreen';
-import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, newRecord, saveRecords, statusOf, type ReviewRecords } from '@/lib/review';
+import { TodayScreen } from '@/components/today/TodayScreen';
+import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, loadReviewDays, newRecord, nextDue, saveRecords, saveReviewDays, statusOf, streak, withReviewDay, type ReviewRecords } from '@/lib/review';
 import type { Section } from '@/components/shell/AppChrome';
 import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocateMarks, type MarkAnchors } from '@/lib/marks';
 import { CreditsModal } from '@/components/modals/CreditsModal';
@@ -36,9 +37,11 @@ export interface DictionaryAppProps {
   initialPage: number;
   /** Entry to open in the word drawer (deep link /word/[headword]). */
   initialEntry?: DictionaryEntry | null;
+  /** The front page (/) opens on Today; links to pages and words open the book. */
+  initialSection?: Section;
 }
 
-export default function DictionaryApp({ initialMeta, initialPages, initialPage, initialEntry = null }: DictionaryAppProps) {
+export default function DictionaryApp({ initialMeta, initialPages, initialPage, initialEntry = null, initialSection = 'book' }: DictionaryAppProps) {
   const meta = initialMeta;
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [highlightedWord, setHighlightedWord] = useState<string>(initialEntry?.headword || '');
@@ -84,7 +87,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [activeWordEntry, setActiveWordEntry] = useState<DictionaryEntry | null>(initialEntry);
   const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialEntry));
   // Which screen is showing. The book stays mounted (hidden) under Saved and Review, so its place and state survive.
-  const [section, setSection] = useState<Section>('book');
+  const [section, setSection] = useState<Section>(initialSection);
+  // The home screen (Today or Book) that Saved and Review return to.
+  const [homeSection, setHomeSection] = useState<Section>(initialSection);
+  // Last page read, for "Continue reading" on Today. null until known.
+  const [lastReadPage, setLastReadPage] = useState<number | null>(null);
+  const [reviewDays, setReviewDays] = useState<string[]>([]);
   // Bumped each time Review opens, so every visit starts a fresh round.
   const [reviewRound, setReviewRound] = useState(0);
   const [reviewRecords, setReviewRecords] = useState<ReviewRecords>({});
@@ -94,6 +102,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [clock, setClock] = useState(0);
   useEffect(() => {
     setReviewRecords(loadRecords());
+    setReviewDays(loadReviewDays());
+    try { const last = Number(localStorage.getItem('panna_last_page')); if (Number.isInteger(last) && last >= 1) setLastReadPage(last); } catch {}
     // Browsers keep history state across reloads: a reload while Saved or Review was open must not leave a stale
     // entry that "Back to the book" would step onto.
     if (window.history.state?.panna) {
@@ -406,9 +416,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   useEffect(() => {
     const handlePopState = async () => {
       const shown = window.history.state?.panna;
-      sectionEntryRef.current = shown === 'saved' || shown === 'review';
-      setSection(shown === 'saved' || shown === 'review' ? shown : 'book');
       const path = window.location.pathname;
+      const isSection = shown === 'saved' || shown === 'review' || shown === 'today';
+      sectionEntryRef.current = isSection;
+      // The front page with no screen recorded is Today.
+      const next: Section = isSection ? shown : path === '/' ? 'today' : 'book';
+      setSection(next);
+      if (next === 'book' || next === 'today') setHomeSection(next);
       if (path.startsWith('/page/')) {
         const pNum = parseInt(path.replace('/page/', ''), 10);
         setShowWordDrawer(false);
@@ -427,8 +441,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           }
         }
       } else if (path === '/') {
+        // The front page is Today (set above); the book stays where the reader left it.
         setShowWordDrawer(false);
-        if (currentPage !== 1) turnToPage(1);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -485,9 +499,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const handleCloseWordDrawer = () => {
     setShowWordDrawer(false);
     if (typeof window !== 'undefined') {
-      const url = `/page/${currentPage}`;
-      if (window.location.pathname !== url && !window.location.pathname.startsWith('/page/')) {
-        window.history.pushState(null, '', url);
+      // Only a sheet opened from the book changes the address (to /word/…); give the page address back. Sheets opened
+      // over Today, Saved or Review leave the address alone.
+      if (window.location.pathname.startsWith('/word/')) {
+        window.history.pushState(null, '', `/page/${currentPage}`);
       }
     }
   };
@@ -571,34 +586,57 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     turnToPage(randomPage, randomPageObj?.first_headword || '');
   };
 
-  // ── Saved and Review screens ────────────────────────────────────────────
-  // Opening one from the book adds a history entry, so the phone's Back button returns to the book; switching
-  // between them replaces that entry.
-  const openSection = (next: Exclude<Section, 'book'>) => {
-    if (section === next) return;
-    setShowMenu(false);
-    if (next === 'review') setReviewRound(n => n + 1);
-    if (section === 'book') {
-      window.history.pushState({ panna: next }, '', `/page/${currentPage}`);
-      sectionEntryRef.current = true;
-    } else {
-      window.history.replaceState({ ...window.history.state, panna: next }, '', window.location.pathname);
-    }
-    setSection(next);
-    window.scrollTo(0, 0);
+  // ── Screens and history ─────────────────────────────────────────────────
+  // Today and Book are the two home screens; Saved and Review open over whichever one the reader came from, with one
+  // history entry, so the phone's Back button (or ✕ / Done) returns there. Moving from Book to Today also adds an
+  // entry, so Back returns to the book.
+  const isHome = (s: Section) => s === 'book' || s === 'today';
+  const stripSection = () => {
+    const { panna, ...rest } = window.history.state ?? {}; // keep Next.js's own router state
+    return rest;
   };
-  // viaBack: undo the history entry (Book tab, "Back to the book"); otherwise replace it, because the caller is
-  // about to navigate somewhere new.
-  const leaveSection = (viaBack: boolean) => {
-    if (viaBack && sectionEntryRef.current && window.history.state?.panna) {
-      window.history.back(); // the popstate handler shows the book
+  const goTo = (target: Section) => {
+    if (target === section) return;
+    setShowMenu(false);
+    if (target === 'review') setReviewRound(n => n + 1);
+    window.scrollTo(0, 0);
+    if (!isHome(target)) {
+      if (isHome(section)) {
+        window.history.pushState({ panna: target }, '', window.location.pathname);
+        sectionEntryRef.current = true;
+      } else {
+        window.history.replaceState({ ...window.history.state, panna: target }, '', window.location.pathname);
+      }
+      setSection(target);
       return;
     }
-    if (window.history.state?.panna) {
-      const { panna, ...rest } = window.history.state; // keep Next.js's own router state
-      window.history.replaceState(rest, '', window.location.pathname);
+    // Closing Saved or Review back to the screen it opened over: undo its history entry.
+    if (!isHome(section) && target === homeSection && sectionEntryRef.current && window.history.state?.panna) {
+      window.history.back(); // the popstate handler shows the home screen
+      return;
     }
+    if (!isHome(section)) {
+      window.history.replaceState(stripSection(), '', window.location.pathname);
+      sectionEntryRef.current = false;
+    }
+    if (target === 'today') {
+      window.history.pushState({ ...stripSection(), panna: 'today' }, '', '/');
+      sectionEntryRef.current = true;
+    } else if (homeSection === 'today' && section === 'today' && sectionEntryRef.current && window.history.state?.panna === 'today') {
+      window.history.back(); // Today was opened from the book: Back returns to it
+      return;
+    } else if (window.location.pathname === '/') {
+      window.history.pushState({}, '', `/page/${currentPage}`);
+    }
+    setHomeSection(target);
+    setSection(target);
+  };
+  // Leave Saved / Review / Today for the book because the caller is about to turn to a page (which adds its own
+  // history entry): no Back step is spent on the screen being left.
+  const showBookForNavigation = () => {
+    if (window.history.state?.panna) window.history.replaceState(stripSection(), '', window.location.pathname);
     sectionEntryRef.current = false;
+    setHomeSection('book');
     setSection('book');
   };
   const handleReviewAnswer = useCallback((key: string, correct: boolean) => {
@@ -606,6 +644,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       const now = Date.now();
       const next = { ...prev, [key]: answer(prev[key] ?? newRecord(now), correct, now) };
       saveRecords(next);
+      return next;
+    });
+    setReviewDays(prev => {
+      const next = withReviewDay(prev, Date.now());
+      if (next !== prev) saveReviewDays(next);
       return next;
     });
   }, []);
@@ -661,11 +704,30 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const canPrevMobile = currentPage > 1;
   const canNextMobile = currentPage < meta.total_pages;
 
+  // Remember the page being read, for "Continue reading" on Today.
+  useEffect(() => {
+    if (section !== 'book') return;
+    setLastReadPage(currentPage);
+    try { localStorage.setItem('panna_last_page', String(currentPage)); } catch {}
+  }, [section, currentPage]);
+
+  // "tomorrow (4 words)" for Today when nothing is due.
+  const nextReviewLabel = useMemo(() => {
+    const now = Date.now();
+    const next = nextDue(bookmarkedWords.map(w => w.normalized), reviewRecords, now);
+    if (!next) return null;
+    const label = comesBackLabel(daysUntil({ box: 0, due_at: next.at, right: 0, wrong: 0 }, now));
+    return `${label} (${next.count} word${next.count === 1 ? '' : 's'})`;
+  // clock: recount as time passes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmarkedWords, reviewRecords, clock]);
+
   // The tab title follows what is on screen, in the same format the server uses for each URL.
   useEffect(() => {
     const brand = 'पन्ना (Panna)';
     let title: string | null = null;
-    if (section === 'saved') title = `Saved — ${brand}`;
+    if (section === 'today') title = `${brand} — A Pocket Dictionary`;
+    else if (section === 'saved') title = `Saved — ${brand}`;
     else if (section === 'review') title = `Review — ${brand}`;
     else if (showWordDrawer && activeWordEntry) {
       const pron = activeWordEntry.pronunciation_deva ? ` (${activeWordEntry.pronunciation_deva})` : '';
@@ -728,8 +790,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           />
         }
         savedCount={savedCount}
-        onOpenSaved={() => (section === 'saved' ? leaveSection(true) : openSection('saved'))}
-        onOpenReview={() => (section === 'review' ? leaveSection(true) : openSection('review'))}
+        onOpenSaved={() => goTo(section === 'saved' ? homeSection : 'saved')}
+        onOpenReview={() => goTo(section === 'review' ? homeSection : 'review')}
+        onOpenToday={() => goTo(section === 'today' ? 'book' : 'today')}
         section={section}
         dueCount={dueCount}
         onOpenMenu={() => setShowMenu(true)}
@@ -825,17 +888,34 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           notes={marginNotes}
           loadPage={fetchPage}
           onOpenWord={handleOpenSavedWord}
-          onGoToPage={(page) => { leaveSection(false); setHighlightedWord(''); turnToPage(page); }}
+          onGoToPage={(page) => { showBookForNavigation(); setHighlightedWord(''); turnToPage(page); }}
           onRemoveWord={(w) => setBookmarkedWords(prev => persistList('panna_saved_words', prev.filter(x => x.normalized !== w.normalized)))}
           onRestoreWord={(w) => setBookmarkedWords(prev => prev.some(x => x.normalized === w.normalized) ? prev : persistList('panna_saved_words', [...prev, w]))}
           onRemovePage={(kind, page) => { const [set, key] = savedPageSetters[kind]; set(prev => persistList(key, prev.filter(p => p !== page))); }}
           onRestorePage={(kind, page) => { const [set, key] = savedPageSetters[kind]; set(prev => prev.includes(page) ? prev : persistList(key, [...prev, page].sort((a, b) => a - b))); }}
           onDeleteNote={(note) => handleDeleteMarginNote(note.id)}
           onRestoreNote={(note) => setMarginNotes(prev => prev.some(n => n.id === note.id) ? prev : persistList('panna_marginalia', [...prev, note]))}
-          onBackToBook={() => leaveSection(true)}
+          onBackToBook={() => goTo(homeSection)}
+          backLabel={homeSection === 'today' ? 'Back to Today' : 'Back to the book'}
           statusFor={(key) => statusOf(reviewRecords[key])}
           dueCount={dueCount}
-          onReview={() => openSection('review')}
+          onReview={() => goTo('review')}
+        />
+      )}
+
+      {section === 'today' && (
+        <TodayScreen
+          dueCount={dueCount}
+          savedWords={bookmarkedWords.length}
+          nextReview={nextReviewLabel}
+          streak={streak(reviewDays, Date.now())}
+          lastPage={lastReadPage}
+          loadPage={fetchPage}
+          isSaved={(key) => bookmarkedWords.some(w => w.normalized === key)}
+          onStartReview={() => goTo('review')}
+          onContinueReading={(page) => { showBookForNavigation(); setHighlightedWord(''); turnToPage(page); }}
+          onOpenWord={(entry) => { setActiveWordEntry(entry); setShowWordDrawer(true); }}
+          onToggleSave={handleToggleWordBookmark}
         />
       )}
 
@@ -845,8 +925,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           saved={bookmarkedWords}
           records={reviewRecords}
           onAnswer={handleReviewAnswer}
-          onClose={() => leaveSection(true)}
-          onOpenSaved={() => openSection('saved')}
+          onClose={() => goTo(homeSection)}
+          onOpenSaved={() => goTo('saved')}
         />
       )}
 
@@ -857,7 +937,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         isOpen={showWordDrawer}
         onClose={handleCloseWordDrawer}
         onSelectWord={(word, destPage) => {
-          if (section !== 'book') leaveSection(false);
+          if (section !== 'book') showBookForNavigation();
           if (destPage) turnToPage(destPage, word);
           else handleSelectWord(word, currentPage);
         }}
@@ -897,9 +977,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         active={section}
         savedCount={savedCount}
         dueCount={dueCount}
-        onBook={() => { if (section !== 'book') leaveSection(true); if (!isBookOpen) setIsBookOpen(true); }}
-        onSaved={() => openSection('saved')}
-        onReview={() => openSection('review')}
+        onBook={() => { goTo('book'); if (!isBookOpen) setIsBookOpen(true); }}
+        onSaved={() => goTo('saved')}
+        onToday={() => goTo('today')}
+        onReview={() => goTo('review')}
       />
     </main>
   );

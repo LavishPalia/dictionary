@@ -10,7 +10,7 @@
 .app-search { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .app-count { font: 13px var(--font-fell); color: var(--brass-muted); }
 .app-count::before { content: '· '; }
-#open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass); }
+#open-today-btn[aria-pressed='true'], #open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass); }
 
 /* Search field in the header (the results list is styled by LookupBar). */
 .app-lookup {

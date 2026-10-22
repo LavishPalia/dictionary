@@ -177,7 +177,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
             </>
           )}
         </div>
-        <Button variant="desk" full onClick={saved.length ? onOpenSaved : onClose}>{saved.length ? 'See saved words' : 'Back to the book'}</Button>
+        <Button variant="desk" full onClick={saved.length ? onOpenSaved : onClose}>{saved.length ? 'See saved words' : 'Done'}</Button>
       </section>
     );
   }
@@ -281,7 +281,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
             const next = nextDue(round.keys, records, Date.now());
             return next ? <p className="review-muted">Next review: <b>{comesBackLabel(daysUntil({ box: 0, due_at: next.at, right: 0, wrong: 0 }, Date.now()))}</b> ({next.count} word{next.count === 1 ? '' : 's'}).</p> : null;
           })()}
-          <Button variant="primary" onClick={onClose} id="review-finish-btn">Back to the book</Button>
+          <Button variant="primary" onClick={onClose} id="review-finish-btn">Done</Button>
         </div>
       )}
     </section>

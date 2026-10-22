@@ -26,6 +26,8 @@ interface SavedScreenProps {
   onDeleteNote: (note: MarginNote) => void;
   onRestoreNote: (note: MarginNote) => void;
   onBackToBook: () => void;
+  /** "Back to the book" or "Back to Today": wherever Saved was opened from. */
+  backLabel: string;
   statusFor: (normalized: string) => ReviewStatus;
   dueCount: number;
   onReview: () => void;
@@ -104,7 +106,7 @@ export function SavedScreen(props: SavedScreenProps) {
           <p className="saved-summary">{total ? `${plural(words.length, 'word')} · ${plural(pages.length, 'page')} · ${plural(notes.length, 'note')}` : 'Nothing saved yet'}</p>
         </div>
         <Button variant="desk" className="app-desktop-only" id="close-saved-btn" onClick={props.onBackToBook}>
-          <BookIcon /> Back to the book
+          <BookIcon /> {props.backLabel}
         </Button>
       </div>
 

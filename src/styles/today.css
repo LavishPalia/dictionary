@@ -1,0 +1,19 @@
+/* Today screen. */
+
+.today { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 14px; }
+.today-hint { margin: -6px 2px 2px; font: italic 15px var(--font-fell); color: var(--brass-muted); }
+.today-hint-hi { font: normal 16px var(--font-deva); color: var(--brass-soft); }
+
+.today-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); }
+.today-streak { color: var(--crimson); }
+.today-big { margin: 6px 0 2px; font: 22px var(--font-fell); color: var(--ink); }
+.today-mid { margin: 0; font: 18px var(--font-fell); color: var(--ink); }
+.today-muted { margin: 0 0 12px; font: 14.5px/1.45 var(--font-fell); color: var(--ink-soft); }
+.today-tight { margin: 0; }
+.today-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: 8px; }
+
+.today-word-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; }
+.today-word { font: bold 24px var(--font-fell); color: var(--ink); }
+.today-hi { margin: 2px 0 4px; font: 20px/1.35 var(--font-deva); color: var(--crimson); }
+.today-def { margin: 0; font: 15.5px/1.45 var(--font-fell); color: var(--ink); }
+.today-actions { display: flex; gap: var(--space-2); margin-top: 12px; }

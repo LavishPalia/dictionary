@@ -26,6 +26,7 @@
     "test:review-ui": "node scripts/test-review-browser.mjs",
     "test:marks-ui": "node scripts/test-marks-browser.mjs",
     "test:backup-ui": "node scripts/test-backup-browser.mjs",
+    "test:today-ui": "node scripts/test-today-browser.mjs",
     "test:review": "tsx scripts/test-review.ts",
     "test:marks": "tsx scripts/test-marks.ts",
     "test:backup": "tsx scripts/test-backup.ts",
