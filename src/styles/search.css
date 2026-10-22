@@ -1,0 +1,59 @@
+/* Search results panel under the header search box (LookupBar, NoEntryCard). */
+
+.lookup-clear {
+  flex: none; width: 32px; height: 32px; margin-right: -6px; border: 0; border-radius: var(--radius-pill);
+  background: transparent; color: var(--sepia); font-size: 15px; cursor: pointer;
+}
+.lookup-clear:hover { background: rgba(138, 116, 82, 0.15); color: var(--ink); }
+.lookup-clear:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+
+.lookup-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 100;
+  max-height: min(64vh, 560px); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--paper-gradient); border: 1px solid var(--rule); border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); color: var(--ink); text-align: left;
+}
+
+.lookup-group {
+  position: sticky; top: 0; z-index: 1; padding: 7px 14px 5px;
+  font: 12px var(--font-fell-sc); letter-spacing: 0.03em; color: var(--ink-soft);
+  background: #e6d6ad; border-bottom: 1px solid var(--rule-faint);
+}
+.lookup-group--row { display: flex; align-items: center; justify-content: space-between; }
+.lookup-link {
+  border: 0; background: transparent; padding: 4px 6px; margin: -4px -6px; color: var(--crimson);
+  font: 12px var(--font-fell-sc); cursor: pointer;
+}
+.lookup-link:hover { text-decoration: underline; }
+
+.lookup-option {
+  display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 14px;
+  border-bottom: 1px solid var(--rule-faint); cursor: pointer;
+}
+.lookup-option:last-child { border-bottom: 0; }
+.lookup-option[aria-selected='true'] { background: rgba(201, 162, 74, 0.22); box-shadow: inset 3px 0 0 var(--brass); }
+.lookup-option--recent { min-height: 48px; }
+.lookup-option-main { flex: 1; min-width: 0; }
+.lookup-hw { font: bold 16px var(--font-fell); color: var(--ink); }
+.lookup-hi { font: 15px/1.35 var(--font-deva); color: var(--crimson); overflow-wrap: anywhere; }
+.lookup-def { font: italic 13.5px/1.35 var(--font-fell); color: var(--ink-soft); }
+.lookup-note { font: 13px var(--font-fell); color: var(--ink-soft); }
+.lookup-page { flex: none; font: 13px var(--font-fell-sc); color: var(--ink-soft); white-space: nowrap; }
+.lookup-recent-word { flex: 1; font: 16px var(--font-fell); color: var(--ink); }
+.lookup-mark { background: rgba(201, 162, 74, 0.45); color: inherit; border-radius: 2px; padding: 0 1px; }
+
+.noentry { padding: 16px; }
+.noentry-title { font: 20px var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }
+.noentry-sub { margin: 4px 0 10px; font: 14px var(--font-fell); color: var(--ink-soft); }
+.noentry-suggestions { display: grid; gap: 6px; }
+.noentry-suggestions .lookup-option { border: 1px solid var(--rule); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.3); }
+.noentry-suggestions .lookup-option[aria-selected='true'] { background: rgba(201, 162, 74, 0.22); }
+.noentry .ui-label { margin-bottom: var(--space-2); }
+.noentry-ways { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.noentry-tip { font: 14px var(--font-fell); color: var(--ink-soft); }
+.noentry-note { margin: 12px 0 0; font: italic 13.5px/1.4 var(--font-fell); color: var(--ink-soft); }
+
+/* Phones: the panel spans the header (under the ⋯ button too) and can use most of the screen. */
+@media (max-width: 1023px) {
+  .lookup-panel { right: calc(-1 * (var(--tap) + var(--space-2))); max-height: calc(100dvh - 170px); }
+}

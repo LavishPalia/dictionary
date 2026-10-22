@@ -1,57 +1,42 @@
 'use client';
 
 import React from 'react';
-
-export interface RecoverySuggestion {
-  headword: string;
-  normalized: string;
-  page_number: number;
-  preview: string;
-  matched_form?: string;
-}
+import { Chip } from '@/components/ui';
 
 interface NoEntryCardProps {
   query: string;
-  suggestions: RecoverySuggestion[];
-  onSelect: (suggestion: RecoverySuggestion) => void;
+  /** Suggestion rows (role="option"), rendered by the search list so the arrow keys reach them. */
+  children?: React.ReactNode;
+  listboxId: string;
+  totalEntries: number;
+  onBrowseLetter?: () => void;
 }
 
-export const NoEntryCard: React.FC<NoEntryCardProps> = ({ query, suggestions, onSelect }) => (
-  <div role="status" aria-live="polite" style={{ padding: '14px 16px' }}>
-    <div style={{ fontFamily: 'var(--font-fell)', fontSize: '17px', color: '#2a1e14' }}>
-      No direct entry found for “{query}”.
-    </div>
-    {suggestions.length ? (
-      <>
-        <div className="guide-word" style={{ marginTop: '5px', fontSize: '12px', color: '#7a2b22' }}>
-          Did you mean?
-        </div>
-        <div style={{ display: 'grid', gap: '4px', marginTop: '7px' }}>
-          {suggestions.map((item) => (
-            <button
-              key={item.normalized}
-              type="button"
-              onClick={() => onSelect(item)}
-              style={{
-                border: '1px solid #cbb78c', borderRadius: '3px', padding: '7px 9px',
-                background: '#e5d5ad', color: '#2a1e14', textAlign: 'left', cursor: 'pointer',
-                font: '16px var(--font-fell)',
-              }}
-            >
-              {item.headword}
-              {item.matched_form && item.matched_form.toLowerCase() !== item.headword.toLowerCase() && (
-                <span className="guide-word" style={{ marginLeft: '8px', fontSize: '11px' }}>
-                  close form: {item.matched_form}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </>
-    ) : (
-      <div className="guide-word" style={{ marginTop: '6px', fontSize: '12px' }}>
-        Try another spelling or search for a shorter part of the word.
+// Shown when a search finds no entry: the closest spellings if there are any, other ways to find the word,
+// and an honest note about what the dictionary covers.
+export const NoEntryCard: React.FC<NoEntryCardProps> = ({ query, children, listboxId, totalEntries, onBrowseLetter }) => {
+  const hasSuggestions = React.Children.count(children) > 0;
+  return (
+    <div className="noentry">
+      <div className="noentry-title">No entry for “{query}”</div>
+      {hasSuggestions ? (
+        <>
+          <div className="noentry-sub" id={`${listboxId}-dym`}>Did you mean:</div>
+          <div id={listboxId} role="listbox" aria-labelledby={`${listboxId}-dym`} className="noentry-suggestions">{children}</div>
+        </>
+      ) : (
+        <div className="noentry-sub">Try another spelling, or search for a shorter part of the word.</div>
+      )}
+      <hr className="ui-divider" />
+      <div className="ui-label">Other ways to find it</div>
+      <div className="noentry-ways">
+        {onBrowseLetter && <Chip onMouseDown={(e) => e.preventDefault()} onClick={onBrowseLetter}>Browse {query[0].toUpperCase()} ›</Chip>}
+        <span className="noentry-tip">Type the Hindi meaning instead, e.g. <span className="ui-hi">समारोह</span></span>
       </div>
-    )}
-  </div>
-);
+      <p className="noentry-note">
+        Panna has {totalEntries.toLocaleString('en-IN')} common words. Rare words, names and slang may be missing.
+        Plurals and tenses work too: <i>ceremonies</i> opens <i>Ceremony</i>.
+      </p>
+    </div>
+  );
+};

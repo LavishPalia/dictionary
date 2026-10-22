@@ -75,6 +75,20 @@ async function testEndpoints() {
   check('Hindi "ऊपर" ranks exact meanings first, most common word first (On, Up, Above)',
     upar.slice(0, 3).join() === 'On,Up,Above' && upar.includes('Onto'), upar);
 
+  // Every result says why it matched, so the search list can group it.
+  const kinds = async (q: string) => (await getJson(`/api/search?q=${encodeURIComponent(q)}`)).body.results
+    .map((r: { headword: string; match: string; pos?: string; meaning_hi?: string }) => ({ h: r.headword, m: r.match, ok: typeof r.pos === 'string' && typeof r.meaning_hi === 'string' }));
+  const ceremo = await kinds('ceremo');
+  check('search results carry pos and meaning_hi', ceremo.length > 0 && ceremo.every((r: { ok: boolean }) => r.ok), ceremo);
+  check('prefix match is labelled "headword"', ceremo[0]?.m === 'headword', ceremo);
+  const plural = await kinds('ceremonies');
+  check('inflected form is labelled "form"', plural[0]?.h === 'Ceremony' && plural[0]?.m === 'form', plural);
+  const mammal = await kinds('mammal');
+  check('definition-only match is labelled "definition"', mammal.some((r: { h: string; m: string }) => r.h === 'Camel' && r.m === 'definition'), mammal);
+  const hindiKinds = await kinds('ऊंट');
+  check('Hindi meaning match is labelled "hindi"', hindiKinds[0]?.h === 'Camel' && hindiKinds[0]?.m === 'hindi', hindiKinds);
+  check('typo suggestion is labelled "suggestion"', (await kinds('ceremonis'))[0]?.m === 'suggestion');
+
   if (failures) {
     console.error(`\n${failures} check(s) failed.`);
     process.exit(1);

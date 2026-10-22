@@ -33,13 +33,29 @@ interface PageRow {
   footer_hints: string;
 }
 
+/** Why a search result was returned; the search list groups results by it. */
+export type SearchMatch = 'headword' | 'form' | 'definition' | 'hindi' | 'pronunciation' | 'suggestion';
+
 export interface SearchResult {
   headword: string;
   normalized: string;
   page_number: number;
+  pos: string;
+  meaning_hi: string;
+  /** Kept for older clients: `${pos} ${meaning_hi}`. */
   preview: string;
+  match: SearchMatch;
   matched_form?: string;
+  /** Only for definition matches, so the list can show where the word was found. */
+  definition_en?: string;
   suggestion?: boolean;
+}
+
+function toResult(r: EntryRow, match: SearchMatch, extra: Partial<SearchResult> = {}): SearchResult {
+  return {
+    headword: r.headword, normalized: r.normalized, page_number: r.page_number,
+    pos: r.pos, meaning_hi: r.meaning_hi, preview: `${r.pos} ${r.meaning_hi}`, match, ...extra,
+  };
 }
 
 // One read-only connection per server process (kept on globalThis so dev-mode HMR doesn't leak handles).
@@ -182,11 +198,11 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
 
   const seen = new Set<string>();
   const results: SearchResult[] = [];
-  const add = (rows: EntryRow[]) => {
+  const add = (rows: EntryRow[], match: SearchMatch | ((r: EntryRow) => SearchMatch), extra?: (r: EntryRow) => Partial<SearchResult>) => {
     for (const r of rows) {
       if (results.length >= limit || seen.has(r.normalized)) continue;
       seen.add(r.normalized);
-      results.push({ headword: r.headword, normalized: r.normalized, page_number: r.page_number, preview: `${r.pos} ${r.meaning_hi}` });
+      results.push(toResult(r, typeof match === 'function' ? match(r) : match, extra?.(r)));
     }
   };
 
@@ -198,37 +214,33 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
       SELECT e.* FROM entries_fts JOIN entries e ON e.rowid = entries_fts.rowid
       WHERE entries_fts MATCH ? LIMIT 1000
     `).all(`meaning_hi_search : ${term} OR pronunciation_search : ${term}`) as HindiSearchRow[];
-    add(rows
+    const ranked = rows
       .map((row) => ({ row, tier: hindiMatchTier(nq, row) }))
       .sort((a, b) => a.tier - b.tier
         || (a.row.freq_rank ?? Infinity) - (b.row.freq_rank ?? Infinity)
-        || (a.row.normalized < b.row.normalized ? -1 : 1))
-      .map(({ row }) => row));
+        || (a.row.normalized < b.row.normalized ? -1 : 1));
+    const tierOf = new Map(ranked.map(({ row, tier }) => [row.normalized, tier]));
+    add(ranked.map(({ row }) => row), (r) => (tierOf.get(r.normalized) === 3 ? 'pronunciation' : 'hindi'));
     return results;
   }
 
-  add(db().prepare('SELECT * FROM entries WHERE normalized = ?').all(q) as EntryRow[]);
+  add(db().prepare('SELECT * FROM entries WHERE normalized = ?').all(q) as EntryRow[], 'headword');
   if (results.length < limit) {
     const forms = db().prepare(`SELECT e.*, f.form AS matched_form FROM forms f JOIN entries e ON e.id = f.lemma_id
       WHERE f.normalized_form = ? ORDER BY e.normalized LIMIT ?`).all(q, limit) as (EntryRow & { matched_form: string })[];
-    for (const r of forms) {
-      if (results.length >= limit || seen.has(r.normalized)) continue;
-      seen.add(r.normalized);
-      results.push({ headword: r.headword, normalized: r.normalized, page_number: r.page_number,
-        preview: `${r.pos} ${r.meaning_hi}`, matched_form: r.matched_form });
-    }
+    add(forms, 'form', (r) => ({ matched_form: (r as EntryRow & { matched_form: string }).matched_form }));
   }
   add(db().prepare(`
     SELECT * FROM entries WHERE normalized >= ? AND normalized < ?
     ORDER BY length(normalized), normalized LIMIT ?
-  `).all(q, `${q}\u{10FFFF}`, limit) as EntryRow[]);
+  `).all(q, `${q}\u{10FFFF}`, limit) as EntryRow[], 'headword');
   if (results.length < limit) {
     add(db().prepare(`SELECT * FROM entries WHERE normalized LIKE ? ESCAPE '\\' ORDER BY length(normalized), normalized LIMIT ?`)
-      .all(`%${escapeLike(q)}%`, limit) as EntryRow[]);
+      .all(`%${escapeLike(q)}%`, limit) as EntryRow[], 'headword');
   }
   if (results.length < limit) {
     add(db().prepare(`SELECT * FROM entries WHERE lower(definition_en) LIKE ? ESCAPE '\\' ORDER BY rowid LIMIT ?`)
-      .all(`%${escapeLike(q)}%`, limit) as EntryRow[]);
+      .all(`%${escapeLike(q)}%`, limit) as EntryRow[], 'definition', (r) => ({ definition_en: r.definition_en }));
   }
   if (results.length) return results;
 
@@ -266,12 +278,5 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
     .filter((candidate) => candidate.distance > 0 && candidate.distance <= maxDistance)
     .sort((a, b) => a.distance - b.distance || a.row.normalized.localeCompare(b.row.normalized))
     .slice(0, Math.min(3, limit))
-    .map(({ row, form }) => ({
-      headword: row.headword,
-      normalized: row.normalized,
-      page_number: row.page_number,
-      preview: `${row.pos} ${row.meaning_hi}`,
-      ...(form ? { matched_form: form } : {}),
-      suggestion: true,
-    }));
+    .map(({ row, form }) => toResult(row, 'suggestion', { ...(form ? { matched_form: form } : {}), suggestion: true }));
 }

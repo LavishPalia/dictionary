@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
 import '@/styles/ui.css';
 import '@/styles/shell.css';
+import '@/styles/search.css';
 import { Caveat, IM_Fell_English, IM_Fell_English_SC, Tiro_Devanagari_Hindi } from 'next/font/google';
 
 // Self-hosted at build time: no request to Google at runtime, and fallback metrics are adjusted so text

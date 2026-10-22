@@ -497,7 +497,14 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       }}
     >
       <AppHeader
-        search={<LookupBar onSelectWord={handleSelectWord} />}
+        search={
+          <LookupBar
+            onSelectWord={handleSelectWord}
+            onSelectRecent={handleSelectSavedWord}
+            onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) handleSelectLetter(letter, page); }}
+            totalEntries={meta.total_entries}
+          />
+        }
         savedCount={savedCount}
         onOpenSaved={() => setShowBookmarksModal(true)}
         onOpenMenu={() => setShowMenu(true)}

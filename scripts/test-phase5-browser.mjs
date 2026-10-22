@@ -90,7 +90,7 @@ async function main() {
       for (let i = 0; i < 15; i++) {
         await sleep(200);
         body = await evaluate('document.body.innerText');
-        if (body.includes(`No direct entry found for “${query}”`)) break;
+        if (body.includes(`No entry for “${query}”`)) break;
       }
       return { body, value };
     };
@@ -103,11 +103,11 @@ async function main() {
     };
     let { body } = await typeQuery('ceremonis');
     const typoDebug = await evaluate(`(async () => ({ value: document.querySelector('#lookup-input').value, response: await (await fetch('/api/search?q=ceremonis')).json() }))()`);
-    check('desktop typo search shows recovery suggestion', body.includes('No direct entry found for “ceremonis”') && body.includes('Did you mean?') && body.includes('Ceremony'), { value: typoDebug?.value, api: typoDebug?.response?.results, didYouMean: body.includes('Did you mean?'), ceremony: body.includes('Ceremony') });
+    check('desktop typo search shows recovery suggestion', body.includes('No entry for “ceremonis”') && body.includes('Did you mean:') && body.includes('Ceremony'), { value: typoDebug?.value, api: typoDebug?.response?.results, didYouMean: body.includes('Did you mean:'), ceremony: body.includes('Ceremony') });
     let value;
     ({ body, value } = await typeQuery('zzzzqx'));
-    const emptyAt = body.indexOf('No direct entry found');
-    check('desktop unknown word shows useful empty state', body.includes('No direct entry found for “zzzzqx”') && body.includes('Try another spelling'),
+    const emptyAt = body.indexOf('No entry for');
+    check('desktop unknown word shows useful empty state', body.includes('No entry for “zzzzqx”') && body.includes('Try another spelling'),
       { value, card: emptyAt >= 0 ? body.slice(emptyAt, emptyAt + 120) : null });
 
     await openCredits();
