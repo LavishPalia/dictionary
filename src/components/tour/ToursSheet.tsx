@@ -2,7 +2,7 @@
 
 import { Button, Sheet } from '@/components/ui';
 import { ChevronIcon } from '@/components/ui/icons';
-import { TOURS, type TourId, type ToursState } from '@/lib/tours';
+import { TOURS, tourById, type TourId, type ToursState } from '@/lib/tours';
 
 // ⋯ → Guided tours: every tour, with a tick once seen, and the switch for one-time tips.
 export function ToursSheet({ open, state, onClose, onStart, onTipsAgain, onTipsOff }: {
@@ -22,7 +22,7 @@ export function ToursSheet({ open, state, onClose, onStart, onTipsAgain, onTipsO
             <button type="button" className="tours-item" id={`tour-start-${tour.id}`} onClick={() => onStart(tour.id)}>
               <span className="tours-item-text">
                 <span className="tours-item-title">{tour.title}</span>
-                <span className="tours-item-sub">{tour.en} · {tour.steps.length} steps</span>
+                <span className="tours-item-sub">{tour.en} · {tourById(tour.id).steps.length} steps</span>
                 <span className="tours-item-hi" lang="hi">{tour.hi}</span>
               </span>
               {state.seen[tour.id] && <span className="tours-seen">✓ Seen</span>}

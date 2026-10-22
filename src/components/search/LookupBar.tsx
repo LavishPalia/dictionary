@@ -6,6 +6,7 @@ import { splitMatch } from '@/lib/highlight';
 import { clearRecent, loadRecent, rememberRecent, type RecentWord } from '@/lib/recent';
 import { NoEntryCard } from './NoEntryCard';
 import { SearchIcon } from '@/components/ui/icons';
+import { Chip } from '@/components/ui';
 
 interface LookupBarProps {
   onSelectWord: (headword: string, pageNumber: number) => void;
@@ -45,6 +46,9 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
   const [results, setResults] = useState<SearchResult[]>([]);
   // The query the current results belong to, so nothing (not even "No entry") shows for a stale query.
   const [resultsFor, setResultsFor] = useState('');
+  // Offline answers come from the book pages saved on this device (public/sw.js): all of them, or only those visited.
+  // 'unreachable': no connection and nothing to answer from.
+  const [offline, setOffline] = useState<null | 'saved' | 'partial' | 'unreachable'>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recent, setRecent] = useState<RecentWord[]>([]);
@@ -84,12 +88,17 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
         if (res.ok) {
           const data = await res.json();
           setResults(data.results || []);
+          setOffline(data.offline ? (data.complete ? 'saved' : 'partial') : null);
           setResultsFor(q);
           setIsOpen(true);
           setSelectedIndex(0);
         }
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') console.error('Search error:', err);
+        if ((err as Error).name === 'AbortError') return;
+        setResults([]);
+        setOffline('unreachable');
+        setResultsFor(q);
+        setIsOpen(true);
       }
     }, 150);
 
@@ -282,6 +291,21 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
                 ))}
               </div>
             </>
+          ) : noEntry && offline ? (
+            <div className="noentry" id="lookup-offline">
+              <div className="noentry-title">You’re offline</div>
+              <p className="noentry-sub" lang="hi">आप ऑफ़लाइन हैं</p>
+              <div className="noentry-sub">
+                {offline === 'saved'
+                  ? <>No entry for “{trimmed}” in the book saved on this device.</>
+                  : <>Search needs a connection for pages you haven’t opened. To search the whole book offline, use ⋯ → <b>Save the book for offline</b>.</>}
+              </div>
+              {/^[a-z]/i.test(trimmed) && (
+                <div className="noentry-ways">
+                  <Chip onMouseDown={(e) => e.preventDefault()} onClick={() => { setIsOpen(false); onBrowseLetter(trimmed[0].toUpperCase()); }}>Browse {trimmed[0].toUpperCase()} ›</Chip>
+                </div>
+              )}
+            </div>
           ) : noEntry ? (
             <NoEntryCard
               query={trimmed}
@@ -293,6 +317,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
             </NoEntryCard>
           ) : (
             <div id={listboxId} role="listbox" aria-label="Search results">
+              {offline === 'partial' && <div className="lookup-group" id="lookup-offline-note">Offline · only pages you’ve opened</div>}
               {(() => {
                 let index = 0;
                 return groups.map((g) => (

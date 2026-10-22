@@ -10,6 +10,9 @@ design-docs
 .temp_edge_profile*
 .test_edge_suite*
 *.png
+# App icons are source files (scripts/make-app-icons.mjs renders them).
+!public/icons/*.png
+!src/app/apple-icon.png
 
 # SQLite generated files
 data/dictionary.db

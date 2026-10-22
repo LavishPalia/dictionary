@@ -252,21 +252,27 @@ async function main() {
       await sleep(900);
       check(`${sizeName}: Back ends the tour`, !(await step()));
 
-      // ── Settings and backup ──
+      // ── Settings and backup (with "Read without a connection" only where offline saving exists) ──
       await open('/', size);
+      const canSave = await evaluate('Boolean(navigator.serviceWorker && navigator.serviceWorker.controller)');
+      const n = canSave ? 5 : 4;
       await click('#menu-btn'); await sleep(400); await click('#guided-tours-btn'); await sleep(500);
+      check(`${sizeName}: the list counts the steps this browser will show`, (await evaluate(`document.querySelector('#tour-start-settings').textContent`)).includes(`${n} steps`));
       await click('#tour-start-settings');
-      s = await waitStep('1 of 5');
+      s = await waitStep(`1 of ${n}`);
       check(`${sizeName}: Settings starts at ⋯ with the menu closed`, !s?.menu && await surrounds(s, '#menu-btn'), s);
-      await click('#tour-next-btn'); s = await waitStep('2 of 5');
+      await click('#tour-next-btn'); s = await waitStep(`2 of ${n}`);
       check(`${sizeName}: then opens the menu at Desk lighting`, s?.menu && await surrounds(s, '#reading-menu [aria-label="Desk lighting"]'), s);
       check(`${sizeName}: the tip is drawn above the menu`, await evaluate(`(() => { const r = document.querySelector('#tour-next-btn').getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.id === 'tour-next-btn'; })()`));
-      await click('#tour-next-btn'); s = await waitStep('3 of 5');
-      check(`${sizeName}: then page-turn speed`, await surrounds(s, '#reading-menu [aria-label="Page-turn speed"]'), s);
-      await click('#tour-next-btn'); s = await waitStep('4 of 5');
+      if (canSave) {
+        await click('#tour-next-btn'); s = await waitStep(`3 of ${n}`);
+        check(`${sizeName}: then saving the book for offline`, s?.title === 'Read without a connection' && s.hi.includes('इंटरनेट') && await surrounds(s, '#offline-save-btn'), s);
+      }
+      await click('#tour-next-btn'); s = await waitStep(`${n - 1} of ${n}`);
       check(`${sizeName}: then backup`, await surrounds(s, '#backup-btn'), s);
-      await click('#tour-next-btn'); s = await waitStep('5 of 5');
+      await click('#tour-next-btn'); s = await waitStep(`${n} of ${n}`);
       check(`${sizeName}: then Guided tours`, await surrounds(s, '#guided-tours-btn') && inView(s), s);
+      check(`${sizeName}: no step about page-turn speed any more`, !(await evaluate(`document.querySelector('#tour-tip-title')?.textContent`)).includes('Page turns'));
       await key('Tab', 'Tab');
       check(`${sizeName}: Tab stays in the tip`, await evaluate(`document.querySelector('#tour-tip').contains(document.activeElement)`));
       await click('#tour-next-btn');

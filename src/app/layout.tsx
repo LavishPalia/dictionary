@@ -26,12 +26,16 @@ export const metadata: Metadata = {
   description: 'An authentic vintage English into Hindi dictionary with the words around them.',
   keywords: ['dictionary', 'hindi', 'vintage dictionary', 'panna', '3d book', 'english hindi'],
   authors: [{ name: 'Panna' }],
+  // Installed on iOS: its own name, full screen (icon: src/app/apple-icon.png; the manifest covers other browsers).
+  appleWebApp: { capable: true, title: 'Panna', statusBarStyle: 'black-translucent' },
+  other: { 'mobile-web-app-capable': 'yes' }, // the current name of Apple's tag, for Chrome
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  themeColor: '#2b1d14',
 };
 
 export default function RootLayout({

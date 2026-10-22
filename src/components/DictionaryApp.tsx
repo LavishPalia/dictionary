@@ -26,6 +26,7 @@ import { TourLayer } from '@/components/tour/TourLayer';
 import { ToursSheet } from '@/components/tour/ToursSheet';
 import { useTours } from '@/components/tour/useTours';
 import { unseenTours } from '@/lib/tours';
+import { useOffline } from '@/components/shell/useOffline';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -655,6 +656,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setSection('book');
   };
   // Guided tours and one-time tips (src/components/tour). A tour step sets up its own scene through these.
+  const offline = useOffline(meta, initialPages.map(p => p.page_number));
   const tours = useTours({
     section,
     goTo,
@@ -877,6 +879,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         menuOpen={showMenu}
       />
 
+      {!offline.online && (
+        <p className="app-offline" id="offline-notice" role="status">
+          You’re offline. {offline.savedCurrent ? 'The whole book is saved on this device.' : 'Pages you’ve opened still work.'}
+          <span lang="hi" className="app-offline-hi"> आप ऑफ़लाइन हैं।</span>
+        </p>
+      )}
+
       <div style={{ display: section === 'book' ? 'contents' : 'none' }}>
         {/* Dynamic Riffle indicator banner (Matching Flip.dc.html) */}
         {riffleInfo && (
@@ -1055,6 +1064,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onRestore={() => backupRef.current?.restore()}
         onOpenTours={tours.openSheet}
         toursUnseen={unseenTours(tours.state)}
+        offline={{ available: offline.available, status: offline.status, saving: offline.saving, onSave: offline.save }}
+        onInstall={offline.install}
+        installHint={offline.installHint}
         backupLabel={lastBackupLabel(lastBackupAt)}
       />
 

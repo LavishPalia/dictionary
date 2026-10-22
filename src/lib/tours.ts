@@ -21,6 +21,8 @@ export interface TourStep extends TourText {
   /** What to light up: a selector, or a function for targets that depend on the page. */
   target: { desktop: string | (() => Element | null); phone: string | (() => Element | null) };
   scene: TourScene;
+  /** Only shown when this is true (a feature this browser has); the step count leaves it out otherwise. */
+  when?: () => boolean;
   /** Replaces `en` on one layout (the phone has no keyboard sentence, desktop has no swipe). */
   enPhone?: string;
   enDesktop?: string;
@@ -115,9 +117,11 @@ export const TOURS: Tour[] = [
       { target: both(menuRow('Desk lighting')), scene: { menu: true }, title: 'Evening light',
         en: 'A warmer, dimmer desk for reading at night.',
         hi: 'रात में पढ़ने के लिए हल्की, गर्म रोशनी।' },
-      { target: both(menuRow('Page-turn speed')), scene: { menu: true }, title: 'Page turns',
-        en: 'Choose how pages turn; “Instant” skips the animation.',
-        hi: 'पन्ने कैसे पलटें, चुनें; Instant में कोई एनिमेशन नहीं।' },
+      // Offline saving exists only where the service worker runs (production builds, supporting browsers).
+      { target: both('#offline-save-btn'), scene: { menu: true }, title: 'Read without a connection',
+        when: () => typeof navigator !== 'undefined' && Boolean(navigator.serviceWorker?.controller),
+        en: 'Save the whole book on this device to read and search it offline.',
+        hi: 'बिना इंटरनेट के पढ़ने के लिए पूरी किताब इस डिवाइस पर सहेजें।' },
       { target: both('#backup-btn'), scene: { menu: true }, title: 'Keep your words safe',
         en: 'They live only in this browser. Back them up to a file, and restore it on any device.',
         hi: 'आपके शब्द सिर्फ़ इसी ब्राउज़र में हैं। फ़ाइल में सहेजें, किसी भी डिवाइस पर वापस लाएँ।' },
@@ -128,7 +132,11 @@ export const TOURS: Tour[] = [
   },
 ];
 
-export const tourById = (id: TourId) => TOURS.find((t) => t.id === id)!;
+/** A tour with only the steps this browser can show. */
+export function tourById(id: TourId): Tour {
+  const tour = TOURS.find((t) => t.id === id)!;
+  return { ...tour, steps: tour.steps.filter((s) => !s.when || s.when()) };
+}
 
 export interface Tip extends TourText {
   id: TipId;

@@ -29,6 +29,11 @@ interface ReadingMenuProps {
   onOpenTours: () => void;
   /** Tours not seen yet (0: all seen). */
   toursUnseen: number;
+  /** Saving the whole book for offline use (shown only where the service worker runs). */
+  offline: { available: boolean; status: string; saving: boolean; onSave: () => void };
+  /** Install as an app: a browser prompt to show, or instructions for iOS. */
+  onInstall: (() => void) | null;
+  installHint: 'ios' | null;
   /** e.g. "Last backup 3 days ago". */
   backupLabel: string;
 }
@@ -114,6 +119,33 @@ export function ReadingMenu(props: ReadingMenuProps) {
       <button type="button" className="menu-row menu-link" id="cover-toggle-btn" onClick={thenClose(props.onToggleBook)}>
         <span className="menu-title">{props.bookOpen ? 'Close the book' : 'Open the book'}</span><ChevronIcon />
       </button>
+      {props.offline.available && (
+        // Stays open while saving, so the progress can be watched.
+        <button type="button" className="menu-row menu-link" id="offline-save-btn" onClick={props.offline.onSave}
+          disabled={props.offline.saving} aria-describedby="offline-status">
+          <span>
+            <span className="menu-title">Save the book for offline</span>
+            <span className="menu-sub menu-sub--block" id="offline-status" aria-live="polite">{props.offline.status}</span>
+          </span>
+          <ChevronIcon />
+        </button>
+      )}
+      {props.onInstall ? (
+        <button type="button" className="menu-row menu-link" id="install-btn" onClick={thenClose(props.onInstall)}>
+          <span>
+            <span className="menu-title">Install Panna</span>
+            <span className="menu-sub menu-sub--block">Open it from your home screen or desktop, like an app</span>
+          </span>
+          <ChevronIcon />
+        </button>
+      ) : props.installHint === 'ios' ? (
+        <div className="menu-row" id="install-hint">
+          <span>
+            <span className="menu-title">Install Panna</span>
+            <span className="menu-sub menu-sub--block">In Safari, tap Share, then “Add to Home Screen”</span>
+          </span>
+        </div>
+      ) : null}
       <button type="button" className="menu-row menu-link" id="backup-btn" onClick={thenClose(props.onBackup)}>
         <span>
           <span className="menu-title">Back up my words</span>
