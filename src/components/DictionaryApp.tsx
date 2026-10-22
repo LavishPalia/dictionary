@@ -14,6 +14,8 @@ import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
+import { BackupManager, lastBackupLabel, type BackupHandle } from '@/components/shell/BackupManager';
+import { LAST_BACKUP_KEY } from '@/lib/backup';
 import { BookMeta, BookPage, DictionaryEntry, MarginNote } from '@/lib/types';
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
@@ -63,7 +65,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   }, []);
   useEffect(() => {
     if (!settingsLoaded) return;
-    try { localStorage.setItem('panna_settings', JSON.stringify({ evening: isLampLit, speed: speedMode, sounds: !isMuted })); } catch {}
+    try {
+      // Nothing to remember until the reader changes something: a browser that has never been set up must not
+      // look as if it chose the defaults (a restored backup's settings would otherwise lose to them).
+      const untouched = !isLampLit && speedMode === 'realistic' && !isMuted;
+      if (untouched && localStorage.getItem('panna_settings') === null) return;
+      localStorage.setItem('panna_settings', JSON.stringify({ evening: isLampLit, speed: speedMode, sounds: !isMuted }));
+    } catch {}
   }, [settingsLoaded, isLampLit, speedMode, isMuted]);
 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
@@ -97,6 +105,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   }, []);
   const [showCreditsModal, setShowCreditsModal] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState<boolean>(false);
+  const backupRef = useRef<BackupHandle>(null);
+  const [lastBackupAt, setLastBackupAt] = useState<number | null>(null);
+  useEffect(() => {
+    try { const at = Number(localStorage.getItem(LAST_BACKUP_KEY)); if (at) setLastBackupAt(at); } catch {}
+  }, []);
   const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
   const [bookmarkedWords, setBookmarkedWords] = useState<SavedWord[]>([]);
 
@@ -873,7 +886,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         bookOpen={isBookOpen}
         onToggleBook={() => setIsBookOpen(prev => !prev)}
         onOpenCredits={() => setShowCreditsModal(true)}
+        onBackup={() => backupRef.current?.backup()}
+        onRestore={() => backupRef.current?.restore()}
+        backupLabel={lastBackupLabel(lastBackupAt)}
       />
+
+      <BackupManager ref={backupRef} dataVersion={meta.data_version} totalPages={meta.total_pages} onBackedUp={setLastBackupAt} />
 
       <BottomNav
         active={section}

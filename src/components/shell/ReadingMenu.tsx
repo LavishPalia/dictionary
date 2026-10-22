@@ -24,6 +24,10 @@ interface ReadingMenuProps {
   bookOpen: boolean;
   onToggleBook: () => void;
   onOpenCredits: () => void;
+  onBackup: () => void;
+  onRestore: () => void;
+  /** e.g. "Last backup 3 days ago". */
+  backupLabel: string;
 }
 
 // Everything that used to crowd the top of the screen: reading preferences and the less frequent actions.
@@ -95,6 +99,16 @@ export function ReadingMenu(props: ReadingMenuProps) {
       </button>
       <button type="button" className="menu-row menu-link" id="cover-toggle-btn" onClick={thenClose(props.onToggleBook)}>
         <span className="menu-title">{props.bookOpen ? 'Close the book' : 'Open the book'}</span><ChevronIcon />
+      </button>
+      <button type="button" className="menu-row menu-link" id="backup-btn" onClick={thenClose(props.onBackup)}>
+        <span>
+          <span className="menu-title">Back up my words</span>
+          <span className="menu-sub menu-sub--block" id="backup-label">{props.backupLabel}</span>
+        </span>
+        <ChevronIcon />
+      </button>
+      <button type="button" className="menu-row menu-link" id="restore-btn" onClick={thenClose(props.onRestore)}>
+        <span className="menu-title">Restore from a backup</span><ChevronIcon />
       </button>
       <button type="button" className="menu-row menu-link" id="open-credits-btn" onClick={thenClose(props.onOpenCredits)}>
         <span className="menu-title">Sources &amp; credits</span><ChevronIcon />

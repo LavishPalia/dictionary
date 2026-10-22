@@ -72,3 +72,8 @@
 .menu-link:hover .menu-title { color: var(--crimson); }
 .menu-link:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
 .menu-link:disabled { opacity: 0.5; cursor: not-allowed; }
+.menu-sub--block { display: block; }
+.restore-from { margin: 0 0 4px; }
+.restore-summary { margin: 0 0 var(--space-4); }
+.restore-actions { display: grid; gap: var(--space-2); }
+.restore-actions .menu-sub { margin: -2px 0 var(--space-2); }
