@@ -33,6 +33,7 @@
     "test:backup": "tsx scripts/test-backup.ts",
     "test:quiz": "tsx scripts/test-quiz.ts",
     "test:related": "tsx scripts/test-related.ts",
+    "test:hinglish": "tsx scripts/test-hinglish.ts",
     "test:highlight": "tsx scripts/test-highlight.ts",
     "test:pos": "tsx scripts/test-pos.ts",
     "snap": "node scripts/snap-views.mjs",

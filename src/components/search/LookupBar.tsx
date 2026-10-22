@@ -18,6 +18,7 @@ interface LookupBarProps {
 // Display order of result groups, and their labels. Hindi labels lead for Hindi groups, as in the mockups.
 const GROUPS: Array<{ id: string; label: string; matches: SearchMatch[] }> = [
   { id: 'words', label: 'English words', matches: ['headword', 'form'] },
+  { id: 'hinglish', label: 'हिंदी अर्थ से · Hindi in English letters', matches: ['hinglish'] },
   { id: 'hindi', label: 'हिंदी अर्थ से · from Hindi meanings', matches: ['hindi'] },
   { id: 'sound', label: 'उच्चारण से · sounds like', matches: ['pronunciation'] },
   { id: 'definition', label: 'Found in English definitions', matches: ['definition'] },
@@ -209,7 +210,11 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
             )}
           </div>
           {item.meaning_hi && (
-            <div className="lookup-hi">{item.match === 'hindi' ? <Highlighted text={item.meaning_hi} query={trimmed} /> : item.meaning_hi}</div>
+            <div className="lookup-hi">
+              {item.match === 'hindi' ? <Highlighted text={item.meaning_hi} query={trimmed} />
+                : item.match === 'hinglish' && item.matched_hi ? <Highlighted text={item.meaning_hi} query={item.matched_hi} />
+                : item.meaning_hi}
+            </div>
           )}
           {item.match === 'definition' && item.definition_en && (
             <div className="lookup-def"><Highlighted text={snippet(item.definition_en, trimmed)} query={trimmed} /></div>

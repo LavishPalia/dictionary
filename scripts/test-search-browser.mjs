@@ -98,6 +98,16 @@ async function main() {
       p = await panel();
       check(`${sizeName}: variant spelling ऊंट finds Camel and highlights the printed ऊँट`, p?.options[0] === 'Camel' && p.marks[0] === 'ऊँट', p);
 
+      await type('chhod');
+      p = await panel();
+      check(`${sizeName}: Hinglish "chhod" is grouped as Hindi in English letters`, p?.groups.some((g) => g.includes('Hindi in English letters')), p?.groups);
+      check(`${sizeName}: Hinglish "chhod" finds Abandon and Quit and highlights छोड़ना`,
+        ['Abandon', 'Quit'].every((w) => p?.options.includes(w)) && p.marks.includes('छोड़ना'), p);
+      await type('kitab');
+      await evaluate(`(() => { document.querySelector('#lookup-panel [role="option"]').click(); return true; })()`);
+      await sleep(1500);
+      check(`${sizeName}: choosing a Hinglish result opens the word`, await evaluate(`location.pathname === '/word/Book'`), await evaluate('location.pathname'));
+
       await type('mammal');
       p = await panel();
       check(`${sizeName}: definition matches are labelled and show the definition`, p?.groups.includes('Found in English definitions') && p.text.includes('long-necked mammal'), p?.groups);

@@ -53,7 +53,7 @@ export function TodayScreen(props: TodayScreenProps) {
   return (
     <section className="today" id="today-screen" aria-labelledby="today-title">
       <h1 id="today-title" className="ui-visually-hidden">Today</h1>
-      <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> in the search box.</p>
+      <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
 
       <Card className="today-card" id="today-review">
         <div className="today-card-head">

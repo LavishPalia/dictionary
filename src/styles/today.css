@@ -3,6 +3,7 @@
 .today { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 14px; }
 .today-hint { margin: -6px 2px 2px; font: italic 15px var(--font-fell); color: var(--brass-muted); }
 .today-hint-hi { font: normal 16px var(--font-deva); color: var(--brass-soft); }
+.today-hint-latin { font-style: normal; color: var(--brass-soft); }
 
 .today-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); }
 .today-streak { color: var(--crimson); }

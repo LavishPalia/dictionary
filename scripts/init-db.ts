@@ -11,6 +11,7 @@ import crypto from 'crypto';
 import Database from 'better-sqlite3';
 import { DictionaryEntry } from '../src/lib/types';
 import { normalizeHindi } from '../src/lib/hindi';
+import { HINDI_STOPWORDS, hinglishKey, romanize } from '../src/lib/hinglish';
 import { SEED_ENTRIES } from './seed-entries';
 import { COMPANION_PAGES } from './companion-entries';
 import { EXPANDED_PAGES } from './expanded-entries';
@@ -200,6 +201,16 @@ CREATE TABLE related (
   PRIMARY KEY (entry_id, kind, rank)
 );
 
+-- Hinglish search keys (src/lib/hinglish.ts): each Hindi meaning, and each word in it, as a loose Latin key.
+-- whole = 1 when hi is a complete meaning (छोड़ना), 0 for a word inside one (त्याग in त्याग देना).
+CREATE TABLE hinglish (
+  key TEXT NOT NULL,
+  entry_id TEXT NOT NULL REFERENCES entries(id),
+  hi TEXT NOT NULL,
+  whole INTEGER NOT NULL,
+  PRIMARY KEY (key, entry_id, hi)
+) WITHOUT ROWID;
+
 CREATE TABLE pages (
   page_number INTEGER PRIMARY KEY,
   guide_left TEXT NOT NULL,
@@ -268,6 +279,7 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     const insertForm = db.prepare(`INSERT OR IGNORE INTO forms (normalized_form, form, lemma_id, lemma_headword, page_number)
       VALUES (?, ?, ?, ?, ?)`);
     const insertMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
+    const insertHinglish = db.prepare('INSERT OR IGNORE INTO hinglish (key, entry_id, hi, whole) VALUES (?, ?, ?, ?)');
     const insertRelated = db.prepare(`INSERT INTO related (entry_id, kind, rank, related_id)
       VALUES (@entry_id, @kind, @rank, @related_id)`);
 
@@ -282,6 +294,19 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
       }));
       for (const p of pages) insertPage.run({ ...p, entry_ids: JSON.stringify(p.entry_ids) });
       for (const r of related) insertRelated.run(r);
+      for (const e of laid) {
+        for (const meaning of e.meaning_hi.split(/[,;]/).map((m) => m.replace(/\([^)]*\)/g, '').trim()).filter(Boolean)) {
+          const words = meaning.split(/\s+/);
+          const phraseKeys = (words.length === 1 ? romanize(meaning) : words.map(romanize).reduce<string[]>(
+            (acc, forms) => acc.flatMap((a) => forms.map((f) => a + f)), ['']));
+          for (const r of phraseKeys) { const key = hinglishKey(r); if (key.length >= 2) insertHinglish.run(key, e.id, meaning, 1); }
+          if (words.length === 1) continue;
+          for (const word of words) {
+            if (HINDI_STOPWORDS.has(word)) continue;
+            for (const r of romanize(word)) { const key = hinglishKey(r); if (key.length >= 2) insertHinglish.run(key, e.id, word, 0); }
+          }
+        }
+      }
       for (const [form, parents] of agid.formToParents) {
         for (const { lemma } of parents) {
           const entry = entryByWord.get(lemma);

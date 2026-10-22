@@ -5,6 +5,7 @@ import Database from 'better-sqlite3';
 import { BookMeta, BookPage, DictionaryEntry } from './types';
 import { damerauLevenshtein } from './search-distance';
 import { normalizeHindi } from './hindi';
+import { hinglishKey, spellingDistance } from './hinglish';
 
 const DB_FILE = path.join(process.cwd(), 'data', 'dictionary.db');
 
@@ -34,7 +35,7 @@ interface PageRow {
 }
 
 /** Why a search result was returned; the search list groups results by it. */
-export type SearchMatch = 'headword' | 'form' | 'definition' | 'hindi' | 'pronunciation' | 'suggestion';
+export type SearchMatch = 'headword' | 'form' | 'definition' | 'hindi' | 'hinglish' | 'pronunciation' | 'suggestion';
 
 export interface SearchResult {
   headword: string;
@@ -46,6 +47,8 @@ export interface SearchResult {
   preview: string;
   match: SearchMatch;
   matched_form?: string;
+  /** Only for Hinglish matches: the Hindi meaning or word that the English letters spelled. */
+  matched_hi?: string;
   /** Only for definition matches, so the list can show where the word was found. */
   definition_en?: string;
   suggestion?: boolean;
@@ -204,9 +207,36 @@ function prefixUpperBound(prefix: string): string {
   return String.fromCodePoint(last + 1);
 }
 
+const MAX_HINGLISH = 4;
+
 /**
- * Headword search. Latin: exact match, then prefix (B-tree range on `normalized`), then substring, then
- * definition text. Devanagari: FTS5 prefix match on the variant-folded Hindi meaning and Devanagari
+ * Hindi typed in English letters ("chhod" → छोड़ना). Best first: the query spells a whole Hindi meaning, then a word
+ * in one, then the start of a meaning, then the start of a word (only for keys of three letters or more); then the
+ * closest spelling (then with the aspirate h's as typed), the closest in length, and the commonest word.
+ */
+function searchHinglish(q: string): Array<EntryRow & { matched_hi: string }> {
+  const key = hinglishKey(q);
+  if (q.length < 3 || key.length < 2) return [];
+  const rows = db().prepare(`
+    SELECT h.key AS hkey, h.hi AS matched_hi, h.whole, e.* FROM hinglish h JOIN entries e ON e.id = h.entry_id
+    WHERE h.key >= ? AND h.key < ? LIMIT 2000
+  `).all(key, `${key}\u{10FFFF}`) as Array<HindiSearchRow & { hkey: string; matched_hi: string; whole: number }>;
+  const tier = (r: { hkey: string; whole: number }) => (r.hkey === key ? 0 : 2) + (r.whole ? 0 : 1);
+  const scored = rows
+    .filter((r) => r.hkey === key || key.length >= 3)
+    .map((r) => ({ ...r, distance: spellingDistance(q, r.matched_hi), exact: spellingDistance(q, r.matched_hi, true) ?? 99 }))
+    .filter((r): r is typeof r & { distance: number } => r.distance !== null);
+  const best = new Map<string, (typeof scored)[number]>();
+  for (const r of scored.sort((a, b) => tier(a) - tier(b) || a.distance - b.distance || a.exact - b.exact || a.hkey.length - b.hkey.length
+    || (a.freq_rank ?? Infinity) - (b.freq_rank ?? Infinity) || (a.normalized < b.normalized ? -1 : 1))) {
+    if (!best.has(r.normalized)) best.set(r.normalized, r);
+  }
+  return [...best.values()].slice(0, MAX_HINGLISH);
+}
+
+/**
+ * Headword search. Latin: exact match, then prefix (B-tree range on `normalized`) alongside Hinglish (searchHinglish),
+ * then substring, then definition text. Devanagari: FTS5 prefix match on the variant-folded Hindi meaning and Devanagari
  * pronunciation, ranked by hindiMatchTier and then by word frequency.
  */
 export function searchWords(query: string, limit: number = 8): SearchResult[] {
@@ -247,10 +277,14 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
       WHERE f.normalized_form = ? ORDER BY e.normalized LIMIT ?`).all(q, limit) as (EntryRow & { matched_form: string })[];
     add(forms, 'form', (r) => ({ matched_form: (r as EntryRow & { matched_form: string }).matched_form }));
   }
+  // Hinglish only when the query is not an English word or a form of one ("hum", "mat" stay English). Its results
+  // keep room among the English words that merely start with the query ("pani": Panic…).
+  const hinglish = results.length ? [] : searchHinglish(q);
   add(db().prepare(`
     SELECT * FROM entries WHERE normalized >= ? AND normalized < ?
     ORDER BY length(normalized), normalized LIMIT ?
-  `).all(q, `${q}\u{10FFFF}`, limit) as EntryRow[], 'headword');
+  `).all(q, `${q}\u{10FFFF}`, limit - hinglish.length) as EntryRow[], 'headword');
+  add(hinglish, 'hinglish', (r) => ({ matched_hi: (r as EntryRow & { matched_hi: string }).matched_hi }));
   if (results.length < limit) {
     add(db().prepare(`SELECT * FROM entries WHERE normalized LIKE ? ESCAPE '\\' ORDER BY length(normalized), normalized LIMIT ?`)
       .all(`%${escapeLike(q)}%`, limit) as EntryRow[], 'headword');
