@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Site icon: the binding red of the book cover with a brass प (pa, for पन्ना). The letter is an outline from
+       Tiro Devanagari Hindi (SIL Open Font License), so it never depends on a font installed on the device. -->
+  <rect width="64" height="64" rx="12" fill="#5b1f19"/>
+  <rect x="4" y="4" width="56" height="56" rx="9" fill="none" stroke="#c9a24a" stroke-width="2" opacity="0.7"/>
+  <path transform="translate(15.85 49.7) scale(1.45)" fill="#e8d3a0" d="M11.12-6.72L11.12-6.72Q9.56-6.72 8.12-7.44Q6.68-8.16 5.52-9.28Q4.36-10.40 3.68-11.64Q3-12.88 2.96-13.88L2.96-13.88Q2.92-14.44 2.92-14.92Q2.92-15.40 2.92-15.84L2.92-15.840Q2.92-17.12 2.94-18.68Q2.96-20.24 2.96-21.80L2.96-21.80L0.24-21.80L-1.12-24.40L-1.12-24.80L22.04-24.80L23.40-22.20L23.40-21.80L18.72-21.80L18.80 0.40L18.40 0.40L15.20-1.68L15.24-8Q13.12-6.72 11.12-6.72ZM15.28-12.16L15.36-21.80L6.36-21.80L6.44-13Q6.44-11.08 7.32-10.20Q8.20-9.32 9.20-9.32L9.20-9.32Q10.40-9.32 11.90-10.08Q13.40-10.84 15.28-12.16L15.28-12.16Z"/>
+</svg>

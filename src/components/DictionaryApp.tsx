@@ -581,6 +581,25 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const canPrevMobile = currentPage > 1;
   const canNextMobile = currentPage < meta.total_pages;
 
+  // The tab title follows what is on screen, in the same format the server uses for each URL.
+  useEffect(() => {
+    const brand = 'पन्ना (Panna)';
+    let title: string | null = null;
+    if (section === 'saved') title = `Saved — ${brand}`;
+    else if (section === 'review') title = `Review — ${brand}`;
+    else if (showWordDrawer && activeWordEntry) {
+      const pron = activeWordEntry.pronunciation_deva ? ` (${activeWordEntry.pronunciation_deva})` : '';
+      title = `${activeWordEntry.headword}${pron} — ${brand} Dictionary`;
+    } else {
+      const pages = (isMobile ? [singleMobilePage] : [leftPage, rightPage]).filter((p): p is BookPage => p !== null);
+      if (pages.length) {
+        const label = pages.length === 2 ? `Pages ${pages[0].page_number}–${pages[1].page_number}` : `Page ${pages[0].page_number}`;
+        title = `${label} (${pages[0].guide_left} to ${pages[pages.length - 1].guide_right}) — ${brand}`;
+      }
+    }
+    if (title) document.title = title;
+  }, [section, showWordDrawer, activeWordEntry, isMobile, singleMobilePage, leftPage, rightPage]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

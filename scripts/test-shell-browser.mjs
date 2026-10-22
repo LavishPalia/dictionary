@@ -99,6 +99,10 @@ async function main() {
     await evaluate(`document.querySelector('#goto-page-form').requestSubmit(); true`);
     await sleep(2500);
     check('desktop: Go to page in the menu turns to page 40', await evaluate(`location.pathname === '/page/40' && !document.querySelector('#reading-menu')`), await evaluate('location.pathname'));
+    const title = await evaluate('document.title');
+    check('desktop: the tab title follows the page', /^Pages 40–41 \(.+ to .+\) — पन्ना \(Panna\)$/.test(title), title);
+    const icon = await evaluate(`(async () => { const href = document.querySelector('link[rel="icon"]')?.getAttribute('href'); const res = href && await fetch(href); const ico = await fetch('/favicon.ico'); return { href, type: res?.headers.get('content-type'), ico: ico.ok && ico.url.includes('/icon.svg') }; })()`);
+    check('desktop: the site icon is linked, and /favicon.ico leads to it', icon.href?.startsWith('/icon.svg') && icon.type === 'image/svg+xml' && icon.ico, icon);
 
     await evaluate(`document.querySelector('#menu-btn').click(); true`);
     await sleep(300);
