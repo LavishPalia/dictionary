@@ -1,0 +1,24 @@
+/* Word sheet (WordDetailDrawer). */
+
+.word-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.word-title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.word-title { margin: 0; font: bold 32px/1.1 var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }
+.word-pron { font: 18px var(--font-deva); color: var(--ink-soft); }
+.word-pos { margin-top: 8px; padding: 3px 10px; font: 14px var(--font-fell); color: var(--ink-soft); }
+
+.word-hi { margin: 14px 0 4px; font: 28px/1.35 var(--font-deva); color: var(--crimson); overflow-wrap: anywhere; }
+.word-def { margin: 0; font: 17px/1.45 var(--font-fell); color: var(--ink); }
+.word-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: 14px; }
+.word-actions + .ui-divider { margin-top: 16px; }
+.word-example { margin: 4px 0 0; font: italic 16px/1.4 var(--font-fell); color: var(--ink); }
+
+.word-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-top: 14px; }
+.word-provenance { font: italic 13px var(--font-fell); color: var(--ink-soft); }
+.word-goto { margin: 0; padding: 10px 0; font-size: 14px; }
+.word-goto:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* Desktop side panel: a little more room for the word. */
+@media (min-width: 1024px) {
+  .word-title { font-size: 38px; }
+  .word-hi { font-size: 32px; }
+}

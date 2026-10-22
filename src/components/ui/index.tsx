@@ -93,11 +93,16 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 // Modal sheet: slides up from the bottom on phones, centred on wider screens. Closes on Escape or a tap
 // outside, keeps Tab inside, locks page scroll, and returns focus to whatever opened it. Pass returnFocusTo
 // when the opener is known: Safari does not focus a button when it is clicked, so "whatever had focus" is not it.
-export function Sheet({ open, onClose, title, hideTitle, children, id, className, returnFocusTo }: {
+// variant "side" docks to the right edge on wide screens (still a bottom sheet on phones). Pass labelledBy to
+// use a heading inside children as the dialog's name instead of the built-in title.
+export function Sheet({ open, onClose, title, hideTitle, labelledBy, children, id, scrimId, className, returnFocusTo, variant = 'center' }: {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   hideTitle?: boolean;
+  labelledBy?: string;
+  scrimId?: string;
+  variant?: 'center' | 'side';
   children: ReactNode;
   id?: string;
   className?: string;
@@ -115,15 +120,16 @@ export function Sheet({ open, onClose, title, hideTitle, children, id, className
     const opener = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const first = panel.current?.querySelector<HTMLElement>(FOCUSABLE);
-    (first ?? panel.current)?.focus();
+    // Focus the sheet itself: screen readers announce its name, and no button shows a focus ring
+    // before the reader has pressed a key. Tab then reaches the first control.
+    panel.current?.focus();
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') { event.stopPropagation(); onCloseRef.current(); return; }
       if (event.key !== 'Tab' || !panel.current) return;
       const items = Array.from(panel.current.querySelectorAll<HTMLElement>(FOCUSABLE));
       if (!items.length) return;
       const [head, tail] = [items[0], items[items.length - 1]];
-      if (event.shiftKey && document.activeElement === head) { event.preventDefault(); tail.focus(); }
+      if (event.shiftKey && (document.activeElement === head || document.activeElement === panel.current)) { event.preventDefault(); tail.focus(); }
       else if (!event.shiftKey && document.activeElement === tail) { event.preventDefault(); head.focus(); }
     };
     document.addEventListener('keydown', onKey, true);
@@ -137,18 +143,19 @@ export function Sheet({ open, onClose, title, hideTitle, children, id, className
 
   if (!open) return null;
   return (
-    <div className="ui-scrim" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div id={scrimId} className={cx('ui-scrim', variant === 'side' && 'ui-scrim--side')}
+      onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div
         ref={panel}
         id={id}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={labelledBy ?? titleId}
         tabIndex={-1}
-        className={cx('ui-sheet', className)}
+        className={cx('ui-sheet', variant === 'side' && 'ui-sheet--side', className)}
       >
         <div className="ui-sheet-grab" aria-hidden="true" />
-        <h2 id={titleId} className={hideTitle ? 'ui-visually-hidden' : 'ui-sheet-title'}>{title}</h2>
+        {!labelledBy && <h2 id={titleId} className={hideTitle ? 'ui-visually-hidden' : 'ui-sheet-title'}>{title}</h2>}
         {children}
       </div>
     </div>

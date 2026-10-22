@@ -136,3 +136,14 @@
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
+
+/* Side panel: on wide screens the sheet docks to the right edge, leaving the book visible on the left. */
+@media (min-width: 1024px) {
+  .ui-scrim--side { justify-content: flex-end; align-items: stretch; background: rgba(15, 9, 5, 0.45); }
+  .ui-sheet--side {
+    max-width: 460px; height: 100%; max-height: none; border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    padding: var(--space-6) 28px; animation-name: ui-sheet-side;
+  }
+}
+@keyframes ui-sheet-side { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+.ui-sheet:focus { outline: none; }

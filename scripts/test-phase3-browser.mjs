@@ -228,7 +228,7 @@ async function main() {
     await sleep(500);
     const isBookmarked = await evaluate(`
       const btn = document.querySelector("#save-word-btn");
-      return btn ? btn.textContent.includes('Bookmarked') : false;
+      return btn ? btn.getAttribute('aria-pressed') === 'true' && btn.textContent.includes('Saved') : false;
     `);
     check('word bookmarked state toggled', isBookmarked === true);
 
