@@ -81,6 +81,14 @@ async function main() {
       path: location.pathname,
       screen: document.querySelector('#today-screen') ? 'today' : document.querySelector('#review-screen') ? 'review' : document.querySelector('#saved-screen') ? 'saved' : 'book',
     })`);
+    const type = async (text) => {
+      await evaluate(`(() => { const input = document.querySelector('#lookup-input'); input.focus(); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ${JSON.stringify(text)}); input.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
+      for (let i = 0; i < 20; i++) {
+        await sleep(150);
+        if (await evaluate(`Boolean(document.querySelector('#lookup-panel [role="option"], #lookup-panel .noentry'))`)) break;
+      }
+      await sleep(150);
+    };
     const go = async (fn) => { await evaluate(`(() => { ${fn}; return true; })()`); await sleep(900); return where(); };
     const day = (offset) => evaluate(`(() => { const d = new Date(Date.now() + ${offset} * ${DAY}); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })()`);
 
@@ -144,8 +152,32 @@ async function main() {
       w = await go(`document.querySelector('#close-review-btn').click()`);
       check(`${sizeName}: Review opened from the book closes back to the book`, w.screen === 'book' && w.path === bookPath, w);
 
-      // Reading moves "Continue reading" along.
-      check(`${sizeName}: the last page read is remembered`, await evaluate(`localStorage.getItem('panna_last_page')`) === bookPath.replace('/page/', ''));
+      // The search box works from every screen: a result, a recent search or "Browse" shows the book.
+      w = await go(`document.querySelector('${todayBtn}').click()`);
+      await type('Camel');
+      w = await go(`document.querySelector('#lookup-panel [role="option"]').click()`);
+      check(`${sizeName}: a search from Today shows the book at the word`, w.screen === 'book' && w.path === '/word/Camel', w);
+      check(`${sizeName}: the found word is on the open page`, await evaluate(`[...document.querySelectorAll('.entry-headword')].some((el) => el.textContent.trim() === 'Camel' && el.getBoundingClientRect().width > 0)`));
+      w = await go(`history.back()`);
+      check(`${sizeName}: Back from the found word returns to Today`, w.screen === 'today' && w.path === '/', w);
+      w = await go(`document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#nav-saved-btn' : '#open-bookmarks-btn')}).click()`);
+      await evaluate(`(() => { const i = document.querySelector('#lookup-input'); i.focus(); i.click(); return true; })()`);
+      await sleep(400);
+      w = await go(`[...document.querySelectorAll('#lookup-panel [role="option"]')].find((o) => o.textContent.includes('Camel')).click()`);
+      check(`${sizeName}: a recent search from Saved shows the book at the word`, w.screen === 'book' && w.path === '/word/Camel', w);
+      w = await go(`document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#nav-review-btn' : '#open-review-btn')}).click()`);
+      await type('ceremonis'); // "Browse C" is offered on the No entry card
+      const browsePage = await evaluate(`(async () => '/page/' + (await (await fetch('/api/meta')).json()).thumb_index.C)()`);
+      w = await go(`[...document.querySelectorAll('#lookup-panel button')].find((b) => b.textContent.startsWith('Browse C')).click()`);
+      check(`${sizeName}: "Browse C" from Review shows the book at C`, w.screen === 'book' && w.path === browsePage, { w, browsePage });
+
+      // Reading moves "Continue reading" along (once the desktop page turn has finished).
+      await sleep(1500);
+      // The desktop spread pairs pages 2n and 2n+1, and either may be the one stored.
+      const stored = Number(await evaluate(`localStorage.getItem('panna_last_page')`));
+      const browsed = Number(browsePage.replace('/page/', ''));
+      const spreadLeft = browsed % 2 === 0 ? browsed : browsed - 1;
+      check(`${sizeName}: the last page read is remembered`, sizeName === 'phone' ? stored === browsed : stored === spreadLeft || stored === spreadLeft + 1, { stored, browsed });
 
       // A first visit: nothing saved, nothing read.
       await seed({});

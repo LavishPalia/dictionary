@@ -318,8 +318,18 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     if (isFlipping || loadingTargetRef.current) return;
 
     const clampedTarget = Math.max(1, Math.min(meta.total_pages, newTarget));
+    // Client-side URL history update without full page reload
+    const showInAddress = () => {
+      const url = wordToHighlight
+        ? `/word/${encodeURIComponent(wordToHighlight)}`
+        : `/page/${clampedTarget}`;
+      if (window.location.pathname !== url) {
+        window.history.pushState(null, '', url);
+      }
+    };
     if (clampedTarget === currentPage) {
       if (wordToHighlight) setHighlightedWord(wordToHighlight);
+      showInAddress(); // e.g. a search from Today for a word on the page the book is already open at
       return;
     }
 
@@ -357,15 +367,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       setRiffleInfo(null);
     }
 
-    // Client-side URL history update without full page reload
-    if (typeof window !== 'undefined') {
-      const url = wordToHighlight
-        ? `/word/${encodeURIComponent(wordToHighlight)}`
-        : `/page/${clampedTarget}`;
-      if (window.location.pathname !== url) {
-        window.history.pushState(null, '', url);
-      }
-    }
+    showInAddress();
 
     if (instantTurns) {
       // Nothing to animate: apply the page change immediately, and never latch
@@ -449,13 +451,20 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     return () => window.removeEventListener('popstate', handlePopState);
   }, [currentPage, turnToPage, fetchWord]);
 
+  // The search box is on every screen: what it finds is shown in the book.
+  const showBookForSearch = () => {
+    if (section !== 'book') showBookForNavigation();
+  };
+
   // Search selection handler
   const handleSelectWord = (headword: string, destPage: number) => {
+    showBookForSearch();
     turnToPage(destPage, headword);
   };
 
   // Saved words keep the page number they had when saved, which changes when the book is rebuilt: look them up again.
   const handleSelectSavedWord = async (headword: string, savedPage: number) => {
+    showBookForSearch();
     const found = await fetchWord(headword);
     turnToPage(found ? found.pageNumber : savedPage, found ? found.entry.headword : headword);
   };
@@ -785,7 +794,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           <LookupBar
             onSelectWord={handleSelectWord}
             onSelectRecent={handleSelectSavedWord}
-            onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) handleSelectLetter(letter, page); }}
+            onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) { showBookForSearch(); handleSelectLetter(letter, page); } }}
             totalEntries={meta.total_entries}
           />
         }
