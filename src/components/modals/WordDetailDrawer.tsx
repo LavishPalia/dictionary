@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DictionaryEntry } from '@/lib/types';
 import { describePos } from '@/lib/pos';
+import { flyToSaved } from '@/lib/motion';
 import { SpeechLang, speechUnavailableReason, useSpeechVoices } from '@/lib/speech';
 import { Button, IconButton, Sheet } from '@/components/ui';
 import { CloseIcon, SpeakerIcon, StarIcon } from '@/components/ui/icons';
@@ -30,6 +31,9 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
 }) => {
   const [speaking, setSpeaking] = useState<SpeechLang | null>(null);
   const speech = useSpeechVoices();
+  // The ink stamp plays only when the reader saves, not when reopening a word saved earlier.
+  const [justSaved, setJustSaved] = useState(false);
+  useEffect(() => setJustSaved(false), [entry?.normalized, isOpen]);
 
   if (!entry) return null;
 
@@ -112,7 +116,11 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
           id="save-word-btn"
           variant={isBookmarked ? 'primary' : 'paper'}
           aria-pressed={isBookmarked}
-          onClick={() => onToggleBookmark(entry)}
+          className={isBookmarked && justSaved ? 'motion-stamp' : undefined}
+          onClick={(event) => {
+            if (!isBookmarked) { setJustSaved(true); flyToSaved(event.currentTarget); }
+            onToggleBookmark(entry);
+          }}
           style={{ flex: 1 }}
         >
           <StarIcon />{isBookmarked ? 'Saved' : 'Save word'}

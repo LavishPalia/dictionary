@@ -137,14 +137,6 @@ html, body {
   margin-left: 3px;
 }
 
-.pencil-underlined {
-  border-bottom: 2px solid var(--color-pencil);
-  padding-bottom: 1px;
-  background: rgba(80, 100, 140, 0.06);
-  border-radius: 1px;
-  transition: all 0.3s ease;
-}
-
 .guide-word {
   font: 13px var(--font-fell-sc);
   letter-spacing: 0.06em;

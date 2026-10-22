@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button, Segmented, Sheet, Switch } from '@/components/ui';
 import { ChevronIcon } from '@/components/ui/icons';
 
-export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk';
+export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk' | 'instant';
 
 interface ReadingMenuProps {
   open: boolean;
@@ -12,6 +12,7 @@ interface ReadingMenuProps {
   evening: boolean;
   onEveningChange: (evening: boolean) => void;
   speed: PageTurnSpeed;
+  reducedMotion: boolean;
   onSpeedChange: (speed: PageTurnSpeed) => void;
   soundsOn: boolean;
   onSoundsChange: (on: boolean) => void;
@@ -55,10 +56,12 @@ export function ReadingMenu(props: ReadingMenuProps) {
       <div className="menu-row">
         <div>
           <div className="menu-title">Page-turn speed</div>
-          <div className="menu-sub">How long one page takes to turn</div>
+          <div className="menu-sub">
+            {props.reducedMotion ? 'Your device asks for less motion, so pages turn instantly' : 'How long one page takes to turn'}
+          </div>
         </div>
         <Segmented label="Page-turn speed" value={props.speed} onChange={props.onSpeedChange}
-          options={[{ value: 'slow', label: 'Slow' }, { value: 'realistic', label: 'Normal' }, { value: 'brisk', label: 'Fast' }]} />
+          options={[{ value: 'slow', label: 'Slow' }, { value: 'realistic', label: 'Normal' }, { value: 'brisk', label: 'Fast' }, { value: 'instant', label: 'Instant' }]} />
       </div>
       <label className="menu-row" htmlFor="sounds-switch">
         <div>

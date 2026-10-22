@@ -12,6 +12,9 @@ import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
 import { BookMeta, BookPage, DictionaryEntry, MarginNote } from '@/lib/types';
 import { soundEngine } from '@/lib/audio';
+import { flushSync } from 'react-dom';
+import { useReducedMotion, visibleElement } from '@/lib/motion';
+import type { PageTurnSpeed } from '@/components/shell/ReadingMenu';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -37,7 +40,27 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isLampLit, setIsLampLit] = useState<boolean>(false);
-  const [speedMode, setSpeedMode] = useState<'realistic' | 'brisk' | 'slow'>('realistic');
+  const [speedMode, setSpeedMode] = useState<PageTurnSpeed>('realistic');
+  const reducedMotion = useReducedMotion();
+  // Turn pages without the 3D flip: phones (no flip engine), the "Instant" speed, or a reduce-motion setting.
+  const instantTurns = isMobile || speedMode === 'instant' || reducedMotion;
+
+  // Reading settings survive a reload. settingsLoaded is state, not a ref, so it flips in the same render as the
+  // loaded values: saving can never run with the defaults first and overwrite what was stored.
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('panna_settings') || '{}');
+      if (typeof saved.evening === 'boolean') setIsLampLit(saved.evening);
+      if (['slow', 'realistic', 'brisk', 'instant'].includes(saved.speed)) setSpeedMode(saved.speed);
+      if (typeof saved.sounds === 'boolean') { setIsMuted(!saved.sounds); soundEngine.setMuted(!saved.sounds); }
+    } catch {}
+    setSettingsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    try { localStorage.setItem('panna_settings', JSON.stringify({ evening: isLampLit, speed: speedMode, sounds: !isMuted })); } catch {}
+  }, [settingsLoaded, isLampLit, speedMode, isMuted]);
 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
   const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
@@ -97,6 +120,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   const flipDuration = useMemo(() => {
     switch (speedMode) {
+      case 'instant': return 0;
       case 'brisk': return 650;
       case 'slow': return 1400;
       case 'realistic':
@@ -200,7 +224,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const direction = clampedTarget > currentPage ? 'forward' : 'backward';
     // Mobile has no CSS-3D flip engine (BookSpread is unmounted there), so a
     // "flip" would never report completion and isFlipping would latch forever.
-    const riffleMode = !isMobile && dist > 4;
+    const riffleMode = !instantTurns && dist > 4;
 
     if (wordToHighlight !== undefined) {
       setHighlightedWord(wordToHighlight);
@@ -232,7 +256,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       }
     }
 
-    if (isMobile) {
+    if (instantTurns) {
       // Nothing to animate: apply the page change immediately, and never latch
       // isFlipping (desktop parity for the paper sound is kept here instead of
       // in the flip midpoint callback).
@@ -243,7 +267,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     }
 
     setIsFlipping(true);
-  }, [currentPage, isFlipping, isMobile, meta.total_pages, fetchPage]);
+  }, [currentPage, isFlipping, isMobile, instantTurns, meta.total_pages, fetchPage]);
 
   // Looks a headword up on the server (its page changes whenever the book is rebuilt).
   const fetchWord = useCallback(async (headword: string): Promise<{ entry: DictionaryEntry; pageNumber: number } | null> => {
@@ -331,8 +355,20 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const visible = [leftPage, rightPage, singleMobilePage].flatMap(p => (p ? [...p.column1, ...p.column2] : []));
     const found = visible.find(e => e.normalized === norm);
     if (found) {
-      setActiveWordEntry(found);
-      setShowWordDrawer(true);
+      const open = () => { setActiveWordEntry(found); setShowWordDrawer(true); };
+      // The tapped headword glides into the sheet's title (View Transitions). Elsewhere the sheet just opens.
+      const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
+      const source = reducedMotion || !doc.startViewTransition ? null : visibleElement('.entry-headword',
+        (el) => el.textContent?.trim() === found.headword && (el.closest('.entry-text') as HTMLElement | null)?.style.cursor === 'pointer');
+      if (source && doc.startViewTransition) {
+        source.style.setProperty('view-transition-name', 'word-headword');
+        doc.startViewTransition(() => {
+          source.style.removeProperty('view-transition-name');
+          flushSync(open);
+        });
+      } else {
+        open();
+      }
       if (typeof window !== 'undefined') {
         const url = `/word/${encodeURIComponent(found.headword)}`;
         if (window.location.pathname !== url) {
@@ -536,6 +572,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       {!isBookOpen ? (
         /* VINTAGE HARDCOVER PRESENTATION WITH 3D OPENING CINEMATIC */
         <CoverCinematic
+          reducedMotion={reducedMotion}
           isOpen={isBookOpen}
           onOpen={() => setIsBookOpen(true)}
         />
@@ -642,6 +679,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         evening={isLampLit}
         onEveningChange={setIsLampLit}
         speed={speedMode}
+        reducedMotion={reducedMotion}
         onSpeedChange={setSpeedMode}
         soundsOn={!isMuted}
         onSoundsChange={(on) => { setIsMuted(!on); soundEngine.setMuted(!on); }}

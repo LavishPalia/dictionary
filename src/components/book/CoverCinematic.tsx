@@ -6,17 +6,20 @@ import { soundEngine } from '@/lib/audio';
 interface CoverCinematicProps {
   isOpen: boolean;
   onOpen: () => void;
+  reducedMotion?: boolean;
 }
 
 export const CoverCinematic: React.FC<CoverCinematicProps> = ({
   isOpen,
   onOpen,
+  reducedMotion = false,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleOpenClick = () => {
     if (isAnimating) return;
     soundEngine.playPageTurn();
+    if (reducedMotion) { onOpen(); return; } // no swing when the reader asked for less motion
     setIsAnimating(true);
     setTimeout(() => {
       onOpen();
