@@ -51,6 +51,14 @@ check('merge keeps the more recently studied review record', review.camel.box ==
 check('merge combines marked pages', JSON.stringify(merged.panna_bookmarks) === '[16,40]' && JSON.stringify(merged.panna_dog_ears) === '[23]');
 check('merge keeps notes from both', (merged.panna_marginalia as unknown[]).length === 2);
 check('merge keeps this browser’s settings', JSON.stringify(merged.panna_settings) === JSON.stringify(laptop.panna_settings));
+{
+  const t = restoreData({ panna_tours: { seen: { start: 200 }, tips: { book: 5 }, tipsOff: true } },
+    { ...backup, data: { panna_tours: { seen: { start: 100, word: 300 }, tips: { review: 7 }, welcomeDone: true, tipsOff: false } } }, 'merge', book)
+    .panna_tours as { seen: Record<string, number>; tips: Record<string, number>; welcomeDone: boolean; tipsOff: boolean };
+  check('merge keeps tours and tips seen on either side, and this browser’s tips choice',
+    t.seen.start === 100 && t.seen.word === 300 && t.tips.book === 5 && t.tips.review === 7 && t.welcomeDone && t.tipsOff, t);
+  check('a backup with damaged tour progress is refused', !parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, panna_tours: [] } })).ok);
+}
 check('merge combines recent searches without duplicates', (merged.panna_recent_searches as Array<{ headword: string }>).map((r) => r.headword).join() === 'camel,Heal', merged.panna_recent_searches);
 
 // A backup made under an older build of the book: its marks move to where their words are now.

@@ -12,3 +12,4 @@ export const SpeakerIcon = () => <Svg><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /
 export const SunIcon = () => <Svg><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5" /></Svg>;
 export const CardsIcon = () => <Svg><rect x="4" y="6" width="13" height="15" rx="2" /><path d="M8 3h10a2 2 0 0 1 2 2v12" /></Svg>;
 export const CloseIcon = () => <Svg><path d="M6 6l12 12M18 6L6 18" /></Svg>;
+export const CompassIcon = () => <Svg><circle cx="12" cy="12" r="8.5" /><path d="M15.5 8.5l-2 5-5 2 2-5z" /></Svg>;

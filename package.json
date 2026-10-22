@@ -28,6 +28,7 @@
     "test:backup-ui": "node scripts/test-backup-browser.mjs",
     "test:today-ui": "node scripts/test-today-browser.mjs",
     "test:related-ui": "node scripts/test-related-browser.mjs",
+    "test:tour-ui": "node scripts/test-tour-browser.mjs",
     "test:review": "tsx scripts/test-review.ts",
     "test:marks": "tsx scripts/test-marks.ts",
     "test:backup": "tsx scripts/test-backup.ts",

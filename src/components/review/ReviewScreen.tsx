@@ -18,6 +18,8 @@ interface ReviewScreenProps {
   onAnswer: (normalized: string, correct: boolean) => void;
   onClose: () => void;
   onOpenSaved: () => void;
+  /** Starts the Saving and Review tour. */
+  onHowItWorks: () => void;
 }
 
 interface Option { key: string; text: string; correct: boolean }
@@ -60,7 +62,7 @@ const PROMPTS: Record<QuestionKind, string> = {
 
 // One review round: up to 20 due words, one calm card at a time, no timer. A word answered wrongly comes back
 // once at the end of the round so the reader leaves having got it right.
-export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }: ReviewScreenProps) {
+export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, onHowItWorks }: ReviewScreenProps) {
   // The round is fixed when the screen opens; answering moves words out of "due" but not out of this round.
   const [round] = useState(() => {
     const now = Date.now();
@@ -163,6 +165,8 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
     </div>
   );
 
+  const howLink = <button type="button" className="lookup-link tour-howlink" id="review-how-btn" onClick={onHowItWorks}>How Review works ›</button>;
+
   // ── Nothing due ─────────────────────────────────────────────
   if (!practice && round.due.length === 0) {
     const next = nextDue(round.keys, records, Date.now());
@@ -185,6 +189,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
               <p className="review-note">Practice doesn’t change when words come back.</p>
             </>
           )}
+          {howLink}
         </div>
         <Button variant="desk" full onClick={saved.length ? onOpenSaved : onClose}>{saved.length ? 'See saved words' : 'Done'}</Button>
       </section>
@@ -296,6 +301,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved }:
             return next ? <p className="review-muted">Next review: <b>{comesBackLabel(daysUntil({ box: 0, due_at: next.at, right: 0, wrong: 0 }, Date.now()))}</b> ({next.count} word{next.count === 1 ? '' : 's'}).</p> : null;
           })()}
           <Button variant="primary" onClick={onClose} id="review-finish-btn">Done</Button>
+          {howLink}
         </div>
       )}
     </section>

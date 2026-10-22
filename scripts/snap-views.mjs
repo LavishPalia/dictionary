@@ -28,6 +28,7 @@ const VIEWS = [
   { name: 'menu', path: '/page/16', click: ['#menu-btn'] },
   { name: 'credits', path: '/page/16', click: ['#menu-btn', '#open-credits-btn'] },
   { name: 'saved', path: '/page/16', click: ['#nav-saved-btn'] }, // a script click works even where the tab is hidden (desktop)
+  { name: 'tour', path: '/', click: ['#today-take-tour'] }, // last: it answers the welcome card
 ];
 
 async function main() {
@@ -66,6 +67,10 @@ async function main() {
     for (const [sizeName, size] of Object.entries(SIZES)) {
       await send('Emulation.setDeviceMetricsOverride', { width: size.width, height: size.height, deviceScaleFactor: 1, mobile: size.mobile });
       await send('Emulation.setTouchEmulationEnabled', { enabled: size.mobile });
+      // A first visit (the welcome card shows on Today) with one-time tips off, so they cannot land in other views.
+      await send('Page.navigate', { url: `${BASE}/page/1` });
+      await sleep(1500);
+      await evaluate(`(() => { localStorage.clear(); localStorage.setItem('panna_tours', JSON.stringify({ seen: {}, tips: {}, tipsOff: true })); return true; })()`);
       for (const view of VIEWS) {
         await send('Page.navigate', { url: `${BASE}${view.path}` });
         let ready = false;

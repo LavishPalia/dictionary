@@ -16,6 +16,8 @@ interface WordDetailDrawerProps {
   onSelectWord: (headword: string, destPage?: number) => void;
   /** Show a similar or opposite word in this sheet. */
   onOpenRelated: (word: RelatedWord) => void;
+  /** Starts the word card tour on this word. */
+  onTourCard: () => void;
   isBookmarked: boolean;
   onToggleBookmark: (entry: DictionaryEntry) => void;
   /** For saved words: when the word next comes up in Review. */
@@ -31,6 +33,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   onClose,
   onSelectWord,
   onOpenRelated,
+  onTourCard,
   isBookmarked,
   onToggleBookmark,
   reviewNote,
@@ -122,18 +125,20 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
       {related.length > 0 && (
         <>
           <hr className="ui-divider" />
-          {related.map(({ kind, label, words }) => (
-            <div key={kind} className="word-related">
-              <div className="ui-label" id={`word-${kind}-label`}>{label}</div>
-              <ul className="word-related-list" id={`word-${kind}`} aria-labelledby={`word-${kind}-label`}>
-                {words.map((w) => (
-                  <li key={w.headword}>
-                    <Chip onClick={() => onOpenRelated(w)} title={`Open “${w.headword}”`}>{w.headword}</Chip>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div id="word-related">
+            {related.map(({ kind, label, words }) => (
+              <div key={kind} className="word-related">
+                <div className="ui-label" id={`word-${kind}-label`}>{label}</div>
+                <ul className="word-related-list" id={`word-${kind}`} aria-labelledby={`word-${kind}-label`}>
+                  {words.map((w) => (
+                    <li key={w.headword}>
+                      <Chip onClick={() => onOpenRelated(w)} title={`Open “${w.headword}”`}>{w.headword}</Chip>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </>
       )}
 
@@ -160,6 +165,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
         <span className="word-provenance">
           {entry.reviewed === 0 ? 'Machine-written · not yet checked by a reviewer' : ''}
         </span>
+        <button type="button" className="lookup-link tour-howlink" id="word-tour-btn" onClick={onTourCard}>Tour this card ›</button>
         <button type="button" className="lookup-link word-goto" id="see-on-page-btn"
           onClick={() => { onClose(); onSelectWord(entry.headword, pageNumber); }}>
           See on page {pageNumber.toLocaleString('en-IN')} ›

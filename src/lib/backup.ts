@@ -11,7 +11,7 @@ export const LAST_BACKUP_KEY = 'panna_last_backup';
 /** Everything that goes into a backup, by localStorage key. */
 export const BACKUP_KEYS = [
   'panna_saved_words', 'panna_review', 'panna_bookmarks', 'panna_dog_ears', 'panna_marginalia',
-  'panna_mark_anchors', 'panna_settings', 'panna_recent_searches',
+  'panna_mark_anchors', 'panna_settings', 'panna_recent_searches', 'panna_tours',
 ] as const;
 export type BackupKey = typeof BACKUP_KEYS[number];
 export type BackupData = Partial<Record<BackupKey, unknown>>;
@@ -56,6 +56,7 @@ export function parseBackup(text: string): { ok: true; backup: Backup; summary: 
     ['panna_mark_anchors', isObject],
     ['panna_settings', isObject],
     ['panna_recent_searches', isArray],
+    ['panna_tours', isObject],
   ];
   for (const [key, valid] of checks) {
     if (d[key] !== undefined && !valid(d[key])) return { ok: false, error: 'This backup is damaged and can’t be restored.' };
@@ -85,6 +86,24 @@ export function wordsToLocate(backup: Backup, currentVersion: string): string[] 
   return [...new Set([...Object.values(anchors.ribbons ?? {}), ...Object.values(anchors.dogEars ?? {}), ...notes.map((n) => n.anchor).filter((a): a is string => !!a)])];
 }
 
+type ToursLike = { seen?: Record<string, number>; tips?: Record<string, number>; welcomeDone?: boolean; tipsOff?: boolean; listOpened?: boolean };
+
+/** Tours and tips seen on either side stay seen; this browser's choice about tips wins. */
+function mergeTours(current: unknown, backup: unknown): ToursLike {
+  const c = (isObject(current) ? current : {}) as ToursLike;
+  const b = (isObject(backup) ? backup : {}) as ToursLike;
+  const earliest = (x: Record<string, number> = {}, y: Record<string, number> = {}) => {
+    const out = { ...y };
+    for (const [k, v] of Object.entries(x)) out[k] = out[k] === undefined ? v : Math.min(out[k], v);
+    return out;
+  };
+  return {
+    seen: earliest(c.seen, b.seen), tips: earliest(c.tips, b.tips),
+    welcomeDone: Boolean(c.welcomeDone || b.welcomeDone), tipsOff: c.tipsOff ?? b.tipsOff ?? false,
+    listOpened: Boolean(c.listOpened || b.listOpened),
+  };
+}
+
 /**
  * The data to write after restoring. "replace" makes this browser match the backup; "merge" keeps both: words and
  * notes are combined, for review progress the more recently studied copy of each word wins, and this browser's
@@ -105,7 +124,7 @@ export function restoreData(
     Object.assign(b, { panna_bookmarks: moved.ribbons, panna_dog_ears: moved.dogEars, panna_marginalia: moved.notes, panna_mark_anchors: moved.anchors });
   }
   if (mode === 'replace') {
-    return Object.fromEntries(BACKUP_KEYS.map((k) => [k, b[k] ?? (k === 'panna_review' || k === 'panna_settings' ? {} : [])])) as BackupData;
+    return Object.fromEntries(BACKUP_KEYS.map((k) => [k, b[k] ?? (k === 'panna_review' || k === 'panna_settings' || k === 'panna_tours' ? {} : [])])) as BackupData;
   }
 
   const words = new Map<string, SavedWordLike>();
@@ -138,5 +157,6 @@ export function restoreData(
     },
     panna_settings: current.panna_settings ?? b.panna_settings ?? {},
     panna_recent_searches: recent,
+    panna_tours: mergeTours(current.panna_tours, b.panna_tours),
   };
 }

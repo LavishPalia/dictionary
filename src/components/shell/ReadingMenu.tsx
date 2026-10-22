@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Segmented, Sheet, Switch } from '@/components/ui';
-import { ChevronIcon } from '@/components/ui/icons';
+import { ChevronIcon, CompassIcon } from '@/components/ui/icons';
 
 export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk' | 'instant';
 
@@ -26,6 +26,9 @@ interface ReadingMenuProps {
   onOpenCredits: () => void;
   onBackup: () => void;
   onRestore: () => void;
+  onOpenTours: () => void;
+  /** Tours not seen yet (0: all seen). */
+  toursUnseen: number;
   /** e.g. "Last backup 3 days ago". */
   backupLabel: string;
 }
@@ -49,6 +52,17 @@ export function ReadingMenu(props: ReadingMenuProps) {
 
   return (
     <Sheet open={open} onClose={onClose} title="Reading settings" id="reading-menu" returnFocusTo={() => document.getElementById('menu-btn')}>
+      {/* First, so anyone opening the menu finds the tours. */}
+      <button type="button" className="menu-row menu-link menu-tours" id="guided-tours-btn" onClick={thenClose(props.onOpenTours)}>
+        <span className="menu-tours-icon" aria-hidden="true"><CompassIcon /></span>
+        <span className="menu-tours-text">
+          <span className="menu-title">Guided tours</span>
+          <span className="menu-sub menu-sub--block" id="guided-tours-sub">
+            {props.toursUnseen ? `Learn your way around Panna · ${props.toursUnseen} not seen yet` : 'Learn your way around Panna'}
+          </span>
+        </span>
+        <ChevronIcon />
+      </button>
       <div className="menu-row">
         <div>
           <div className="menu-title">Desk lighting</div>

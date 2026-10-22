@@ -31,6 +31,8 @@ interface SavedScreenProps {
   statusFor: (normalized: string) => ReviewStatus;
   dueCount: number;
   onReview: () => void;
+  /** Starts the Saving and Review tour. */
+  onHowItWorks: () => void;
 }
 
 type Tab = 'words' | 'pages' | 'notes';
@@ -104,6 +106,7 @@ export function SavedScreen(props: SavedScreenProps) {
         <div>
           <h1 id="saved-title" className="saved-title" tabIndex={-1} ref={headingRef}>Saved</h1>
           <p className="saved-summary">{total ? `${plural(words.length, 'word')} · ${plural(pages.length, 'page')} · ${plural(notes.length, 'note')}` : 'Nothing saved yet'}</p>
+          <button type="button" className="lookup-link tour-howlink tour-howlink--desk" id="saved-how-btn" onClick={props.onHowItWorks}>How saving works ›</button>
         </div>
         <Button variant="desk" className="app-desktop-only" id="close-saved-btn" onClick={props.onBackToBook}>
           <BookIcon /> {props.backLabel}

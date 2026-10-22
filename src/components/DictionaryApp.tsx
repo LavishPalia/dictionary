@@ -22,6 +22,10 @@ import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
 import { useReducedMotion, visibleElement } from '@/lib/motion';
 import type { PageTurnSpeed } from '@/components/shell/ReadingMenu';
+import { TourLayer } from '@/components/tour/TourLayer';
+import { ToursSheet } from '@/components/tour/ToursSheet';
+import { useTours } from '@/components/tour/useTours';
+import { unseenTours } from '@/lib/tours';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -528,6 +532,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   };
 
   const handleToggleWordBookmark = (entry: DictionaryEntry) => {
+    // The very first save gets a one-time tip saying when the word comes back.
+    if (bookmarkedWords.length === 0) tours.offerTip('first-save', true);
     setBookmarkedWords(prev => {
       const exists = prev.some(w => w.normalized === entry.normalized);
       const updated = exists
@@ -648,6 +654,52 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setHomeSection('book');
     setSection('book');
   };
+  // Guided tours and one-time tips (src/components/tour). A tour step sets up its own scene through these.
+  const tours = useTours({
+    section,
+    goTo,
+    setMenu: setShowMenu,
+    openWord: (entry) => {
+      if (entry) { setActiveWordEntry(entry); setShowWordDrawer(true); } else setShowWordDrawer(false);
+    },
+    findVisibleEntry: (headword) => {
+      const norm = headword.toLowerCase().trim();
+      return [leftPage, rightPage, singleMobilePage].flatMap(p => (p ? [...p.column1, ...p.column2] : [])).find(e => e.normalized === norm) ?? null;
+    },
+    fetchWord,
+    currentWord: showWordDrawer ? activeWordEntry : null,
+    phone: isMobile,
+    reducedMotion: reducedMotion || speedMode === 'instant',
+  });
+  const { offerTip } = tours;
+  // One-time tips, the first time each thing is used (never during a tour; the layer waits for its target).
+  useEffect(() => {
+    if (section !== 'book' || showWordDrawer || showMenu || !isBookOpen) return;
+    const timer = setTimeout(() => offerTip('book'), 900);
+    return () => clearTimeout(timer);
+  }, [section, showWordDrawer, showMenu, isBookOpen, offerTip]);
+  useEffect(() => {
+    if (!showWordDrawer) return;
+    const timer = setTimeout(() => offerTip('word-card'), 500);
+    return () => clearTimeout(timer);
+  }, [showWordDrawer, offerTip]);
+  useEffect(() => {
+    if (section === 'review') offerTip('review');
+  }, [section, offerTip]);
+  // "?" opens Guided tours (desktop keyboards), unless typing or something is already open.
+  const openToursSheet = tours.openSheet;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey || tours.active || document.querySelector('[role="dialog"]')) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      e.preventDefault();
+      openToursSheet();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openToursSheet, tours.active]);
+
   const handleReviewAnswer = useCallback((key: string, correct: boolean) => {
     setReviewRecords(prev => {
       const now = Date.now();
@@ -926,6 +978,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           statusFor={(key) => statusOf(reviewRecords[key])}
           dueCount={dueCount}
           onReview={() => goTo('review')}
+          onHowItWorks={() => tours.startTour('review')}
         />
       )}
 
@@ -942,6 +995,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onContinueReading={(page) => { showBookForNavigation(); setHighlightedWord(''); turnToPage(page); }}
           onOpenWord={(entry) => { setActiveWordEntry(entry); setShowWordDrawer(true); }}
           onToggleSave={handleToggleWordBookmark}
+          showWelcome={tours.showWelcome}
+          onTakeTour={() => tours.startTour('start')}
+          onDismissWelcome={tours.dismissWelcome}
         />
       )}
 
@@ -953,6 +1009,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onAnswer={handleReviewAnswer}
           onClose={() => goTo(homeSection)}
           onOpenSaved={() => goTo('saved')}
+          onHowItWorks={() => tours.startTour('review')}
         />
       )}
 
@@ -963,6 +1020,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         isOpen={showWordDrawer}
         onClose={handleCloseWordDrawer}
         onOpenRelated={handleOpenRelated}
+        onTourCard={() => { if (activeWordEntry) tours.startTour('word', activeWordEntry); }}
         onSelectWord={(word, destPage) => {
           if (section !== 'book') showBookForNavigation();
           if (destPage) turnToPage(destPage, word);
@@ -995,8 +1053,20 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onOpenCredits={() => setShowCreditsModal(true)}
         onBackup={() => backupRef.current?.backup()}
         onRestore={() => backupRef.current?.restore()}
+        onOpenTours={tours.openSheet}
+        toursUnseen={unseenTours(tours.state)}
         backupLabel={lastBackupLabel(lastBackupAt)}
       />
+
+      <ToursSheet
+        open={tours.sheetOpen}
+        state={tours.state}
+        onClose={tours.closeSheet}
+        onStart={(id) => tours.startTour(id)}
+        onTipsAgain={tours.tipsAgain}
+        onTipsOff={tours.tipsOff}
+      />
+      {tours.layer && <TourLayer key={tours.layer.kind} {...tours.layer} />}
 
       <BackupManager ref={backupRef} dataVersion={meta.data_version} totalPages={meta.total_pages} onBackedUp={setLastBackupAt} />
 

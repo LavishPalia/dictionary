@@ -20,6 +20,10 @@ interface TodayScreenProps {
   onContinueReading: (page: number) => void;
   onOpenWord: (entry: DictionaryEntry) => void;
   onToggleSave: (entry: DictionaryEntry) => void;
+  /** First visit: offer the Getting started tour. */
+  showWelcome: boolean;
+  onTakeTour: () => void;
+  onDismissWelcome: () => void;
 }
 
 const SECONDS_PER_CARD = 20;
@@ -54,6 +58,19 @@ export function TodayScreen(props: TodayScreenProps) {
     <section className="today" id="today-screen" aria-labelledby="today-title">
       <h1 id="today-title" className="ui-visually-hidden">Today</h1>
       <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
+
+      {props.showWelcome && (
+        <Card className="today-card today-welcome" id="today-welcome" aria-labelledby="today-welcome-title">
+          <span className="ui-label">New to Panna?</span>
+          <p className="today-big" id="today-welcome-title">Take the one-minute tour</p>
+          <p className="tour-hi" lang="hi">पन्ना में नए हैं? एक मिनट का टूर देखें।</p>
+          <p className="today-muted">Find words, save them, and remember them. Any time later: ⋯ → Guided tours.</p>
+          <div className="today-actions">
+            <Button variant="primary" id="today-take-tour" onClick={props.onTakeTour}>Take the tour</Button>
+            <Button id="today-not-now" onClick={props.onDismissWelcome}>Not now</Button>
+          </div>
+        </Card>
+      )}
 
       <Card className="today-card" id="today-review">
         <div className="today-card-head">
