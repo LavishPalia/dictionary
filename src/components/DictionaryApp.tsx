@@ -5,7 +5,7 @@ import { BookSpread } from '@/components/book/BookSpread';
 import { MobilePage } from '@/components/book/MobilePage';
 import { LookupBar } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
-import { BookmarksModal } from '@/components/modals/BookmarksModal';
+import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
@@ -69,11 +69,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Word Detail Drawer & Bookmarks State
   const [activeWordEntry, setActiveWordEntry] = useState<DictionaryEntry | null>(initialEntry);
   const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialEntry));
-  const [showBookmarksModal, setShowBookmarksModal] = useState<boolean>(false);
+  // Which screen is showing. The book stays mounted (hidden) under Saved, so its place and state survive.
+  const [section, setSection] = useState<'book' | 'saved'>('book');
   const [showCreditsModal, setShowCreditsModal] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
-  const [bookmarkedWords, setBookmarkedWords] = useState<DictionaryEntry[]>([]);
+  const [bookmarkedWords, setBookmarkedWords] = useState<SavedWord[]>([]);
 
   // ── Page cache & prefetching ────────────────────────────────────────────
   // Pages arrive from /api/page/[n]; the map is LRU-ordered (oldest first) and cacheVersion re-renders on arrival.
@@ -304,6 +305,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
     const handlePopState = async () => {
+      setSection(window.history.state?.panna === 'saved' ? 'saved' : 'book');
       const path = window.location.pathname;
       if (path.startsWith('/page/')) {
         const pNum = parseInt(path.replace('/page/', ''), 10);
@@ -404,7 +406,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       const exists = prev.some(w => w.normalized === entry.normalized);
       const updated = exists
         ? prev.filter(w => w.normalized !== entry.normalized)
-        : [...prev, entry];
+        : [...prev, { ...entry, saved_at: Date.now() }];
       try { localStorage.setItem('panna_saved_words', JSON.stringify(updated)); } catch(e){}
       return updated;
     });
@@ -466,6 +468,35 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     turnToPage(randomPage, randomPageObj?.first_headword || '');
   };
 
+  // ── Saved screen ────────────────────────────────────────────────────────
+  // Opening it adds a history entry, so the phone's Back button closes it.
+  const openSaved = () => {
+    if (section === 'saved') return;
+    setShowMenu(false);
+    window.history.pushState({ panna: 'saved' }, '', `/page/${currentPage}`);
+    setSection('saved');
+    window.scrollTo(0, 0);
+  };
+  // viaBack: undo the history entry (Book tab, "Back to the book"); otherwise replace it, because the caller is
+  // about to navigate somewhere new.
+  const leaveSaved = (viaBack: boolean) => {
+    if (window.history.state?.panna === 'saved') {
+      if (viaBack) { window.history.back(); return; } // the popstate handler shows the book
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    setSection('book');
+  };
+  const persistList = <T,>(key: string, list: T[]) => { try { localStorage.setItem(key, JSON.stringify(list)); } catch {} return list; };
+  const savedPageSetters: Record<SavedPageKind, [React.Dispatch<React.SetStateAction<number[]>>, string]> = {
+    'ribbon': [setBookmarkedPages, 'panna_bookmarks'],
+    'dog-ear': [setDogEaredPages, 'panna_dog_ears'],
+  };
+  const handleOpenSavedWord = async (word: SavedWord) => {
+    const found = await fetchWord(word.headword); // the stored copy may be from an older build of the book
+    setActiveWordEntry(found ? found.entry : word);
+    setShowWordDrawer(true);
+  };
+
   const savedCount = bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length;
 
   const canPrev = leftPageNum > 1;
@@ -499,7 +530,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
       // A control already used the key (e.g. arrows in a segmented control), or a dialog is in front of the book.
-      if (e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
+      if (e.defaultPrevented || document.querySelector('[role="dialog"]') || document.getElementById('saved-screen')) return;
       if (isFlipping) return;
 
       if (e.key === 'ArrowLeft') {
@@ -542,11 +573,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           />
         }
         savedCount={savedCount}
-        onOpenSaved={() => setShowBookmarksModal(true)}
+        onOpenSaved={() => (section === 'saved' ? leaveSaved(true) : openSaved())}
+        savedActive={section === 'saved'}
         onOpenMenu={() => setShowMenu(true)}
         menuOpen={showMenu}
       />
 
+      <div style={{ display: section === 'saved' ? 'none' : 'contents' }}>
         {/* Dynamic Riffle indicator banner (Matching Flip.dc.html) */}
         {riffleInfo && (
           <div
@@ -625,6 +658,26 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           />
         </div>
       )}
+      </div>
+
+      {section === 'saved' && (
+        <SavedScreen
+          words={bookmarkedWords}
+          ribbonPages={bookmarkedPages}
+          dogEaredPages={dogEaredPages}
+          notes={marginNotes}
+          loadPage={fetchPage}
+          onOpenWord={handleOpenSavedWord}
+          onGoToPage={(page) => { leaveSaved(false); setHighlightedWord(''); turnToPage(page); }}
+          onRemoveWord={(w) => setBookmarkedWords(prev => persistList('panna_saved_words', prev.filter(x => x.normalized !== w.normalized)))}
+          onRestoreWord={(w) => setBookmarkedWords(prev => prev.some(x => x.normalized === w.normalized) ? prev : persistList('panna_saved_words', [...prev, w]))}
+          onRemovePage={(kind, page) => { const [set, key] = savedPageSetters[kind]; set(prev => persistList(key, prev.filter(p => p !== page))); }}
+          onRestorePage={(kind, page) => { const [set, key] = savedPageSetters[kind]; set(prev => prev.includes(page) ? prev : persistList(key, [...prev, page].sort((a, b) => a - b))); }}
+          onDeleteNote={(note) => handleDeleteMarginNote(note.id)}
+          onRestoreNote={(note) => setMarginNotes(prev => prev.some(n => n.id === note.id) ? prev : persistList('panna_marginalia', [...prev, note]))}
+          onBackToBook={() => leaveSaved(true)}
+        />
+      )}
 
       {/* Word Detail Inspection Drawer */}
       <WordDetailDrawer
@@ -633,42 +686,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         isOpen={showWordDrawer}
         onClose={handleCloseWordDrawer}
         onSelectWord={(word, destPage) => {
+          if (section === 'saved') leaveSaved(false);
           if (destPage) turnToPage(destPage, word);
           else handleSelectWord(word, currentPage);
         }}
         isBookmarked={activeWordEntry ? bookmarkedWords.some(w => w.normalized === activeWordEntry.normalized) : false}
         onToggleBookmark={handleToggleWordBookmark}
-      />
-
-      {/* Bookmarks & Reading History Modal */}
-      <BookmarksModal
-        isOpen={showBookmarksModal}
-        onClose={() => setShowBookmarksModal(false)}
-        bookmarkedPages={bookmarkedPages}
-        dogEaredPages={dogEaredPages}
-        marginNotes={marginNotes}
-        bookmarkedWords={bookmarkedWords}
-        onSelectPage={(pNum) => turnToPage(pNum)}
-        onSelectWord={handleSelectSavedWord}
-        onRemovePageBookmark={(pNum) => {
-          setBookmarkedPages(prev => {
-            const next = prev.filter(p => p !== pNum);
-            try { localStorage.setItem('panna_bookmarks', JSON.stringify(next)); } catch(e){}
-            return next;
-          });
-        }}
-        onRemoveDogEar={(pNum) => {
-          handleToggleDogEar(pNum);
-        }}
-        onDeleteMarginNote={handleDeleteMarginNote}
-        onRemoveWordBookmark={(headword) => {
-          const norm = headword.toLowerCase().trim();
-          setBookmarkedWords(prev => {
-            const next = prev.filter(w => w.normalized !== norm);
-            try { localStorage.setItem('panna_saved_words', JSON.stringify(next)); } catch(e){}
-            return next;
-          });
-        }}
       />
 
       <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />
@@ -694,10 +717,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       />
 
       <BottomNav
-        active={showBookmarksModal ? 'saved' : 'book'}
+        active={section}
         savedCount={savedCount}
-        onBook={() => { setShowBookmarksModal(false); if (!isBookOpen) setIsBookOpen(true); }}
-        onSaved={() => setShowBookmarksModal(true)}
+        onBook={() => { if (section === 'saved') leaveSaved(true); if (!isBookOpen) setIsBookOpen(true); }}
+        onSaved={openSaved}
       />
     </main>
   );

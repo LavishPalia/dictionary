@@ -106,12 +106,6 @@ async function main() {
     await key('Escape');
     await sleep(300);
 
-    await evaluate(`document.querySelector('#open-bookmarks-btn').click(); true`);
-    await sleep(50);
-    const modalAnims = await evaluate(`document.querySelector('#bookmarks-modal-card')?.getAnimations().map((a) => a.animationName) ?? []`);
-    check('desktop: the Saved panel now animates in (its keyframes used to be missing)', modalAnims.includes('scaleUp'), modalAnims);
-    await evaluate(`document.querySelector('#close-bookmarks-btn')?.click(); true`);
-    await sleep(300);
 
     await evaluate(`document.querySelector('#menu-btn').click(); true`);
     await sleep(200);

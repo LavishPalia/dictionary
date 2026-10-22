@@ -26,7 +26,7 @@ const VIEWS = [
   { name: 'hindi-search', path: '/page/16', type: 'ऊंट' },
   { name: 'menu', path: '/page/16', click: ['#menu-btn'] },
   { name: 'credits', path: '/page/16', click: ['#menu-btn', '#open-credits-btn'] },
-  { name: 'bookmarks', path: '/page/16', click: '#open-bookmarks-btn' },
+  { name: 'saved', path: '/page/16', click: ['#nav-saved-btn'] }, // a script click works even where the tab is hidden (desktop)
 ];
 
 async function main() {

@@ -252,7 +252,7 @@ async function main() {
     `);
     await sleep(500);
 
-    // Open Bookmarks modal
+    // Open the Saved screen
     await evaluate(`
       const btn = document.querySelector("#open-bookmarks-btn");
       if (btn) btn.click();
@@ -260,20 +260,22 @@ async function main() {
     `);
     await sleep(600);
 
-    const modalHasSavedItems = await evaluate(`
-      const body = document.body.textContent;
-      return (body.includes('Reading History') || body.includes('SILK RIBBON SPREADS')) && body.includes('Pages ${L}–${L + 1}') && body.includes('Ceremony');
-    `);
-    check(`Bookmarks modal shows spread ${L}–${L + 1} & Ceremony`, modalHasSavedItems === true);
-    await takeScreenshot('phase3_2_bookmarks_modal.png');
+    const savedWordsText = await evaluate(`return document.querySelector('#saved-screen')?.innerText ?? '';`);
+    await evaluate(`[...document.querySelectorAll('#saved-screen [role="radio"]')].find((r) => r.textContent.startsWith('Pages')).click(); return true;`);
+    await sleep(200);
+    const savedPagesText = await evaluate(`return document.querySelector('#saved-screen')?.innerText ?? '';`);
+    check(`Saved screen shows Ceremony and spread ${L}–${L + 1}`,
+      savedWordsText.includes('Ceremony') && savedPagesText.includes(`Pages ${L}–${L + 1}`), { savedWordsText, savedPagesText });
+    await takeScreenshot('phase3_2_saved_screen.png');
 
-    // Close Bookmarks modal
+    // Back to the book
     await evaluate(`
-      const btn = document.querySelector("#close-bookmarks-btn");
+      const btn = document.querySelector("#close-saved-btn");
       if (btn) btn.click();
       return true;
     `);
     await sleep(500);
+    check('Back to the book leaves the Saved screen', await evaluate(`return !document.querySelector('#saved-screen');`));
 
     console.log('\n[6/7] Testing Single Page Turn (Next >) ...');
     await evaluate(`

@@ -22,6 +22,7 @@
     "test:search": "node scripts/test-search-browser.mjs",
     "test:word": "node scripts/test-word-browser.mjs",
     "test:motion": "node scripts/test-motion-browser.mjs",
+    "test:saved": "node scripts/test-saved-browser.mjs",
     "test:highlight": "tsx scripts/test-highlight.ts",
     "test:pos": "tsx scripts/test-pos.ts",
     "snap": "node scripts/snap-views.mjs",

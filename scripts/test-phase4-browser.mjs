@@ -303,7 +303,7 @@ async function main() {
     // ─────────────────────────────────────────────────────────────
     // TEST 4: BOOKMARKS MODAL INTEGRATION
     // ─────────────────────────────────────────────────────────────
-    console.log('\n[5/5] Testing Bookmarks Modal (Dog-Ears & Marginalia List) ...');
+    console.log('\n[5/5] Testing Saved screen (Folded corners & pencil notes) ...');
     await evaluate(`
       const btn = document.querySelector("#open-bookmarks-btn");
       if (btn) btn.click();
@@ -311,20 +311,21 @@ async function main() {
     `);
     await sleep(600);
 
-    const modalVerification = await evaluate(`
-      const text = document.body.textContent;
-      return {
-        hasDogEarSection: text.includes('DOG-EARED PAGES') && text.includes('Folded Page ${R}'),
-        hasNotesSection: text.includes('HANDWRITTEN MARGIN NOTES') && text.includes('key reference note: ceremony'),
-      };
-    `);
-    check(`Bookmarks Modal lists Dog-Eared Page ${R}`, modalVerification?.hasDogEarSection === true);
-    check('Bookmarks Modal lists Marginalia note', modalVerification?.hasNotesSection === true);
-    await takeScreenshot('phase4_5_bookmarks_modal.png');
+    // The Saved screen shows one tab at a time.
+    const savedTab = async (name) => {
+      await evaluate(`[...document.querySelectorAll('#saved-screen [role="radio"]')].find((r) => r.textContent.startsWith('${name}')).click(); return true;`);
+      await sleep(200);
+      return evaluate(`return document.querySelector('#saved-screen')?.innerText ?? '';`);
+    };
+    const pagesText = await savedTab('Pages');
+    const notesText = await savedTab('Notes');
+    check(`Saved screen lists the folded corner on page ${R}`, pagesText.includes(`Page ${R}`) && pagesText.includes('Folded corner'), pagesText);
+    check('Saved screen lists the pencil note', notesText.includes('key reference note: ceremony') && notesText.includes(`on page ${R}`), notesText);
+    await takeScreenshot('phase4_5_saved_screen.png');
 
-    // Close Bookmarks Modal
+    // Back to the book
     await evaluate(`
-      const closeBtn = document.querySelector("#close-bookmarks-btn");
+      const closeBtn = document.querySelector("#close-saved-btn");
       if (closeBtn) closeBtn.click();
       return true;
     `);

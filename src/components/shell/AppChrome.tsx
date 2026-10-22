@@ -6,10 +6,11 @@ import { BookIcon, MoreIcon, StarIcon } from '@/components/ui/icons';
 
 // Top bar. Desktop: wordmark, search, Saved, ⋯. Phones: search and ⋯ only (Saved lives in the bottom bar).
 // Which layout shows is decided in CSS at the same 1024px breakpoint the book uses.
-export function AppHeader({ search, savedCount, onOpenSaved, onOpenMenu, menuOpen }: {
+export function AppHeader({ search, savedCount, onOpenSaved, savedActive, onOpenMenu, menuOpen }: {
   search: ReactNode;
   savedCount: number;
   onOpenSaved: () => void;
+  savedActive: boolean;
   onOpenMenu: () => void;
   menuOpen: boolean;
 }) {
@@ -20,7 +21,7 @@ export function AppHeader({ search, savedCount, onOpenSaved, onOpenMenu, menuOpe
         <span className="app-wordmark-en">English → हिंदी</span>
       </div>
       <div className="app-search">{search}</div>
-      <Button variant="desk" id="open-bookmarks-btn" className="app-desktop-only" onClick={onOpenSaved}
+      <Button variant="desk" id="open-bookmarks-btn" className="app-desktop-only" onClick={onOpenSaved} aria-pressed={savedActive}
         aria-label={`Saved: ${savedCount} item${savedCount === 1 ? '' : 's'}`}>
         <StarIcon /> Saved{savedCount > 0 && <span className="app-count">{savedCount}</span>}
       </Button>
@@ -40,8 +41,7 @@ export function BottomNav({ active, savedCount, onBook, onSaved }: {
   onSaved: () => void;
 }) {
   return (
-    // While Saved is open (still a modal for now) the bar stays above it, so "Book" can take the reader back.
-    <nav className={active === 'saved' ? 'app-bottomnav app-bottomnav--raised' : 'app-bottomnav'} aria-label="Sections">
+    <nav className="app-bottomnav" aria-label="Sections">
       <button type="button" id="nav-book-btn" aria-current={active === 'book' ? 'page' : undefined} onClick={onBook}>
         <BookIcon />Book
       </button>

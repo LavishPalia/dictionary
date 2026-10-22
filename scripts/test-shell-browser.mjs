@@ -127,13 +127,11 @@ async function main() {
 
     await evaluate(`document.querySelector('#nav-saved-btn').click(); true`);
     await sleep(400);
-    check('phone: Saved tab opens saved items and becomes current',
-      await evaluate(`Boolean(document.querySelector('#bookmarks-modal-card')) && document.querySelector('#nav-saved-btn').getAttribute('aria-current') === 'page'`));
-    const barOnTop = await evaluate(`(() => { const r = document.querySelector('#nav-book-btn').getBoundingClientRect(); return Boolean(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('.app-bottomnav')); })()`);
-    check('phone: bottom bar stays usable while Saved is open', barOnTop);
+    check('phone: Saved tab opens the Saved screen and becomes current',
+      await evaluate(`Boolean(document.querySelector('#saved-screen')) && document.querySelector('#nav-saved-btn').getAttribute('aria-current') === 'page'`));
     await evaluate(`document.querySelector('#nav-book-btn').click(); true`);
-    await sleep(300);
-    check('phone: Book tab returns to the page', await evaluate(`!document.querySelector('#bookmarks-modal-card')`));
+    await sleep(400);
+    check('phone: Book tab returns to the page', await evaluate(`!document.querySelector('#saved-screen') && Boolean(document.querySelector('.entry-text'))`));
 
     await evaluate(`document.querySelector('#menu-btn').click(); true`);
     await sleep(300);
