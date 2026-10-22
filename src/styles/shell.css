@@ -10,7 +10,7 @@
 .app-search { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .app-count { font: 13px var(--font-fell); color: var(--brass-muted); }
 .app-count::before { content: '· '; }
-#open-bookmarks-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass); }
+#open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass); }
 
 /* Search field in the header (the results list is styled by LookupBar). */
 .app-lookup {
@@ -52,6 +52,7 @@
   .app-bottomnav button:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
   .app-bottomnav .app-count { position: absolute; top: 6px; left: calc(50% + 12px); font-size: 11px; }
   .app-bottomnav .app-count::before { content: ''; }
+  .app-bottomnav .ui-badge { position: absolute; top: 6px; left: calc(50% + 8px); }
   /* Room for the bar under the last thing on the page. */
   .app-main { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
 }

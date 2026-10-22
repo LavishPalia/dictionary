@@ -16,6 +16,8 @@ interface WordDetailDrawerProps {
   onSelectWord: (headword: string, destPage?: number) => void;
   isBookmarked: boolean;
   onToggleBookmark: (entry: DictionaryEntry) => void;
+  /** For saved words: when the word next comes up in Review. */
+  reviewNote?: string | null;
 }
 
 // The word sheet: a bottom sheet on phones, a side panel beside the book on desktop. Hindi is the largest
@@ -28,6 +30,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   onSelectWord,
   isBookmarked,
   onToggleBookmark,
+  reviewNote,
 }) => {
   const [speaking, setSpeaking] = useState<SpeechLang | null>(null);
   const speech = useSpeechVoices();
@@ -126,6 +129,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
           <StarIcon />{isBookmarked ? 'Saved' : 'Save word'}
         </Button>
       </div>
+
+      {reviewNote && <p className="word-review-note" id="word-review-note">{reviewNote}</p>}
 
       <div className="word-foot">
         <span className="word-provenance">

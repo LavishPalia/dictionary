@@ -6,6 +6,9 @@ import { MobilePage } from '@/components/book/MobilePage';
 import { LookupBar } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
+import { ReviewScreen } from '@/components/review/ReviewScreen';
+import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, newRecord, saveRecords, statusOf, type ReviewRecords } from '@/lib/review';
+import type { Section } from '@/components/shell/AppChrome';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
@@ -69,8 +72,26 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Word Detail Drawer & Bookmarks State
   const [activeWordEntry, setActiveWordEntry] = useState<DictionaryEntry | null>(initialEntry);
   const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialEntry));
-  // Which screen is showing. The book stays mounted (hidden) under Saved, so its place and state survive.
-  const [section, setSection] = useState<'book' | 'saved'>('book');
+  // Which screen is showing. The book stays mounted (hidden) under Saved and Review, so its place and state survive.
+  const [section, setSection] = useState<Section>('book');
+  // Bumped each time Review opens, so every visit starts a fresh round.
+  const [reviewRound, setReviewRound] = useState(0);
+  const [reviewRecords, setReviewRecords] = useState<ReviewRecords>({});
+  // True while the history entry for an open Saved/Review screen is one this visit pushed, so Back can pop it.
+  const sectionEntryRef = useRef(false);
+  // Re-reads "now" every minute so the due count changes at midnight without a reload.
+  const [clock, setClock] = useState(0);
+  useEffect(() => {
+    setReviewRecords(loadRecords());
+    // Browsers keep history state across reloads: a reload while Saved or Review was open must not leave a stale
+    // entry that "Back to the book" would step onto.
+    if (window.history.state?.panna) {
+      const { panna, ...rest } = window.history.state;
+      window.history.replaceState(rest, '', window.location.pathname);
+    }
+    const timer = setInterval(() => setClock(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const [showCreditsModal, setShowCreditsModal] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
@@ -305,7 +326,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
     const handlePopState = async () => {
-      setSection(window.history.state?.panna === 'saved' ? 'saved' : 'book');
+      const shown = window.history.state?.panna;
+      sectionEntryRef.current = shown === 'saved' || shown === 'review';
+      setSection(shown === 'saved' || shown === 'review' ? shown : 'book');
       const path = window.location.pathname;
       if (path.startsWith('/page/')) {
         const pNum = parseInt(path.replace('/page/', ''), 10);
@@ -468,23 +491,56 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     turnToPage(randomPage, randomPageObj?.first_headword || '');
   };
 
-  // ── Saved screen ────────────────────────────────────────────────────────
-  // Opening it adds a history entry, so the phone's Back button closes it.
-  const openSaved = () => {
-    if (section === 'saved') return;
+  // ── Saved and Review screens ────────────────────────────────────────────
+  // Opening one from the book adds a history entry, so the phone's Back button returns to the book; switching
+  // between them replaces that entry.
+  const openSection = (next: Exclude<Section, 'book'>) => {
+    if (section === next) return;
     setShowMenu(false);
-    window.history.pushState({ panna: 'saved' }, '', `/page/${currentPage}`);
-    setSection('saved');
+    if (next === 'review') setReviewRound(n => n + 1);
+    if (section === 'book') {
+      window.history.pushState({ panna: next }, '', `/page/${currentPage}`);
+      sectionEntryRef.current = true;
+    } else {
+      window.history.replaceState({ ...window.history.state, panna: next }, '', window.location.pathname);
+    }
+    setSection(next);
     window.scrollTo(0, 0);
   };
   // viaBack: undo the history entry (Book tab, "Back to the book"); otherwise replace it, because the caller is
   // about to navigate somewhere new.
-  const leaveSaved = (viaBack: boolean) => {
-    if (window.history.state?.panna === 'saved') {
-      if (viaBack) { window.history.back(); return; } // the popstate handler shows the book
-      window.history.replaceState(null, '', window.location.pathname);
+  const leaveSection = (viaBack: boolean) => {
+    if (viaBack && sectionEntryRef.current && window.history.state?.panna) {
+      window.history.back(); // the popstate handler shows the book
+      return;
     }
+    if (window.history.state?.panna) {
+      const { panna, ...rest } = window.history.state; // keep Next.js's own router state
+      window.history.replaceState(rest, '', window.location.pathname);
+    }
+    sectionEntryRef.current = false;
     setSection('book');
+  };
+  const handleReviewAnswer = useCallback((key: string, correct: boolean) => {
+    setReviewRecords(prev => {
+      const now = Date.now();
+      const next = { ...prev, [key]: answer(prev[key] ?? newRecord(now), correct, now) };
+      saveRecords(next);
+      return next;
+    });
+  }, []);
+  const dueCount = useMemo(
+    () => dueWords(bookmarkedWords.map(w => w.normalized), reviewRecords, Date.now(), Infinity).length,
+    // clock: recount as time passes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bookmarkedWords, reviewRecords, clock],
+  );
+  // "In review · comes back in 3 days" under Save in the word sheet.
+  const reviewNoteFor = (entry: DictionaryEntry | null): string | null => {
+    if (!entry || !bookmarkedWords.some(w => w.normalized === entry.normalized)) return null;
+    const record = reviewRecords[entry.normalized];
+    if (!record || record.due_at <= Date.now()) return 'In review · due now';
+    return `In review · ${statusOf(record) === 'mastered' ? 'mastered · ' : ''}comes back ${comesBackLabel(daysUntil(record, Date.now()))}`;
   };
   const persistList = <T,>(key: string, list: T[]) => { try { localStorage.setItem(key, JSON.stringify(list)); } catch {} return list; };
   const savedPageSetters: Record<SavedPageKind, [React.Dispatch<React.SetStateAction<number[]>>, string]> = {
@@ -530,7 +586,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
       // A control already used the key (e.g. arrows in a segmented control), or a dialog is in front of the book.
-      if (e.defaultPrevented || document.querySelector('[role="dialog"]') || document.getElementById('saved-screen')) return;
+      if (e.defaultPrevented || document.querySelector('[role="dialog"]') || section !== 'book') return;
       if (isFlipping) return;
 
       if (e.key === 'ArrowLeft') {
@@ -543,7 +599,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFlipping, handlePrevSpread, handleNextSpread]);
+  }, [isFlipping, handlePrevSpread, handleNextSpread, section]);
 
   return (
     <main
@@ -573,13 +629,15 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           />
         }
         savedCount={savedCount}
-        onOpenSaved={() => (section === 'saved' ? leaveSaved(true) : openSaved())}
-        savedActive={section === 'saved'}
+        onOpenSaved={() => (section === 'saved' ? leaveSection(true) : openSection('saved'))}
+        onOpenReview={() => (section === 'review' ? leaveSection(true) : openSection('review'))}
+        section={section}
+        dueCount={dueCount}
         onOpenMenu={() => setShowMenu(true)}
         menuOpen={showMenu}
       />
 
-      <div style={{ display: section === 'saved' ? 'none' : 'contents' }}>
+      <div style={{ display: section === 'book' ? 'contents' : 'none' }}>
         {/* Dynamic Riffle indicator banner (Matching Flip.dc.html) */}
         {riffleInfo && (
           <div
@@ -668,14 +726,28 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           notes={marginNotes}
           loadPage={fetchPage}
           onOpenWord={handleOpenSavedWord}
-          onGoToPage={(page) => { leaveSaved(false); setHighlightedWord(''); turnToPage(page); }}
+          onGoToPage={(page) => { leaveSection(false); setHighlightedWord(''); turnToPage(page); }}
           onRemoveWord={(w) => setBookmarkedWords(prev => persistList('panna_saved_words', prev.filter(x => x.normalized !== w.normalized)))}
           onRestoreWord={(w) => setBookmarkedWords(prev => prev.some(x => x.normalized === w.normalized) ? prev : persistList('panna_saved_words', [...prev, w]))}
           onRemovePage={(kind, page) => { const [set, key] = savedPageSetters[kind]; set(prev => persistList(key, prev.filter(p => p !== page))); }}
           onRestorePage={(kind, page) => { const [set, key] = savedPageSetters[kind]; set(prev => prev.includes(page) ? prev : persistList(key, [...prev, page].sort((a, b) => a - b))); }}
           onDeleteNote={(note) => handleDeleteMarginNote(note.id)}
           onRestoreNote={(note) => setMarginNotes(prev => prev.some(n => n.id === note.id) ? prev : persistList('panna_marginalia', [...prev, note]))}
-          onBackToBook={() => leaveSaved(true)}
+          onBackToBook={() => leaveSection(true)}
+          statusFor={(key) => statusOf(reviewRecords[key])}
+          dueCount={dueCount}
+          onReview={() => openSection('review')}
+        />
+      )}
+
+      {section === 'review' && (
+        <ReviewScreen
+          key={reviewRound}
+          saved={bookmarkedWords}
+          records={reviewRecords}
+          onAnswer={handleReviewAnswer}
+          onClose={() => leaveSection(true)}
+          onOpenSaved={() => openSection('saved')}
         />
       )}
 
@@ -686,12 +758,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         isOpen={showWordDrawer}
         onClose={handleCloseWordDrawer}
         onSelectWord={(word, destPage) => {
-          if (section === 'saved') leaveSaved(false);
+          if (section !== 'book') leaveSection(false);
           if (destPage) turnToPage(destPage, word);
           else handleSelectWord(word, currentPage);
         }}
         isBookmarked={activeWordEntry ? bookmarkedWords.some(w => w.normalized === activeWordEntry.normalized) : false}
         onToggleBookmark={handleToggleWordBookmark}
+        reviewNote={reviewNoteFor(activeWordEntry)}
       />
 
       <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />
@@ -719,8 +792,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       <BottomNav
         active={section}
         savedCount={savedCount}
-        onBook={() => { if (section === 'saved') leaveSaved(true); if (!isBookOpen) setIsBookOpen(true); }}
-        onSaved={openSaved}
+        dueCount={dueCount}
+        onBook={() => { if (section !== 'book') leaveSection(true); if (!isBookOpen) setIsBookOpen(true); }}
+        onSaved={() => openSection('saved')}
+        onReview={() => openSection('review')}
       />
     </main>
   );

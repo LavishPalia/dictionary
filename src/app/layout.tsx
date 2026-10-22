@@ -5,6 +5,7 @@ import '@/styles/shell.css';
 import '@/styles/search.css';
 import '@/styles/word.css';
 import '@/styles/saved.css';
+import '@/styles/review.css';
 import '@/styles/motion.css';
 import { Caveat, IM_Fell_English, IM_Fell_English_SC, Tiro_Devanagari_Hindi } from 'next/font/google';
 

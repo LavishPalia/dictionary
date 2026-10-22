@@ -57,6 +57,7 @@
 .ui-tag--learning { color: var(--crimson); border-color: rgba(122, 43, 34, 0.4); }
 .ui-tag--mastered { color: var(--green); border-color: rgba(61, 90, 42, 0.45); }
 .ui-badge {
+  margin-left: 2px;
   display: inline-block; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
   background: var(--crimson); color: #f6e9cc; font: 600 10px/18px system-ui, sans-serif; text-align: center;
 }

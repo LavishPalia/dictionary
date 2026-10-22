@@ -42,7 +42,7 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
 
 export function Badge({ count, label }: { count: number; label: string }) {
   if (count <= 0) return null;
-  return <span className="ui-badge" aria-label={label}>{count > 99 ? '99+' : count}</span>;
+  return <span className="ui-badge" {...(label ? { 'aria-label': label } : { 'aria-hidden': true })}>{count > 99 ? '99+' : count}</span>;
 }
 
 // A radio group drawn as joined pills. Arrow keys move between options, as for native radios.

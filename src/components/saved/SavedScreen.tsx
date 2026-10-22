@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import type { BookPage, DictionaryEntry, MarginNote } from '@/lib/types';
+import type { ReviewStatus } from '@/lib/review';
 import { Button, IconButton, Segmented } from '@/components/ui';
 import { BookIcon, CloseIcon } from '@/components/ui/icons';
 
@@ -25,6 +26,9 @@ interface SavedScreenProps {
   onDeleteNote: (note: MarginNote) => void;
   onRestoreNote: (note: MarginNote) => void;
   onBackToBook: () => void;
+  statusFor: (normalized: string) => ReviewStatus;
+  dueCount: number;
+  onReview: () => void;
 }
 
 type Tab = 'words' | 'pages' | 'notes';
@@ -117,6 +121,12 @@ export function SavedScreen(props: SavedScreenProps) {
         />
       </div>
 
+      {tab === 'words' && props.dueCount > 0 && (
+        <Button variant="primary" full id="saved-review-btn" className="saved-review" onClick={props.onReview}>
+          Review {props.dueCount} word{props.dueCount === 1 ? '' : 's'} now ›
+        </Button>
+      )}
+
       {tab === 'words' && (
         groups.length === 0 ? (
           <p className="saved-empty">No saved words yet. Open any word and tap <b>Save word</b> to keep it here.</p>
@@ -131,6 +141,11 @@ export function SavedScreen(props: SavedScreenProps) {
                       <span className="saved-hw">{w.headword}</span>
                       <span className="saved-hi" lang="hi">{w.meaning_hi}</span>
                     </button>
+                    {props.statusFor(w.normalized) !== 'new' && (
+                      <span className={`ui-tag review-status ui-tag--${props.statusFor(w.normalized)}`}>
+                        {props.statusFor(w.normalized) === 'mastered' ? 'Mastered' : 'Learning'}
+                      </span>
+                    )}
                     <IconButton surface="paper" aria-label={`Remove ${w.headword} from saved words`}
                       onClick={() => { props.onRemoveWord(w); removed(`Removed “${w.headword}”`, () => props.onRestoreWord(w)); }}>
                       <CloseIcon />

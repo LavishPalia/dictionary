@@ -280,3 +280,64 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
     .slice(0, Math.min(3, limit))
     .map(({ row, form }) => toResult(row, 'suggestion', { ...(form ? { matched_form: form } : {}), suggestion: true }));
 }
+
+/** One review card: the word, and three wrong options a learner could plausibly confuse with it. */
+export interface QuizCard {
+  entry: DictionaryEntry;
+  distractors: Array<Pick<DictionaryEntry, 'headword' | 'normalized' | 'pos' | 'meaning_hi' | 'definition_en'>>;
+}
+
+const primaryPos = (pos: string) => pos.split('&')[0].trim();
+
+// The comma-separated meanings and their words, folded like search, so "छोड़ना" and "छोड़ देना" count as overlapping.
+function hindiTokens(meaningSearch: string): Set<string> {
+  const tokens = new Set<string>();
+  for (const meaning of meaningSearch.split(/[,;]/).map((m) => m.replace(/\([^)]*\)/g, '').trim()).filter(Boolean)) {
+    tokens.add(meaning);
+    for (const word of meaning.split(' ')) if (word.length > 1 && !['के', 'की', 'का', 'को', 'में', 'से', 'पर', 'है', 'और', 'या'].includes(word)) tokens.add(word);
+  }
+  return tokens;
+}
+
+/**
+ * Review cards for saved words. Wrong options share the word's part of speech and are close to it in frequency
+ * (so they look like real alternatives), and never share a Hindi meaning or meaning-word with it (so there is
+ * exactly one right answer). `random` is injectable so tests can make the choice repeatable.
+ */
+export function getQuizCards(headwords: string[], random: () => number = Math.random): QuizCard[] {
+  const cards: QuizCard[] = [];
+  for (const headword of headwords.slice(0, 20)) {
+    const row = db().prepare('SELECT * FROM entries WHERE normalized = ?').get(headword.toLowerCase().trim()) as HindiSearchRow | undefined;
+    if (!row) continue;
+    const answerTokens = hindiTokens(row.meaning_hi_search);
+    const rank = row.freq_rank ?? 1_000_000;
+    const pos = primaryPos(row.pos);
+    const nearest = (samePos: boolean) => db().prepare(`
+      SELECT * FROM entries
+      WHERE normalized != ? ${samePos ? "AND (pos = ? OR pos LIKE ? || ' &%')" : ''}
+      ORDER BY abs(coalesce(freq_rank, 1000000) - ?), normalized
+      LIMIT 40
+    `).all(...(samePos ? [row.normalized, pos, pos, rank] : [row.normalized, rank])) as HindiSearchRow[];
+
+    const picked: HindiSearchRow[] = [];
+    const usable = (c: HindiSearchRow) => c.meaning_hi.trim() && c.definition_en.trim()
+      && c.definition_en !== row.definition_en
+      && ![...hindiTokens(c.meaning_hi_search)].some((t) => answerTokens.has(t))
+      && !picked.some((p) => p.meaning_hi === c.meaning_hi || [...hindiTokens(p.meaning_hi_search)].some((t) => hindiTokens(c.meaning_hi_search).has(t)));
+    for (const pool of [nearest(true), nearest(false)]) {
+      // Shuffle the 12 closest usable candidates so the same word does not always get the same options.
+      const candidates = pool.filter(usable).slice(0, 12);
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      for (const c of candidates) if (picked.length < 3 && usable(c)) picked.push(c);
+      if (picked.length === 3) break;
+    }
+    cards.push({
+      entry: toEntry(row),
+      distractors: picked.map((d) => ({ headword: d.headword, normalized: d.normalized, pos: d.pos, meaning_hi: d.meaning_hi, definition_en: d.definition_en })),
+    });
+  }
+  return cards;
+}
