@@ -1,0 +1,19 @@
+# Never upload secrets or local-only files to Vercel (it builds the database itself with npm run build).
+.env
+.env*
+scratch
+.freebuff
+.playwright-mcp
+.next
+node_modules
+data/dictionary.db*
+data/reports
+data/sources/raw
+build-prompt
+design-docs
+*.png
+!public/icons/*.png
+!src/app/apple-icon.png
+FIX_PLAN.md
+TEST_REPORT.md
+DICTIONARY_COVERAGE_REPORT.md
