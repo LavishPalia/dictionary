@@ -11,9 +11,18 @@ export interface DictionaryEntry {
   examples?: string[];
   source?: string;
   license_attribution?: string;
+  reviewed?: 0 | 1; // 1 = human-written or human-reviewed; 0 = machine-generated, sample-audited
   page_number?: number;
   column?: 1 | 2;
   position_in_column?: number;
+  /** Similar and opposite words that are themselves in Panna (WordNet), best first. */
+  similar?: RelatedWord[];
+  opposite?: RelatedWord[];
+}
+
+export interface RelatedWord {
+  headword: string;
+  page_number: number;
 }
 
 export interface BookPage {
@@ -32,12 +41,11 @@ export interface ThumbIndexItem {
   page_number: number;
 }
 
-export interface BookCatalog {
+export interface BookMeta {
   total_pages: number;
   total_entries: number;
-  thumb_index: Record<string, number>; // e.g., { 'A': 1, 'B': 45, 'C': 90, ... }
-  word_to_page: Record<string, number>; // lowercase normalized headword -> page number
-  pages: Record<number, BookPage>;
+  thumb_index: Record<string, number>; // letter -> page holding that letter's first headword
+  data_version: string; // content hash of the built database; versions /api/page caching
 }
 
 export interface MarginNote {
@@ -47,5 +55,7 @@ export interface MarginNote {
   color: 'blue' | 'graphite' | 'crimson';
   created_at: number;
   top_pct?: number;
+  /** The word the note was written beside; lets the note follow it when page numbers change (src/lib/marks.ts). */
+  anchor?: string;
 }
 

@@ -1,0 +1,96 @@
+/* App chrome: header, phone bottom bar and the ⋯ menu. Breakpoint matches the book's (1024px). */
+
+.app-header {
+  width: 100%; max-width: 1280px; display: flex; align-items: center; gap: var(--space-4);
+  margin-bottom: 28px; position: relative; z-index: 40;
+}
+.app-wordmark { display: flex; align-items: baseline; gap: 10px; flex: none; }
+.app-wordmark-hi { font: 34px/1 var(--font-deva); color: var(--brass); }
+.app-wordmark-en { font: 15px var(--font-fell-sc); color: #cdb98f; white-space: nowrap; }
+.app-search { flex: 1; min-width: 0; display: flex; justify-content: center; }
+.app-count { font: 13px var(--font-fell); color: var(--brass-muted); }
+.app-count::before { content: '· '; }
+#open-today-btn[aria-pressed='true'], #open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass-soft); }
+
+/* Search field in the header (the results list is styled by LookupBar). */
+.app-lookup {
+  position: relative; display: flex; align-items: center; gap: 10px; width: 100%; max-width: 620px;
+  height: 48px; padding: 0 16px; border-radius: var(--radius-pill); border: 1px solid var(--sepia);
+  background: linear-gradient(180deg, var(--parch-hi), var(--parch)); color: var(--ink-soft);
+  box-shadow: inset 0 1px 3px rgba(80, 50, 20, 0.18), 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.app-lookup:focus-within { outline: 2px solid var(--brass); outline-offset: 2px; }
+.app-lookup input {
+  flex: 1; min-width: 0; height: 44px; border: 0; outline: 0; background: transparent;
+  font: 18px var(--font-fell); color: var(--ink);
+}
+.app-lookup input::placeholder { color: var(--ink-soft); opacity: 0.85; }
+.app-lookup-key { font: 13px var(--font-fell-sc); color: var(--sepia); white-space: nowrap; }
+.app-lookup-key kbd { font: inherit; padding: 0 5px; border: 1px solid var(--rule); border-radius: var(--radius-sm); }
+
+/* Phone bottom bar */
+.app-bottomnav { display: none; }
+
+@media (max-width: 1023px) {
+  .app-desktop-only { display: none !important; }
+  .app-header { gap: var(--space-2); margin-bottom: 20px; }
+  .app-lookup { height: 44px; padding: 0 14px; }
+  .app-lookup input { font-size: 17px; }
+  .app-bottomnav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    height: calc(62px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+    background: var(--desk-bar); border-top: 1px solid #4a3a2c;
+  }
+  .app-bottomnav button {
+    flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    border: 0; background: transparent; color: var(--rule); font: 12px var(--font-fell-sc); cursor: pointer;
+  }
+  .app-bottomnav button[aria-current='page'] { color: var(--brass); }
+  .app-bottomnav button[aria-current='page']::before {
+    content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 2px; border-radius: 2px; background: var(--brass);
+  }
+  .app-bottomnav button:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
+  .app-bottomnav .app-count { position: absolute; top: 6px; left: calc(50% + 12px); font-size: 11px; }
+  .app-bottomnav .app-count::before { content: ''; }
+  .app-bottomnav .ui-badge { position: absolute; top: 6px; left: calc(50% + 8px); }
+  /* Room for the bar under the last thing on the page. */
+  .app-main { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+}
+
+/* ⋯ menu rows */
+.menu-row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap;
+  min-height: 56px; padding: var(--space-2) 0; border-bottom: 1px solid rgba(138, 116, 82, 0.25);
+}
+.menu-row:last-child { border-bottom: 0; }
+.menu-title { font: 17px var(--font-fell); color: var(--ink); }
+.menu-sub { font: 13px var(--font-fell); color: var(--ink-soft); }
+.menu-link {
+  width: 100%; border-left: 0; border-right: 0; border-top: 0; background: transparent; text-align: left;
+  color: var(--ink-soft); cursor: pointer; flex-wrap: nowrap;
+}
+.menu-link:hover .menu-title { color: var(--crimson); }
+.menu-link:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
+.menu-link:disabled { opacity: 0.5; cursor: not-allowed; }
+.menu-sub--block { display: block; }
+.restore-from { margin: 0 0 4px; }
+.restore-summary { margin: 0 0 var(--space-4); }
+.restore-actions { display: grid; gap: var(--space-2); }
+.restore-actions .menu-sub { margin: -2px 0 var(--space-2); }
+
+/* Shown under the header while there is no connection. */
+.app-offline {
+  margin: -16px 0 16px; padding: 6px 14px; border-radius: var(--radius-pill); border: 1px solid var(--brass-line);
+  font: italic 14px var(--font-fell); color: var(--brass-soft); background: rgba(0, 0, 0, 0.25); text-align: center;
+}
+.app-offline-hi { font: normal 14px var(--font-deva); }
+
+/* Phones: small controls get a full 44 px touch target (WCAG 2.5.5), without changing how they look much. */
+@media (max-width: 1023px) {
+  .ui-btn--small, .ui-seg button, .tour-tip .tour-btn, .tour-tip .tour-link { min-height: 44px; }
+  .ui-iconbtn, .tour-close, .lookup-clear { min-width: 44px; min-height: 44px; }
+  .tour-howlink, .word-goto { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  #goto-page-input { min-height: 44px; }
+  /* The phone's page arrows set their size inline. */
+  button[aria-label='Previous page'], button[aria-label='Next page'] { min-width: 44px !important; min-height: 44px !important; }
+}

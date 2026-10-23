@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panna — redesign mockups v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Tiro+Devanagari+Hindi:ital@0;1&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parch: #efe3c0; --parch2: #ecdfba; --parch3: #e2d2aa;
+    --ink: #2a1e14; --ink-soft: #5e4a33; --crimson: #7a2b22; --binding: #5b1f19;
+    --brass: #c9a24a; --brass-soft: #e8d3a0; --sepia: #8a7452; --desk: #2a1d14; --desk2: #3e2a1b;
+    --green: #3d5a2a;
+    --fell: "IM Fell English", Georgia, serif;
+    --fellsc: "IM Fell English SC", Georgia, serif;
+    --deva: "Tiro Devanagari Hindi", "Noto Serif Devanagari", serif;
+    --hand: "Caveat", cursive;
+  }
+  * { box-sizing: border-box; }
+  .wrap { width: 100%; font-family: var(--font-sans); color: var(--foreground); }
+  .intro { margin: 0 0 18px; font-size: 14px; line-height: 1.55; color: var(--muted-foreground); }
+  .intro b { color: var(--foreground); }
+  h2.sec { font: 600 13px var(--font-sans); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted-foreground); margin: 26px 0 12px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 22px 20px; }
+  figure { margin: 0; width: 344px; max-width: 100%; }
+  figcaption { margin-top: 10px; font-size: 13px; line-height: 1.5; color: var(--muted-foreground); }
+  figcaption b { color: var(--foreground); font-weight: 600; }
+  figcaption ul { margin: 4px 0 0; padding-left: 18px; }
+
+  /* ---------- device ---------- */
+  .device { background: #0e0a07; padding: 10px; border-radius: 34px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .screen { position: relative; height: 740px; border-radius: 26px; overflow: hidden;
+    background: radial-gradient(ellipse at 50% -10%, #4d3626 0%, var(--desk) 62%, #1d140d 100%);
+    font-family: var(--fell); color: var(--ink); }
+  .statusbar { height: 26px; display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; font: 600 11px var(--font-sans); color: #d9c7a0; opacity: .8; }
+
+  /* ---------- shared chrome ---------- */
+  .topbar { display: flex; gap: 8px; align-items: center; padding: 6px 12px 10px; }
+  .search { flex: 1; height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 14px;
+    background: linear-gradient(180deg, #f3e8c9, var(--parch)); border: 1px solid var(--sepia); border-radius: 22px;
+    font: 16px var(--fell); color: var(--ink-soft); box-shadow: inset 0 1px 3px rgba(80,50,20,.18); }
+  .search .typed { color: var(--ink); }
+  .search .deva { font-family: var(--deva); font-size: 16px; }
+  .search .x { margin-left: auto; color: var(--sepia); font-size: 15px; }
+  .iconbtn { width: 44px; height: 44px; flex: none; border-radius: 22px; display: grid; place-items: center;
+    border: 1px solid rgba(201,162,74,.55); color: var(--brass-soft); background: rgba(255,255,255,.03); }
+  svg.i { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  .bottomnav { position: absolute; left: 0; right: 0; bottom: 0; height: 66px; display: flex;
+    background: #1f150e; border-top: 1px solid #4a3a2c; padding-bottom: 6px; }
+  .bottomnav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    font: 12px var(--fellsc); color: #b9a57c; text-decoration: none; position: relative; }
+  .bottomnav a.on { color: var(--brass); }
+  .bottomnav a.on::before { content: ""; position: absolute; top: 0; left: 30%; right: 30%; height: 2px; background: var(--brass); border-radius: 2px; }
+  .badge { position: absolute; top: 7px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+    background: var(--crimson); color: #f6e9cc; font: 600 10px/18px var(--font-sans); text-align: center; }
+
+  /* ---------- parchment surfaces ---------- */
+  .card { background: linear-gradient(135deg, var(--parch) 0%, var(--parch2) 55%, var(--parch3) 100%);
+    border: 1px solid #b9a57c; border-radius: 10px; padding: 14px 16px; margin: 0 12px 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 0 30px rgba(120,80,30,.12); }
+  .label { font: 12px var(--fellsc); letter-spacing: .04em; color: var(--ink-soft); }
+  .hi { font-family: var(--deva); color: var(--crimson); }
+  .pron { font-family: var(--deva); color: var(--ink-soft); font-size: 13px; }
+  .pos { font-style: italic; color: var(--ink-soft); font-size: 13px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 16px;
+    border-radius: 22px; font: 15px var(--fellsc); border: 1px solid var(--sepia); color: var(--ink); background: rgba(255,255,255,.25); }
+  .btn.primary { background: var(--binding); border-color: var(--binding); color: #f4e6c5; }
+  .btn.full { width: 100%; }
+  .chip { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 16px;
+    border: 1px solid #b9a57c; font: 14px var(--fell); color: var(--ink); background: rgba(255,255,255,.3); margin: 0 6px 6px 0; }
+  .muted { color: var(--ink-soft); }
+  .hint { margin: 0 14px 12px; font: italic 14px var(--fell); color: #d8c494; }
+  .hint .deva { font-family: var(--deva); font-style: normal; color: var(--brass-soft); }
+
+  /* ---------- book page (mobile) ---------- */
+  .page { position: absolute; top: 80px; left: 10px; right: 10px; bottom: 76px;
+    background: linear-gradient(135deg, var(--parch) 0%, var(--parch2) 55%, var(--parch3) 100%);
+    border-radius: 4px 8px 8px 4px; box-shadow: 0 8px 22px rgba(0,0,0,.5), inset 0 0 40px rgba(120,80,30,.16);
+    padding: 12px 34px 0 16px; }
+  .ribbon { position: absolute; top: -4px; left: 14px; width: 12px; height: 34px; background: var(--binding);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+  .guide { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 0 6px 18px;
+    border-bottom: 1px solid #b9a57c; font: 13px var(--fellsc); color: var(--ink-soft); }
+  .guide .pg { font: 13px var(--fellsc); color: var(--ink); border-bottom: 1px dotted var(--sepia); }
+  .entry { padding: 4px 0 4px; border-bottom: 1px solid rgba(138,116,82,.18); }
+  .entry:last-of-type { border-bottom: 0; }
+  .entry .l1 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .entry .hw { font: bold 16.5px var(--fell); color: var(--ink); }
+  .entry .hi { font-size: 16px; }
+  .entry .l2 { margin-top: 0; font-size: 13.5px; line-height: 1.22; color: var(--ink); text-align: left; hyphens: auto; }
+  .entry .l2 .pron, .entry .l2 .pos { font-size: 12.5px; }
+  .entry.hl { background: rgba(201,162,74,.18); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 4px; }
+  .rail { position: absolute; top: 10px; right: 3px; bottom: 44px; width: 24px; display: flex; flex-direction: column;
+    justify-content: space-between; align-items: center; border-left: 1px solid rgba(138,116,82,.35); }
+  .rail span { font: 10.5px/1 var(--fellsc); color: var(--ink-soft); }
+  .rail span.on { color: #f4e6c5; background: var(--binding); border-radius: 3px; padding: 2px 4px; }
+  .pagefoot { position: absolute; left: 16px; right: 34px; bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+    font: 13px var(--fellsc); color: var(--ink-soft); }
+  .pagefoot .turn { width: 36px; height: 36px; border-radius: 18px; display: grid; place-items: center; border: 1px solid #b9a57c; color: var(--ink); }
+
+  /* ---------- sheets ---------- */
+  .dim { position: absolute; inset: 0; background: rgba(15,9,5,.62); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 18px 18px 0 0;
+    background: linear-gradient(160deg, #f2e7c8 0%, var(--parch) 45%, var(--parch3) 100%);
+    box-shadow: 0 -10px 30px rgba(0,0,0,.45); padding: 10px 18px 18px; }
+  .grab { width: 40px; height: 4px; border-radius: 2px; background: #b9a57c; margin: 0 auto 12px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .divider { height: 1px; background: rgba(138,116,82,.35); margin: 12px 0; }
+  .speak { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 18px;
+    border: 1px solid #b9a57c; font: 14px var(--fellsc); color: var(--ink); background: rgba(255,255,255,.3); }
+  .speak.off { opacity: .5; }
+  .tag { display: inline-block; font: 11px var(--fellsc); padding: 2px 8px; border-radius: 10px; border: 1px solid #b9a57c; color: var(--ink-soft); }
+
+  /* ---------- lists ---------- */
+  .list { margin: 0 12px; background: linear-gradient(135deg, var(--parch) 0%, var(--parch2) 60%, var(--parch3) 100%);
+    border-radius: 10px; border: 1px solid #b9a57c; box-shadow: 0 6px 16px rgba(0,0,0,.35); overflow: hidden; }
+  .li { display: flex; align-items: center; gap: 10px; padding: 9px 14px; min-height: 56px; border-bottom: 1px solid rgba(138,116,82,.22); }
+  .li:last-child { border-bottom: 0; }
+  .li .grow { flex: 1; min-width: 0; }
+  .li .hw { font: bold 16px var(--fell); }
+  .li .hi { font-size: 15px; }
+  .li .pg { font: 13px var(--fellsc); color: var(--ink-soft); white-space: nowrap; }
+  .li mark { background: rgba(201,162,74,.35); color: inherit; border-radius: 2px; padding: 0 1px; }
+  .group { padding: 7px 14px 5px; font: 12px var(--fellsc); color: var(--ink-soft); background: rgba(138,116,82,.12); border-bottom: 1px solid rgba(138,116,82,.22); }
+  .status { font: 11px var(--fellsc); padding: 2px 8px; border-radius: 10px; }
+  .status.learn { color: var(--crimson); border: 1px solid rgba(122,43,34,.4); }
+  .status.done { color: var(--green); border: 1px solid rgba(61,90,42,.45); }
+
+  /* ---------- review ---------- */
+  .progress { height: 4px; border-radius: 2px; background: rgba(232,211,160,.2); margin: 0 14px 14px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 66%; background: var(--brass); }
+  .opt { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border-radius: 10px; margin-bottom: 8px;
+    border: 1px solid #b9a57c; background: rgba(255,255,255,.28); font: 18px var(--deva); color: var(--ink); }
+  .opt .k { font: 13px var(--fellsc); color: var(--ink-soft); width: 14px; }
+  .opt.right { border-color: var(--green); background: rgba(61,90,42,.12); }
+  .opt.dim2 { opacity: .55; }
+
+  /* ---------- settings ---------- */
+  .set { display: flex; align-items: center; justify-content: space-between; min-height: 52px; border-bottom: 1px solid rgba(138,116,82,.25); }
+  .set .t { font: 16px var(--fell); }
+  .set .s { font: 12.5px var(--fell); color: var(--ink-soft); }
+  .seg { display: flex; border: 1px solid var(--sepia); border-radius: 18px; overflow: hidden; }
+  .seg span { padding: 7px 12px; font: 13px var(--fellsc); }
+  .seg span.on { background: var(--binding); color: #f4e6c5; }
+  .slider { width: 120px; height: 4px; border-radius: 2px; background: #c9b58a; position: relative; }
+  .slider::after { content: ""; position: absolute; left: 55%; top: -8px; width: 20px; height: 20px; border-radius: 10px; background: var(--binding); border: 2px solid #f4e6c5; }
+  .toggle { width: 46px; height: 28px; border-radius: 14px; background: var(--binding); position: relative; }
+  .toggle::after { content: ""; position: absolute; right: 3px; top: 3px; width: 22px; height: 22px; border-radius: 11px; background: #f4e6c5; }
+  .goto { display: flex; gap: 6px; align-items: center; }
+  .goto .box { width: 64px; height: 36px; border: 1px solid var(--sepia); border-radius: 8px; display: grid; place-items: center; font: 15px var(--fell); background: rgba(255,255,255,.35); }
+
+  /* ---------- desktop ---------- */
+  .desk-wrap { width: 100%; overflow: hidden; border-radius: var(--radius); }
+  .desk { width: 1440px; height: 900px; transform-origin: 0 0; position: relative; font-family: var(--fell); color: var(--ink);
+    background: radial-gradient(ellipse at 50% -10%, #4d3626 0%, var(--desk) 60%, #1a120c 100%); }
+  .dhead { display: flex; align-items: center; gap: 16px; padding: 22px 48px; }
+  .wordmark { display: flex; align-items: baseline; gap: 10px; color: var(--brass-soft); }
+  .wordmark .w1 { font: 34px var(--deva); color: var(--brass); }
+  .wordmark .w2 { font: 15px var(--fellsc); color: #cdb98f; }
+  .dhead .search { height: 48px; border-radius: 24px; max-width: 620px; margin: 0 auto; font-size: 17px; }
+  .dbtn { height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid rgba(201,162,74,.55); color: var(--brass-soft);
+    display: inline-flex; align-items: center; gap: 8px; font: 15px var(--fellsc); position: relative; }
+  .dbtn .badge { position: static; margin-left: 2px; }
+  .spread { position: absolute; left: 120px; right: 150px; top: 100px; height: 690px; display: flex; padding: 12px;
+    background: linear-gradient(180deg, #7a2b22, #5b1f19); border-radius: 10px; box-shadow: 0 30px 60px rgba(0,0,0,.55); }
+  .dpage { flex: 1; position: relative; padding: 26px 40px 20px;
+    background: linear-gradient(135deg, var(--parch) 0%, var(--parch2) 55%, var(--parch3) 100%); box-shadow: inset 0 0 50px rgba(120,80,30,.16); }
+  .dpage.left { border-radius: 4px 0 0 4px; box-shadow: inset -30px 0 40px -20px rgba(70,40,15,.35), inset 0 0 50px rgba(120,80,30,.16); }
+  .dpage.right { border-radius: 0 4px 4px 0; box-shadow: inset 30px 0 40px -20px rgba(70,40,15,.35), inset 0 0 50px rgba(120,80,30,.16); }
+  .dpage .guide { padding-left: 0; font-size: 14px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; margin-top: 10px; }
+  .cols .entry .hw { font-size: 18px; }
+  .cols .entry .hi { font-size: 17px; }
+  .cols .entry .l2 { font-size: 15px; line-height: 1.35; }
+  .cols .entry { padding: 9px 0 8px; }
+  .dribbon { position: absolute; top: -12px; left: 50%; margin-left: -9px; width: 18px; height: 70px; background: #8f2a20; z-index: 2;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%); }
+  .tabs { position: absolute; right: 108px; top: 130px; display: flex; flex-direction: column; gap: 2px; }
+  .tabs span { width: 44px; height: 22px; padding-left: 8px; font: 13px/22px var(--fellsc); color: var(--ink); border-radius: 0 6px 6px 0;
+    background: linear-gradient(90deg, #c9b07c, #d8c494); box-shadow: 1px 1px 2px rgba(0,0,0,.4); }
+  .tabs span.on { background: var(--binding); color: #f4e6c5; width: 52px; }
+  .dfoot { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; align-items: center; gap: 18px;
+    font: 15px var(--fellsc); color: #d8c494; }
+  .dfoot .turn { width: 44px; height: 44px; border-radius: 22px; border: 1px solid rgba(201,162,74,.55); display: grid; place-items: center; color: var(--brass-soft); }
+  .dfoot .pgsel { padding: 8px 16px; border: 1px solid rgba(201,162,74,.55); border-radius: 22px; }
+  .notes { margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted-foreground); }
+  .notes b { color: var(--foreground); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="intro"><b>Direction:</b> keep the book exactly as the heart of Panna; rebuild everything <i>around</i> it for exam aspirants on phones.
+Search is always one tap away, four destinations sit in a thumb-reach bottom bar (Today · Book · Saved · Review), rarely used controls move into one menu,
+and Hindi gets equal weight with English. Entries shown are real Panna data.</p>
+
+<h2 class="sec">Phone · daily flow</h2>
+<div class="grid">
+
+  <!-- 1. TODAY / HOME -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="row" style="padding: 4px 16px 10px; justify-content: space-between;">
+        <div class="wordmark"><span class="w1" style="font-size:28px">पन्ना</span><span class="w2" style="font-size:13px">English → हिंदी</span></div>
+        <div class="iconbtn"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></div>
+      </div>
+      <div class="topbar" style="padding-top:0"><div class="search" style="height:52px;border-radius:26px;font-size:17px">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>Search English or <span class="deva">हिंदी</span>…</div></div>
+      <p class="hint">Hindi works too — try <span class="deva">छोड़ना</span></p>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><span class="label">Today's review</span><span class="label" style="color:var(--crimson)">6 days in a row</span></div>
+        <div style="font: 22px var(--fell); margin: 6px 0 2px">12 words are due</div>
+        <div class="muted" style="font-size:14px; margin-bottom:12px">About 4 minutes · from words you looked up</div>
+        <span class="btn primary full">Start review</span>
+      </div>
+
+      <div class="card">
+        <span class="label">Continue reading</span>
+        <div class="row" style="margin-top:8px; justify-content:space-between">
+          <div><div style="font: 18px var(--fell)">Page 1,402</div><div class="muted" style="font-size:14px">Haughty — Heave</div></div>
+          <span class="btn">Open book ›</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="label">Word of the day</span>
+        <div class="row" style="margin-top:6px; gap:8px; align-items:baseline; flex-wrap:wrap">
+          <span style="font: bold 22px var(--fell)">Stalwart</span><span class="pron">स्टॉलवर्ट</span><span class="pos">adj.</span>
+        </div>
+        <div class="hi" style="font-size:19px; margin: 2px 0 4px">वफादार, भरोसेमंद</div>
+        <div style="font-size:15px">dependable and loyal.</div>
+        <div class="muted" style="font-size:14px; font-style:italic; margin-top:4px">“a stalwart supporter of the team”</div>
+      </div>
+
+      <div class="bottomnav">
+        <a class="on"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/></svg>Today</a>
+        <a><svg class="i" viewBox="0 0 24 24"><path d="M3 5.5C6 4 9 4 12 6c3-2 6-2 9-.5V19c-3-1.5-6-1.5-9 .5-3-2-6-2-9-.5z"/><path d="M12 6v13.5"/></svg>Book</a>
+        <a><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>Saved</a>
+        <a><svg class="i" viewBox="0 0 24 24"><rect x="4" y="6" width="13" height="15" rx="2"/><path d="M8 3h10a2 2 0 0 1 2 2v12"/></svg>Review<span class="badge">12</span></a>
+      </div>
+    </div></div>
+    <figcaption><b>1 · Today (new first screen)</b>
+      <ul><li>Search is the hero; a hint teaches Hindi search.</li>
+      <li>Review, “continue where you left off” and a word of the day replace the blank endpapers.</li>
+      <li>A gentle streak, but no timers or leaderboards.</li></ul></figcaption>
+  </figure>
+
+  <!-- 2. BOOK PAGE -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="topbar">
+        <div class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>Search English or <span class="deva">हिंदी</span>…</div>
+        <div class="iconbtn"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></div>
+      </div>
+      <div class="page">
+        <div class="ribbon"></div>
+        <div class="guide"><span>Calm</span><span class="pg">p. 16 ▾</span><span>Candle</span></div>
+        <div class="entry"><div class="l1"><span class="hw">Calm</span><span class="hi">शांत, स्थिर</span></div>
+          <div class="l2"><span class="pron">काम</span> <span class="pos">adj.</span> not showing or feeling nervousness, anger, or excitement.</div></div>
+        <div class="entry hl"><div class="l1"><span class="hw">Camel</span><span class="hi">ऊँट</span></div>
+          <div class="l2"><span class="pron">कैमल</span> <span class="pos">n.</span> a large long-necked mammal with one or two humps.</div></div>
+        <div class="entry"><div class="l1"><span class="hw">Camera</span><span class="hi">कैमरा</span></div>
+          <div class="l2"><span class="pron">कैमरा</span> <span class="pos">n.</span> a device for recording visual images in photographs.</div></div>
+        <div class="entry"><div class="l1"><span class="hw">Camp</span><span class="hi">शिविर, पड़ाव</span></div>
+          <div class="l2"><span class="pron">कैम्प</span> <span class="pos">n.</span> a place with temporary accommodation of huts or tents.</div></div>
+        <div class="entry"><div class="l1"><span class="hw">Can</span><span class="hi">सकना</span></div>
+          <div class="l2"><span class="pron">कैन</span> <span class="pos">modal v.</span> be able to; have the capability to.</div></div>
+        <div class="entry"><div class="l1"><span class="hw">Canal</span><span class="hi">नहर</span></div>
+          <div class="l2"><span class="pron">कनाल</span> <span class="pos">n.</span> an artificial waterway constructed to allow passage of boats.</div></div>
+        <div class="entry"><div class="l1"><span class="hw">Cancel</span><span class="hi">रद्द करना</span></div>
+          <div class="l2"><span class="pron">कैन्सल</span> <span class="pos">v. t.</span> to decide that an agreed event will not take place.</div></div>
+        <div class="entry"><div class="l1"><span class="hw">Candle</span><span class="hi">मोमबत्ती</span></div>
+          <div class="l2"><span class="pron">कैंडल</span> <span class="pos">n.</span> a cylinder of wax with a wick that gives light.</div></div>
+        <div class="rail">
+          <span>A</span><span>B</span><span class="on">C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span><span>K</span><span>L</span><span>M</span>
+          <span>N</span><span>O</span><span>P</span><span>Q</span><span>R</span><span>S</span><span>T</span><span>U</span><span>V</span><span>W</span><span>X</span><span>Y</span><span>Z</span>
+        </div>
+        <div class="pagefoot"><span class="turn">‹</span><span>16 of 3,125</span><span class="turn">›</span></div>
+      </div>
+      <div class="bottomnav">
+        <a><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/></svg>Today</a>
+        <a class="on"><svg class="i" viewBox="0 0 24 24"><path d="M3 5.5C6 4 9 4 12 6c3-2 6-2 9-.5V19c-3-1.5-6-1.5-9 .5-3-2-6-2-9-.5z"/><path d="M12 6v13.5"/></svg>Book</a>
+        <a><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>Saved</a>
+        <a><svg class="i" viewBox="0 0 24 24"><rect x="4" y="6" width="13" height="15" rx="2"/><path d="M8 3h10a2 2 0 0 1 2 2v12"/></svg>Review<span class="badge">12</span></a>
+      </div>
+    </div></div>
+    <figcaption><b>2 · Book page</b>
+      <ul><li>Seven buttons become one slim search bar + ⋯ menu; the page gets the space.</li>
+      <li>Hindi sits beside the headword at equal size; left-aligned text, no justified gaps.</li>
+      <li>A–Z thumb rail is back on mobile (drag along it); ribbon no longer hides a guide word; tap “p. 16 ▾” to jump.</li></ul></figcaption>
+  </figure>
+
+  <!-- 3. SEARCH (HINDI) -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="topbar">
+        <div class="search" style="border-color: var(--brass); box-shadow: 0 0 0 3px rgba(201,162,74,.25)">
+          <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span class="typed deva">छोड़</span><span class="x">✕</span></div>
+        <div class="iconbtn" style="font: 14px var(--fellsc); width:auto; padding: 0 12px">Cancel</div>
+      </div>
+      <div class="list">
+        <div class="group">हिंदी अर्थ से · from Hindi meanings</div>
+        <div class="li"><div class="grow"><div><span class="hw">Abandon</span> <span class="pos">v. t.</span></div><div class="hi">त्याग देना, <mark>छोड़</mark>ना</div></div><span class="pg">p. 3</span></div>
+        <div class="li"><div class="grow"><div><span class="hw">Leave</span> <span class="pos">v. t.</span></div><div class="hi"><mark>छोड़</mark>ना, जाना</div></div><span class="pg">p. 1,702</span></div>
+        <div class="li"><div class="grow"><div><span class="hw">Quit</span> <span class="pos">v. t.</span></div><div class="hi"><mark>छोड़</mark>ना, त्यागना</div></div><span class="pg">p. 2,247</span></div>
+        <div class="li"><div class="grow"><div><span class="hw">Release</span> <span class="pos">v. t.</span></div><div class="hi">मुक्त करना, <mark>छोड़</mark>ना</div></div><span class="pg">p. 2,301</span></div>
+        <div class="li"><div class="grow"><div><span class="hw">Desert</span> <span class="pos">v. t.</span></div><div class="hi">बेसहारा <mark>छोड़</mark> देना</div></div><span class="pg">p. 784</span></div>
+        <div class="group">Recent</div>
+        <div class="li"><div class="grow"><span class="hw" style="font-weight:normal">haughty</span></div><span class="pg">⟲</span></div>
+        <div class="li"><div class="grow"><span class="hw" style="font-weight:normal">stalwart</span></div><span class="pg">⟲</span></div>
+      </div>
+    </div></div>
+    <figcaption><b>3 · Search, typed in Hindi</b>
+      <ul><li>Results grouped: Hindi-meaning matches are labelled so it’s clear why they appear.</li>
+      <li>The matched part is highlighted; most common words first (our new ranking).</li>
+      <li>Recent searches below, so a word looked up yesterday is one tap away.</li></ul></figcaption>
+  </figure>
+
+  <!-- 4. NO ENTRY -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="topbar">
+        <div class="search" style="border-color: var(--brass); box-shadow: 0 0 0 3px rgba(201,162,74,.25)">
+          <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span class="typed">ceremonis</span><span class="x">✕</span></div>
+        <div class="iconbtn" style="font: 14px var(--fellsc); width:auto; padding: 0 12px">Cancel</div>
+      </div>
+      <div class="card" style="padding: 18px">
+        <div style="font: 20px var(--fell)">No entry for “ceremonis”</div>
+        <div class="muted" style="font-size:14px; margin: 4px 0 14px">Did you mean:</div>
+        <div class="li" style="border:1px solid #b9a57c; border-radius:10px; background: rgba(255,255,255,.3)">
+          <div class="grow"><div><span class="hw">Ceremony</span> <span class="pos">n.</span></div><div class="hi">समारोह</div></div><span class="pg">p. 18 ›</span></div>
+        <div class="divider"></div>
+        <div class="label" style="margin-bottom:8px">Other ways to find it</div>
+        <span class="chip">Search in हिंदी</span><span class="chip">Browse C ›</span>
+        <div class="muted" style="font-size:13.5px; margin-top:8px; font-style:italic">Panna has 25,000 common words. Rare words, names and slang may be missing.</div>
+      </div>
+      <p class="hint" style="margin-top:4px">Plurals and tenses work too: <i>ceremonies</i> opens <i>Ceremony</i>.</p>
+    </div></div>
+    <figcaption><b>4 · No entry found</b>
+      <ul><li>One clear suggestion with its Hindi meaning, instead of a dead end.</li>
+      <li>Honest about coverage, and offers next steps (Hindi search, browse the letter).</li></ul></figcaption>
+  </figure>
+
+  <!-- 5. WORD SHEET -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="page" style="top:40px"><div class="guide"><span>Haste</span><span class="pg">p. 1,402</span><span>Heave</span></div></div>
+      <div class="dim"></div>
+      <div class="sheet" style="top: 92px">
+        <div class="grab"></div>
+        <div class="row" style="justify-content:space-between; align-items:flex-start">
+          <div>
+            <div class="row" style="gap:10px; align-items:baseline"><span style="font: bold 30px var(--fell)">Haughty</span><span class="pron" style="font-size:16px">हॉटी</span></div>
+            <span class="tag">adjective · describes a person</span>
+          </div>
+          <span style="font-size:20px; color: var(--ink-soft)">✕</span>
+        </div>
+        <div class="hi" style="font-size:28px; margin: 10px 0 2px">घमंडी, अहंकारी</div>
+        <div style="font-size:17px; line-height:1.4">arrogant and showing superiority.</div>
+        <div class="row" style="margin: 12px 0 4px; gap:8px">
+          <span class="speak">🔊 English</span><span class="speak">🔊 हिंदी</span>
+        </div>
+        <div class="divider"></div>
+        <div class="label">Example</div>
+        <div style="font: italic 16px var(--fell); margin-top:4px">She gave him a haughty look.</div>
+        <div class="hi" style="font-size:15px; color: var(--ink-soft)">उसने उसे घमंड भरी नज़र से देखा।</div>
+        <div class="divider"></div>
+        <div class="label" style="margin-bottom:6px">Similar</div>
+        <span class="chip">arrogant</span><span class="chip">proud</span><span class="chip">conceited</span>
+        <div class="label" style="margin: 4px 0 6px">Opposite</div>
+        <span class="chip">humble</span><span class="chip">modest</span>
+        <div class="row" style="margin-top: 10px; gap:8px">
+          <span class="btn" style="flex:1">☆ Save</span><span class="btn primary" style="flex:1.6">＋ Add to review</span>
+        </div>
+        <div class="row" style="justify-content:space-between; margin-top:12px">
+          <span class="muted" style="font-size:12.5px; font-style:italic">Machine-written · not yet checked by a reviewer</span>
+          <span style="font: 14px var(--fellsc); color: var(--crimson)">See on page ›</span>
+        </div>
+      </div>
+    </div></div>
+    <figcaption><b>5 · Word sheet</b>
+      <ul><li>Hindi is the biggest thing after the word; plain-English labels replace “adj.” / “v. t.”.</li>
+      <li>Adds an example with its Hindi translation, similar and opposite words (exam staples), and “Add to review”.</li>
+      <li>Honest note when an entry hasn’t been human-checked yet.</li></ul></figcaption>
+  </figure>
+
+  <!-- 6. REVIEW -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="row" style="padding: 8px 14px 12px; justify-content:space-between; color: var(--brass-soft)">
+        <span style="font-size:20px">✕</span><span style="font: 15px var(--fellsc)">Review · 8 of 12</span><span style="width:20px"></span>
+      </div>
+      <div class="progress"><i></i></div>
+      <div class="card" style="padding: 20px 16px 16px">
+        <div class="label" style="text-align:center">What does this mean?</div>
+        <div style="text-align:center; font: bold 34px var(--fell); margin: 8px 0 0">Haughty</div>
+        <div style="text-align:center; margin-bottom: 16px"><span class="pron" style="font-size:15px">हॉटी</span> · <span class="pos">adj.</span> 🔊</div>
+        <div class="opt right"><span class="k">✓</span>घमंडी, अहंकारी</div>
+        <div class="opt dim2"><span class="k">B</span>डरपोक, कायर</div>
+        <div class="opt dim2"><span class="k">C</span>उदार, दयालु</div>
+        <div class="opt dim2"><span class="k">D</span>थका हुआ</div>
+        <div style="margin-top: 10px; padding: 12px; border-radius: 10px; background: rgba(61,90,42,.1); border: 1px solid rgba(61,90,42,.3)">
+          <div style="font: 16px var(--fell); color: var(--green)">Right! arrogant and showing superiority.</div>
+          <div class="muted" style="font-size:14px; margin-top:2px">Comes back in <b style="color:var(--ink)">3 days</b>.</div>
+        </div>
+      </div>
+      <div style="padding: 0 12px"><span class="btn primary full">Next word ›</span></div>
+      <p class="hint" style="text-align:center; margin-top:12px">Other card types: definition → word, similar / opposite word, fill in the blank</p>
+    </div></div>
+    <figcaption><b>6 · Review (quiz notebook)</b>
+      <ul><li>One calm card at a time, styled like the book; gentle progress, no timer.</li>
+      <li>After answering: the meaning, then when the word will come back (spaced repetition).</li>
+      <li>Wrong options are words of the same type and similar difficulty.</li></ul></figcaption>
+  </figure>
+
+  <!-- 7. SAVED -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="row" style="padding: 6px 16px 10px; justify-content:space-between">
+        <span style="font: 24px var(--fell); color: var(--brass-soft)">Saved words <span style="font-size:16px; color:#b9a57c">46</span></span>
+        <div class="iconbtn"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></div>
+      </div>
+      <div class="row" style="padding: 0 12px 12px; gap:6px">
+        <span class="chip" style="background: var(--binding); color:#f4e6c5; border-color: var(--binding)">All 46</span>
+        <span class="chip" style="color: var(--brass-soft); border-color: rgba(201,162,74,.5); background:none">Learning 31</span>
+        <span class="chip" style="color: var(--brass-soft); border-color: rgba(201,162,74,.5); background:none">Mastered 15</span>
+      </div>
+      <div class="list">
+        <div class="group">Today</div>
+        <div class="li"><div class="grow"><span class="hw">Haughty</span> <span class="hi">घमंडी</span></div><span class="status learn">Learning</span></div>
+        <div class="li"><div class="grow"><span class="hw">Stalwart</span> <span class="hi">वफादार</span></div><span class="status learn">Learning</span></div>
+        <div class="group">Yesterday</div>
+        <div class="li"><div class="grow"><span class="hw">Abandon</span> <span class="hi">त्याग देना</span></div><span class="status done">Mastered</span></div>
+        <div class="li"><div class="grow"><span class="hw">Contagion</span> <span class="hi">संक्रमण</span></div><span class="status learn">Learning</span></div>
+        <div class="group">Earlier this week</div>
+        <div class="li"><div class="grow"><span class="hw">Simile</span> <span class="hi">उपमा</span></div><span class="status done">Mastered</span></div>
+        <div class="li"><div class="grow"><span class="hw">Dragnet</span> <span class="hi">घेराबंदी</span></div><span class="status learn">Learning</span></div>
+      </div>
+      <p class="hint" style="margin-top:12px">Also here: pages you dog-eared and your pencil notes.</p>
+      <div class="bottomnav">
+        <a><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/></svg>Today</a>
+        <a><svg class="i" viewBox="0 0 24 24"><path d="M3 5.5C6 4 9 4 12 6c3-2 6-2 9-.5V19c-3-1.5-6-1.5-9 .5-3-2-6-2-9-.5z"/><path d="M12 6v13.5"/></svg>Book</a>
+        <a class="on"><svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>Saved</a>
+        <a><svg class="i" viewBox="0 0 24 24"><rect x="4" y="6" width="13" height="15" rx="2"/><path d="M8 3h10a2 2 0 0 1 2 2v12"/></svg>Review<span class="badge">12</span></a>
+      </div>
+    </div></div>
+    <figcaption><b>7 · Saved words</b>
+      <ul><li>Grouped by when you saved them, with Learning / Mastered from the review schedule.</li>
+      <li>One home for words, dog-ears and pencil notes (today they’re split across a modal).</li></ul></figcaption>
+  </figure>
+
+  <!-- 8. MENU -->
+  <figure>
+    <div class="device"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="page" style="top:40px"><div class="guide"><span>Calm</span><span class="pg">p. 16</span><span>Candle</span></div></div>
+      <div class="dim"></div>
+      <div class="sheet" style="top: 250px">
+        <div class="grab"></div>
+        <div style="font: 20px var(--fell); margin-bottom: 4px">Reading settings</div>
+        <div class="set"><div><div class="t">Desk lighting</div><div class="s">Evening is easier on the eyes at night</div></div><div class="seg"><span class="on">Day</span><span>Evening</span></div></div>
+        <div class="set"><div><div class="t">Page-turn speed</div><div class="s">Slow ↔ Fast (was “Pace 1.05”)</div></div><div class="slider"></div></div>
+        <div class="set"><div><div class="t">Page sounds</div><div class="s">Paper rustle when turning</div></div><div class="toggle"></div></div>
+        <div class="set"><div class="t">Go to page</div><div class="goto"><span class="box">16</span><span class="btn" style="height:36px">Go</span></div></div>
+        <div class="set"><div class="t">Close the book</div><span class="muted">›</span></div>
+        <div class="set"><div class="t">Back up my words</div><span class="muted">›</span></div>
+        <div class="set" style="border-bottom:0"><div class="t">Sources &amp; credits</div><span class="muted">›</span></div>
+      </div>
+    </div></div>
+    <figcaption><b>8 · ⋯ Menu</b>
+      <ul><li>Desk, Pace, Sound, Close Book and Credits leave the main screen and get plain names and explanations.</li>
+      <li>Adds backup so months of review progress aren’t lost when the browser is cleared.</li></ul></figcaption>
+  </figure>
+</div>
+
+<h2 class="sec">Desktop · book spread</h2>
+<div class="desk-wrap" id="deskWrap">
+  <div class="desk" id="desk">
+    <div class="dhead">
+      <div class="wordmark"><span class="w1">पन्ना</span><span class="w2">English → हिंदी</span></div>
+      <div class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>Search English or <span class="deva">हिंदी</span>…<span class="x" style="font: 13px var(--fellsc)">Press /</span></div>
+      <span class="dbtn">Today</span>
+      <span class="dbtn">☆ Saved</span>
+      <span class="dbtn">Review <span class="badge">12</span></span>
+      <span class="dbtn" style="padding: 0 14px">⋯</span>
+    </div>
+    <div class="spread">
+      <div class="dribbon"></div>
+      <div class="dpage left">
+        <div class="guide"><span>Calm</span><span class="pg">16</span><span>Candle</span></div>
+        <div class="cols">
+          <div>
+            <div class="entry"><div class="l1"><span class="hw">Calm</span><span class="hi">शांत, स्थिर</span></div><div class="l2"><span class="pron">काम</span> <span class="pos">adj.</span> not showing or feeling nervousness, anger, or excitement.</div></div>
+            <div class="entry hl"><div class="l1"><span class="hw">Camel</span><span class="hi">ऊँट</span></div><div class="l2"><span class="pron">कैमल</span> <span class="pos">n.</span> a large long-necked mammal with one or two humps.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Camera</span><span class="hi">कैमरा</span></div><div class="l2"><span class="pron">कैमरा</span> <span class="pos">n.</span> a device for recording visual images in photographs.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Camp</span><span class="hi">शिविर, पड़ाव</span></div><div class="l2"><span class="pron">कैम्प</span> <span class="pos">n.</span> a place with temporary accommodation of huts or tents.</div></div>
+          </div>
+          <div>
+            <div class="entry"><div class="l1"><span class="hw">Can</span><span class="hi">सकना</span></div><div class="l2"><span class="pron">कैन</span> <span class="pos">modal v.</span> be able to; have the capability to.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Canal</span><span class="hi">नहर</span></div><div class="l2"><span class="pron">कनाल</span> <span class="pos">n.</span> an artificial waterway constructed to allow passage of boats.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Cancel</span><span class="hi">रद्द करना</span></div><div class="l2"><span class="pron">कैन्सल</span> <span class="pos">v. t.</span> to decide that an agreed event will not take place.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Candle</span><span class="hi">मोमबत्ती</span></div><div class="l2"><span class="pron">कैंडल</span> <span class="pos">n.</span> a cylinder of wax with a wick that gives light.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="dpage right">
+        <div class="guide"><span>Cane</span><span class="pg">17</span><span>Carry</span></div>
+        <div class="cols">
+          <div>
+            <div class="entry"><div class="l1"><span class="hw">Cane</span><span class="hi">बेंत, छड़ी</span></div><div class="l2"><span class="pron">केन</span> <span class="pos">n.</span> a light walking stick, or the hollow stem of a tall grass.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Cap</span><span class="hi">टोपी</span></div><div class="l2"><span class="pron">कैप</span> <span class="pos">n.</span> a soft flat hat with a peak at the front.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Capital</span><span class="hi">राजधानी, पूँजी</span></div><div class="l2"><span class="pron">कैपिटल</span> <span class="pos">n.</span> the city where a country's government sits.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Captain</span><span class="hi">कप्तान</span></div><div class="l2"><span class="pron">कैप्टन</span> <span class="pos">n.</span> the person in command of a ship, aircraft or team.</div></div>
+          </div>
+          <div>
+            <div class="entry"><div class="l1"><span class="hw">Car</span><span class="hi">कार, गाड़ी</span></div><div class="l2"><span class="pron">कार</span> <span class="pos">n.</span> a road vehicle with an engine and four wheels.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Card</span><span class="hi">कार्ड, पत्रक</span></div><div class="l2"><span class="pron">कार्ड</span> <span class="pos">n.</span> a piece of thick stiff paper used for writing or printing.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Care</span><span class="hi">देखभाल, परवाह</span></div><div class="l2"><span class="pron">केयर</span> <span class="pos">n.</span> the work of looking after someone or something.</div></div>
+            <div class="entry"><div class="l1"><span class="hw">Carry</span><span class="hi">ले जाना, उठाना</span></div><div class="l2"><span class="pron">कैरी</span> <span class="pos">v. t.</span> to hold and take something from one place to another.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <span>A</span><span>B</span><span class="on">C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span><span>K</span><span>L</span><span>M</span>
+      <span>N</span><span>O</span><span>P</span><span>Q</span><span>R</span><span>S</span><span>T</span><span>U</span><span>V</span><span>W</span><span>X</span><span>Y</span><span>Z</span>
+    </div>
+    <div class="dfoot"><span class="turn">‹</span><span class="pgsel">Pages 16–17 of 3,125 ▾</span><span class="turn">›</span></div>
+  </div>
+</div>
+<p class="notes"><b>Desktop:</b> one header row (wordmark, search with a “/” shortcut, Today · Saved · Review · ⋯) instead of seven buttons in two rows;
+both pages carry entries (no blank endpapers); Hindi beside each headword; page jump lives in the page counter; the developer footer is gone.
+Clicking a word opens the same word sheet as a side panel.</p>
+
+</div>
+<script>
+  function fitDesk() {
+    var wrap = document.getElementById('deskWrap'), desk = document.getElementById('desk');
+    var s = wrap.clientWidth / 1440;
+    desk.style.transform = 'scale(' + s + ')';
+    wrap.style.height = Math.round(900 * s) + 'px';
+  }
+  fitDesk();
+  window.addEventListener('resize', fitDesk);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDesk);
+</script>
+</body>
+</html>

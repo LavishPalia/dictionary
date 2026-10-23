@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 
 interface ThumbIndexProps {
   activeLetter: string;
@@ -15,8 +15,19 @@ export const ThumbIndex: React.FC<ThumbIndexProps> = ({
   thumbMap,
   onSelectLetter,
 }) => {
+  // One tab stop for the whole index (the current letter); ↑ ↓ (and Home / End) move between letters, Enter jumps.
+  const refs = useRef<Array<HTMLButtonElement | null>>([]);
+  const current = Math.max(0, ALPHABET.findIndex((l) => l === activeLetter.toUpperCase()));
+  const onKeyDown = (event: React.KeyboardEvent, index: number) => {
+    const next = event.key === 'ArrowDown' ? index + 1 : event.key === 'ArrowUp' ? index - 1
+      : event.key === 'Home' ? 0 : event.key === 'End' ? ALPHABET.length - 1 : null;
+    if (next === null) return;
+    event.preventDefault();
+    refs.current[(next + ALPHABET.length) % ALPHABET.length]?.focus();
+  };
   return (
-    <div
+    <nav
+      aria-label="Letters"
       style={{
         position: 'absolute',
         right: '-54px',
@@ -35,6 +46,13 @@ export const ThumbIndex: React.FC<ThumbIndexProps> = ({
         return (
           <button
             key={letter}
+            ref={(el) => { refs.current[ALPHABET.indexOf(letter)] = el; }}
+            type="button"
+            className="thumb-tab"
+            tabIndex={ALPHABET.indexOf(letter) === current ? 0 : -1}
+            aria-current={isActive ? 'true' : undefined}
+            aria-label={`Letter ${letter}, page ${targetPage}`}
+            onKeyDown={(e) => onKeyDown(e, ALPHABET.indexOf(letter))}
             onClick={() => onSelectLetter(letter, targetPage)}
             title={`Jump to letter ${letter} (Page ${targetPage})`}
             style={{
@@ -45,7 +63,7 @@ export const ThumbIndex: React.FC<ThumbIndexProps> = ({
               padding: '0 10px 0 8px',
               background: isActive ? '#7a2b22' : '#a8885a',
               color: isActive ? '#f1e4c4' : '#2a1e14',
-              font: `${isActive ? '700' : '400'} 13px 'IM Fell English SC', serif`,
+              font: `${isActive ? '700' : '400'} 13px var(--font-fell-sc)`,
               borderRadius: '0 6px 6px 0',
               borderBottom: '1px solid #6e5532',
               marginLeft: isActive ? '-8px' : '0px',
@@ -73,6 +91,6 @@ export const ThumbIndex: React.FC<ThumbIndexProps> = ({
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 };

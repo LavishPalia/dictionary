@@ -26,11 +26,17 @@ export const DogEar: React.FC<DogEarProps> = ({
 
   if (isDogEared) {
     return (
-      <div
+      <button
+        type="button"
         id={`dog-ear-corner-${pageNumber}`}
+        className="book-control"
         onClick={handleClick}
+        aria-pressed={true}
+        aria-label={`Page ${pageNumber}: corner folded. Unfold it`}
         title={`Page ${pageNumber} is dog-eared! Click to unfold corner`}
         style={{
+        border: 0, padding: 0, margin: 0, display: 'block',
+          background: 'transparent',
           position: 'absolute',
           top: 0,
           left: isLeftPage ? 0 : 'auto',
@@ -91,17 +97,22 @@ export const DogEar: React.FC<DogEarProps> = ({
             }}
           />
         </div>
-      </div>
+      </button>
     );
   }
 
   // Unfolded state: subtle interactive peel hover target
   return (
-    <div
+    <button
+      type="button"
       id={`dog-ear-trigger-${pageNumber}`}
+      className="book-control"
       onClick={handleClick}
+      aria-pressed={false}
+      aria-label={`Fold the corner of page ${pageNumber}`}
       title={`Fold corner of Page ${pageNumber} (dog-ear)`}
       style={{
+        border: 0, padding: 0, margin: 0, display: 'block',
         position: 'absolute',
         top: 0,
         left: isLeftPage ? 0 : 'auto',

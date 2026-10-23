@@ -1,0 +1,802 @@
+[
+ {
+  "lemma": "think",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "believe",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "run",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "head",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "room",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "whole",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "eat",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "speak",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "plan",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "cut",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "month",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "dog",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "light",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "important",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "trust",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "wonder",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "fast",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "welcome",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "expect",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "cop",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "murder",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "sort",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "food",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "explain",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "officer",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "mad",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "plane",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "push",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "mama",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "clothes",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "bank",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "patient",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "soul",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "roll",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "study",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "fish",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "fear",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "tie",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "living",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "killer",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "client",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "strike",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "feed",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "type",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "mommy",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "breathe",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "enemy",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "match",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "dare",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "address",
+  "band": "top 1k"
+ },
+ {
+  "lemma": "plant",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "lab",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "spring",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "design",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "funeral",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "stomach",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "familiar",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "sock",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "connect",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "bike",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "egg",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "pot",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "castle",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "surgeon",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "attract",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "confidence",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "sweep",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "theme",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "painful",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "halfway",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "organ",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "sunshine",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "airline",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "internal",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "graduation",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "cabinet",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "spiritual",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "sleeve",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "clamp",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "potion",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "tremendous",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "vanquish",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "attic",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "tow",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "athlete",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "attempted",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "roller",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "obtain",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "psychotic",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "ginger",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "distinguished",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "flank",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "furious",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "reliable",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "publisher",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "hideous",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "massacre",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "lone",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "playboy",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "regiment",
+  "band": "1k-5k"
+ },
+ {
+  "lemma": "crusade",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "hulk",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "canary",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "vibration",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "accidental",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "caddy",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "renew",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "puddle",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "snob",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "sleeper",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "battleship",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "deactivate",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "understudy",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "pottery",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "overcoat",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "tat",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "joust",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "trainee",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "jiffy",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "diving",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "grits",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "impeccable",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "sesame",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "horizontal",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "gazelle",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "penance",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "buzzing",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "metabolism",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "blatant",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "dotty",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "stead",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "deflect",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "inadvertently",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "indifference",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "monetary",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "bonsai",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "gasket",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "impersonal",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "apprehension",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "burr",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "capitalize",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "incorrigible",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "payable",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "inhalation",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "subscriber",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "trilogy",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "damaging",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "knave",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "roomful",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "nuptials",
+  "band": "5k-15k"
+ },
+ {
+  "lemma": "township",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "outboard",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "profess",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "whelp",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "obese",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "outspoken",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "lawnmower",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "summerhouse",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "tryst",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "debauchery",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "astounding",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "heliport",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "pathetically",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "perishable",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "epaulet",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "sinkhole",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "keenly",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "furtive",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "northeastern",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "loaner",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "maraschino",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "verve",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "bended",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "ionization",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "pathos",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "adaptive",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "appose",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "paedophile",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "calamine",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "genial",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "grainy",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "hepatic",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "horseflesh",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "pomeranian",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "ellipsis",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "leaver",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "toque",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "endive",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "samovar",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "tested",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "birdcall",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "detract",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "draconian",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "rejected",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "respondent",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "sparsely",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "brocade",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "carting",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "democratically",
+  "band": "15k-25k"
+ },
+ {
+  "lemma": "globulin",
+  "band": "15k-25k"
+ }
+]

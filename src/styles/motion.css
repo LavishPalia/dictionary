@@ -1,0 +1,49 @@
+/* Shared animations. Durations stay short: readers look up many words in a row and should never wait. */
+
+/* Used by older components (Bookmarks modal, margin notes, riffle banner); these were referenced but never defined. */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.75; } }
+
+/* The pencil underline draws itself under a word you found, so the eye goes straight to it. */
+.pencil-underlined {
+  border-bottom: 0;
+  padding-bottom: 3px; /* same box as the old 1px padding + 2px border */
+  background-image: linear-gradient(var(--color-pencil), var(--color-pencil)), linear-gradient(rgba(80, 100, 140, 0.06), rgba(80, 100, 140, 0.06));
+  background-repeat: no-repeat;
+  background-position: 0 100%, 0 0;
+  background-size: 100% 2px, 100% 100%;
+  border-radius: 1px;
+  animation: pencil-draw 0.45s cubic-bezier(.3, .7, .4, 1) 0.15s both;
+}
+@keyframes pencil-draw {
+  from { background-size: 0 2px, 100% 100%; }
+}
+
+/* Saving a word: the star is stamped in ink. */
+.motion-stamp svg { fill: currentColor; animation: ink-stamp 0.35s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes ink-stamp {
+  0% { transform: scale(1.6) rotate(-12deg); opacity: 0.4; }
+  100% { transform: none; opacity: 1; }
+}
+
+.motion-flying-star {
+  position: fixed; top: 0; left: 0; z-index: 2000; width: 24px; height: 24px; pointer-events: none;
+  font-size: 22px; line-height: 24px; text-align: center; color: var(--brass);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Shared-element move from the page into the word sheet (View Transitions; browsers without it just open the sheet). */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+::view-transition-group(word-headword) { animation-duration: 0.32s; animation-timing-function: cubic-bezier(.3, .7, .3, 1); }
+::view-transition-old(word-headword),
+::view-transition-new(word-headword) { height: 100%; object-fit: contain; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pencil-underlined { animation: none; }
+  .motion-stamp svg { animation: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+.word-title { view-transition-name: word-headword; }

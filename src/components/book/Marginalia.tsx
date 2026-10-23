@@ -66,7 +66,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               right: isLeftPage ? 'auto' : '6px',
               maxWidth: '68px',
               zIndex: 24,
-              fontFamily: '"Caveat", cursive',
+              fontFamily: 'var(--font-hand)',
               fontSize: '20px',
               lineHeight: 1.1,
               color: colorHex,
@@ -118,9 +118,13 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
       })}
 
       {/* Outer Margin Click Trigger to Add Note */}
-      <div
+      <button
+        type="button"
         id={`add-note-trigger-p${pageNumber}`}
+        className="book-control"
+        aria-label={`Write a pencil note in the margin of page ${pageNumber}`}
         onClick={(e) => {
+          // From the keyboard there is no pointer position (clientY is 0): the note goes near the top.
           const rect = e.currentTarget.getBoundingClientRect();
           const relativeY = e.clientY - rect.top;
           const topPct = Math.max(15, Math.min(80, Math.round((relativeY / rect.height) * 100)));
@@ -128,6 +132,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
         }}
         title={`Click margin to write a pencil note on Page ${pageNumber}`}
         style={{
+          border: 0, padding: 0, margin: 0, background: 'transparent',
           position: 'absolute',
           top: '60px',
           bottom: '50px',
@@ -144,10 +149,13 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
         }}
         onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
         onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
+        onFocus={(e) => (e.currentTarget.style.opacity = '1')}
+        onBlur={(e) => (e.currentTarget.style.opacity = '0')}
       >
         <span
+          aria-hidden="true"
           style={{
-            fontFamily: '"IM Fell English SC", serif',
+            fontFamily: 'var(--font-fell-sc)',
             fontSize: '14px',
             color: '#8a7452',
             userSelect: 'none',
@@ -155,7 +163,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
         >
           ✏️
         </span>
-      </div>
+      </button>
 
       {/* Inline Pencil Note Editor Popup */}
       {isEditorOpen && (
@@ -179,7 +187,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ font: '11px "IM Fell English SC", serif', color: '#2a1e14', letterSpacing: '0.05em' }}>
+            <span style={{ font: '11px var(--font-fell-sc)', color: '#2a1e14', letterSpacing: '0.05em' }}>
               ✏️ Margin Note (p. {pageNumber})
             </span>
             <button
@@ -204,7 +212,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               border: '1px solid #c4b18e',
               borderRadius: '3px',
               padding: '6px 8px',
-              fontFamily: '"Caveat", cursive',
+              fontFamily: 'var(--font-hand)',
               fontSize: '18px',
               color: getColorHex(selectedColor),
               resize: 'none',
@@ -277,7 +285,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
                 border: '1px solid #8a7452',
                 borderRadius: '3px',
                 padding: '2px 8px',
-                font: '11px "IM Fell English SC", serif',
+                font: '11px var(--font-fell-sc)',
                 color: '#2a1e14',
                 cursor: 'pointer',
               }}

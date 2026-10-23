@@ -12,9 +12,10 @@ export async function GET(
     return NextResponse.json({ error: 'Word not found' }, { status: 404 });
   }
 
+  // Page numbers change whenever the book is rebuilt, so this is not immutable.
   return NextResponse.json(result, {
     headers: {
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': 'public, max-age=300',
     },
   });
 }

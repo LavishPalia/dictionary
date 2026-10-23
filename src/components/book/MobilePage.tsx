@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BookPage } from '@/lib/types';
 import { GuideWords } from './GuideWords';
 import { PageColumn } from './PageColumn';
@@ -16,7 +16,16 @@ interface MobilePageProps {
   onNextPage: () => void;
   canPrev?: boolean;
   canNext?: boolean;
+  /** Slide pages off and on after a swipe (off for reduced motion and Instant speed; the drag still follows). */
+  animate?: boolean;
 }
+
+// A swipe turns the page past a quarter of the page's width, or as a quick flick.
+const TURN_SHARE = 0.25;
+const FLICK_SPEED = 0.5; // px per ms
+const SLIDE_MS = 180;
+// Past the first or last page the page moves a quarter as far as the finger.
+const RESISTANCE = 0.25;
 
 export const MobilePage: React.FC<MobilePageProps> = ({
   page,
@@ -28,25 +37,90 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   onNextPage,
   canPrev = true,
   canNext = true,
+  animate = true,
 }) => {
-  const touchStartXRef = useRef<number | null>(null);
+  // The page follows the finger sideways; vertical moves are left to the browser (touch-action: pan-y).
+  const cardRef = useRef<HTMLDivElement>(null);
+  const touchRef = useRef<{ x: number; y: number; t: number; axis: 'x' | 'y' | null } | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [sliding, setSliding] = useState(false);
+  // After a turn, the page that arrives slides in from this side (+1 right, -1 left).
+  const enterFromRef = useRef(0);
+  const turnTimerRef = useRef<number | null>(null);
+
+  const width = () => cardRef.current?.offsetWidth ?? 390;
+  const slideTo = (x: number, then?: () => void) => {
+    setSliding(true);
+    setOffset(x);
+    window.setTimeout(() => { setSliding(false); then?.(); }, SLIDE_MS);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
+    if (e.touches.length !== 1) return;
+    // A new touch while the last turn's page is still arriving: the reader is moving on, so skip its slide-in
+    // rather than ignore the touch.
+    if (enterFromRef.current) {
+      enterFromRef.current = 0;
+      if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current);
+      setSliding(false);
+      setOffset(0);
+    }
+    touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now(), axis: null };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const start = touchRef.current;
+    if (!start) return;
+    const dx = e.touches[0].clientX - start.x;
+    const dy = e.touches[0].clientY - start.y;
+    if (!start.axis) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (start.axis !== 'x') return;
+    const blocked = (dx < 0 && !canNext) || (dx > 0 && !canPrev);
+    setOffset(blocked ? dx * RESISTANCE : dx);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
-    touchStartXRef.current = null;
-    if (Math.abs(deltaX) > 40) {
-      if (deltaX < 0) {
-        onNextPage();
-      } else {
-        onPrevPage();
-      }
+    const start = touchRef.current;
+    touchRef.current = null;
+    if (!start || start.axis !== 'x') return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const speed = Math.abs(dx) / Math.max(1, performance.now() - start.t);
+    const turning = Math.abs(dx) > width() * TURN_SHARE || (speed > FLICK_SPEED && Math.abs(dx) > 24);
+    const next = dx < 0;
+    if (!turning || (next ? !canNext : !canPrev)) {
+      slideTo(0);
+      return;
     }
+    const turn = () => {
+      // The new page enters from the side the reader is moving towards.
+      enterFromRef.current = next ? 1 : -1;
+      if (next) onNextPage(); else onPrevPage();
+      // If the page does not change (still loading, or refused), bring this one back.
+      turnTimerRef.current = window.setTimeout(() => { enterFromRef.current = 0; slideTo(0); }, 1500);
+    };
+    if (animate) slideTo((next ? -1 : 1) * width(), turn);
+    else { setOffset(0); turn(); }
   };
+
+  // A new page after a swipe: start it off-screen on the far side, then slide it in.
+  const pageNumber = page?.page_number;
+  useEffect(() => {
+    const from = enterFromRef.current;
+    if (!from) return;
+    enterFromRef.current = 0;
+    if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current);
+    if (!animate) { setOffset(0); return; }
+    setSliding(false);
+    setOffset(from * width());
+    const frame = requestAnimationFrame(() => requestAnimationFrame(() => slideTo(0)));
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageNumber]);
+
+  useEffect(() => () => { if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current); }, []);
 
   if (!page) {
     return (
@@ -73,11 +147,18 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
   return (
     <div
+      ref={cardRef}
+      id="mobile-page"
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => { touchRef.current = null; slideTo(0); }}
       style={{
         width: '100%',
         maxWidth: '390px',
+        touchAction: 'pan-y',
+        transform: offset ? `translateX(${offset}px)` : undefined,
+        transition: sliding ? `transform ${SLIDE_MS}ms ease-out` : 'none',
         background: '#ecdfba',
         display: 'flex',
         flexDirection: 'column',
@@ -88,10 +169,16 @@ export const MobilePage: React.FC<MobilePageProps> = ({
       }}
     >
       {/* Hanging silk bookmark ribbon */}
-      <div
+      <button
+        type="button"
+        id="mobile-ribbon"
+        className="book-control"
         onClick={onToggleBookmark}
+        aria-pressed={isBookmarked}
+        aria-label={isBookmarked ? 'Ribbon: this page is marked. Remove the ribbon' : 'Mark this page with the ribbon'}
         title={isBookmarked ? 'Page bookmarked! Click to remove' : 'Click to bookmark this page'}
         style={{
+          border: 0, margin: 0,
           position: 'absolute',
           right: '28px',
           top: 0,
@@ -110,9 +197,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         }}
       >
         {isBookmarked && (
-          <span style={{ color: '#e0bd68', fontSize: '13px', lineHeight: 1 }}>★</span>
+          <span aria-hidden="true" style={{ color: '#e0bd68', fontSize: '13px', lineHeight: 1 }}>★</span>
         )}
-      </div>
+      </button>
 
       {/* Page content */}
       <div style={{ flex: 1, padding: '18px 24px 12px' }}>
@@ -154,7 +241,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
             border: '1px solid #8a7452',
             background: 'transparent',
             borderRadius: '4px',
-            font: '20px "IM Fell English", serif',
+            font: '20px var(--font-fell)',
             color: '#2a1e14',
             cursor: canPrev ? 'pointer' : 'not-allowed',
             opacity: canPrev ? 1 : 0.4,
@@ -177,7 +264,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
             border: '1px solid #8a7452',
             background: 'transparent',
             borderRadius: '4px',
-            font: '20px "IM Fell English", serif',
+            font: '20px var(--font-fell)',
             color: '#2a1e14',
             cursor: canNext ? 'pointer' : 'not-allowed',
             opacity: canNext ? 1 : 0.4,

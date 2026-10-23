@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parch: #efe3c0; --ink: #2a1e14; --ink-soft: #5e4a33; --crimson: #7a2b22;
+    --brass: #c9a24a; --brass-soft: #e8d3a0; --sepia: #8a7452; --desk: #2a1d14; --green: #3d5a2a;
+    --fell: "IM Fell English", Georgia, serif; --fellsc: "IM Fell English SC", Georgia, serif;
+    --deva: "Tiro Devanagari Hindi", "Noto Serif Devanagari", serif;
+  }
+  .wrap { width: 100%; font-family: var(--font-sans); color: var(--foreground); }
+  .intro { margin: 0 0 6px; font-size: 14px; line-height: 1.55; color: var(--muted-foreground); }
+  h2.sec { font: 600 12px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); margin: 26px 0 12px; }
+  .row { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+  figure { margin: 0; }
+  figcaption { margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: var(--muted-foreground); max-width: 330px; }
+  figcaption b { color: var(--foreground); }
+
+  .screen { position: relative; border-radius: var(--radius); padding: 16px; overflow: hidden;
+    background: radial-gradient(ellipse at 50% -10%, #4d3626 0%, var(--desk) 62%, #1d140d 100%); font-family: var(--fell); color: var(--ink); }
+  .phone { width: 300px; height: 520px; box-sizing: border-box; }
+  .desk { width: 390px; height: 300px; box-sizing: border-box; }
+  .search { height: 38px; border-radius: 19px; background: linear-gradient(180deg, #f3e8c9, var(--parch)); border: 1px solid var(--sepia);
+    display: flex; align-items: center; padding: 0 14px; color: var(--ink-soft); font-size: 14px; }
+  .card { background: linear-gradient(180deg, #f3e8c9, #e9dbb4); border-radius: 12px; padding: 12px 14px; margin-top: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .label { font: 11px var(--fellsc); color: var(--ink-soft); letter-spacing: .04em; }
+  .big { font-size: 19px; margin: 3px 0 2px; }
+  .hi { font-family: var(--deva); }
+  .hiline { font: 14px/1.5 var(--deva); color: var(--ink-soft); margin: 2px 0 0; }
+  .en { font-size: 15px; line-height: 1.4; margin: 4px 0 0; }
+  .btns { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .btn { border: 1px solid var(--sepia); border-radius: 18px; padding: 6px 14px; font: 13px var(--fellsc); color: var(--ink); background: rgba(255,255,255,.35); }
+  .btn.primary { background: var(--crimson); color: #f6e9cc; border-color: var(--crimson); }
+  .link { font: 13px var(--fellsc); color: var(--crimson); margin-left: auto; }
+  .muted { font-size: 12px; font-style: italic; color: var(--ink-soft); margin-top: 8px; }
+  .dim { position: absolute; inset: 0; background: rgba(10,6,3,.62); }
+  .spot { position: absolute; border-radius: 22px; box-shadow: 0 0 0 2px var(--brass), 0 0 0 9999px rgba(10,6,3,.62); }
+  .tip { position: absolute; background: linear-gradient(180deg, #f6ecd0, #eadcb5); border-radius: 14px; padding: 12px 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5); border: 1px solid var(--brass); }
+  .tip .count { font: 11px var(--fellsc); color: var(--sepia); }
+  .tip .t { font-size: 17px; margin: 2px 0 0; }
+  .x { position: absolute; top: 8px; right: 10px; font-size: 14px; color: var(--ink-soft); }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; height: 46px; border-top: 1px solid rgba(201,162,74,.25); display: flex;
+    justify-content: space-around; align-items: center; font: 11px var(--fellsc); color: #b9a57c; background: #1f150e; }
+  .arrow { position: absolute; width: 12px; height: 12px; background: #f6ecd0; transform: rotate(45deg); border-left: 1px solid var(--brass); border-top: 1px solid var(--brass); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.45; }
+  th { text-align: left; font: 600 11.5px var(--font-sans); color: var(--muted-foreground); text-transform: uppercase; letter-spacing: .05em; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td.n { width: 18px; color: var(--muted-foreground); }
+  td.target { width: 26%; color: var(--muted-foreground); font-size: 12px; }
+  td .h { display: block; font-family: var(--deva); font-size: 13.5px; color: var(--muted-foreground); margin-top: 2px; }
+  td b { font-weight: 600; }
+  .tour h3 { font: 600 15px var(--font-sans); margin: 22px 0 2px; }
+  .tour p.meta { margin: 0 0 8px; font-size: 12.5px; color: var(--muted-foreground); }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 9px; background: var(--accent-surface); color: var(--accent-surface-foreground); margin-left: 6px; vertical-align: 1px; }
+  ul.rules { margin: 6px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="intro">Every tip has an English line with a short Hindi line under it. The Hindi wording is a first draft for you to check. Tours never save words, add marks or change your review schedule themselves, and they return you to where you started.</p>
+
+<h2 class="sec">How it looks</h2>
+<div class="row">
+  <figure>
+    <div class="screen phone">
+      <div class="search">⌕&nbsp; Search English or <span class="hi">&nbsp;हिंदी</span>…</div>
+      <div class="card" style="border: 1px solid var(--brass)">
+        <div class="label">New to Panna?</div>
+        <div class="big">Take the one-minute tour</div>
+        <p class="hiline">पन्ना में नए हैं? एक मिनट का टूर देखें।</p>
+        <p class="en" style="font-size:14px">Find words, save them, and remember them.</p>
+        <div class="btns"><span class="btn primary">Take the tour</span><span class="btn">Not now</span></div>
+        <div class="muted">Any time later: ⋯ → Guided tours</div>
+      </div>
+      <div class="card"><div class="label">Today’s review</div><div class="big">Nothing to review yet</div></div>
+      <div class="card"><div class="label">Continue reading</div><div class="big">Page 1</div></div>
+      <div class="nav"><span style="color:var(--brass)">Today</span><span>Book</span><span>Saved</span><span>Review</span></div>
+    </div>
+    <figcaption><b>1 · Welcome card on Today</b>, first visit only, at the top of Today. “Not now” hides it for good; the tours stay in the ⋯ menu.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="screen phone">
+      <div class="search" style="position:relative; z-index:0">⌕&nbsp; Search English or <span class="hi">&nbsp;हिंदी</span>…</div>
+      <div class="card"><div class="label">Today’s review</div><div class="big">Nothing to review yet</div></div>
+      <div class="spot" style="left:12px; top:12px; width:276px; height:46px"></div>
+      <div class="tip" style="left:12px; right:12px; bottom:58px">
+        <span class="x">✕</span>
+        <div class="count">Getting started · 1 of 5</div>
+        <div class="t">Look up any word</div>
+        <p class="en" style="font-size:14px">Type an English word — or Hindi, in हिंदी or in English letters like <i>chhodna</i>.</p>
+        <p class="hiline">कोई भी शब्द खोजें — अंग्रेज़ी में, हिंदी में, या अंग्रेज़ी अक्षरों में।</p>
+        <div class="btns"><span class="link" style="margin-left:0">Skip tour</span><span style="margin-left:auto" class="btn">Back</span><span class="btn primary">Next ›</span></div>
+      </div>
+      <div class="nav"><span style="color:var(--brass)">Today</span><span>Book</span><span>Saved</span><span>Review</span></div>
+    </div>
+    <figcaption><b>2 · A tour step on a phone.</b> The control is lit and the rest dimmed. The tip sits as a card along the bottom, so it never covers what it points at.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="screen desk">
+      <div style="display:flex; gap:10px; align-items:center">
+        <span style="font: 22px var(--deva); color: var(--brass)">पन्ना</span>
+        <div class="search" style="flex:1; height:32px; font-size:13px">⌕ Search…</div>
+        <span class="btn" style="color:var(--brass-soft); border-color:rgba(201,162,74,.5); background:none; position:relative; z-index:2">Review</span>
+        <span class="btn" style="color:var(--brass-soft); border-color:rgba(201,162,74,.5); background:none">⋯</span>
+      </div>
+      <div class="card" style="height:150px"></div>
+      <div class="spot" style="left:258px; top:13px; width:76px; height:32px; border-radius:16px"></div>
+      <div class="arrow" style="left:290px; top:56px"></div>
+      <div class="tip" style="left:150px; top:62px; width:220px">
+        <span class="x">✕</span>
+        <div class="count">Getting started · 5 of 5</div>
+        <div class="t">A few minutes a day</div>
+        <p class="en" style="font-size:13.5px">Review quizzes you on your saved words, just when you’re about to forget them.</p>
+        <p class="hiline" style="font-size:13px">Review आपके सहेजे शब्दों पर सवाल पूछता है।</p>
+        <div class="btns"><span class="btn">Back</span><span class="btn primary">Done</span></div>
+      </div>
+    </div>
+    <figcaption><b>3 · A tour step on desktop</b>: a pop-up beside the control, with an arrow. Esc, ✕ or the browser’s Back ends the tour; ← → move between steps.</figcaption>
+  </figure>
+</div>
+
+<h2 class="sec">The tours (⋯ → Guided tours)</h2>
+<div class="tour">
+
+<h3>1 · Getting started <span class="tag">offered on first visit</span></h3>
+<p class="meta">5 steps, about a minute. Starts on Today.</p>
+<table>
+<tr><th></th><th>Tip (English, then Hindi)</th><th>Points at</th></tr>
+<tr><td class="n">1</td><td><b>Look up any word.</b> Type an English word — or Hindi, in हिंदी or in English letters like <i>chhodna</i>.<span class="h">कोई भी शब्द खोजें — अंग्रेज़ी में, हिंदी में, या अंग्रेज़ी अक्षरों में।</span></td><td class="target">Search box</td></tr>
+<tr><td class="n">2</td><td><b>Read like a real book.</b> Desktop: turn pages with the arrows, by clicking a page corner, or with ← →. Phone: with the arrows, or swipe.<span class="h">तीरों से या उँगली से खिसकाकर पन्ने पलटें।</span></td><td class="target">The tour opens the book. Desktop: the page arrows · phone: the page arrows</td></tr>
+<tr><td class="n">3</td><td><b>Tap a word for its card.</b> See its Hindi meaning, hear it spoken, and find similar and opposite words.<span class="h">किसी शब्द को छुएँ — हिंदी अर्थ देखें और उच्चारण सुनें।</span></td><td class="target">The first word on the page</td></tr>
+<tr><td class="n">4</td><td><b>Save words to learn them.</b> Saved words come back in Review at the right times, so they stick.<span class="h">सहेजे गए शब्द सही समय पर Review में लौटते हैं, ताकि याद रहें।</span></td><td class="target">The tour opens that word’s card · the Save button (not pressed)</td></tr>
+<tr><td class="n">5</td><td><b>A few minutes a day.</b> Review quizzes you on your saved words, just when you’re about to forget them. More tours are in ⋯.<span class="h">Review आपके सहेजे शब्दों पर सवाल पूछता है। बाकी टूर ⋯ में हैं।</span></td><td class="target">Review (phone: bottom tab · desktop: header button). Then back to Today.</td></tr>
+</table>
+
+<h3>2 · The word card</h3>
+<p class="meta">5 steps. Opens a word that has similar and opposite words (today’s word of the day if it has some).</p>
+<table>
+<tr><td class="n">1</td><td><b>Hindi first.</b> The large red line is the Hindi meaning; the English definition is under it.<span class="h">बड़ी लाल पंक्ति हिंदी अर्थ है; नीचे अंग्रेज़ी परिभाषा।</span></td><td class="target">Hindi meaning</td></tr>
+<tr><td class="n">2</td><td><b>Hear it.</b> Listen to the English word, or to its Hindi meaning.<span class="h">अंग्रेज़ी शब्द या उसका हिंदी अर्थ सुनें।</span></td><td class="target">The two speak buttons</td></tr>
+<tr><td class="n">3</td><td><b>Similar and opposite words.</b> Tap one to open it right here — an easy way to grow your vocabulary.<span class="h">मिलते-जुलते और उल्टे शब्द — किसी को छूकर यहीं खोलें।</span></td><td class="target">Similar / Opposite chips</td></tr>
+<tr><td class="n">4</td><td><b>Save to learn.</b> Saving adds the word to Review. Tap again to remove it.<span class="h">सहेजने से शब्द Review में जुड़ता है। हटाने के लिए फिर छुएँ।</span></td><td class="target">Save</td></tr>
+<tr><td class="n">5</td><td><b>Find it in the book.</b> Shows the word on its page, underlined in pencil.<span class="h">शब्द को किताब में उसके पन्ने पर दिखाता है।</span></td><td class="target">“See on page”</td></tr>
+</table>
+
+<h3>3 · Saving and Review</h3>
+<p class="meta">4 steps. Opens Saved, then returns.</p>
+<table>
+<tr><td class="n">1</td><td><b>Everything you keep.</b> Saved has your words, the pages you marked, and your notes.<span class="h">Saved में आपके शब्द, निशान लगे पन्ने और नोट्स हैं।</span></td><td class="target">Saved (tab / header button); the tour opens it</td></tr>
+<tr><td class="n">2</td><td><b>How well you know each word.</b> Every saved word shows whether it’s new, being learned, or mastered.<span class="h">हर शब्द के साथ दिखता है: नया, सीख रहे हैं, या पक्का।</span></td><td class="target">Words · Pages · Notes switch</td></tr>
+<tr><td class="n">3</td><td><b>How Review works.</b> A word comes back after 1, 3, 7, 16 and 35 days. Right answers stretch the gap; a miss brings it back tomorrow.<span class="h">शब्द 1, 3, 7, 16 और 35 दिन बाद लौटता है। गलत जवाब पर कल फिर।</span></td><td class="target">Review (tab / header button)</td></tr>
+<tr><td class="n">4</td><td><b>A little every day.</b> No timer, no rush — keep your streak going. On a keyboard, answer with 1–4 and press Enter.<span class="h">कोई टाइमर नहीं — रोज़ थोड़ा दोहराएँ और अपनी streak बनाए रखें।</span></td><td class="target">Today’s review card. Desktop only: the keyboard sentence.</td></tr>
+</table>
+
+<h3>4 · Marking the book <span class="tag">built after step 5</span></h3>
+<p class="meta">Desktop 4 steps: ribbon, folded corner, margin note, letter tabs. Phone 2 steps: ribbon, swipe. (Phones have no folded corners, notes or letter tabs yet; step 5 may change that.)</p>
+<table>
+<tr><td class="n">1</td><td><b>Place a ribbon.</b> Tap the ribbon to keep your place on this page.<span class="h">इस पन्ने पर रिबन लगाकर जगह याद रखें।</span></td><td class="target">Silk ribbon</td></tr>
+<tr><td class="n">2</td><td><b>Fold a corner</b> to mark a page you’ll come back to. <i>(desktop)</i><span class="h">जिस पन्ने पर लौटना हो, उसका कोना मोड़ें।</span></td><td class="target">Page corner</td></tr>
+<tr><td class="n">3</td><td><b>Write in the margin.</b> Click the margin to leave a pencil note. <i>(desktop)</i><span class="h">हाशिये पर क्लिक करके पेंसिल से नोट लिखें।</span></td><td class="target">Page margin</td></tr>
+<tr><td class="n">4</td><td><b>Jump to a letter</b> with the tabs on the edge of the book. <i>(desktop)</i><span class="h">किनारे के अक्षरों से सीधे उस अक्षर पर जाएँ।</span></td><td class="target">Letter tabs</td></tr>
+</table>
+
+<h3>5 · Settings and backup</h3>
+<p class="meta">5 steps. Opens the ⋯ menu.</p>
+<table>
+<tr><td class="n">1</td><td><b>Make it yours.</b> Settings and more live here.<span class="h">सेटिंग्स और बाकी विकल्प यहाँ हैं।</span></td><td class="target">⋯ button; the tour opens the menu</td></tr>
+<tr><td class="n">2</td><td><b>Evening light.</b> A warmer, dimmer desk for reading at night.<span class="h">रात में पढ़ने के लिए हल्की, गर्म रोशनी।</span></td><td class="target">Desk lighting</td></tr>
+<tr><td class="n">3</td><td><b>Read without a connection.</b> Save the whole book on this device to read and search it offline.<span class="h">बिना इंटरनेट के पढ़ने के लिए पूरी किताब इस डिवाइस पर सहेजें।</span></td><td class="target">Save the book for offline (only where offline saving works; otherwise the tour has 4 steps)</td></tr>
+<tr><td class="n">4</td><td><b>Keep your words safe.</b> They live only in this browser. Back them up to a file, and restore it on any device.<span class="h">आपके शब्द सिर्फ़ इसी ब्राउज़र में हैं। फ़ाइल में सहेजें, किसी भी डिवाइस पर वापस लाएँ।</span></td><td class="target">Back up my words</td></tr>
+<tr><td class="n">5</td><td><b>Tours any time.</b> Replay any tour from here, as often as you like.<span class="h">कोई भी टूर यहाँ से जितनी बार चाहें देखें।</span></td><td class="target">Guided tours (new menu row)</td></tr>
+</table>
+</div>
+
+<h2 class="sec">One-time tips (one step each, shown once)</h2>
+<table>
+<tr><th>When</th><th>Tip</th></tr>
+<tr><td class="target">First time a word card opens</td><td><b>Save the words you want to learn</b> — Review brings them back.<span class="h">सीखने वाले शब्द सहेजें — Review उन्हें फिर लाएगा।</span></td></tr>
+<tr><td class="target">First word saved</td><td><b>Saved!</b> It will come up in Review tomorrow.<span class="h">सहेज लिया! यह कल Review में आएगा।</span></td></tr>
+<tr><td class="target">First Review card</td><td><b>Pick the meaning you think is right.</b> No timer — a miss just comes back later.<span class="h">जो अर्थ सही लगे, चुनें। कोई टाइमर नहीं।</span></td></tr>
+<tr><td class="target">First time the book opens</td><td><b>Tap any word</b> on the page to see its meaning.<span class="h">अर्थ देखने के लिए पन्ने पर किसी शब्द को छुएँ।</span></td></tr>
+</table>
+<ul class="rules">
+  <li>Never shown during a tour, or to someone who just finished the tour covering it. At most one tip per screen.</li>
+  <li>Each tip has “Got it” and “Turn off tips”. ⋯ → Guided tours lists every tour with a ✓ once seen, plus “Show tips again”.</li>
+  <li>Progress is saved in this browser (<code>panna_tours</code>) and included in backups.</li>
+</ul>
+</div>
+</body>
+</html>

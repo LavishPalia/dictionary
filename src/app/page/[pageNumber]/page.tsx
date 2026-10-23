@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { getPage, getSpread } from '@/lib/book-data';
+import { getMeta, getPage, getSpreadPages, spreadLeft } from '@/lib/book-data';
 import DictionaryApp from '@/components/DictionaryApp';
 
 interface PageRouteProps {
@@ -10,7 +10,7 @@ interface PageRouteProps {
 }
 
 export async function generateMetadata({ params }: PageRouteProps): Promise<Metadata> {
-  const pageNum = parseInt(params.pageNumber, 10);
+  const pageNum = Number(params.pageNumber);
 
   if (!Number.isInteger(pageNum) || !getPage(pageNum)) {
     return {
@@ -18,26 +18,22 @@ export async function generateMetadata({ params }: PageRouteProps): Promise<Meta
     };
   }
 
-  const leftPageNum = pageNum % 2 === 0 ? pageNum : pageNum - 1;
-  const spread = getSpread(leftPageNum);
-
-  const guide = (spread.left && spread.right)
-    ? `${spread.left.guide_left} to ${spread.right.guide_right}`
-    : (spread.right?.guide_left
-        ? `${spread.right.guide_left} to ${spread.right.guide_right}`
-        : (spread.left?.guide_left || 'Dictionary Pages'));
+  const leftPageNum = spreadLeft(pageNum);
+  const pages = getSpreadPages(pageNum);
+  const guide = `${pages[0].guide_left} to ${pages[pages.length - 1].guide_right}`;
+  const label = pages.length === 2 ? `Pages ${leftPageNum}–${leftPageNum + 1}` : `Page ${pages[0].page_number}`;
 
   return {
-    title: `Pages ${leftPageNum}–${leftPageNum + 1} (${guide}) — पन्ना (Panna)`,
-    description: `Read vintage dictionary pages ${leftPageNum} and ${leftPageNum + 1} with English and Hindi meanings.`,
+    title: `${label} (${guide}) — पन्ना (Panna)`,
+    description: `Read vintage dictionary ${label.toLowerCase()} with English and Hindi meanings.`,
   };
 }
 
 export default function DirectPageRoute({ params }: PageRouteProps) {
-  const pageNum = parseInt(params.pageNumber, 10);
+  const pageNum = Number(params.pageNumber);
   if (!Number.isInteger(pageNum) || !getPage(pageNum)) {
     notFound();
   }
 
-  return <DictionaryApp initialPage={pageNum} />;
+  return <DictionaryApp initialMeta={getMeta()} initialPages={getSpreadPages(pageNum)} initialPage={pageNum} />;
 }

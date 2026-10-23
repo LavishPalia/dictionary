@@ -6,17 +6,20 @@ import { soundEngine } from '@/lib/audio';
 interface CoverCinematicProps {
   isOpen: boolean;
   onOpen: () => void;
+  reducedMotion?: boolean;
 }
 
 export const CoverCinematic: React.FC<CoverCinematicProps> = ({
   isOpen,
   onOpen,
+  reducedMotion = false,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleOpenClick = () => {
     if (isAnimating) return;
     soundEngine.playPageTurn();
+    if (reducedMotion) { onOpen(); return; } // no swing when the reader asked for less motion
     setIsAnimating(true);
     setTimeout(() => {
       onOpen();
@@ -59,7 +62,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
           padding: '40px',
         }}
       >
-        <div style={{ textAlign: 'center', color: '#6e5532', fontStyle: 'italic', fontFamily: '"IM Fell English", serif' }}>
+        <div style={{ textAlign: 'center', color: '#6e5532', fontStyle: 'italic', fontFamily: 'var(--font-fell)' }}>
           <h3 style={{ fontSize: '26px', margin: '0 0 10px', color: '#2a1e14', fontStyle: 'normal' }}>
             पन्ना · Panna
           </h3>
@@ -153,7 +156,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             <h1
               style={{
                 margin: '0 0 6px',
-                fontFamily: '"Tiro Devanagari Hindi", serif',
+                fontFamily: 'var(--font-deva)',
                 fontSize: '54px',
                 color: '#f3e5c8',
                 fontWeight: 600,
@@ -167,7 +170,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             <h2
               style={{
                 margin: '0 0 16px',
-                fontFamily: '"IM Fell English SC", serif',
+                fontFamily: 'var(--font-fell-sc)',
                 fontSize: '32px',
                 color: '#c9a24a',
                 letterSpacing: '0.18em',
@@ -182,7 +185,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             <p
               style={{
                 margin: '0 0 8px',
-                fontFamily: '"IM Fell English", serif',
+                fontFamily: 'var(--font-fell)',
                 fontSize: '22px',
                 color: '#eedcb2',
                 fontStyle: 'italic',
@@ -195,7 +198,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             <p
               style={{
                 margin: 0,
-                fontFamily: '"IM Fell English SC", serif',
+                fontFamily: 'var(--font-fell-sc)',
                 fontSize: '13px',
                 color: '#c9a24a',
                 letterSpacing: '0.1em',
@@ -213,7 +216,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
               background: 'rgba(201, 162, 74, 0.15)',
               border: '1px solid #c9a24a',
               borderRadius: '20px',
-              fontFamily: '"IM Fell English SC", serif',
+              fontFamily: 'var(--font-fell-sc)',
               fontSize: '13px',
               color: '#f1e4c4',
               letterSpacing: '0.16em',
@@ -256,7 +259,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               color: '#d4c5a0',
-              fontFamily: '"IM Fell English SC", serif',
+              fontFamily: 'var(--font-fell-sc)',
               fontSize: '14px',
               letterSpacing: '0.12em',
               textAlign: 'center',

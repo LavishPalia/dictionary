@@ -1,0 +1,86 @@
+/* Guided tours and one-time tips (src/components/tour). Above sheets (900), below the fly-to-Saved star (2000). */
+
+.tour-layer { position: fixed; inset: 0; z-index: 1500; pointer-events: none; }
+.tour-blocker { position: absolute; inset: 0; pointer-events: auto; }
+.tour-dim { position: absolute; inset: 0; background: rgba(10, 6, 3, 0.62); }
+.tour-spot {
+  position: fixed; border-radius: var(--radius-md);
+  box-shadow: 0 0 0 2px var(--brass), 0 0 0 9999px rgba(10, 6, 3, 0.62);
+  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+.tour-ring {
+  position: fixed; border-radius: var(--radius-md); box-shadow: 0 0 0 2px var(--brass);
+  animation: tour-ring 1.6s ease-in-out infinite;
+}
+@keyframes tour-ring { 50% { box-shadow: 0 0 0 4px rgba(201, 162, 74, 0.45); } }
+
+.tour-tip {
+  position: fixed; box-sizing: border-box; pointer-events: auto;
+  padding: 14px 16px 12px; border-radius: var(--radius-lg); border: 1px solid var(--brass);
+  background: linear-gradient(180deg, #f6ecd0, #eadcb5); color: var(--ink);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  transition: top 0.25s ease, left 0.25s ease, bottom 0.25s ease;
+}
+.tour-tip:focus { outline: none; }
+/* The tip takes focus so screen readers read it; its buttons show the focus ring, not the card. */
+.tour-tip--phone { left: 12px; right: 12px; max-width: 480px; margin: 0 auto; }
+.tour-tip--small { max-width: 320px; }
+.tour-tip--small.tour-tip--phone { max-width: 480px; }
+
+.tour-arrow {
+  position: absolute; width: 12px; height: 12px; margin-left: -6px; background: #f3e7c6; transform: rotate(45deg);
+  border: 1px solid var(--brass);
+}
+.tour-arrow--top { top: -7px; border-right: 0; border-bottom: 0; }
+.tour-arrow--bottom { bottom: -7px; border-left: 0; border-top: 0; background: #eadcb5; }
+
+.tour-close {
+  position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 36px; height: 36px;
+  border: 0; border-radius: var(--radius-pill); background: none; color: var(--ink-soft); cursor: pointer; padding: 0;
+}
+.tour-close svg { width: 16px; height: 16px; }
+.tour-close:hover { background: rgba(0, 0, 0, 0.06); }
+.tour-kicker { font: 12px var(--font-fell-sc); color: var(--ink-soft); padding-right: 36px; }
+.tour-title { margin: 2px 0 0; font: 19px/1.25 var(--font-fell); color: var(--ink); padding-right: 28px; }
+.tour-en { margin: 6px 0 0; font: 15px/1.4 var(--font-fell); color: var(--ink); }
+.tour-hi { margin: 4px 0 0; font: 14.5px/1.55 var(--font-deva); color: var(--ink-soft); }
+
+.tour-btns { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: 12px; }
+.tour-btn {
+  min-height: 40px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--sepia);
+  background: rgba(255, 255, 255, 0.35); color: var(--ink); font: 14px var(--font-fell-sc); cursor: pointer;
+}
+.tour-btn--primary { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
+.tour-btn--primary:hover { background: var(--crimson); border-color: var(--crimson); }
+.tour-link {
+  min-height: 40px; margin-right: auto; padding: 0 4px; border: 0; background: none; color: var(--crimson); font: 14px var(--font-fell-sc); cursor: pointer;
+}
+.tour-link:hover { text-decoration: underline; }
+.tour-btn:focus-visible, .tour-link:focus-visible, .tour-close:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+.tour--still .tour-spot, .tour--still .tour-tip { transition: none; }
+.tour--still .tour-ring { animation: none; }
+
+/* Welcome card on Today, and the Guided tours sheet. */
+.today-welcome { border: 1px solid var(--brass); }
+.today-welcome .tour-hi { margin-top: 2px; }
+.tours-list { list-style: none; margin: 0; padding: 0; }
+.tours-item { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid var(--rule-faint);
+  background: none; text-align: left; cursor: pointer; color: var(--ink); }
+.tours-item:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.tours-item-text { flex: 1; }
+.tours-item-title { display: block; font: 17px var(--font-fell); }
+.tours-item-sub { display: block; margin-top: 1px; font: 14px/1.4 var(--font-fell); color: var(--ink-soft); }
+.tours-item-hi { display: block; font: 13.5px/1.5 var(--font-deva); color: var(--ink-soft); }
+.tours-seen { font: 12px var(--font-fell-sc); color: var(--green); white-space: nowrap; }
+.tours-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 14px; }
+.tours-note { font: italic 13.5px var(--font-fell); color: var(--ink-soft); }
+
+/* ⋯ menu: the Guided tours row comes first, with a compass. */
+.menu-tours { justify-content: flex-start; }
+.menu-tours-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: var(--radius-pill);
+  background: rgba(201, 162, 74, 0.18); color: var(--binding); }
+.menu-tours-icon svg { width: 20px; height: 20px; }
+.menu-tours-text { flex: 1; }
+.tour-howlink { margin: 0; padding: 10px 0; font-size: 14px; }
+.tour-howlink--desk { color: var(--brass-soft); padding: 4px 0; }

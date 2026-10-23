@@ -1,0 +1,14 @@
+{
+  "target_entries": 25000,
+  "curated_entries": 757,
+  "generated_entries": 24243,
+  "top_5000_generated": 4296,
+  "models": {
+    "gemini-3.8-flash": 40,
+    "gemini-3.5-flash-lite": 14482,
+    "gemini-3.1-flash-lite": 9721
+  },
+  "max_definition_characters": 120,
+  "max_hindi_characters": 35,
+  "review_sheet": "data\\sources\\PHASE4_TOP5000_REVIEW.csv"
+}
