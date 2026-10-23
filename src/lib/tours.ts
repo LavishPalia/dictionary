@@ -3,7 +3,7 @@
 // actions, so stepping back and forth just applies the scene again. Tours only point and explain: they never save
 // words, add marks or change the review schedule.
 
-export type TourId = 'start' | 'word' | 'review' | 'settings';
+export type TourId = 'start' | 'word' | 'review' | 'marks' | 'settings';
 export type TipId = 'book' | 'word-card' | 'first-save' | 'review' | 'tours-here';
 type Screen = 'today' | 'book' | 'saved' | 'review';
 
@@ -23,6 +23,8 @@ export interface TourStep extends TourText {
   scene: TourScene;
   /** Only shown when this is true (a feature this browser has); the step count leaves it out otherwise. */
   when?: () => boolean;
+  /** Only on this layout (folded corners, margin notes and letter tabs are desktop-only; swiping is for phones). */
+  layout?: 'desktop' | 'phone';
   /** Replaces `en` on one layout (the phone has no keyboard sentence, desktop has no swipe). */
   enPhone?: string;
   enDesktop?: string;
@@ -44,6 +46,11 @@ export function firstWordOnPage(): HTMLElement | null {
     return el.style.cursor === 'pointer' && r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight;
   }) ?? null;
 }
+/** The first element on screen matching a selector (a spread has a control per page, and copies for page turns). */
+const onScreen = (selector: string) => () => [...document.querySelectorAll<HTMLElement>(selector)].find((el) => {
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 && r.right > 0 && r.left < window.innerWidth && r.bottom > 0 && r.top < window.innerHeight;
+}) ?? null;
 const menuRow = (label: string) => () => document.querySelector(`#reading-menu [aria-label="${label}"]`)?.closest('.menu-row') ?? null;
 
 export const TOURS: Tour[] = [
@@ -109,6 +116,26 @@ export const TOURS: Tour[] = [
     ],
   },
   {
+    id: 'marks', title: 'Marking the book', en: 'Ribbons, folded corners, margin notes and letter tabs.', hi: 'रिबन, मुड़े कोने, हाशिये के नोट और अक्षर।',
+    steps: [
+      { target: { desktop: '#silk-ribbon', phone: '#mobile-ribbon' }, scene: { section: 'book' }, title: 'Place a ribbon',
+        en: 'Tap the ribbon to keep your place on these pages.', enPhone: 'Tap the ribbon to keep your place on this page.',
+        hi: 'इस पन्ने पर रिबन लगाकर जगह याद रखें।' },
+      { target: both(onScreen('[id^="dog-ear-trigger-"], [id^="dog-ear-corner-"]')), scene: { section: 'book' }, layout: 'desktop',
+        title: 'Fold a corner', en: 'Fold the top corner of a page you’ll come back to.',
+        hi: 'जिस पन्ने पर लौटना हो, उसका कोना मोड़ें।' },
+      { target: both(onScreen('[id^="add-note-trigger-p"]')), scene: { section: 'book' }, layout: 'desktop',
+        title: 'Write in the margin', en: 'Click the margin to leave a pencil note beside a word.',
+        hi: 'हाशिये पर क्लिक करके पेंसिल से नोट लिखें।' },
+      { target: both('[aria-label="Letters"]'), scene: { section: 'book' }, layout: 'desktop',
+        title: 'Jump to a letter', en: 'The tabs on the edge of the book open each letter’s first page.',
+        hi: 'किनारे के अक्षरों से सीधे उस अक्षर पर जाएँ।' },
+      { target: both('#mobile-page'), scene: { section: 'book' }, layout: 'phone',
+        title: 'Swipe to turn', en: 'Drag the page sideways: it follows your finger. Let go to turn, or drag back to stay.',
+        hi: 'पन्ना पलटने के लिए उसे उँगली से बगल में खिसकाएँ।' },
+    ],
+  },
+  {
     id: 'settings', title: 'Settings and backup', en: 'Evening light, page turns, and keeping your words safe.', hi: 'शाम की रोशनी, पन्ने पलटना, और शब्द सुरक्षित रखना।',
     steps: [
       { target: both('#menu-btn'), scene: {}, title: 'Make it yours',
@@ -132,10 +159,14 @@ export const TOURS: Tour[] = [
   },
 ];
 
-/** A tour with only the steps this browser can show. */
+// The app's phone layout starts below this width (DictionaryApp isMobile).
+const PHONE_BELOW = 1024;
+
+/** A tour with only the steps this browser and layout can show. */
 export function tourById(id: TourId): Tour {
   const tour = TOURS.find((t) => t.id === id)!;
-  return { ...tour, steps: tour.steps.filter((s) => !s.when || s.when()) };
+  const layout = typeof window !== 'undefined' && window.innerWidth < PHONE_BELOW ? 'phone' : 'desktop';
+  return { ...tour, steps: tour.steps.filter((s) => (!s.when || s.when()) && (!s.layout || s.layout === layout)) };
 }
 
 export interface Tip extends TourText {

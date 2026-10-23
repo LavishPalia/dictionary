@@ -158,8 +158,17 @@ async function main() {
       check(`${label}: a long swipe right turns back`, (await waitFor(`/page/${CALM_PAGE}`)) === `/page/${CALM_PAGE}`, await where());
       await sleep(600);
 
-      // 80px in two quick moves: under a quarter of the page (a swipe), so only its speed can turn the page.
-      await drag(260, 180, { steps: 2, stepMs: 0 });
+      // A flick: 80px (under a quarter of the page) in about 50ms. Fired from inside the page, as DevTools input
+      // arrives too unevenly under load to guarantee a fast finger; the other swipes use real input events.
+      await evaluate(`(async () => {
+        const el = document.querySelector('#mobile-page');
+        const fire = (type, x) => { const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: 420 });
+          el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [t], targetTouches: type === 'touchend' ? [] : [t], changedTouches: [t] })); };
+        fire('touchstart', 260);
+        for (const x of [220, 180]) { await new Promise((r) => setTimeout(r, 16)); fire('touchmove', x); }
+        await new Promise((r) => setTimeout(r, 16)); fire('touchend', 180);
+        return true;
+      })()`);
       check(`${label}: a quick flick turns the page`, (await waitFor(`/page/${CALM_PAGE + 1}`)) === `/page/${CALM_PAGE + 1}`, await where());
       await sleep(600);
 

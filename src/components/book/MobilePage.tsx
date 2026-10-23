@@ -56,7 +56,15 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1 || enterFromRef.current) return;
+    if (e.touches.length !== 1) return;
+    // A new touch while the last turn's page is still arriving: the reader is moving on, so skip its slide-in
+    // rather than ignore the touch.
+    if (enterFromRef.current) {
+      enterFromRef.current = 0;
+      if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current);
+      setSliding(false);
+      setOffset(0);
+    }
     touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now(), axis: null };
   };
 
@@ -163,6 +171,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
       {/* Hanging silk bookmark ribbon */}
       <button
         type="button"
+        id="mobile-ribbon"
         className="book-control"
         onClick={onToggleBookmark}
         aria-pressed={isBookmarked}

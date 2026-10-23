@@ -195,12 +195,12 @@ async function main() {
       await click('#menu-btn');
       await sleep(400);
       check(`${sizeName}: Guided tours is the first row of the menu, with how many are unseen`, await evaluate(`(() => {
-        const first = document.querySelector('#reading-menu .menu-row'); return first?.id === 'guided-tours-btn' && first.textContent.includes('4 not seen yet'); })()`),
+        const first = document.querySelector('#reading-menu .menu-row'); return first?.id === 'guided-tours-btn' && first.textContent.includes('5 not seen yet'); })()`),
         await evaluate(`[document.querySelector('#reading-menu .menu-row')?.id, document.querySelector('#reading-menu .menu-row')?.textContent, Boolean(document.querySelector('#reading-menu'))]`));
       await click('#guided-tours-btn');
       await sleep(500);
-      check(`${sizeName}: ⋯ → Guided tours lists the four tours`, await evaluate(`[...document.querySelectorAll('#tours-sheet .tours-item-title')].map((e) => e.textContent).join('|')`)
-        === 'Getting started|The word card|Saving and Review|Settings and backup');
+      check(`${sizeName}: ⋯ → Guided tours lists the five tours`, await evaluate(`[...document.querySelectorAll('#tours-sheet .tours-item-title')].map((e) => e.textContent).join('|')`)
+        === 'Getting started|The word card|Saving and Review|Marking the book|Settings and backup');
       check(`${sizeName}: every tour has a Hindi line`, await evaluate(`[...document.querySelectorAll('#tours-sheet .tours-item-hi')].every((e) => e.lang === 'hi' && e.textContent.length > 5)`));
       await click('#tour-start-start');
       s = await waitStep('1 of 5');
@@ -255,6 +255,30 @@ async function main() {
       await evaluate(`history.back(); true`);
       await sleep(900);
       check(`${sizeName}: Back ends the tour`, !(await step()));
+
+      // ── Marking the book: ribbon, folded corner, margin note and letter tabs on desktop; ribbon and swipe on phones ──
+      await open(`/page/${CAMEL_PAGE}`, size);
+      const marks = sizeName === 'phone' ? 2 : 4;
+      await click('#menu-btn'); await sleep(400); await click('#guided-tours-btn'); await sleep(500);
+      check(`${sizeName}: Marking the book has ${marks} steps here`, (await evaluate(`document.querySelector('#tour-start-marks').textContent`)).includes(`${marks} steps`));
+      await click('#tour-start-marks');
+      s = await waitStep(`1 of ${marks}`);
+      check(`${sizeName}: it starts at the ribbon`, s?.title === 'Place a ribbon' && s.hi.includes('रिबन') && await surrounds(s, sizeName === 'phone' ? '#mobile-ribbon' : '#silk-ribbon') && inView(s), s);
+      if (sizeName === 'phone') {
+        await click('#tour-next-btn'); s = await waitStep('2 of 2');
+        check(`${sizeName}: then swiping the page`, s?.title === 'Swipe to turn' && s.hi.length > 5 && await surrounds(s, '#mobile-page'), s);
+      } else {
+        await click('#tour-next-btn'); s = await waitStep('2 of 4');
+        check(`${sizeName}: then folding a corner`, s?.title === 'Fold a corner' && s.spot && inView(s), s);
+        await click('#tour-next-btn'); s = await waitStep('3 of 4');
+        check(`${sizeName}: then a margin note`, s?.title === 'Write in the margin' && s.spot && inView(s), s);
+        await click('#tour-next-btn'); s = await waitStep('4 of 4');
+        check(`${sizeName}: then the letter tabs`, s?.title === 'Jump to a letter' && await surrounds(s, '[aria-label="Letters"]'), s);
+      }
+      await click('#tour-next-btn');
+      await sleep(700);
+      check(`${sizeName}: Done ends the tour, on the same page`, !(await step()) && (await evaluate('location.pathname')) === `/page/${CAMEL_PAGE}`, await evaluate('location.pathname'));
+      check(`${sizeName}: the tour marked nothing`, await evaluate(`['panna_bookmarks', 'panna_dog_ears', 'panna_marginalia'].every((k) => (JSON.parse(localStorage.getItem(k) || '[]')).length === 0)`));
 
       // ── Settings and backup (with "Read without a connection" only where offline saving exists) ──
       await open('/', size);
