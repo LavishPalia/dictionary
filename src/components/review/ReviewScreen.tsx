@@ -245,10 +245,12 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
                 return (
                   <button key={o.key} type="button" className={`review-option ${state && `review-option--${state}`}`}
                     lang={question.kind === 'meaning' ? 'hi' : undefined}
-                    disabled={answered} aria-disabled={answered} onClick={() => choose(o)}
-                    aria-label={answered ? `${o.text}${o.correct ? ' (right answer)' : o.key === chosen ? ' (your answer)' : ''}` : undefined}>
+                    disabled={answered} aria-disabled={answered} onClick={() => choose(o)}>
                     <span className="review-key" aria-hidden="true">{state === 'right' ? '✓' : state === 'wrong' ? '✗' : LETTERS[i]}</span>
                     <span>{o.text}</span>
+                    {answered && (o.correct || o.key === chosen) && (
+                      <span className="ui-visually-hidden" lang="en">{o.correct ? ' (right answer)' : ' (your answer)'}</span>
+                    )}
                   </button>
                 );
               })}

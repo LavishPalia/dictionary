@@ -17,6 +17,12 @@ export type TourLayerProps = { phone: boolean; reducedMotion: boolean } & (
 );
 
 const MISSING_AFTER_MS = 1500;
+
+/** English text with any Hindi words in it marked as Hindi, so a screen reader switches voice for them. */
+function withHindi(text: string): React.ReactNode {
+  return text.split(/([ऀ-ॿ]+(?:[\s,]+[ऀ-ॿ]+)*)/).map((part, i) =>
+    (i % 2 ? <span key={i} lang="hi">{part}</span> : part));
+}
 const PAD = 6;
 const GAP = 14;
 const MARGIN = 12;
@@ -164,7 +170,7 @@ export function TourLayer(props: TourLayerProps) {
           {arrow && <span className={`tour-arrow tour-arrow--${arrow.side}`} style={{ left: arrow.left }} aria-hidden="true" />}
           <div className="tour-kicker">Tip</div>
           <h2 className="tour-title" id={titleId}>{tip.title}</h2>
-          <p className="tour-en">{tip.en}</p>
+          <p className="tour-en">{withHindi(tip.en)}</p>
           <p className="tour-hi" lang="hi">{tip.hi}</p>
           <div className="tour-btns">
             <button type="button" className="tour-link" id="tip-off-btn" onClick={props.onTipsOff}>Turn off tips</button>
@@ -192,7 +198,7 @@ export function TourLayer(props: TourLayerProps) {
         <div className="tour-kicker" id="tour-count">{tour.title} · {step + 1} of {tour.steps.length}</div>
         <h2 className="tour-title" id={titleId}>{s.title}</h2>
         <div id="tour-tip-text">
-          <p className="tour-en">{stepText(s, phone)}</p>
+          <p className="tour-en">{withHindi(stepText(s, phone))}</p>
           <p className="tour-hi" lang="hi">{s.hi}</p>
         </div>
         <div className="tour-btns">

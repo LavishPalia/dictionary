@@ -21,7 +21,16 @@ export const PronunciationFooter: React.FC<PronunciationFooterProps> = ({ hints 
         textOverflow: 'ellipsis',
       }}
     >
-      {hints}
+      {/* "Calm काम · Camel कैमल": each Hindi half is marked as Hindi, so screen readers read it with a Hindi voice. */}
+      {hints.split(' · ').map((hint, i) => {
+        const at = hint.search(/[ऀ-ॿ]/);
+        return (
+          <React.Fragment key={i}>
+            {i > 0 && ' · '}
+            {at > 0 ? <>{hint.slice(0, at)}<span lang="hi">{hint.slice(at)}</span></> : hint}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };

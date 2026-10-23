@@ -110,7 +110,8 @@ async function main() {
       await seed(['Camel', 'Ceremony', 'Abandon']);
       await open('/page/16', size);
       const badge = await evaluate(`document.querySelector('${reviewBtn} .ui-badge')?.textContent`);
-      check(`${sizeName}: Review shows 3 words due`, badge === '3' && await evaluate(`document.querySelector('${reviewBtn}').getAttribute('aria-label') === 'Review: 3 words due'`), badge);
+      // The button's name is its text: "Review", the badge, and hidden "words due".
+      check(`${sizeName}: Review shows 3 words due`, badge === '3' && await evaluate(`document.querySelector('${reviewBtn}').textContent.replace(/\\s+/g, ' ').trim() === 'Review 3 words due'`), badge);
 
       await evaluate(`document.querySelector('${reviewBtn}').click(); true`);
       await waitForCard();

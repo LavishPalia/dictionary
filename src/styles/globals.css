@@ -114,6 +114,18 @@ html, body {
   color: var(--color-ink-primary);
 }
 
+/* The headword as a button (PageColumn): looks like the printed word, shows a ring when reached by keyboard. */
+.entry-open {
+  display: inline; margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit;
+  text-align: inherit; cursor: inherit;
+}
+.entry-open:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 2px; }
+
+/* Ribbon, folded corners and the margin-note area are buttons. The ribbon's swallowtail clip would hide a focus
+   ring, so it is dropped while the ribbon has keyboard focus. */
+.thumb-tab:focus-visible { outline: 2px solid var(--brass) !important; outline-offset: 1px; position: relative; z-index: 1; }
+.book-control:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; clip-path: none !important; opacity: 1 !important; }
+
 .entry-pronunciation {
   font-family: var(--font-deva);
   font-size: 13px;

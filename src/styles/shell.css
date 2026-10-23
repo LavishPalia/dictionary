@@ -10,7 +10,7 @@
 .app-search { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .app-count { font: 13px var(--font-fell); color: var(--brass-muted); }
 .app-count::before { content: '· '; }
-#open-today-btn[aria-pressed='true'], #open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass); }
+#open-today-btn[aria-pressed='true'], #open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass-soft); }
 
 /* Search field in the header (the results list is styled by LookupBar). */
 .app-lookup {
@@ -84,3 +84,13 @@
   font: italic 14px var(--font-fell); color: var(--brass-soft); background: rgba(0, 0, 0, 0.25); text-align: center;
 }
 .app-offline-hi { font: normal 14px var(--font-deva); }
+
+/* Phones: small controls get a full 44 px touch target (WCAG 2.5.5), without changing how they look much. */
+@media (max-width: 1023px) {
+  .ui-btn--small, .ui-seg button, .tour-tip .tour-btn, .tour-tip .tour-link { min-height: 44px; }
+  .ui-iconbtn, .tour-close, .lookup-clear { min-width: 44px; min-height: 44px; }
+  .tour-howlink, .word-goto { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  #goto-page-input { min-height: 44px; }
+  /* The phone's page arrows set their size inline. */
+  button[aria-label='Previous page'], button[aria-label='Next page'] { min-width: 44px !important; min-height: 44px !important; }
+}

@@ -88,10 +88,15 @@ export const MobilePage: React.FC<MobilePageProps> = ({
       }}
     >
       {/* Hanging silk bookmark ribbon */}
-      <div
+      <button
+        type="button"
+        className="book-control"
         onClick={onToggleBookmark}
+        aria-pressed={isBookmarked}
+        aria-label={isBookmarked ? 'Ribbon: this page is marked. Remove the ribbon' : 'Mark this page with the ribbon'}
         title={isBookmarked ? 'Page bookmarked! Click to remove' : 'Click to bookmark this page'}
         style={{
+          border: 0, margin: 0,
           position: 'absolute',
           right: '28px',
           top: 0,
@@ -110,9 +115,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         }}
       >
         {isBookmarked && (
-          <span style={{ color: '#e0bd68', fontSize: '13px', lineHeight: 1 }}>★</span>
+          <span aria-hidden="true" style={{ color: '#e0bd68', fontSize: '13px', lineHeight: 1 }}>★</span>
         )}
-      </div>
+      </button>
 
       {/* Page content */}
       <div style={{ flex: 1, padding: '18px 24px 12px' }}>

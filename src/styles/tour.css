@@ -40,7 +40,7 @@
 }
 .tour-close svg { width: 16px; height: 16px; }
 .tour-close:hover { background: rgba(0, 0, 0, 0.06); }
-.tour-kicker { font: 12px var(--font-fell-sc); color: var(--sepia); padding-right: 36px; }
+.tour-kicker { font: 12px var(--font-fell-sc); color: var(--ink-soft); padding-right: 36px; }
 .tour-title { margin: 2px 0 0; font: 19px/1.25 var(--font-fell); color: var(--ink); padding-right: 28px; }
 .tour-en { margin: 6px 0 0; font: 15px/1.4 var(--font-fell); color: var(--ink); }
 .tour-hi { margin: 4px 0 0; font: 14.5px/1.55 var(--font-deva); color: var(--ink-soft); }

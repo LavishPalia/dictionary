@@ -219,7 +219,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
             )}
           </div>
           {item.meaning_hi && (
-            <div className="lookup-hi">
+            <div className="lookup-hi" lang="hi">
               {item.match === 'hindi' ? <Highlighted text={item.meaning_hi} query={trimmed} />
                 : item.match === 'hinglish' && item.matched_hi ? <Highlighted text={item.meaning_hi} query={item.matched_hi} />
                 : item.meaning_hi}

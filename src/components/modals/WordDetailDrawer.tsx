@@ -93,7 +93,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
       onClick={() => playSpeech(lang)}
       disabled={speaking !== null || !!unavailable[lang]}
       title={unavailable[lang] ?? `Say the ${what} aloud`}
-      aria-label={unavailable[lang] ? `Say the ${what} aloud (${unavailable[lang]})` : `Say the ${what} aloud`}
+      // The name starts with the button's own word (English / हिंदी), as voice control expects.
+      aria-label={`${lang === 'hi' ? 'हिंदी' : 'English'}: say the ${what} aloud${unavailable[lang] ? ` (${unavailable[lang]})` : ''}`}
     >
       <SpeakerIcon />{label}
     </Button>

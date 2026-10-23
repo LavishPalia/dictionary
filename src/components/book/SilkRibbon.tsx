@@ -12,11 +12,16 @@ export const SilkRibbon: React.FC<SilkRibbonProps> = ({
   onToggleBookmark,
 }) => {
   return (
-    <div
+    <button
+      type="button"
       id="silk-ribbon"
+      className="book-control"
       onClick={onToggleBookmark}
+      aria-pressed={isBookmarked}
+      aria-label={isBookmarked ? 'Ribbon: these pages are marked. Remove the ribbon' : 'Mark these pages with the ribbon'}
       title={isBookmarked ? 'Page bookmarked! Click to remove bookmark ribbon' : 'Click to place silk bookmark ribbon on this spread'}
       style={{
+        border: 0, padding: 0, margin: 0, display: 'block',
         position: 'absolute',
         top: '-12px',
         left: '549px',
@@ -68,6 +73,6 @@ export const SilkRibbon: React.FC<SilkRibbonProps> = ({
           ★
         </div>
       )}
-    </div>
+    </button>
   );
 };

@@ -890,6 +890,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       )}
 
       <div style={{ display: section === 'book' ? 'contents' : 'none' }}>
+        <h1 className="ui-visually-hidden" id="book-title">
+          {isMobile ? `Page ${currentPage}` : `Pages ${leftPageNum}–${rightPageNum}`}
+        </h1>
         {/* Dynamic Riffle indicator banner (Matching Flip.dc.html) */}
         {riffleInfo && (
           <div

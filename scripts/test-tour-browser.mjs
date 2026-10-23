@@ -77,7 +77,7 @@ async function main() {
       const t = tip.getBoundingClientRect();
       return {
         count: document.querySelector('#tour-count')?.textContent, title: document.querySelector('#tour-tip-title')?.textContent,
-        hi: tip.querySelector('[lang="hi"]')?.textContent ?? '', focused: tip.contains(document.activeElement),
+        hi: tip.querySelector('.tour-hi')?.textContent ?? '', focused: tip.contains(document.activeElement),
         spot: spot ? { top: spot.top, left: spot.left, bottom: spot.bottom, right: spot.right } : null,
         tip: { top: t.top, left: t.left, bottom: t.bottom, right: t.right }, vw: innerWidth, vh: innerHeight,
         sheet: Boolean(document.querySelector('#word-sheet')), menu: Boolean(document.querySelector('#reading-menu')),
