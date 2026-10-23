@@ -4,6 +4,12 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Calm is on: tests open it to use a known entry (page numbers change when the book grows).
+const book = new Database('data/dictionary.db', { readonly: true });
+const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
+// The first word on that page, which Tab reaches first.
+const FIRST_WORD = book.prepare('SELECT headword FROM entries WHERE page_number = ? ORDER BY col_idx, position_in_col LIMIT 1').get(CALM_PAGE).headword;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9345;
@@ -83,23 +89,23 @@ async function main() {
 
     // Each view: how to reach it. Run in order per size.
     const VIEWS = [
-      { name: 'today (first visit)', go: async (size) => { await open('/page/16', size); await seed(null); await open('/', size); await sleep(1200); } },
-      { name: 'book', go: async (size) => { await seed(quiet, saveWords); await open('/page/16', size); await sleep(800); } },
-      { name: 'book tip', go: async (size) => { await seed({ seen: {}, tips: {}, welcomeDone: true }); await open('/page/16', size); await sleep(2000); } },
-      { name: 'word card', go: async (size) => { await seed(quiet); await open('/page/16', size); await openEntry('Calm'); await sleep(900); } },
+      { name: 'today (first visit)', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await seed(null); await open('/', size); await sleep(1200); } },
+      { name: 'book', go: async (size) => { await seed(quiet, saveWords); await open(`/page/${CALM_PAGE}`, size); await sleep(800); } },
+      { name: 'book tip', go: async (size) => { await seed({ seen: {}, tips: {}, welcomeDone: true }); await open(`/page/${CALM_PAGE}`, size); await sleep(2000); } },
+      { name: 'word card', go: async (size) => { await seed(quiet); await open(`/page/${CALM_PAGE}`, size); await openEntry('Calm'); await sleep(900); } },
       { name: 'report form', go: async () => { await click('#report-btn'); await sleep(400); } },
-      { name: 'search results', go: async (size) => { await open('/page/16', size); await type('cam'); } },
+      { name: 'search results', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await type('cam'); } },
       { name: 'search no entry', go: async () => { await type('ceremonis'); } },
       { name: 'search hindi', go: async () => { await type('छोड़'); } },
-      { name: 'saved', go: async (size) => { await seed(quiet, saveWords); await open('/page/16', size); await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn'); await sleep(900); } },
-      { name: 'review question', go: async (size) => { await open('/page/16', size); await click(size.mobile ? '#nav-review-btn' : '#open-review-btn'); await sleep(1500); } },
+      { name: 'saved', go: async (size) => { await seed(quiet, saveWords); await open(`/page/${CALM_PAGE}`, size); await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn'); await sleep(900); } },
+      { name: 'review question', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await click(size.mobile ? '#nav-review-btn' : '#open-review-btn'); await sleep(1500); } },
       { name: 'review answered', go: async () => { await click('.review-option'); await sleep(600); } },
-      { name: 'menu', go: async (size) => { await open('/page/16', size); await click('#menu-btn'); await sleep(600); } },
+      { name: 'menu', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await click('#menu-btn'); await sleep(600); } },
       { name: 'guided tours list', go: async () => { await click('#guided-tours-btn'); await sleep(700); } },
       { name: 'tour step', go: async () => { await click('#tour-start-start'); await sleep(1500); } },
-      { name: 'credits', go: async (size) => { await open('/page/16', size); await click('#menu-btn'); await sleep(400); await click('#open-credits-btn'); await sleep(800); } },
+      { name: 'credits', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await click('#menu-btn'); await sleep(400); await click('#open-credits-btn'); await sleep(800); } },
       { name: 'offline notice', go: async (size) => {
-        await open('/page/16', size);
+        await open(`/page/${CALM_PAGE}`, size);
         await send('Network.enable'); await send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
         await sleep(600);
       } },
@@ -107,7 +113,7 @@ async function main() {
 
     const results = [];
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
       for (const view of VIEWS) {
         await view.go(size);
         await evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })()`);
@@ -124,7 +130,7 @@ async function main() {
     // ── Keyboard and screen-reader basics, beyond what axe checks ──
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       await seed(quiet);
-      await open('/page/16', size);
+      await open(`/page/${CALM_PAGE}`, size);
       await sleep(600);
       check(`${sizeName}: pinch-zoom is allowed`, await evaluate(`!/maximum-scale|user-scalable=no/.test(document.querySelector('meta[name="viewport"]').content)`));
       check(`${sizeName}: the book view has a level-one heading`, await evaluate(`document.querySelector('#book-title')?.textContent.startsWith('Page')`));
@@ -142,14 +148,14 @@ async function main() {
         await key('Tab', 'Tab');
         reached = await evaluate(`document.activeElement?.classList.contains('entry-open') ? document.activeElement.textContent : null`);
       }
-      check(`${sizeName}: Tab reaches the words on the page`, reached === 'Calm', reached);
+      check(`${sizeName}: Tab reaches the words on the page`, reached === FIRST_WORD, reached);
       check(`${sizeName}: a headword is a button that opens a dialog`, await evaluate(`document.activeElement.tagName === 'BUTTON' && document.activeElement.getAttribute('aria-haspopup') === 'dialog'`));
       await key('Enter', 'Enter', '\r');
       await sleep(900);
-      check(`${sizeName}: Enter opens its word card, with focus in it`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Calm' && document.querySelector('#word-sheet').contains(document.activeElement)`));
+      check(`${sizeName}: Enter opens its word card, with focus in it`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === '${FIRST_WORD}' && document.querySelector('#word-sheet').contains(document.activeElement)`));
       await key('Escape');
       await sleep(500);
-      check(`${sizeName}: Escape closes it and focus returns to the headword`, await evaluate(`!document.querySelector('#word-sheet') && document.activeElement?.textContent === 'Calm'`),
+      check(`${sizeName}: Escape closes it and focus returns to the headword`, await evaluate(`!document.querySelector('#word-sheet') && document.activeElement?.textContent === '${FIRST_WORD}'`),
         await evaluate(`document.activeElement?.outerHTML.slice(0, 80)`));
       if (!size.mobile) {
         check('desktop: the letter tabs are one tab stop', await evaluate(`[...document.querySelectorAll('.thumb-tab')].filter((b) => b.tabIndex === 0).length === 1 && document.querySelectorAll('.thumb-tab').length === 26`));

@@ -4,6 +4,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Calm is on: tests open it to use a known entry (page numbers change when the book grows).
+const book = new Database('data/dictionary.db', { readonly: true });
+const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9343;
@@ -89,9 +93,9 @@ async function main() {
     try {
       for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
         await setOffline(false);
-        check(`${sizeName}: app hydrates`, await open('/page/16', size));
+        check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
         await evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
-        await open('/page/16', size);
+        await open(`/page/${CALM_PAGE}`, size);
         const version = (await evaluate(`fetch('/api/meta').then((r) => r.json())`)).data_version;
 
         await openCard('Calm');
@@ -118,7 +122,7 @@ async function main() {
         let saved = mine().filter((r) => r.headword === 'Calm');
         const last = saved[saved.length - 1];
         check(`${sizeName}: the server saved the report with the word, problems, note and book build`, saved.length >= 1
-          && last.issues.join() === 'hindi,pos' && last.note.startsWith('शांत ठीक है, पर "स्थिर" नहीं') && last.seen_in === version && last.page_number === 16, last);
+          && last.issues.join() === 'hindi,pos' && last.note.startsWith('शांत ठीक है, पर "स्थिर" नहीं') && last.seen_in === version && last.page_number === CALM_PAGE, last);
         check(`${sizeName}: no personal data is stored`, last && !Object.keys(last).some((k) => /ip|agent|address|user/i.test(k)), last && Object.keys(last));
         await click('#report-done-btn');
         await sleep(300);

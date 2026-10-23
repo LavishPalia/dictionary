@@ -4,6 +4,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9333;
@@ -95,7 +99,7 @@ async function main() {
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       const todayBtn = sizeName === 'phone' ? '#nav-today-btn' : '#open-today-btn';
       const bookBtn = sizeName === 'phone' ? '#nav-book-btn' : '#open-today-btn'; // desktop: the Today button toggles back
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
       await seed({ words: ['Camel', 'Ceremony', 'Abandon'], raw: { panna_last_page: '40', panna_review_days: [await day(-2), await day(-1)] } });
       check(`${sizeName}: the front page opens`, await open('/', size));
       let w = await where();

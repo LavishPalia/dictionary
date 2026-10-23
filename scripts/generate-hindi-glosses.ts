@@ -35,7 +35,17 @@ interface GeneratedRow {
 function writeJsonlAtomic(file: string, rows: unknown[]): void {
   const tmp = `${file}.tmp`;
   fs.writeFileSync(tmp, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
-  fs.renameSync(tmp, file);
+  // On Windows a virus scanner or the search indexer can briefly lock the file; wait and try again.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      fs.renameSync(tmp, file);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if ((code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES') || attempt >= 10) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200 * attempt);
+    }
+  }
 }
 
 function csvCell(value: unknown): string {

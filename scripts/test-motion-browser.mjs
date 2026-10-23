@@ -4,6 +4,16 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
+// Desktop spreads start on an even page; the next spread is two pages on. Guide word: the spread's first headword.
+const SPREAD = CAMEL_PAGE - (CAMEL_PAGE % 2);
+const NEXT_SPREAD = SPREAD + 2;
+const guideOf = (page) => new Database('data/dictionary.db', { readonly: true })
+  .prepare('SELECT headword FROM entries WHERE page_number = ? ORDER BY col_idx, position_in_col LIMIT 1').get(page).headword;
+const [GUIDE, NEXT_GUIDE] = [guideOf(SPREAD), guideOf(NEXT_SPREAD)];
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9323;
@@ -83,9 +93,9 @@ async function main() {
 
     // ── Desktop, normal motion ──────────────────────────────
     await reduce(false);
-    check('desktop: app hydrates', await open('/page/16', desktop));
+    check('desktop: app hydrates', await open(`/page/${CAMEL_PAGE}`, desktop));
     await evaluate(`localStorage.removeItem('panna_saved_words'); localStorage.removeItem('panna_settings'); true`);
-    check('desktop: page 16 reloads with no saved state', await open('/page/16', desktop));
+    check('desktop: page 16 reloads with no saved state', await open(`/page/${CAMEL_PAGE}`, desktop));
     const hasVT = await watchTransitions();
     check('desktop: tapping an entry opens its sheet', await clickEntry('Camel'));
     await sleep(80);
@@ -113,11 +123,11 @@ async function main() {
     await key('Escape');
     await sleep(200);
     const instant = await timeTurn();
-    check('desktop: "Instant" page turns land at once (no 3D flip)', instant.ms < 400 && instant.path === '/page/18' && instant.guide === 'Century', instant);
+    check('desktop: "Instant" page turns land at once (no 3D flip)', instant.ms < 400 && instant.path === `/page/${NEXT_SPREAD}` && instant.guide === NEXT_GUIDE, instant);
     check('desktop: lighting, speed and sounds are saved',
       await evaluate(`localStorage.getItem('panna_settings')`) === JSON.stringify({ evening: true, speed: 'instant', sounds: true }),
       await evaluate(`localStorage.getItem('panna_settings')`));
-    await open('/page/16', desktop);
+    await open(`/page/${CAMEL_PAGE}`, desktop);
     await evaluate(`document.querySelector('#menu-btn').click(); true`);
     await sleep(200);
     const restored = await evaluate(`[...document.querySelectorAll('[role="radio"][aria-checked="true"]')].map((r) => r.textContent)`);
@@ -127,25 +137,25 @@ async function main() {
     await sleep(200);
     const flipping = await evaluate(`(async () => {
       document.querySelector('button[aria-label="Next spread"]').click();
-      for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 25)); if (location.pathname !== '/page/16') break; }
+      for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 25)); if (location.pathname !== '/page/${CAMEL_PAGE}') break; }
       await new Promise((r) => setTimeout(r, 150));
       // Mid-turn the spread still shows the old guide word: the leaf is animating.
       return { path: location.pathname, guide: document.querySelector('.guide-word')?.textContent };
     })()`);
-    check('desktop: "Normal" speed still plays the 3D page turn', flipping.path === '/page/18' && flipping.guide === 'Calm', flipping);
+    check('desktop: "Normal" speed still plays the 3D page turn', flipping.path === `/page/${NEXT_SPREAD}` && flipping.guide === GUIDE, flipping);
     await sleep(1500);
 
     // ── Desktop, reduce motion ──────────────────────────────
     await reduce(true);
-    check('reduce motion: app hydrates', await open('/page/16', desktop));
+    check('reduce motion: app hydrates', await open(`/page/${CAMEL_PAGE}`, desktop));
     await watchTransitions();
     const reduced = await evaluate(`(async () => {
       document.querySelector('button[aria-label="Next spread"]').click();
-      for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 25)); if (location.pathname !== '/page/16') break; }
+      for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 25)); if (location.pathname !== '/page/${CAMEL_PAGE}') break; }
       await new Promise((r) => setTimeout(r, 150));
       return { path: location.pathname, guide: document.querySelector('.guide-word')?.textContent };
     })()`);
-    check('reduce motion: page turns land at once', reduced.path === '/page/18' && reduced.guide === 'Century', reduced);
+    check('reduce motion: page turns land at once', reduced.path === `/page/${NEXT_SPREAD}` && reduced.guide === NEXT_GUIDE, reduced);
     await evaluate(`document.querySelector('#menu-btn').click(); true`);
     await sleep(200);
     check('reduce motion: the menu explains why pages turn instantly', await evaluate(`document.querySelector('#reading-menu').innerText.includes('asks for less motion')`));
@@ -173,7 +183,7 @@ async function main() {
 
     // ── Phone ───────────────────────────────────────────────
     await reduce(false);
-    check('phone: app hydrates', await open('/page/16', phone));
+    check('phone: app hydrates', await open(`/page/${CAMEL_PAGE}`, phone));
     await clickEntry('Camel');
     await sleep(500);
     await evaluate(`document.querySelector('#save-word-btn').click(); true`);

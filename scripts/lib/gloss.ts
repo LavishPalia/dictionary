@@ -22,6 +22,9 @@ export const MAX_DEF = 140;
 export const MAX_HI = 35;
 const MAX_ATTEMPTS = 3;
 const DEVANAGARI = /[ऀ-ॿ]/;
+// Any letter or vowel sign from another script: Latin, and the Urdu, Cyrillic, Bengali or Japanese a model sometimes
+// slips into a Hindi word (हवाई جہاز, हेलिकॉプター).
+export const OTHER_SCRIPT = /(?![ऀ-ॿ])[\p{L}\p{M}]/u;
 
 export function loadApiKey(): string {
   if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
@@ -91,7 +94,12 @@ const ITEM_SCHEMA = {
 };
 const RESPONSE_SCHEMA = { type: 'ARRAY', items: ITEM_SCHEMA };
 
+// Words outside WordNet take their label hint from subtitle tagging, which is often wrong for rare words
+// (centipede as a verb), so the model picks the label that fits the everyday sense.
+const OPEN_POS_LABELS = ['n.', 'v. t.', 'v. i.', 'adj.', 'adv.', 'interj.'];
+
 export function allowedPosLabels(req: GlossRequest): string[] {
+  if (!req.synsets.length) return OPEN_POS_LABELS;
   const parts = req.posLabel.split(' & ');
   const expand = (p: string) => (p === 'v.' ? ['v. t.', 'v. i.'] : [p]);
   const first = expand(parts[0]);
@@ -118,6 +126,7 @@ export function buildPrompt(req: GlossRequest): string {
     }
   } else {
     lines.push('candidate senses: none (word is not in WordNet) — set chosen_sense to "none" and define the everyday sense.');
+    lines.push('pos: choose the allowed label that fits that everyday sense (centipede → n., disinvite → v. t.).');
   }
   lines.push(`pronunciation_deva requested: ${req.needsPronunciation ? 'yes' : 'no'}`);
   return lines.join('\n');
@@ -132,8 +141,9 @@ function validate(req: GlossRequest, r: GlossResult): string | null {
   if (!allowedPosLabels(req).includes(r.pos)) return `pos "${r.pos}" is not one of the allowed labels`;
   if (r.chosen_sense !== 'none' && !req.synsets.some((s) => s.id === r.chosen_sense)) return `chosen_sense "${r.chosen_sense}" is not a candidate id`;
   if (!r.definition_en) return 'definition_en is empty';
-  if (!DEVANAGARI.test(r.meaning_hi) || /[A-Za-z]/.test(r.meaning_hi)) return 'meaning_hi must be Devanagari only';
+  if (!DEVANAGARI.test(r.meaning_hi) || OTHER_SCRIPT.test(r.meaning_hi)) return 'meaning_hi must be Devanagari only';
   if (req.needsPronunciation && !DEVANAGARI.test(r.pronunciation_deva ?? '')) return 'pronunciation_deva is required';
+  if (OTHER_SCRIPT.test(r.pronunciation_deva ?? '')) return 'pronunciation_deva must be Devanagari only';
   const over: string[] = [];
   if (charLen(r.definition_en) > MAX_DEF) over.push(`definition_en is ${charLen(r.definition_en)} characters; it must be at most ${MAX_DEF}`);
   if (charLen(r.meaning_hi) > MAX_HI) over.push(`meaning_hi is ${charLen(r.meaning_hi)} characters; it must be at most ${MAX_HI}`);

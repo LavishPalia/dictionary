@@ -43,11 +43,17 @@ check('the closer spelling scores better: bada is बड़ा before बंद'
 // Search on the built book.
 const top = (q: string) => searchWords(q);
 const hing = (q: string) => top(q).filter((r) => r.match === 'hinglish');
-for (const q of ['chhod', 'chod', 'chhor', 'chhodna']) {
+// A verb typed as its stem (chhod) finds the verb, commonest first.
+for (const q of ['chhod', 'chod', 'chhodna']) {
   const r = hing(q);
-  check(`"${q}" finds छोड़ना (Abandon, Quit)`, r.length >= 2 && r.slice(0, 2).every((x) => x.matched_hi === 'छोड़ना')
-    && r.some((x) => x.headword === 'Abandon') && r.some((x) => x.headword === 'Quit'), r.map((x) => [x.headword, x.matched_hi]));
+  check(`"${q}" finds छोड़ना (Leave, Quit)`, r.length >= 2 && r.slice(0, 2).every((x) => x.matched_hi === 'छोड़ना')
+    && r.some((x) => x.headword.toLowerCase() === 'leave') && r.some((x) => x.headword === 'Quit'), r.map((x) => [x.headword, x.matched_hi]));
 }
+check('"chhor" finds छोर, which it spells exactly', hing('chhor')[0]?.matched_hi === 'छोर', hing('chhor').map((x) => x.matched_hi));
+check('a typed chh means छ: "chhor" does not offer चोर', !hing('chhor').some((x) => x.matched_hi === 'चोर'));
+check('ch may be छ: "chota" finds छोटा first', hing('chota')[0]?.matched_hi === 'छोटा', hing('chota').map((x) => x.matched_hi));
+check('an exact word before a verb stem: "chor" offers चोर before छोड़ना', (() => { const r = hing('chor').map((x) => x.matched_hi); return r.includes('चोर') && (!r.includes('छोड़ना') || r.indexOf('चोर') < r.indexOf('छोड़ना')); })(), hing('chor').map((x) => x.matched_hi));
+check('a short key finds a verb by its stem: "padh" finds Read', hing('padh')[0]?.headword === 'Read', hing('padh').map((x) => x.headword));
 check('"kanoon" and "kanun" find Law', hing('kanoon')[0]?.headword === 'Law' && hing('kanun')[0]?.headword === 'Law');
 check('"kitab" finds Book through किताब', hing('kitab')[0]?.headword === 'Book' && hing('kitab')[0]?.matched_hi === 'किताब');
 check('"bada" puts बड़ा first', hing('bada')[0]?.matched_hi === 'बड़ा', hing('bada').map((x) => x.matched_hi));

@@ -4,6 +4,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9327;
@@ -98,9 +102,9 @@ async function main() {
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       const reviewBtn = sizeName === 'phone' ? '#nav-review-btn' : '#open-review-btn';
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
       await seed([]);
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await evaluate(`document.querySelector('${reviewBtn}').click(); true`);
       await waitForCard();
       check(`${sizeName}: with nothing saved, Review explains how words get there`, (await screen())?.text.includes('Nothing to review yet'));
@@ -108,7 +112,7 @@ async function main() {
       await sleep(400);
 
       await seed(['Camel', 'Ceremony', 'Abandon']);
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       const badge = await evaluate(`document.querySelector('${reviewBtn} .ui-badge')?.textContent`);
       // The button's name is its text: "Review", the badge, and hidden "words due".
       check(`${sizeName}: Review shows 3 words due`, badge === '3' && await evaluate(`document.querySelector('${reviewBtn}').textContent.replace(/\\s+/g, ' ').trim() === 'Review 3 words due'`), badge);
@@ -202,7 +206,7 @@ async function main() {
         camel: { box: 4, due_at: Date.now() + 10 * DAY, right: 4, wrong: 0 },
         ceremony: { box: 2, due_at: Date.now() - 5 * DAY, right: 2, wrong: 0 },
       });
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await evaluate(`document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#nav-saved-btn' : '#open-bookmarks-btn')}).click(); true`);
       await sleep(400);
       const tags = await evaluate(`[...document.querySelectorAll('#saved-screen .saved-item')].map((i) => i.querySelector('.saved-hw').textContent + ':' + (i.querySelector('.review-status')?.textContent ?? '-'))`);

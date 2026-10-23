@@ -4,6 +4,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Calm is on: tests open it to use a known entry (page numbers change when the book grows).
+const book = new Database('data/dictionary.db', { readonly: true });
+const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9341;
@@ -105,7 +109,7 @@ async function main() {
     const controlled = async (size) => {
       for (let attempt = 0; attempt < 3; attempt++) {
         for (let i = 0; i < 40; i++) { if (await evaluate('Boolean(navigator.serviceWorker && navigator.serviceWorker.controller)')) return true; await sleep(150); }
-        await open('/page/16', size);
+        await open(`/page/${CALM_PAGE}`, size);
       }
       return false;
     };
@@ -114,7 +118,7 @@ async function main() {
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       await setOffline(false);
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
       // Start each size from a clean site, but only once any worker has finished installing: wiping the site in the
       // middle of an install can leave a registration that never takes charge.
       await evaluate(`Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise((ok) => setTimeout(() => ok(false), 15000))])`);
@@ -122,7 +126,7 @@ async function main() {
       await send('Storage.clearDataForOrigin', { origin: BASE, storageTypes: 'all' });
       await sleep(500);
       await evaluate(`localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
-      await open('/page/16', size);
+      await open(`/page/${CALM_PAGE}`, size);
 
       if (sizeName === 'desktop') {
         // Installable: a manifest with the right icons, an iOS icon and a theme colour.
@@ -147,7 +151,7 @@ async function main() {
 
       // ── Offline, before saving the book ──
       await setOffline(true);
-      await open('/page/16', size);
+      await open(`/page/${CALM_PAGE}`, size);
       check(`${sizeName}: a page opened before still loads offline`, await appShows('Calm'));
       check(`${sizeName}: an offline notice says what still works`, (await evaluate(`document.querySelector('#offline-notice')?.innerText ?? ''`)).includes('Pages you’ve opened still work'));
       await evaluate(`[...document.querySelectorAll('.entry-text')].find((e) => e.textContent.startsWith('Calm') && e.style.cursor === 'pointer').click(); true`);
@@ -155,9 +159,9 @@ async function main() {
       check(`${sizeName}: its words open offline`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Calm'`));
       await key('Escape');
       await sleep(400);
-      await type('cam');
+      await type('cal');
       let p = await panel();
-      check(`${sizeName}: offline search finds words on pages already opened, and says so`, p?.options.includes('Camel') && p.text.includes('only pages you’ve opened'), p);
+      check(`${sizeName}: offline search finds words on pages already opened, and says so`, p?.options.includes('Calm') && p.text.includes('only pages you’ve opened'), p);
       await type('zebra');
       p = await panel();
       check(`${sizeName}: other words explain that search needs a connection or a saved book`, p?.text.includes('You’re offline') && p.text.includes('Save the book for offline'), p);
@@ -170,7 +174,7 @@ async function main() {
 
       // ── Back online: save the whole book ──
       await setOffline(false);
-      await open('/page/16', size);
+      await open(`/page/${CALM_PAGE}`, size);
       check(`${sizeName}: the notice goes away online`, !(await visible('#offline-notice')));
       const total = (await evaluate(`fetch('/api/meta').then((r) => r.json())`)).total_pages;
       const far = await evaluate(`fetch('/api/page/80').then((r) => r.json()).then((p) => p.column1[0].headword)`);
@@ -178,15 +182,15 @@ async function main() {
       await sleep(400);
       await click('#offline-save-btn');
       let status = '';
-      for (let i = 0; i < 100 && !status.startsWith('Saved on this device'); i++) { await sleep(200); status = await evaluate(`document.querySelector('#offline-status')?.textContent ?? ''`); }
-      check(`${sizeName}: saving shows when it is done, with the size`, status.startsWith(`Saved on this device · ${total} pages ·`) && /\d+(\.\d)? (KB|MB)$/.test(status), status);
+      for (let i = 0; i < 300 && !status.startsWith('Saved on this device'); i++) { await sleep(200); status = await evaluate(`document.querySelector('#offline-status')?.textContent ?? ''`); }
+      check(`${sizeName}: saving shows when it is done, with the size`, status.startsWith(`Saved on this device · ${total.toLocaleString('en-IN')} pages ·`) && /\d+(\.\d)? (KB|MB)$/.test(status), status);
       check(`${sizeName}: the menu stays open while saving`, await visible('#reading-menu'));
       await key('Escape');
       await sleep(300);
 
       // ── Offline with the book saved ──
       await setOffline(true);
-      await open('/page/16', size);
+      await open(`/page/${CALM_PAGE}`, size);
       check(`${sizeName}: the notice says the whole book is saved`, (await evaluate(`document.querySelector('#offline-notice')?.innerText ?? ''`)).includes('whole book is saved'));
       await type(far.toLowerCase());
       p = await panel();

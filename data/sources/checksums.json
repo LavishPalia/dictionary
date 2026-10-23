@@ -4,5 +4,6 @@
   "data/sources/infl.txt": "df0c8f6edd4193d823abfad9e4ff6f42b4526211516649e1c73d4533aef749fa",
   "data/sources/lemmas.jsonl": "04316874bbf4e908bf5cacbd69551e4f4f324bd6cdc4b7b96e31867a5a6154ad",
   "data/sources/raw/subtlex-us-pos.tsv": "fb69afad3c5d35033583b3b02cd7656408d4183d8c1237056b85c8374dbd50c3",
-  "data/sources/raw/subtlexus1-pos-zipf.zip": "458128f90a28c4f396cb2a5b23ac93c56f745ee8cfca9be2afedad4091d15090"
+  "data/sources/raw/subtlexus1-pos-zipf.zip": "458128f90a28c4f396cb2a5b23ac93c56f745ee8cfca9be2afedad4091d15090",
+  "data/sources/hindi-glosses.jsonl": "e7673694d34c8f6ef65e13caf6f4d61d24bc041f333cce1d106d8eb09947f157"
 }

@@ -4,6 +4,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9331;
@@ -100,14 +104,14 @@ async function main() {
     };
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
       await seed(['Camel', 'Ceremony'], {
         panna_review: { camel: { box: 2, due_at: Date.now() + 86400000, right: 2, wrong: 0, last_at: Date.now() } },
         panna_dog_ears: [23],
         panna_marginalia: [{ id: 'n1', page_number: 18, text: 'remember this', color: 'blue', created_at: 1, anchor: 'ceremony' }],
         panna_settings: { evening: true, speed: 'instant', sounds: false },
       });
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       const before = await state();
 
       // Back up.
@@ -154,7 +158,7 @@ async function main() {
 
       // Merge keeps what is already here; replace does not.
       await seed(['Abandon']);
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await evaluate(`document.querySelector('#menu-btn').click(); true`);
       await sleep(250);
       await evaluate(`document.querySelector('#restore-btn').click(); true`);
@@ -164,7 +168,7 @@ async function main() {
       await waitHydrated();
       check(`${sizeName}: merging keeps this device’s own words too`, (await state()).words === 'abandon,camel,ceremony', await state());
       await seed(['Abandon']);
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await evaluate(`document.querySelector('#menu-btn').click(); true`);
       await sleep(250);
       await evaluate(`document.querySelector('#restore-btn').click(); true`);

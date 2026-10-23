@@ -204,6 +204,9 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
         key={item.normalized}
         id={optionId(index)}
         role="option"
+        // Focusable but not a Tab stop: focus stays in the search box (arrow keys), and a list that scrolls has
+        // keyboard-reachable content (axe scrollable-region-focusable).
+        tabIndex={-1}
         aria-selected={index === active}
         className="lookup-option"
         onMouseDown={(e) => e.preventDefault()}
@@ -283,7 +286,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
               </div>
               <div id={listboxId} role="listbox" aria-labelledby={`${listboxId}-recent`}>
                 {recent.map((r, i) => (
-                  <div key={r.headword} id={optionId(i)} role="option" aria-selected={i === active} className="lookup-option lookup-option--recent"
+                  <div key={r.headword} id={optionId(i)} role="option" tabIndex={-1} aria-selected={i === active} className="lookup-option lookup-option--recent"
                     onMouseDown={(e) => e.preventDefault()} onClick={() => handleSelectRecent(r)} onMouseEnter={() => setSelectedIndex(i)}>
                     <span className="lookup-recent-word">{r.headword}</span>
                     <span className="lookup-page" aria-hidden="true">⟲</span>

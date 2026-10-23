@@ -4,6 +4,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9349;
@@ -96,7 +100,7 @@ async function main() {
     const filter = async (name) => { await evaluate(`[...document.querySelectorAll('.saved-filter [role="radio"]')].find((b) => b.textContent.startsWith(${JSON.stringify(name)})).click(); true`); await sleep(300); };
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
 
       // ── Today ──
       await seed(false);
@@ -133,7 +137,7 @@ async function main() {
       check(`${sizeName}: Saved with the filter has no accessibility violations`, (await axe()).length === 0, await axe());
       check(`${sizeName}: nothing overflows sideways on Saved`, await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
       await seed(true, false);
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
       await sleep(900);
       await filter('Mastered');

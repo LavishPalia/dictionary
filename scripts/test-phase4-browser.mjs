@@ -37,6 +37,14 @@ async function killTree(child, port) {
     }
   }
   for (let i = 0; i < 20 && !(await portIsFree(port)); i++) await sleep(250);
+  // Edge hands over to a browser process outside the launched tree; stop whatever still listens on the port so
+  // the next run can start.
+  if (process.platform === 'win32' && !(await portIsFree(port))) {
+    const listening = spawnSync('netstat', ['-ano'], { encoding: 'utf8' }).stdout.split(/\r?\n/)
+      .filter((l) => l.includes(`:${port} `) && l.includes('LISTENING')).map((l) => l.trim().split(/\s+/).pop());
+    for (const pid of new Set(listening)) spawnSync('taskkill', ['/PID', pid, '/T', '/F'], { stdio: 'ignore' });
+    for (let i = 0; i < 20 && !(await portIsFree(port)); i++) await sleep(250);
+  }
 }
 
 let checks = 0;

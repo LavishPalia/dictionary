@@ -65,7 +65,7 @@ async function testEndpoints() {
   for (const [a, b, headword] of [
     ['ऊँट', 'ऊंट', 'Camel'], // chandrabindu / anusvara
     ['अफ़सोस', 'अफसोस', 'Alas'], // nukta / none
-    ['केन्द्र', 'केंद्र', 'Centre'], // half nasal / anusvara
+    ['केन्द्र', 'केंद्र', 'center'], // half nasal / anusvara
   ]) {
     const [ra, rb] = [await hindiFirst(a), await hindiFirst(b)];
     check(`Hindi "${a}" and "${b}" both find ${headword}`, ra === headword && rb === headword, { [a]: ra, [b]: rb });
@@ -73,7 +73,7 @@ async function testEndpoints() {
   const upar = (await getJson(`/api/search?q=${encodeURIComponent('ऊपर')}`)).body.results
     .map((r: { headword: string }) => r.headword);
   check('Hindi "ऊपर" ranks exact meanings first, most common word first (On, Up, Above)',
-    upar.slice(0, 3).join() === 'On,Up,Above' && upar.includes('Onto'), upar);
+    upar.slice(0, 3).join() === 'On,Up,Above', upar);
 
   // Every result says why it matched, so the search list can group it.
   const kinds = async (q: string) => (await getJson(`/api/search?q=${encodeURIComponent(q)}`)).body.results

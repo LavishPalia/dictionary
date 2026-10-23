@@ -216,18 +216,28 @@ const MAX_HINGLISH = 4;
  */
 function searchHinglish(q: string): Array<EntryRow & { matched_hi: string }> {
   const key = hinglishKey(q);
-  if (q.length < 3 || key.length < 2) return [];
+  // Three of a letter in a row (zzzzqx) is never Hindi, though folding would shrink it to something that matches.
+  if (q.length < 3 || key.length < 2 || /(.)\1\1/.test(q)) return [];
+  // The word itself and the verb (key + ना) always; longer words that start with the key, up to a limit (kr has
+  // thousands), only for keys of three letters or more.
   const rows = db().prepare(`
     SELECT h.key AS hkey, h.hi AS matched_hi, h.whole, e.* FROM hinglish h JOIN entries e ON e.id = h.entry_id
-    WHERE h.key >= ? AND h.key < ? LIMIT 2000
-  `).all(key, `${key}\u{10FFFF}`) as Array<HindiSearchRow & { hkey: string; matched_hi: string; whole: number }>;
-  const tier = (r: { hkey: string; whole: number }) => (r.hkey === key ? 0 : 2) + (r.whole ? 0 : 1);
+    WHERE h.key IN (?, ?)
+    UNION
+    SELECT * FROM (SELECT h.key AS hkey, h.hi AS matched_hi, h.whole, e.* FROM hinglish h JOIN entries e ON e.id = h.entry_id
+      WHERE ? >= 3 AND h.key > ? AND h.key < ? LIMIT 2000)
+  `).all(key, `${key}n`, key.length, key, `${key}\u{10FFFF}`) as Array<HindiSearchRow & { hkey: string; matched_hi: string; whole: number }>;
+  // A verb is often typed as its stem (chhod for छोड़ना), so stem + ना counts as an exact match.
+  const tier = (r: { hkey: string; whole: number }) => (r.hkey === key || r.hkey === `${key}n` ? 0 : 2) + (r.whole ? 0 : 1);
+  // A verb found through its stem ranks just behind a word spelled exactly (chor: चोर before छोड़ना).
+  const length = (r: { hkey: string }) => (r.hkey === `${key}n` ? key.length + 0.5 : r.hkey.length);
   const scored = rows
-    .filter((r) => r.hkey === key || key.length >= 3)
+    // A two-letter key (oont → ut) is too loose to match one word inside a phrase (उठा हुआ); only a whole meaning.
+    .filter((r) => key.length >= 3 || (tier(r) === 0))
     .map((r) => ({ ...r, distance: spellingDistance(q, r.matched_hi), exact: spellingDistance(q, r.matched_hi, true) ?? 99 }))
-    .filter((r): r is typeof r & { distance: number } => r.distance !== null);
+    .filter((r): r is typeof r & { distance: number } => r.distance !== null && (key.length >= 3 || r.distance === 0));
   const best = new Map<string, (typeof scored)[number]>();
-  for (const r of scored.sort((a, b) => tier(a) - tier(b) || a.distance - b.distance || a.exact - b.exact || a.hkey.length - b.hkey.length
+  for (const r of scored.sort((a, b) => tier(a) - tier(b) || a.distance - b.distance || a.exact - b.exact || length(a) - length(b)
     || (a.freq_rank ?? Infinity) - (b.freq_rank ?? Infinity) || (a.normalized < b.normalized ? -1 : 1))) {
     if (!best.has(r.normalized)) best.set(r.normalized, r);
   }

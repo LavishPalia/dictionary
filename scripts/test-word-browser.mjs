@@ -3,6 +3,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9319;
@@ -104,7 +108,7 @@ async function main() {
       check(`${sizeName}: Escape closes the sheet and the URL returns to the page`,
         !(await sheet()) && await evaluate(`location.pathname.startsWith('/page/')`), await evaluate('location.pathname'));
 
-      check(`${sizeName}: page 16 loads`, await open('/page/16', size));
+      check(`${sizeName}: page 16 loads`, await open(`/page/${CAMEL_PAGE}`, size));
       // The desktop spread also renders non-interactive copies of pages for the page-turn animation.
       await evaluate(`[...document.querySelectorAll('.entry-text')].find((p) => p.textContent.startsWith('Camel') && p.style.cursor === 'pointer').click(); true`);
       await sleep(600);

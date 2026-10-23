@@ -3,6 +3,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9317;
@@ -86,7 +90,7 @@ async function main() {
     })()`);
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
       await evaluate(`localStorage.removeItem('panna_recent_searches'); true`);
 
       await type('छोड़');
@@ -101,8 +105,8 @@ async function main() {
       await type('chhod');
       p = await panel();
       check(`${sizeName}: Hinglish "chhod" is grouped as Hindi in English letters`, p?.groups.some((g) => g.includes('Hindi in English letters')), p?.groups);
-      check(`${sizeName}: Hinglish "chhod" finds Abandon and Quit and highlights छोड़ना`,
-        ['Abandon', 'Quit'].every((w) => p?.options.includes(w)) && p.marks.includes('छोड़ना'), p);
+      check(`${sizeName}: Hinglish "chhod" finds Leave and Quit and highlights छोड़ना`,
+        ['leave', 'Quit'].every((w) => p?.options.includes(w)) && p.marks.includes('छोड़ना'), p);
       await type('kitab');
       await evaluate(`(() => { document.querySelector('#lookup-panel [role="option"]').click(); return true; })()`);
       await sleep(1500);

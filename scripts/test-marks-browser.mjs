@@ -3,6 +3,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9329;
@@ -69,7 +73,7 @@ async function main() {
     const store = (data) => evaluate(`(() => { const d = ${JSON.stringify(data)}; for (const k of ['panna_bookmarks', 'panna_dog_ears', 'panna_marginalia', 'panna_mark_anchors', 'panna_saved_words']) localStorage.removeItem(k); for (const [k, v] of Object.entries(d)) localStorage.setItem(k, JSON.stringify(v)); return true; })()`);
     const read = () => evaluate(`({ ribbons: JSON.parse(localStorage.getItem('panna_bookmarks') || '[]'), dogEars: JSON.parse(localStorage.getItem('panna_dog_ears') || '[]'), notes: JSON.parse(localStorage.getItem('panna_marginalia') || '[]'), anchors: JSON.parse(localStorage.getItem('panna_mark_anchors') || 'null') })`);
     // 1. Marks saved before anchors existed get anchors on the next visit, without moving.
-    check('desktop: app hydrates', await open('/page/16', desktop));
+    check('desktop: app hydrates', await open(`/page/${CAMEL_PAGE}`, desktop));
     // What the current book says, looked up from a loaded page.
     const facts = await evaluate(`(async () => {
       const meta = await (await fetch('/api/meta')).json();
@@ -77,20 +81,23 @@ async function main() {
       const [p16, p23] = await Promise.all([page(16), page(23)]);
       const first = (p) => [...p.column1, ...p.column2][0].normalized;
       const where = async (w) => (await (await fetch('/api/word/' + w)).json()).pageNumber;
-      return { version: meta.data_version, first16: first(p16), first23: first(p23), camel: await where('camel'), century: await where('century'), ceremony: await where('ceremony') };
+      // The word at 30% of page 16, where the older note sits (noteAnchor in src/lib/marks.ts).
+      const all16 = [...p16.column1, ...p16.column2];
+      const at30 = all16[Math.floor(0.3 * all16.length)].normalized;
+      return { version: meta.data_version, first16: first(p16), first23: first(p23), at30, camel: await where('camel'), century: await where('century'), ceremony: await where('ceremony') };
     })()`);
 
     await store({
       panna_bookmarks: [16], panna_dog_ears: [23],
       panna_marginalia: [{ id: 'n1', page_number: 16, text: 'remember', color: 'blue', created_at: 1, top_pct: 30 }],
     });
-    await open('/page/16', desktop);
+    await open(`/page/${CAMEL_PAGE}`, desktop);
     let m;
     for (let i = 0; i < 20; i++) { await sleep(250); m = await read(); if (m.anchors?.dogEars?.[23] && m.notes[0]?.anchor) break; }
     check('older marks keep their pages', m.ribbons.join() === '16' && m.dogEars.join() === '23' && m.notes[0].page_number === 16, m);
     check('older marks get anchor words for this build', m.anchors?.data_version === facts.version
       && m.anchors.ribbons[16] === facts.first16 && m.anchors.dogEars[23] === facts.first23, m.anchors);
-    check('an older note is anchored to the word beside it', m.notes[0].anchor === 'camera', m.notes[0]);
+    check('an older note is anchored to the word beside it', m.notes[0].anchor === facts.at30, { note: m.notes[0], expected: facts.at30 });
 
     // 2. Marks from an older build of the book move to where their words are now.
     await store({
@@ -98,7 +105,7 @@ async function main() {
       panna_marginalia: [{ id: 'n2', page_number: 3, text: 'learn', color: 'blue', created_at: 2, top_pct: 10, anchor: 'ceremony' }],
       panna_mark_anchors: { data_version: 'an-older-build', ribbons: { 2: 'century' }, dogEars: { 5: 'camel' } },
     });
-    await open('/page/16', desktop);
+    await open(`/page/${CAMEL_PAGE}`, desktop);
     for (let i = 0; i < 20; i++) { await sleep(250); m = await read(); if (m.anchors?.data_version === facts.version) break; }
     const left = (p) => (p % 2 === 0 ? p : p - 1);
     check('after a rebuild, a fold moves to its word’s new page', m.dogEars.join() === String(facts.camel), { got: m.dogEars, camel: facts.camel });
@@ -122,7 +129,7 @@ async function main() {
 
     // 4. Phone: the same marks show on the Saved screen.
     await store({ panna_dog_ears: [5], panna_mark_anchors: { data_version: 'an-older-build', ribbons: {}, dogEars: { 5: 'camel' } } });
-    check('phone: app hydrates', await open('/page/16', phone));
+    check('phone: app hydrates', await open(`/page/${CAMEL_PAGE}`, phone));
     for (let i = 0; i < 20; i++) { await sleep(250); m = await read(); if (m.anchors?.data_version === facts.version) break; }
     await evaluate(`document.querySelector('#nav-saved-btn').click(); true`);
     await sleep(300);

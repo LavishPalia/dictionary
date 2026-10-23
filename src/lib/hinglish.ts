@@ -53,7 +53,7 @@ const CONSONANT_LETTERS = 'bcdfgjklmnpqrstvxyz';
  * Latin text with spelling variants folded but every vowel kept: aspirate h (unless keepH), long vowels, doubled
  * letters.
  */
-export function hinglishFold(text: string, keepH = false): string {
+export function hinglishFold(text: string, keepH = false, keepChh = false): string {
   const s = text.toLowerCase().replace(/[^a-z]/g, '')
     .replace(/ph/g, 'f').replace(/w/g, 'v').replace(/z/g, 'j').replace(/q/g, 'k').replace(/x/g, 'ks')
     .replace(/ee|ii/g, 'i').replace(/oo|uu/g, 'u').replace(/ai/g, 'e');
@@ -63,7 +63,8 @@ export function hinglishFold(text: string, keepH = false): string {
     if (!keepH && ch === 'h' && folded && CONSONANT_LETTERS.includes(folded[folded.length - 1])) continue;
     folded += ch;
   }
-  return folded.replace(/(.)\1+/g, '$1');
+  // With keepChh, chh (छ) does not collapse into ch (च) as a doubled h.
+  return (keepChh ? folded.replace(/chh/g, 'cH') : folded).replace(/(.)\1+/g, '$1');
 }
 
 /** The loose key for Latin text (a query, or a romanized Hindi word); the search index. Spaces are ignored. */
@@ -85,11 +86,13 @@ const NASAL_BEFORE = /[bcdfgjklmpqrstvxyz]/;
  * aspirates must agree too, which tells बात (baat) from भात (bhaat) when both match.
  */
 export function spellingDistance(query: string, hindi: string, keepH = false): number | null {
-  const q = hinglishFold(query, keepH);
+  // Readers often type ch for छ (chota, acha), but a typed chh means छ: chhor is छोर, not चोर.
+  const keepChh = keepH && /chh/i.test(query);
+  const q = hinglishFold(query, keepH, keepChh);
   let best: number | null = null;
   const forms = hindi.split(/\s+/).map(romanize).reduce<string[]>((acc, f) => acc.flatMap((a) => f.map((x) => a + x)), ['']);
   for (const form of forms) {
-    const h = hinglishFold(form, keepH);
+    const h = hinglishFold(form, keepH, keepChh);
     // Fewest skips aligning all of q with a prefix of h.
     const memo = new Map<string, number | null>();
     const align = (i: number, j: number): number | null => {

@@ -3,6 +3,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9325;
@@ -97,9 +101,9 @@ async function main() {
     };
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
       await seed();
-      check(`${sizeName}: reloads with saved items`, await open('/page/16', size));
+      check(`${sizeName}: reloads with saved items`, await open(`/page/${CAMEL_PAGE}`, size));
 
       await openSaved(sizeName);
       let s = await saved();
@@ -137,7 +141,7 @@ async function main() {
       await evaluate(`document.activeElement?.blur(); true`);
       await key('ArrowRight');
       await sleep(600);
-      check(`${sizeName}: arrow keys do not turn the hidden book's pages`, await evaluate(`location.pathname`) === '/page/16', await evaluate('location.pathname'));
+      check(`${sizeName}: arrow keys do not turn the hidden book's pages`, await evaluate(`location.pathname`) === `/page/${CAMEL_PAGE}`, await evaluate('location.pathname'));
       await evaluate(`[...document.querySelectorAll('#saved-screen .saved-open')].find((b) => b.textContent.startsWith('Ceremony')).click(); true`);
       await sleep(700);
       check(`${sizeName}: tapping a saved word opens its sheet over Saved`,
@@ -159,7 +163,7 @@ async function main() {
       check(`${sizeName}: tapping a saved page turns the book to it`, !(await saved()) && await evaluate(`location.pathname === '/page/23'`), await evaluate('location.pathname'));
 
       await evaluate(`['panna_saved_words', 'panna_bookmarks', 'panna_dog_ears', 'panna_marginalia'].forEach((k) => localStorage.removeItem(k)); true`);
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await openSaved(sizeName);
       s = await saved();
       check(`${sizeName}: empty Saved explains how to save words`, s?.text.includes('Nothing saved yet') && s.text.includes('Save word'), s?.text);

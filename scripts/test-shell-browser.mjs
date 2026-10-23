@@ -3,6 +3,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9315;
@@ -66,7 +70,7 @@ async function main() {
 
     // ── Desktop ──────────────────────────────────────────────
     const desktop = { width: 1440, height: 900, mobile: false };
-    check('desktop: app hydrates', await open('/page/16', desktop));
+    check('desktop: app hydrates', await open(`/page/${CAMEL_PAGE}`, desktop));
     check('desktop: wordmark, search, Saved and ⋯ are visible',
       (await visible('.app-wordmark')) && (await visible('#lookup-input')) && (await visible('#open-bookmarks-btn')) && (await visible('#menu-btn')));
     check('desktop: no bottom bar', !(await visible('.app-bottomnav')));
@@ -84,7 +88,7 @@ async function main() {
     await evaluate(`document.querySelector('[role="radio"][aria-checked="true"]').focus(); true`);
     await key('ArrowRight');
     await sleep(800);
-    check('desktop: arrow keys inside the menu do not turn the page', await evaluate(`location.pathname === '/page/16'`), await evaluate('location.pathname'));
+    check('desktop: arrow keys inside the menu do not turn the page', await evaluate(`location.pathname === '/page/${CAMEL_PAGE}'`), await evaluate('location.pathname'));
     check('desktop: arrow keys move the lighting choice to Evening',
       await evaluate(`[...document.querySelectorAll('[role="radio"][aria-checked="true"]')].some((r) => r.textContent === 'Evening')`));
     await key('Escape');
@@ -112,7 +116,7 @@ async function main() {
 
     // ── Phone ────────────────────────────────────────────────
     const phone = { width: 390, height: 844, mobile: true };
-    check('phone: app hydrates', await open('/page/16', phone));
+    check('phone: app hydrates', await open(`/page/${CAMEL_PAGE}`, phone));
     check('phone: search and ⋯ visible, wordmark and header Saved hidden',
       (await visible('#lookup-input')) && (await visible('#menu-btn')) && !(await visible('.app-wordmark')) && !(await visible('#open-bookmarks-btn')));
     check('phone: bottom bar shows Book (current) and Saved',

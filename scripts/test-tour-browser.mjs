@@ -3,6 +3,10 @@
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import Database from 'better-sqlite3';
+// The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
+const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
+  .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9337;
@@ -119,7 +123,7 @@ async function main() {
       const phone = sizeName === 'phone';
       const reviewBtn = phone ? '#nav-review-btn' : '#open-review-btn';
       const savedBtn = phone ? '#nav-saved-btn' : '#open-bookmarks-btn';
-      check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
 
       // ── Welcome card ──
       await reset(null);
@@ -226,7 +230,7 @@ async function main() {
       check(`${sizeName}: Done closes the card`, !(await step()) && !(await visible('#word-sheet')) && (await where()).screen === 'today');
 
       // ── Saving and Review, started from the book ──
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await click('#menu-btn'); await sleep(400); await click('#guided-tours-btn'); await sleep(500);
       await click('#tour-start-review');
       s = await waitStep('1 of 4');
@@ -282,7 +286,7 @@ async function main() {
 
       // ── "How this works" links start the tour for where the reader is, and return there ──
       await reset({ seen: {}, tips: {}, welcomeDone: true, tipsOff: true });
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await click(reviewBtn);
       await click('#review-how-btn');
       s = await waitStep('1 of 4');
@@ -297,7 +301,7 @@ async function main() {
       await key('Escape', 'Escape');
       await sleep(1000);
       check(`${sizeName}: and ends back on Saved`, !(await step()) && (await where()).screen === 'saved', await where());
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await evaluate(`[...document.querySelectorAll('.entry-text')].find((e) => e.style.cursor === 'pointer' && e.getBoundingClientRect().width > 0).click(); true`);
       await sleep(700);
       const cardWord = await evaluate(`document.querySelector('#word-sheet-title')?.textContent`);
@@ -310,7 +314,7 @@ async function main() {
       await key('Escape'); await sleep(300);
       // Someone who has opened the tours list knows where tours are: no pointer to ⋯.
       await reset({ seen: {}, tips: {}, welcomeDone: true, listOpened: true });
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await click('#tip-got-it-btn');
       await click(reviewBtn);
       await click('#review-how-btn');
@@ -332,7 +336,7 @@ async function main() {
 
       // ── One-time tips ──
       await reset({ seen: {}, tips: {}, welcomeDone: true });
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       let tip = null;
       for (let i = 0; i < 30 && !tip; i++) { await sleep(150); tip = await evaluate(`document.querySelector('#tip-card')?.innerText ?? null`); }
       check(`${sizeName}: the first visit to the book shows a tip about tapping words`, tip?.includes('Tap any word') && tip.includes('शब्द'), tip);
@@ -350,7 +354,7 @@ async function main() {
       await click('#tip-got-it-btn');
       await sleep(300);
       check(`${sizeName}: "Got it" closes it`, !(await visible('#tip-card')));
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await sleep(1500);
       check(`${sizeName}: and it does not come back`, !(await visible('#tip-card')));
       await evaluate(`[...document.querySelectorAll('.entry-text')].find((e) => e.style.cursor === 'pointer' && e.getBoundingClientRect().width > 0).click(); true`);
@@ -366,7 +370,7 @@ async function main() {
       await sleep(400);
       check(`${sizeName}: Escape still closes the card (and its tip)`, !(await visible('#word-sheet')) && !(await visible('#tip-card')));
       await reset({ seen: {}, tips: {}, welcomeDone: true });
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       tip = null;
       for (let i = 0; i < 30 && !tip; i++) { await sleep(150); tip = await evaluate(`document.querySelector('#tip-card') ? 1 : null`); }
       await click('#tip-off-btn');
@@ -383,7 +387,7 @@ async function main() {
       check(`${sizeName}: "Show tips again" turns them back on`, (await tours())?.tipsOff === false && Object.keys((await tours()).tips).length === 0);
       await key('Escape'); await sleep(300);
       await reset({ seen: { start: Date.now() }, tips: {}, welcomeDone: true });
-      await open('/page/16', size);
+      await open(`/page/${CAMEL_PAGE}`, size);
       await sleep(1800);
       check(`${sizeName}: no "tap a word" tip for someone who took Getting started`, !(await visible('#tip-card')));
       check(`${sizeName}: nothing overflows sideways`, await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
