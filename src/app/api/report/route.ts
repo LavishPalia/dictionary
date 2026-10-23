@@ -3,7 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMeta, getWordEntry } from '@/lib/book-data';
-import { rateLimiter, validateReport } from '@/lib/report';
+import { REPORTS_ENABLED, rateLimiter, validateReport } from '@/lib/report';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +19,7 @@ const MAX_BODY = 4096;
 const allowed = rateLimiter(LIMIT_PER_HOUR);
 
 export async function POST(request: NextRequest) {
+  if (!REPORTS_ENABLED) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
   const text = await request.text();
   if (text.length > MAX_BODY) return NextResponse.json({ error: 'Too long.' }, { status: 413 });
   let body: unknown;

@@ -91,7 +91,22 @@ async function main() {
     const quiet = { seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true };
 
     try {
-      for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
+      // A build without NEXT_PUBLIC_REPORTS=1 (the first release) hides the feature: check that instead.
+      await open(`/page/${CALM_PAGE}`, { width: 1440, height: 900, mobile: false });
+      const reportsOn = (await evaluate(`fetch('/api/report', { method: 'POST', body: '{}' }).then((r) => r.status)`)) !== 404;
+      if (!reportsOn) {
+        console.log('Reports are switched off in this build (NEXT_PUBLIC_REPORTS is not 1).');
+        for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
+          await evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
+          check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
+          await openCard('Calm');
+          check(`${sizeName}: the word card opens`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Calm'`));
+          check(`${sizeName}: reports off: no "Report a problem" on the card`, !(await evaluate(`Boolean(document.querySelector('#report-btn'))`)));
+          check(`${sizeName}: reports off: the card keeps its other links`, await evaluate(`Boolean(document.querySelector('#word-tour-btn') && document.querySelector('#see-on-page-btn'))`));
+        }
+        check('reports off: the endpoint is not there', (await evaluate(`fetch('/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ headword: 'Calm', issues: ['other'] }) }).then((r) => r.status)`)) === 404);
+      }
+      for (const [sizeName, size] of reportsOn ? [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]] : []) {
         await setOffline(false);
         check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
         await evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);

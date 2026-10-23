@@ -8,6 +8,7 @@ import { SpeechLang, speechUnavailableReason, useSpeechVoices } from '@/lib/spee
 import { Button, Chip, IconButton, Sheet } from '@/components/ui';
 import { CloseIcon, SpeakerIcon, StarIcon } from '@/components/ui/icons';
 import { ReportForm } from './ReportForm';
+import { REPORTS_ENABLED } from '@/lib/report';
 
 interface WordDetailDrawerProps {
   entry: DictionaryEntry | null;
@@ -180,7 +181,9 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
           {entry.reviewed === 0 ? 'Machine-written · not yet checked by a reviewer' : ''}
         </span>
         <span className="word-foot-links">
-          <button type="button" className="lookup-link tour-howlink" id="report-btn" onClick={() => setReporting(true)}>Report a problem</button>
+          {REPORTS_ENABLED && (
+            <button type="button" className="lookup-link tour-howlink" id="report-btn" onClick={() => setReporting(true)}>Report a problem</button>
+          )}
           <button type="button" className="lookup-link tour-howlink" id="word-tour-btn" onClick={onTourCard}>Tour this card ›</button>
         </span>
         <button type="button" className="lookup-link word-goto" id="see-on-page-btn"

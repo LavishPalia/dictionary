@@ -29,7 +29,7 @@ import { useTours } from '@/components/tour/useTours';
 import { unseenTours } from '@/lib/tours';
 import { bestStreak, calendar, progressOf } from '@/lib/progress';
 import { useOffline } from '@/components/shell/useOffline';
-import { flushQueue } from '@/lib/report';
+import { REPORTS_ENABLED, flushQueue } from '@/lib/report';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -661,7 +661,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Guided tours and one-time tips (src/components/tour). A tour step sets up its own scene through these.
   const offline = useOffline(meta, initialPages.map(p => p.page_number));
   // Problem reports written offline are sent once the connection is back (and on the next visit).
-  useEffect(() => { if (offline.online) flushQueue(); }, [offline.online]);
+  useEffect(() => { if (REPORTS_ENABLED && offline.online) flushQueue(); }, [offline.online]);
   const tours = useTours({
     section,
     goTo,

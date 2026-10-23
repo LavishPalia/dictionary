@@ -1,5 +1,11 @@
 // "Report a problem" with an entry: what a report may say, shared by the word card's form and /api/report.
 
+/**
+ * Off unless NEXT_PUBLIC_REPORTS=1 at build time (read in the browser and on the server). The first release ships
+ * without it: on Vercel reports need somewhere to go (REPORTS_WEBHOOK_URL) before the link is shown.
+ */
+export const REPORTS_ENABLED = process.env.NEXT_PUBLIC_REPORTS === '1';
+
 export const ISSUES = [
   { id: 'hindi', en: 'The Hindi meaning is wrong', hi: 'हिंदी अर्थ गलत है' },
   { id: 'definition', en: 'The English definition is wrong', hi: 'अंग्रेज़ी परिभाषा गलत है' },
