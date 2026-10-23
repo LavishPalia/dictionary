@@ -33,6 +33,7 @@
     "test:report-ui": "node scripts/test-report-browser.mjs",
     "test:a11y": "node scripts/test-a11y-browser.mjs",
     "test:progress-ui": "node scripts/test-progress-browser.mjs",
+    "test:book-fit-ui": "node scripts/test-book-fit-browser.mjs",
     "test:review": "tsx scripts/test-review.ts",
     "test:marks": "tsx scripts/test-marks.ts",
     "test:backup": "tsx scripts/test-backup.ts",

@@ -143,16 +143,20 @@ async function loadBook() {
   const marker = await cache.match(SAVED_MARKER);
   const saved = marker ? await marker.json() : null;
   const pages = new Map();
-  for (const key of await cache.keys()) {
+  // Read the pages in parallel: one at a time, a saved book (3,000+ pages) took seconds to index, and the index
+  // is rebuilt whenever the browser stops an idle service worker.
+  const keys = (await cache.keys()).filter((key) => {
     const url = new URL(key.url);
-    if (!url.pathname.startsWith('/api/page/')) continue;
-    if (saved && url.searchParams.get('v') !== saved.data_version) continue;
+    return url.pathname.startsWith('/api/page/') && (!saved || url.searchParams.get('v') === saved.data_version);
+  });
+  await Promise.all(keys.map(async (key) => {
     try {
       const p = await (await cache.match(key)).json();
       pages.set(p.page_number, [...p.column1, ...p.column2]);
     } catch {}
-  }
-  const entries = [...pages.values()].flat();
+  }));
+  // In book order, so results do not depend on which page was read first.
+  const entries = [...pages.entries()].sort((a, b) => a[0] - b[0]).flatMap(([, onPage]) => onPage);
   bookIndex = { entries, pages, complete: Boolean(saved && saved.pages && pages.size >= saved.pages) };
   return bookIndex;
 }

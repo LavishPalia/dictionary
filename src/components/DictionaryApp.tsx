@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { BookSpread } from '@/components/book/BookSpread';
+import { ScaledSpread } from '@/components/book/ScaledSpread';
 import { MobilePage } from '@/components/book/MobilePage';
 import { LookupBar } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
@@ -935,10 +936,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onNextPage={handleMobileNext}
           canPrev={canPrevMobile}
           canNext={canNextMobile}
+          animate={!reducedMotion && speedMode !== 'instant'}
         />
       ) : (
         /* Desktop Two-Page Spread with 3D Engine & Hybrid Overlay */
-        <div style={{ transform: 'scale(1)', transformOrigin: 'top center' }}>
+        <ScaledSpread>
           <BookSpread
             leftPage={leftPage}
             rightPage={rightPage}
@@ -970,7 +972,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onPrevPage={handlePrevSpread}
             onNextPage={handleNextSpread}
           />
-        </div>
+        </ScaledSpread>
       )}
       </div>
 
