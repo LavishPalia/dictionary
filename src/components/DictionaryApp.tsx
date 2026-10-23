@@ -26,6 +26,7 @@ import { TourLayer } from '@/components/tour/TourLayer';
 import { ToursSheet } from '@/components/tour/ToursSheet';
 import { useTours } from '@/components/tour/useTours';
 import { unseenTours } from '@/lib/tours';
+import { bestStreak, calendar, progressOf } from '@/lib/progress';
 import { useOffline } from '@/components/shell/useOffline';
 import { flushQueue } from '@/lib/report';
 
@@ -991,6 +992,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onBackToBook={() => goTo(homeSection)}
           backLabel={homeSection === 'today' ? 'Back to Today' : 'Back to the book'}
           statusFor={(key) => statusOf(reviewRecords[key])}
+          progress={progressOf(bookmarkedWords.map(w => w.normalized), reviewRecords)}
           dueCount={dueCount}
           onReview={() => goTo('review')}
           onHowItWorks={() => tours.startTour('review')}
@@ -1003,6 +1005,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           savedWords={bookmarkedWords.length}
           nextReview={nextReviewLabel}
           streak={streak(reviewDays, Date.now())}
+          progress={progressOf(bookmarkedWords.map(w => w.normalized), reviewRecords)}
+          calendar={calendar(reviewDays, Date.now())}
+          bestStreak={bestStreak(reviewDays)}
           lastPage={lastReadPage}
           loadPage={fetchPage}
           isSaved={(key) => bookmarkedWords.some(w => w.normalized === key)}

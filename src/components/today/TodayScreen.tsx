@@ -6,6 +6,8 @@ import { describePos } from '@/lib/pos';
 import { localDate } from '@/lib/review';
 import { Button, Card } from '@/components/ui';
 import { StarIcon } from '@/components/ui/icons';
+import { ProgressBar, ReviewCalendar } from '@/components/progress/Progress';
+import type { CalendarDay, Progress } from '@/lib/progress';
 
 interface TodayScreenProps {
   dueCount: number;
@@ -20,6 +22,10 @@ interface TodayScreenProps {
   onContinueReading: (page: number) => void;
   onOpenWord: (entry: DictionaryEntry) => void;
   onToggleSave: (entry: DictionaryEntry) => void;
+  /** Saved words by status, the last 30 days of review, and the longest run of review days. */
+  progress: Progress;
+  calendar: CalendarDay[];
+  bestStreak: number;
   /** First visit: offer the Getting started tour. */
   showWelcome: boolean;
   onTakeTour: () => void;
@@ -106,6 +112,17 @@ export function TodayScreen(props: TodayScreenProps) {
           <Button id="today-continue-btn" onClick={() => props.onContinueReading(page)}>Open book ›</Button>
         </div>
       </Card>
+
+      {props.progress.total > 0 && (
+        <Card className="today-card" id="today-progress" aria-labelledby="today-progress-title">
+          <div className="today-card-head">
+            <span className="ui-label" id="today-progress-title">Your progress</span>
+            {props.bestStreak >= 2 && <span className="ui-label">Best streak: {props.bestStreak} days</span>}
+          </div>
+          <ProgressBar progress={props.progress} />
+          <ReviewCalendar days={props.calendar} />
+        </Card>
+      )}
 
       {word && (
         <Card className="today-card" id="today-word">

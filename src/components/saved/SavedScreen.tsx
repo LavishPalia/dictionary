@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { BookPage, DictionaryEntry, MarginNote } from '@/lib/types';
 import type { ReviewStatus } from '@/lib/review';
+import { ProgressBar } from '@/components/progress/Progress';
+import { STATUS_LABEL, type Progress } from '@/lib/progress';
 import { Button, IconButton, Segmented } from '@/components/ui';
 import { BookIcon, CloseIcon } from '@/components/ui/icons';
 
@@ -29,6 +31,7 @@ interface SavedScreenProps {
   /** "Back to the book" or "Back to Today": wherever Saved was opened from. */
   backLabel: string;
   statusFor: (normalized: string) => ReviewStatus;
+  progress: Progress;
   dueCount: number;
   onReview: () => void;
   /** Starts the Saving and Review tour. */
@@ -69,6 +72,8 @@ function PageWords({ page, through = page, loadPage }: { page: number; through?:
 export function SavedScreen(props: SavedScreenProps) {
   const { words, ribbonPages, dogEaredPages, notes } = props;
   const [tab, setTab] = useState<Tab>('words');
+  // Words by review status: all, or only new / learning / mastered.
+  const [filter, setFilter] = useState<'all' | ReviewStatus>('all');
   const [toast, setToast] = useState<{ text: string; undo: () => void } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -93,7 +98,7 @@ export function SavedScreen(props: SavedScreenProps) {
     .map((name) => ({
       name,
       items: words
-        .filter((w) => whenGroup(w.saved_at, now) === name)
+        .filter((w) => whenGroup(w.saved_at, now) === name && (filter === 'all' || props.statusFor(w.normalized) === filter))
         .sort((a, b) => (b.saved_at ?? 0) - (a.saved_at ?? 0) || a.headword.localeCompare(b.headword)),
     }))
     .filter((g) => g.items.length > 0);
@@ -132,9 +137,36 @@ export function SavedScreen(props: SavedScreenProps) {
         </Button>
       )}
 
+      {tab === 'words' && words.length > 0 && (
+        <>
+          <ProgressBar progress={props.progress} surface="desk" id="saved-progress" />
+          <div className="saved-filter">
+            <Segmented<'all' | ReviewStatus>
+              label="Show words"
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: 'all', label: `All · ${words.length}` },
+                ...(['new', 'learning', 'mastered'] as const).map((s) => ({ value: s, label: `${STATUS_LABEL[s]} · ${props.progress[s]}` })),
+              ]}
+            />
+          </div>
+        </>
+      )}
+
       {tab === 'words' && (
         groups.length === 0 ? (
-          <p className="saved-empty">No saved words yet. Open any word and tap <b>Save word</b> to keep it here.</p>
+          words.length > 0 ? (
+            <p className="saved-filter-empty" id="saved-filter-empty">
+              {filter === 'mastered'
+                ? 'No words mastered yet. A word is mastered after four right answers in a row, spread over a couple of weeks.'
+                : filter === 'learning'
+                  ? 'No words being learned right now. Words move here after their first review.'
+                  : 'No new words. Every saved word has had at least one review.'}
+            </p>
+          ) : (
+            <p className="saved-empty">No saved words yet. Open any word and tap <b>Save word</b> to keep it here.</p>
+          )
         ) : (
           <div className="ui-list saved-list">
             {groups.map((g) => (

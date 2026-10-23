@@ -86,11 +86,11 @@ async function main() {
       return {
         text: s.innerText,
         groups: [...s.querySelectorAll('.ui-list-group')].map((g) => g.textContent),
-        tabs: [...s.querySelectorAll('[role="radio"]')].map((r) => r.textContent),
+        tabs: [...s.querySelectorAll('.saved-tabs [role="radio"]')].map((r) => r.textContent),
         rows: [...s.querySelectorAll('.saved-hw, .saved-note')].map((e) => e.textContent),
       };
     })()`);
-    const tab = async (name) => { await evaluate(`[...document.querySelectorAll('#saved-screen [role="radio"]')].find((r) => r.textContent.startsWith('${name}')).click(); true`); await sleep(200); };
+    const tab = async (name) => { await evaluate(`[...document.querySelectorAll('#saved-screen .saved-tabs [role="radio"]')].find((r) => r.textContent.startsWith('${name}')).click(); true`); await sleep(200); };
     const openSaved = async (sizeName) => {
       await evaluate(`document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#nav-saved-btn' : '#open-bookmarks-btn')}).click(); true`);
       await sleep(400);
