@@ -17,6 +17,8 @@ design-docs
 # SQLite generated files
 data/dictionary.db
 data/dictionary.db-journal
+# Readers' problem reports (POST /api/report): personal to this server, read with npm run reports
+data/reports/
 data/dictionary.db-wal
 data/dictionary.db-shm
 data/dictionary.db.tmp*

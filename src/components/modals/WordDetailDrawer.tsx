@@ -7,6 +7,7 @@ import { flyToSaved } from '@/lib/motion';
 import { SpeechLang, speechUnavailableReason, useSpeechVoices } from '@/lib/speech';
 import { Button, Chip, IconButton, Sheet } from '@/components/ui';
 import { CloseIcon, SpeakerIcon, StarIcon } from '@/components/ui/icons';
+import { ReportForm } from './ReportForm';
 
 interface WordDetailDrawerProps {
   entry: DictionaryEntry | null;
@@ -22,6 +23,8 @@ interface WordDetailDrawerProps {
   onToggleBookmark: (entry: DictionaryEntry) => void;
   /** For saved words: when the word next comes up in Review. */
   reviewNote?: string | null;
+  /** The book build being read, sent with a problem report. */
+  dataVersion: string;
 }
 
 // The word sheet: a bottom sheet on phones, a side panel beside the book on desktop. Hindi is the largest
@@ -37,12 +40,21 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   isBookmarked,
   onToggleBookmark,
   reviewNote,
+  dataVersion,
 }) => {
   const [speaking, setSpeaking] = useState<SpeechLang | null>(null);
   const speech = useSpeechVoices();
   // The ink stamp plays only when the reader saves, not when reopening a word saved earlier.
   const [justSaved, setJustSaved] = useState(false);
   useEffect(() => setJustSaved(false), [entry?.normalized, isOpen]);
+  // "Report a problem" shows its form in place of the card's body (a second sheet on top would fight this one for
+  // Escape and focus); a new word or closing the card goes back to the word.
+  const [reporting, setReporting] = useState(false);
+  useEffect(() => setReporting(false), [entry?.normalized, isOpen]);
+  const backFromReport = () => {
+    setReporting(false);
+    requestAnimationFrame(() => document.getElementById('report-btn')?.focus());
+  };
 
   if (!entry) return null;
 
@@ -106,6 +118,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
         </IconButton>
       </div>
 
+      {reporting ? <ReportForm entry={entry} dataVersion={dataVersion} onBack={backFromReport} /> : (<>
       <p className="word-hi" lang="hi">{entry.meaning_hi}</p>
       <p className="word-def">{entry.definition_en}</p>
 
@@ -165,12 +178,16 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
         <span className="word-provenance">
           {entry.reviewed === 0 ? 'Machine-written · not yet checked by a reviewer' : ''}
         </span>
-        <button type="button" className="lookup-link tour-howlink" id="word-tour-btn" onClick={onTourCard}>Tour this card ›</button>
+        <span className="word-foot-links">
+          <button type="button" className="lookup-link tour-howlink" id="report-btn" onClick={() => setReporting(true)}>Report a problem</button>
+          <button type="button" className="lookup-link tour-howlink" id="word-tour-btn" onClick={onTourCard}>Tour this card ›</button>
+        </span>
         <button type="button" className="lookup-link word-goto" id="see-on-page-btn"
           onClick={() => { onClose(); onSelectWord(entry.headword, pageNumber); }}>
           See on page {pageNumber.toLocaleString('en-IN')} ›
         </button>
       </div>
+      </>)}
     </Sheet>
   );
 };

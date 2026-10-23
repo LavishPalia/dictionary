@@ -72,9 +72,12 @@ async function main() {
       if (m.method === 'Target.attachedToTarget' && m.params.targetInfo.type === 'service_worker') workers.add(m.params.sessionId);
       if (m.method === 'Target.detachedFromTarget') workers.delete(m.params.sessionId);
     });
+    // A worker that has already stopped (after the site's data is wiped) never answers: give up after 2 s.
     const sendTo = (sessionId, method, params = {}) => new Promise((resolve) => {
       const id = 500000 + Math.floor(Math.random() * 400000);
-      const onMessage = (event) => { const m = JSON.parse(event.data); if (m.id === id) { socket.removeEventListener('message', onMessage); resolve(m.result); } };
+      const done = (result) => { clearTimeout(timer); socket.removeEventListener('message', onMessage); resolve(result); };
+      const onMessage = (event) => { const m = JSON.parse(event.data); if (m.id === id) done(m.result ?? null); };
+      const timer = setTimeout(() => { workers.delete(sessionId); done(null); }, 2000);
       socket.addEventListener('message', onMessage);
       socket.send(JSON.stringify({ id, method, params, sessionId }));
     });
@@ -97,14 +100,27 @@ async function main() {
       for (let i = 0; i < 40; i++) { if (await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return false; el.click(); return true; })()`)) return true; await sleep(100); }
       return false;
     };
-    const controlled = async () => { for (let i = 0; i < 40; i++) { if (await evaluate('Boolean(navigator.serviceWorker && navigator.serviceWorker.controller)')) return true; await sleep(150); } return false; };
+    // The worker is in charge of the page. Right after the site's data is wiped (as this test does between sizes) the
+    // old worker may still be shutting down, and the new one takes charge only from the next load: reload and wait.
+    const controlled = async (size) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        for (let i = 0; i < 40; i++) { if (await evaluate('Boolean(navigator.serviceWorker && navigator.serviceWorker.controller)')) return true; await sleep(150); }
+        await open('/page/16', size);
+      }
+      return false;
+    };
     const appShows = (word) => evaluate(`[...document.querySelectorAll('.entry-text')].some((e) => e.textContent.startsWith(${JSON.stringify(word)}) && e.getBoundingClientRect().width > 0)`);
     const quiet = { seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true };
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       await setOffline(false);
       check(`${sizeName}: app hydrates`, await open('/page/16', size));
+      // Start each size from a clean site, but only once any worker has finished installing: wiping the site in the
+      // middle of an install can leave a registration that never takes charge.
+      await evaluate(`Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise((ok) => setTimeout(() => ok(false), 15000))])`);
+      await sleep(500);
       await send('Storage.clearDataForOrigin', { origin: BASE, storageTypes: 'all' });
+      await sleep(500);
       await evaluate(`localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
       await open('/page/16', size);
 
@@ -117,7 +133,11 @@ async function main() {
         check('iOS gets a home-screen icon and the browser a theme colour', await evaluate(`Boolean(document.querySelector('link[rel="apple-touch-icon"]')) && document.querySelector('meta[name="theme-color"]')?.content === '#2b1d14' && Boolean(document.querySelector('link[rel="icon"]'))`));
       }
 
-      check(`${sizeName}: the service worker takes charge`, await controlled());
+      check(`${sizeName}: the service worker takes charge`, await controlled(size), await evaluate(`(async () => {
+        const r = await navigator.serviceWorker.getRegistration();
+        return { controller: Boolean(navigator.serviceWorker.controller), reg: Boolean(r), active: r?.active?.state, installing: r?.installing?.state,
+          waiting: r?.waiting?.state, regs: (await navigator.serviceWorker.getRegistrations()).length, url: location.href };
+      })()`));
       await sleep(1500); // let it cache what the page already loaded
       await click('#menu-btn');
       await sleep(400);
