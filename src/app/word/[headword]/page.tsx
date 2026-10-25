@@ -9,8 +9,13 @@ interface WordPageProps {
   };
 }
 
+// A stray % in the address (/word/100%) must show "not found", not crash.
+function safeDecode(value: string): string {
+  try { return decodeURIComponent(value); } catch { return value; }
+}
+
 export async function generateMetadata({ params }: WordPageProps): Promise<Metadata> {
-  const headword = decodeURIComponent(params.headword);
+  const headword = safeDecode(params.headword);
   const data = getWordEntry(headword);
 
   if (!data.entry) {
@@ -26,7 +31,7 @@ export async function generateMetadata({ params }: WordPageProps): Promise<Metad
 }
 
 export default function WordPage({ params }: WordPageProps) {
-  const headword = decodeURIComponent(params.headword);
+  const headword = safeDecode(params.headword);
   const data = getWordEntry(headword);
 
   if (!data.entry || !data.pageNumber) {

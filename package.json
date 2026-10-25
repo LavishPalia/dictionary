@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 127.0.0.1",
     "predev": "npm run build:data",
     "prebuild": "npm run build:data",
     "build": "next build",
@@ -52,12 +52,10 @@
     "test:phase4-pipeline": "tsx scripts/test-phase4-pipeline.ts"
   },
   "dependencies": {
-    "@types/three": "^0.186.0",
     "better-sqlite3": "^13.0.3",
     "next": "^14.2.23",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "three": "^0.186.1"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

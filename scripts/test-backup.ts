@@ -1,5 +1,5 @@
 // Checks backup and restore (src/lib/backup.ts). Usage: npx tsx scripts/test-backup.ts
-import { backupFileName, createBackup, parseBackup, restoreData, wordsToLocate, type BackupData } from '../src/lib/backup';
+import { keepValid, backupFileName, createBackup, parseBackup, restoreData, wordsToLocate, type BackupData } from '../src/lib/backup';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {

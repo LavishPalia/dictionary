@@ -3,7 +3,7 @@ import { searchWords } from '@/lib/book-data';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get('q') || '';
+  const q = (searchParams.get('q') || '').slice(0, 100);
 
   if (!q.trim()) {
     return NextResponse.json({ results: [] });

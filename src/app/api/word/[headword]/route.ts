@@ -5,7 +5,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { headword: string } }
 ) {
-  const headword = decodeURIComponent(params.headword);
+  // Next.js has already decoded the path segment; decoding again made a literal % throw (a 500).
+  const headword = params.headword;
   const result = getWordEntry(headword);
 
   if (!result.entry) {

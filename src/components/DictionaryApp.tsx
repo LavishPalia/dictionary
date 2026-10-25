@@ -17,7 +17,7 @@ import { CoverCinematic } from '@/components/book/CoverCinematic';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
 import { BackupManager, lastBackupLabel, type BackupHandle } from '@/components/shell/BackupManager';
-import { LAST_BACKUP_KEY } from '@/lib/backup';
+import { LAST_BACKUP_KEY, isMarginNote, isSavedWord, keepValid } from '@/lib/backup';
 import { BookMeta, BookPage, DictionaryEntry, MarginNote, RelatedWord } from '@/lib/types';
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
@@ -211,12 +211,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const read = <T,>(key: string, fallback: T): T => {
       try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
     };
-    const savedWords = read<SavedWord[]>('panna_saved_words', []);
+    const savedWords = keepValid<SavedWord>(read<unknown>('panna_saved_words', []), isSavedWord);
     if (savedWords.length) setBookmarkedWords(savedWords);
     const marks = {
-      ribbons: read<number[]>('panna_bookmarks', []),
-      dogEars: read<number[]>('panna_dog_ears', []),
-      notes: read<MarginNote[]>('panna_marginalia', []),
+      ribbons: keepValid<number>(read<unknown>('panna_bookmarks', []), Number.isInteger),
+      dogEars: keepValid<number>(read<unknown>('panna_dog_ears', []), Number.isInteger),
+      notes: keepValid<MarginNote>(read<unknown>('panna_marginalia', []), isMarginNote),
     };
     const stored = read<MarkAnchors | null>(ANCHORS_KEY, null);
     const apply = (m: typeof marks, anchors: MarkAnchors) => {
@@ -440,7 +440,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           turnToPage(pNum);
         }
       } else if (path.startsWith('/word/')) {
-        const w = decodeURIComponent(path.replace('/word/', '')).trim();
+        const rawWord = path.replace('/word/', '');
+        const w = (() => { try { return decodeURIComponent(rawWord); } catch { return rawWord; } })().trim();
         const found = await fetchWord(w);
         if (found) {
           setActiveWordEntry(found.entry);
