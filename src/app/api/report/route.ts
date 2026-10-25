@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   if (!found.entry) return NextResponse.json({ error: 'That word is not in Panna.' }, { status: 404 });
 
   // A hash of the address, so the limit works without keeping the address itself.
-  const sender = crypto.createHash('sha256').update(request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.ip || 'local').digest('hex');
+  const sender = crypto.createHash('sha256').update(request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'local').digest('hex');
   if (!allowed(sender)) return NextResponse.json({ error: 'Too many reports for now. Please try again later.' }, { status: 429 });
 
   const record = {

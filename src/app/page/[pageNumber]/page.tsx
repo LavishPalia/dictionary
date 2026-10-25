@@ -4,13 +4,11 @@ import { getMeta, getPage, getSpreadPages, spreadLeft } from '@/lib/book-data';
 import DictionaryApp from '@/components/DictionaryApp';
 
 interface PageRouteProps {
-  params: {
-    pageNumber: string;
-  };
+  params: Promise<{ pageNumber: string }>;
 }
 
 export async function generateMetadata({ params }: PageRouteProps): Promise<Metadata> {
-  const pageNum = Number(params.pageNumber);
+  const pageNum = Number((await params).pageNumber);
 
   if (!Number.isInteger(pageNum) || !getPage(pageNum)) {
     return {
@@ -29,8 +27,8 @@ export async function generateMetadata({ params }: PageRouteProps): Promise<Meta
   };
 }
 
-export default function DirectPageRoute({ params }: PageRouteProps) {
-  const pageNum = Number(params.pageNumber);
+export default async function DirectPageRoute({ params }: PageRouteProps) {
+  const pageNum = Number((await params).pageNumber);
   if (!Number.isInteger(pageNum) || !getPage(pageNum)) {
     notFound();
   }

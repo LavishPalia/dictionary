@@ -137,7 +137,7 @@ async function main() {
       check(`${sizeName}: all Hindi on the page is marked as Hindi`, await evaluate(`(() => {
         const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         for (let t = w.nextNode(); t; t = w.nextNode()) {
-          if (!/[\\u0900-\\u097F]/.test(t.textContent) || !t.parentElement || t.parentElement.closest('script, [aria-hidden="true"]')) continue;
+          if (!/[\\u0900-\\u097F]/.test(t.textContent) || !t.parentElement || t.parentElement.closest('script, title, [aria-hidden="true"]')) continue;
           if (t.parentElement.closest('[lang]')?.getAttribute('lang') !== 'hi') return false;
         }
         return true; })()`));

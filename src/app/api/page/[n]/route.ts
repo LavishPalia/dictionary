@@ -3,9 +3,9 @@ import { getMeta, getPage } from '@/lib/book-data';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { n: string } }
+  { params }: { params: Promise<{ n: string }> }
 ) {
-  const pageNum = Number(params.n);
+  const pageNum = Number((await params).n);
   if (!Number.isInteger(pageNum)) {
     return NextResponse.json({ error: 'Invalid page number' }, { status: 400 });
   }

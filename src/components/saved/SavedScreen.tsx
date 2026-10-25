@@ -75,7 +75,7 @@ export function SavedScreen(props: SavedScreenProps) {
   // Words by review status: all, or only new / learning / mastered.
   const [filter, setFilter] = useState<'all' | ReviewStatus>('all');
   const [toast, setToast] = useState<{ text: string; undo: () => void } | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   // Move focus to the screen's heading so keyboard and screen-reader users start here.
