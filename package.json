@@ -40,6 +40,7 @@
     "test:quiz": "tsx scripts/test-quiz.ts",
     "test:related": "tsx scripts/test-related.ts",
     "test:related-gemini": "tsx scripts/test-related-gemini.ts",
+    "test:examples": "tsx scripts/test-examples.ts",
     "test:hinglish": "tsx scripts/test-hinglish.ts",
     "test:report": "tsx scripts/test-report.ts",
     "test:progress": "tsx scripts/test-progress.ts",
