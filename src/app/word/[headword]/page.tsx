@@ -4,9 +4,7 @@ import { getMeta, getSpreadPages, getWordEntry } from '@/lib/book-data';
 import DictionaryApp from '@/components/DictionaryApp';
 
 interface WordPageProps {
-  params: {
-    headword: string;
-  };
+  params: Promise<{ headword: string }>;
 }
 
 // A stray % in the address (/word/100%) must show "not found", not crash.
@@ -15,7 +13,7 @@ function safeDecode(value: string): string {
 }
 
 export async function generateMetadata({ params }: WordPageProps): Promise<Metadata> {
-  const headword = safeDecode(params.headword);
+  const headword = safeDecode((await params).headword);
   const data = getWordEntry(headword);
 
   if (!data.entry) {
@@ -30,8 +28,8 @@ export async function generateMetadata({ params }: WordPageProps): Promise<Metad
   };
 }
 
-export default function WordPage({ params }: WordPageProps) {
-  const headword = safeDecode(params.headword);
+export default async function WordPage({ params }: WordPageProps) {
+  const headword = safeDecode((await params).headword);
   const data = getWordEntry(headword);
 
   if (!data.entry || !data.pageNumber) {

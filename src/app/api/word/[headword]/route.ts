@@ -3,10 +3,10 @@ import { getWordEntry } from '@/lib/book-data';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { headword: string } }
+  { params }: { params: Promise<{ headword: string }> }
 ) {
   // Next.js has already decoded the path segment; decoding again made a literal % throw (a 500).
-  const headword = params.headword;
+  const { headword } = await params;
   const result = getWordEntry(headword);
 
   if (!result.entry) {
