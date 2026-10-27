@@ -8,7 +8,8 @@ export interface DictionaryEntry {
   definition_en: string;
   meaning_hi: string;
   etymology?: string;
-  examples?: string[];
+  /** One example sentence; blank is [start, end) of the word in `en`, set only when the word appears as written. */
+  example?: { en: string; hi: string; blank?: [number, number] };
   source?: string;
   license_attribution?: string;
   reviewed?: 0 | 1; // 1 = human-written or human-reviewed; 0 = machine-generated, sample-audited

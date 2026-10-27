@@ -83,7 +83,6 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   };
 
   const pos = describePos(entry.pos);
-  const examples = entry.examples?.filter(Boolean) ?? [];
   const related = ([['similar', 'Similar'], ['opposite', 'Opposite']] as const)
     .map(([kind, label]) => ({ kind, label, words: entry[kind] ?? [] }))
     .filter((r) => r.words.length > 0);
@@ -128,14 +127,6 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
         {speakButton('en', 'English', 'English word')}
         {speakButton('hi', <span lang="hi">हिंदी</span>, 'Hindi meaning')}
       </div>
-
-      {examples.length > 0 && (
-        <>
-          <hr className="ui-divider" />
-          <div className="ui-label">Example</div>
-          {examples.map((example) => <p key={example} className="word-example">{example}</p>)}
-        </>
-      )}
 
       {related.length > 0 && (
         <>

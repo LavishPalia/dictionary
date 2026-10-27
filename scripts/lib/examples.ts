@@ -38,3 +38,24 @@ export function validateExample(req: ExampleRequest, r: ExampleResult): string |
   if (!DEVANAGARI.test(hi) || OTHER_SCRIPT.test(hi)) return 'Hindi must be Devanagari only';
   return null;
 }
+
+export interface ExampleDbRow { entry_id: string; en: string; hi: string; blank_start: number; blank_len: number; exact: number }
+
+/**
+ * Turns examples.jsonl rows into rows of the `examples` table. Skips rows whose word isn't in the book, whose blank
+ * span doesn't fit the sentence (or, for an exact row, isn't the word), or that have no text. The first row per word wins.
+ */
+export function toExampleDbRows(rows: ExampleRow[], entryByWord: Map<string, { id: string }>): ExampleDbRow[] {
+  const out = new Map<string, ExampleDbRow>();
+  for (const r of rows) {
+    const entry = entryByWord.get(r.normalized);
+    if (!entry || out.has(entry.id)) continue;
+    const en = (r.en ?? '').trim();
+    const hi = (r.hi ?? '').trim();
+    if (!en || !hi || en !== r.en) continue;
+    if (!Number.isInteger(r.start) || !Number.isInteger(r.length) || r.start < 0 || r.length < 1 || r.start + r.length > en.length) continue;
+    if (r.exact && en.slice(r.start, r.start + r.length).toLowerCase() !== r.normalized) continue;
+    out.set(entry.id, { entry_id: entry.id, en, hi, blank_start: r.start, blank_len: r.length, exact: r.exact ? 1 : 0 });
+  }
+  return [...out.values()].sort((a, b) => (a.entry_id < b.entry_id ? -1 : 1));
+}

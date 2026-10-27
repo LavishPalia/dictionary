@@ -1,4 +1,4 @@
-import { findWord, validateExample, type ExampleRequest } from './lib/examples';
+import { findWord, validateExample, toExampleDbRows, type ExampleRequest, type ExampleRow } from './lib/examples';
 
 let failed = 0;
 function check(label: string, ok: boolean, detail?: string) {
@@ -49,5 +49,20 @@ const wc = (en: string) => validateExample(req, { ...ok, example_en: en });
 check('accepts 6 words', wc('The ceremony was postponed again today.') === null, String(wc('The ceremony was postponed again today.')));
 const sixteen = 'The ceremony was postponed because it rained so hard that the guests stayed home all day.';
 check('accepts 16 words', wc(sixteen) === null && sixteen.split(' ').length === 16, String(wc(sixteen)));
+
+// toExampleDbRows: rows -> validated DB rows
+const book = new Map([['ceremony', { id: 'id-ceremony' }], ['abandon', { id: 'id-abandon' }]]);
+const row = (o: Partial<ExampleRow>): ExampleRow => ({ normalized: 'ceremony', en: 'The ceremony was postponed because of rain.', hi: 'समारोह स्थगित हुआ।', start: 4, length: 8, exact: true, model: 'm', ...o });
+const good = toExampleDbRows([row({})], book);
+check('loader maps a good row', j(good) === j([{ entry_id: 'id-ceremony', en: 'The ceremony was postponed because of rain.', hi: 'समारोह स्थगित हुआ।', blank_start: 4, blank_len: 8, exact: 1 }]), j(good));
+check('loader stores inexact as 0', toExampleDbRows([row({ exact: false })], book)[0]?.exact === 0);
+check('loader skips a word not in the book', toExampleDbRows([row({ normalized: 'zzz' })], book).length === 0);
+check('loader skips a blank past the end', toExampleDbRows([row({ start: 40, length: 8 })], book).length === 0);
+check('loader skips a negative start', toExampleDbRows([row({ start: -1 })], book).length === 0);
+check('loader skips a zero length', toExampleDbRows([row({ length: 0 })], book).length === 0);
+check('loader skips a fractional span', toExampleDbRows([row({ start: 4.5 })], book).length === 0);
+check('loader skips an exact row whose span is not the word', toExampleDbRows([row({ start: 0, length: 3 })], book).length === 0);
+check('loader keeps the first of two rows for a word', toExampleDbRows([row({}), row({ hi: 'दूसरा।' })], book).length === 1);
+check('loader skips empty text', toExampleDbRows([row({ hi: ' ' })], book).length === 0);
 if (failed) { console.error(`${failed} check(s) failed.`); process.exit(1); }
 console.log('Example checks passed.');

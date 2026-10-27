@@ -1,0 +1,5 @@
+{"normalized":"ceremony","en":"The ceremony was postponed because of heavy rain.","hi":"भारी बारिश की वजह से समारोह स्थगित कर दिया गया।","start":4,"length":8,"exact":true,"model":"fixture"}
+{"normalized":"abandon","en":"They had to abandon the car in the snow.","hi":"उन्हें बर्फ़ में गाड़ी छोड़नी पड़ी।","start":12,"length":7,"exact":true,"model":"fixture"}
+{"normalized":"charity","en":"She gave money to a local charity every year.","hi":"वह हर साल एक स्थानीय संस्था को पैसे देती थी।","start":26,"length":7,"exact":true,"model":"fixture"}
+{"normalized":"camel","en":"Many camels crossed the desert at night.","hi":"कई ऊँट रात में रेगिस्तान पार कर गए।","start":5,"length":6,"exact":false,"model":"fixture"}
+{"normalized":"zzqxword","en":"The zzqxword is not in the book at all.","hi":"यह किताब में नहीं है।","start":4,"length":8,"exact":true,"model":"fixture"}
