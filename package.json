@@ -49,7 +49,8 @@
     "data:lemmas": "tsx scripts/build-lemma-list.ts",
     "data:pilot": "tsx scripts/pilot-glosses.ts",
     "data:phase4": "tsx scripts/generate-hindi-glosses.ts",
-    "test:phase4-pipeline": "tsx scripts/test-phase4-pipeline.ts"
+    "test:phase4-pipeline": "tsx scripts/test-phase4-pipeline.ts",
+    "test:gemini-client": "tsx scripts/test-gemini-client.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
