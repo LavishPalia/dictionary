@@ -2,7 +2,7 @@
 // Usage: npx tsx scripts/test-related-gemini.ts
 import Database from 'better-sqlite3';
 import { GRAMMAR_POS } from '../src/lib/book-data';
-import { selectCandidates, validateSuggestions, type HeadwordInfo, type HeadwordLookup, type RelatedCandidate } from './lib/related-gemini';
+import { makeLookup, selectCandidates, validateSuggestions, type HeadwordInfo, type HeadwordLookup, type RelatedCandidate } from './lib/related-gemini';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -53,7 +53,17 @@ check('already-linked and repeated words are duplicates',
 const g = validateSuggestions(cand({ opposite: ['x', 'y'] }), { similar: [], opposite: ['ignore', 'grasp'] }, lookup);
 check('opposite cap is 3 including WordNet links', g.opposite.join() === 'ignore' && g.rejected.some((r) => r.reason === 'cap'), g);
 
+const h = validateSuggestions(cand({ forms: ['knows', 'understand'] }), { similar: ['understand', 'grasp'], opposite: [] }, lookup);
+check('own inflection that is also a headword is rejected as self', h.similar.join() === 'grasp'
+  && h.rejected.some((r) => r.word === 'understand' && r.reason === 'self'), h);
+
 const db = new Database('data/dictionary.db', { readonly: true });
+const real = makeLookup(db);
+check('real makeLookup resolves a mixed-case word to its headword', real('Dog')?.normalized === 'dog', real('Dog'));
+check('real makeLookup returns null for an unknown word', real('qqzzxxyy') === null);
+const acct = selectCandidates(db, 100000).find((x) => x.normalized === 'account');
+check('real account candidate has accounting as its own form, rejected as self', !!acct && (acct.forms ?? []).includes('accounting')
+  && validateSuggestions(acct, { similar: ['accounting'], opposite: [] }, real).rejected.some((r) => r.reason === 'self'), acct?.forms);
 const cands = selectCandidates(db, 1500);
 check('selectCandidates(1500) is about 1,171 items (1,009 have no opposite; 162 more have an opposite but under 2 similar)', cands.length >= 1100 && cands.length <= 1250, cands.length);
 check('candidates are content words', cands.every((x) => !GRAMMAR_POS.some((p) => x.pos.startsWith(p))));

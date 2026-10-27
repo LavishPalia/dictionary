@@ -7,6 +7,7 @@ export interface RelatedCandidate {
   normalized: string; headword: string; pos: string; definition_en: string; meaning_hi: string; freq_rank: number;
   similar: string[]; // existing WordNet links (normalized), in rank order
   opposite: string[];
+  forms?: string[]; // the word's own inflections (normalized): one that is also a headword (account/accounting) is 'self'
 }
 export interface HeadwordInfo { normalized: string; pos: string; freq_rank: number | null }
 /** Resolves a word (lower-cased; inflections mapped to their headword through `forms`) to its Panna entry. */
@@ -33,7 +34,11 @@ export function selectCandidates(db: Database.Database, top: number): RelatedCan
     WHERE freq_rank <= ? AND ${GRAMMAR_POS.map(() => 'pos NOT LIKE ?').join(' AND ')}
     ORDER BY freq_rank, normalized
   `).all(top, ...GRAMMAR_POS.map((p) => `${p}%`)) as Omit<RelatedCandidate, 'similar' | 'opposite'>[];
-  return rows.map((r) => ({ ...r, ...(byWord.get(r.normalized) ?? { similar: [], opposite: [] }) }))
+  const formRows = db.prepare(`SELECT e.normalized AS word, f.normalized_form AS form FROM forms f
+    JOIN entries e ON e.id = f.lemma_id WHERE e.freq_rank <= ?`).all(top) as { word: string; form: string }[];
+  const formsOf = new Map<string, string[]>();
+  for (const f of formRows) formsOf.set(f.word, [...(formsOf.get(f.word) ?? []), f.form]);
+  return rows.map((r) => ({ ...r, ...(byWord.get(r.normalized) ?? { similar: [], opposite: [] }), forms: formsOf.get(r.normalized) ?? [] }))
     .filter((r) => r.similar.length < 2 || r.opposite.length === 0);
 }
 
@@ -58,6 +63,7 @@ export function validateSuggestions(c: RelatedCandidate, r: { similar: string[];
   const resolve = (w: string) => lookup(w.trim().toLowerCase());
   const inOpposite = new Set(r.opposite.map((w) => resolve(w)?.normalized).filter(Boolean));
   const inSimilar = new Set(r.similar.map((w) => resolve(w)?.normalized).filter(Boolean));
+  const ownForms = new Set(c.forms ?? []);
   const linked = new Set([...c.similar, ...c.opposite]);
 
   const run = (words: string[], other: Set<string | undefined>, existing: number, max: number) => {
@@ -67,7 +73,7 @@ export function validateSuggestions(c: RelatedCandidate, r: { similar: string[];
       const info = resolve(word);
       const reject = (reason: RejectReason) => { rejected.push({ word, reason }); };
       if (!info) reject('not-in-panna');
-      else if (info.normalized === c.normalized) reject('self');
+      else if (info.normalized === c.normalized || ownForms.has(word.trim().toLowerCase())) reject('self');
       else if (info.freq_rank === null || info.freq_rank > RARE_RANK) reject('rare');
       else if (!wnPosesOf(info.pos).some((p) => own.includes(p))) reject('pos');
       else if (other.has(info.normalized)) reject('both-lists');
