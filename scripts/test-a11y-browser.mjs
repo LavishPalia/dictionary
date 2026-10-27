@@ -11,6 +11,9 @@ const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized
 // The first word on that page, which Tab reaches first.
 const FIRST_WORD = book.prepare('SELECT headword FROM entries WHERE page_number = ? ORDER BY col_idx, position_in_col LIMIT 1').get(CALM_PAGE).headword;
 
+// Example sentences exist only in builds that have them (skipped otherwise).
+const HAS_EXAMPLE = (() => { try { return Boolean(book.prepare("SELECT 1 FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get()); } catch { return false; } })();
+
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9345;
 const BASE = 'http://localhost:3000';
@@ -93,6 +96,8 @@ async function main() {
       { name: 'book', go: async (size) => { await seed(quiet, saveWords); await open(`/page/${CALM_PAGE}`, size); await sleep(800); } },
       { name: 'book tip', go: async (size) => { await seed({ seen: {}, tips: {}, welcomeDone: true }); await open(`/page/${CALM_PAGE}`, size); await sleep(2000); } },
       { name: 'word card', go: async (size) => { await seed(quiet); await open(`/page/${CALM_PAGE}`, size); await openEntry('Calm'); await sleep(900); } },
+      ...(HAS_EXAMPLE ? [{ name: 'word card with an example', go: async (size) => { await seed(quiet); await open('/word/Ceremony', size); await sleep(900);
+        if (!(await evaluate(`Boolean(document.querySelector('#word-example'))`))) throw new Error('Ceremony has no #word-example'); } }] : []),
       { name: 'report form', go: async () => { await click('#report-btn'); await sleep(400); } },
       { name: 'search results', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await type('cam'); } },
       { name: 'search no entry', go: async () => { await type('ceremonis'); } },
@@ -111,6 +116,7 @@ async function main() {
       } },
     ];
 
+    if (!HAS_EXAMPLE) console.log('skipped: no example in this build (word card with an example)');
     const results = [];
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));

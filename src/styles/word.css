@@ -10,7 +10,10 @@
 .word-def { margin: 0; font: 17px/1.45 var(--font-fell); color: var(--ink); }
 .word-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: 14px; }
 .word-actions + .ui-divider { margin-top: 16px; }
-.word-example { margin: 4px 0 0; font: italic 16px/1.4 var(--font-fell); color: var(--ink); }
+.word-example { margin: 12px 0 0; padding-left: 12px; border-left: 2px solid var(--brass); overflow-wrap: anywhere; }
+.word-example-en { margin: 0; font: italic 16px/1.4 var(--font-fell); color: var(--ink); }
+.word-example-en b { font-style: normal; font-weight: bold; }
+.word-example-hi { margin: 4px 0 0; font: 16px/1.5 var(--font-deva); color: var(--ink-soft); }
 
 .word-related + .word-related { margin-top: 10px; }
 .word-related-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 6px 0 0; padding: 0; list-style: none; }

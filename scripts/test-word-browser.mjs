@@ -8,6 +8,13 @@ import Database from 'better-sqlite3';
 const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
   .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
+// Example sentences: present only when the build has them (before generation there are none).
+const book = new Database('data/dictionary.db', { readonly: true });
+const rowOf = (sql, ...args) => { try { return book.prepare(sql).get(...args); } catch { return undefined; } };
+const CEREMONY = rowOf('SELECT e.en, e.hi, e.exact FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = ?', 'ceremony');
+const INEXACT = rowOf('SELECT n.headword, e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE e.exact = 0 LIMIT 1');
+const NO_EXAMPLE = rowOf('SELECT headword FROM entries WHERE id NOT IN (SELECT entry_id FROM examples) LIMIT 1')?.headword ?? 'About';
+
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9319;
 const BASE = 'http://localhost:3000';
@@ -121,6 +128,46 @@ async function main() {
       check(`${sizeName}: "See on page" closes the sheet and marks the word on the page`,
         !(await sheet()) && await evaluate(`[...document.querySelectorAll('.pencil-underlined')].some((e) => e.textContent.trim() === 'Camel')`));
       check(`${sizeName}: nothing overflows sideways`, await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
+
+      // ── The example sentence ──
+      const exampleCard = () => evaluate(`(() => {
+        const ex = document.querySelector('#word-example');
+        if (!ex) return null;
+        const hi = ex.querySelector('.word-example-hi');
+        const r = document.querySelector('#word-sheet').getBoundingClientRect();
+        return { text: ex.querySelector('p').textContent, bold: [...ex.querySelectorAll('p:first-child b')].map((b) => b.textContent), hi: hi && { text: hi.textContent, lang: hi.getAttribute('lang') },
+          hiLangs: [...ex.querySelectorAll('*')].filter((n) => /[\u0900-\u097F]/.test(n.textContent) && n.children.length === 0).every((n) => n.closest('[lang="hi"]')),
+          fits: ex.scrollWidth <= ex.clientWidth + 1 && ex.getBoundingClientRect().right <= r.right + 1 };
+      })()`);
+      await open(`/word/${NO_EXAMPLE}`, size);
+      await sleep(600);
+      check(`${sizeName}: a word with no example shows no example section`, await evaluate(`Boolean(document.querySelector('#word-sheet')) && !document.querySelector('#word-example') && !document.querySelector('.word-example-hi')`), NO_EXAMPLE);
+      if (!CEREMONY) console.log(`${sizeName}: skipped: no example in this build (ceremony)`);
+      else {
+        await open('/word/Ceremony', size);
+        await sleep(600);
+        const ex = await exampleCard();
+        check(`${sizeName}: Ceremony shows its example sentence`, ex?.text === CEREMONY.en, ex);
+        check(`${sizeName}: the headword in the sentence is bold`, CEREMONY.exact ? ex?.bold.length === 1 && ex.bold[0].toLowerCase() === 'ceremony' : ex?.bold.length === 0, ex?.bold);
+        check(`${sizeName}: the Hindi translation sits below it, marked as Hindi`, ex?.hi?.text === CEREMONY.hi && ex.hi.lang === 'hi' && ex.hiLangs, ex?.hi);
+        check(`${sizeName}: the example fits inside the card`, ex?.fits === true, ex);
+        check(`${sizeName}: the example comes after the meaning`, await evaluate(`Boolean(document.querySelector('.word-def').compareDocumentPosition(document.querySelector('#word-example')) & Node.DOCUMENT_POSITION_FOLLOWING)`));
+      }
+      if (!INEXACT) console.log(`${sizeName}: skipped: no inexact example in this build`);
+      else {
+        await open(`/word/${INEXACT.headword}`, size);
+        await sleep(600);
+        const ex = await exampleCard();
+        check(`${sizeName}: an inexact example shows the plain sentence, no bold`, ex?.text === INEXACT.en && ex.bold.length === 0, ex);
+      }
+    }
+    // The narrowest phone: nothing overflows with the example open.
+    {
+      await open('/word/Ceremony', { width: 320, height: 640, mobile: true });
+      await sleep(600);
+      if (!CEREMONY) console.log('320px: skipped: no example in this build (ceremony)');
+      else check('320px: the word card with an example does not overflow', await evaluate(`document.documentElement.scrollWidth <= innerWidth && document.querySelector('#word-sheet').scrollWidth <= document.querySelector('#word-sheet').clientWidth + 1`),
+        await evaluate(`({ doc: document.documentElement.scrollWidth, w: innerWidth, sheet: [document.querySelector('#word-sheet').scrollWidth, document.querySelector('#word-sheet').clientWidth] })`));
     }
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }

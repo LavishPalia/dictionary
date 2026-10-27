@@ -30,6 +30,14 @@ interface WordDetailDrawerProps {
 
 // The word sheet: a bottom sheet on phones, a side panel beside the book on desktop. Hindi is the largest
 // thing after the word itself. Example sentences and similar/opposite words appear only for entries that have them.
+/** The sentence with the headword in <b>; a blank that does not fit the sentence is ignored. */
+function exampleParts(en: string, blank?: [number, number]): React.ReactNode {
+  if (!blank) return en;
+  const [start, length] = blank;
+  if (!Number.isInteger(start) || !Number.isInteger(length) || start < 0 || length <= 0 || start + length > en.length) return en;
+  return <>{en.slice(0, start)}<b>{en.slice(start, start + length)}</b>{en.slice(start + length)}</>;
+}
+
 export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   entry,
   pageNumber,
@@ -122,6 +130,12 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
       {reporting ? <ReportForm entry={entry} dataVersion={dataVersion} onBack={backFromReport} /> : (<>
       <p className="word-hi" lang="hi">{entry.meaning_hi}</p>
       <p className="word-def">{entry.definition_en}</p>
+      {entry.example && (
+        <div id="word-example" className="word-example">
+          <p className="word-example-en">{exampleParts(entry.example.en, entry.example.blank)}</p>
+          <p className="word-example-hi" lang="hi">{entry.example.hi}</p>
+        </div>
+      )}
 
       <div className="word-actions">
         {speakButton('en', 'English', 'English word')}
