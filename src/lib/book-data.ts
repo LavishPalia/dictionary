@@ -446,7 +446,7 @@ export function locateWords(words: string[]): Record<string, number> {
 }
 
 // Grammar words (the, of, and…) make poor words of the day: learners know them, and they have no single meaning.
-const GRAMMAR_POS = ['art.', 'prep.', 'pron.', 'det.', 'conj.', 'num.', 'interj.', 'aux. v.', 'modal v.'];
+export const GRAMMAR_POS = ['art.', 'prep.', 'pron.', 'det.', 'conj.', 'num.', 'interj.', 'aux. v.', 'modal v.'];
 
 /**
  * The word of the day for a date (YYYY-MM-DD): the same for everyone that day. Drawn from words outside the 1,500

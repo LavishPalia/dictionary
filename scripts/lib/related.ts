@@ -15,7 +15,7 @@ export const MAX_OPPOSITE = 3;
 const SIMILAR_SENSES = 1;
 const OPPOSITE_SENSES = 3;
 const SALIENT_SENSES = 3;
-const RARE_RANK = 25000;
+export const RARE_RANK = 25000;
 
 export interface Related {
   similar: string[]; // normalized headwords, best first
