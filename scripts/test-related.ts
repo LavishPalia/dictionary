@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import Database from 'better-sqlite3';
 import { SOURCES_DIR, WN_POS_LABEL, WnPos, WordNet } from './lib/lexicon';
-import { MAX_OPPOSITE, MAX_SIMILAR, Related, findRelated, mergeGeminiLinks, wnPosesOf } from './lib/related';
+import { MAX_OPPOSITE, MAX_SIMILAR, Related, findRelated, mergeGeminiLinks, wnPosesOf, GEMINI_RARE_RANK } from './lib/related';
 import { questionKind } from '../src/lib/review';
 
 let failures = 0;
@@ -60,7 +60,9 @@ const wnFixture = new Map<string, Related>([
   ['hot', { similar: ['warm'], opposite: ['cold', 'mild', 'cool'] }],
   ['big', { similar: ['large'], opposite: ['small'] }],
 ]);
-const fixtureWords = new Set(['cold', 'hot', 'big', 'large', 'small', 'chilly', 'cool', 'icy', 'frigid', 'warm', 'mild', 'tiny', 'wintry', 'huge']);
+const fixtureWords = new Set(['cold', 'hot', 'big', 'large', 'small', 'chilly', 'cool', 'icy', 'frigid', 'warm', 'mild', 'tiny', 'wintry', 'huge', 'frequent', 'obscure', 'arcane']);
+const fixtureRank = new Map([...fixtureWords].map((w) => [w, 100] as [string, number]));
+fixtureRank.set('frequent', 9000); fixtureRank.set('obscure', 12000); fixtureRank.delete('arcane'); // arcane has no rank: counts as rare
 const fixtureRows = [
   { normalized: 'cold', similar: ['wintry', 'icy', 'nope'], opposite: ['warm', 'cold'], model: 'fixture' },
   { normalized: 'big', similar: ['huge', 'big', 'large'], opposite: ['tiny', 'small'], model: 'fixture' }, // small is WordNet's: no Gemini reverse
@@ -68,8 +70,10 @@ const fixtureRows = [
   { normalized: 'warm', similar: [], opposite: ['hot'], model: 'fixture' }, // hot lists warm as similar: dropped
   { normalized: 'icy', similar: [], opposite: ['cold'], model: 'fixture' }, // cold lists icy as similar: dropped
   { normalized: 'tiny', similar: [], opposite: ['hot'], model: 'fixture' }, // hot is full: forward link, no reverse
+  { normalized: 'large', similar: ['frequent', 'obscure', 'arcane'], opposite: [], model: 'fixture' }, // 9,000 kept; 12,000 and unranked dropped
+  { normalized: 'obscure', similar: [], opposite: ['huge'], model: 'fixture' }, // forward onto common huge is kept; the reverse onto obscure (12,000) is not
 ];
-const merged = mergeGeminiLinks(wnFixture, [...fixtureRows].reverse(), (w) => fixtureWords.has(w));
+const merged = mergeGeminiLinks(wnFixture, [...fixtureRows].reverse(), (w) => fixtureWords.has(w), fixtureRank);
 const words = (w: string, kind: 'similar' | 'opposite', source?: string) =>
   (merged.get(w)?.[kind] ?? []).filter((l) => !source || l.source === source).map((l) => l.word);
 check('WordNet links are unchanged and first', JSON.stringify(words('cold', 'similar', 'wordnet')) === JSON.stringify(wnFixture.get('cold')!.similar)
@@ -89,9 +93,13 @@ check('a forward opposite is dropped when either word lists the other as similar
   [merged.get('warm'), merged.get('icy')]);
 check('no pair is both similar (either way round) and opposite', [...merged].every(([w, l]) => l.opposite.every((o) =>
   !l.similar.some((x) => x.word === o.word) && !merged.get(o.word)?.similar.some((x) => x.word === w))));
+check(`Gemini links to words ranked beyond ${GEMINI_RARE_RANK} (or unranked) are dropped, 9,000 is kept`,
+  words('large', 'similar', 'gemini').join() === 'frequent', merged.get('large'));
+check('a reverse opposite onto a rare word is not added, the forward one is', words('obscure', 'opposite', 'gemini').join() === 'huge'
+  && !words('huge', 'opposite').includes('obscure'), [merged.get('obscure'), merged.get('huge')]);
 check('similar links are not made two-way', !words('huge', 'similar').includes('big') && !words('wintry', 'similar').includes('cold'));
-check('merging is deterministic', JSON.stringify([...merged]) === JSON.stringify([...mergeGeminiLinks(wnFixture, fixtureRows, (w) => fixtureWords.has(w))]));
-check('merging without Gemini rows keeps only WordNet links', [...mergeGeminiLinks(wnFixture, [], (w) => fixtureWords.has(w))]
+check('merging is deterministic', JSON.stringify([...merged]) === JSON.stringify([...mergeGeminiLinks(wnFixture, fixtureRows, (w) => fixtureWords.has(w), fixtureRank)]));
+check('merging without Gemini rows keeps only WordNet links', [...mergeGeminiLinks(wnFixture, [], (w) => fixtureWords.has(w), fixtureRank)]
   .every(([, l]) => [...l.similar, ...l.opposite].every((x) => x.source === 'wordnet')));
 
 // The built database.

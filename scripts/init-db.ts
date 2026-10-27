@@ -258,7 +258,7 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
   const geminiRows: GeminiRow[] = fs.existsSync(RELATED_GEMINI_FILE)
     ? fs.readFileSync(RELATED_GEMINI_FILE, 'utf8').split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l) as GeminiRow)
     : [];
-  const related = [...mergeGeminiLinks(wordnetLinks, geminiRows, (w) => entryByWord.has(w))]
+  const related = [...mergeGeminiLinks(wordnetLinks, geminiRows, (w) => entryByWord.has(w), freqRank)]
     .flatMap(([word, r]) => (['similar', 'opposite'] as const).flatMap((kind) => r[kind].map((link, rank) => ({
       entry_id: entryByWord.get(word)!.id, kind, rank, related_id: entryByWord.get(link.word)!.id, source: link.source,
     }))));

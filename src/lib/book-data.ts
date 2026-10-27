@@ -355,9 +355,10 @@ export interface QuizCard {
 const toOption = (r: EntryRow): QuizOption =>
   ({ headword: r.headword, normalized: r.normalized, pos: r.pos, meaning_hi: r.meaning_hi, definition_en: r.definition_en });
 
-function relatedRows(entryId: string, kind: 'similar' | 'opposite'): HindiSearchRow[] {
+function relatedRows(entryId: string, kind: 'similar' | 'opposite', source?: 'wordnet' | 'gemini'): HindiSearchRow[] {
   return db().prepare(`SELECT e.* FROM related r JOIN entries e ON e.id = r.related_id
-    WHERE r.entry_id = ? AND r.kind = ? ORDER BY r.rank`).all(entryId, kind) as HindiSearchRow[];
+    WHERE r.entry_id = ? AND r.kind = ? ${source ? 'AND r.source = ?' : ''} ORDER BY r.rank`)
+    .all(...(source ? [entryId, kind, source] : [entryId, kind])) as HindiSearchRow[];
 }
 
 /**
@@ -366,9 +367,12 @@ function relatedRows(entryId: string, kind: 'similar' | 'opposite'): HindiSearch
  * its opposites, or similar to one, so exactly one option is right.
  */
 function oppositeQuestion(row: HindiSearchRow, nearest: HindiSearchRow[], random: () => number): QuizCard['opposite'] {
+  // Gemini opposites stay out of Review until the native review of data/sources/RELATED_GEMINI_REVIEW.csv: the right
+  // answer is always a WordNet opposite. Every opposite (either source) is still kept out of the wrong options.
   const opposites = relatedRows(row.id, 'opposite');
-  if (!opposites.length) return undefined;
-  const answer = opposites[0];
+  const wordnetOpposites = relatedRows(row.id, 'opposite', 'wordnet');
+  if (!wordnetOpposites.length) return undefined;
+  const answer = wordnetOpposites[0];
   const excluded = new Set([row.normalized, ...opposites.flatMap((o) => [o.normalized, ...relatedRows(o.id, 'similar').map((s) => s.normalized)])]);
   const picked: HindiSearchRow[] = [];
   const similar = relatedRows(row.id, 'similar');

@@ -39,6 +39,8 @@ Rules:
 - Give up to 5 similar words and up to 3 opposite words. Fewer is fine; do not pad.
 - Do not repeat the words already shown, and never give the headword itself.
 - Leave "opposite" empty when the word has no true opposite (for example table, know).
+- An opposite must be a true opposite in meaning, not a related role or counterpart (doctor/patient, buyer/seller and teacher/student are not opposites).
+- Similar words must be common everyday words a learner would know. No literary, archaic or formal rarities (for example hearken, visage).
 - Return one object per entry, with the headword copied exactly as given.`;
 
 const RESPONSE_SCHEMA = {

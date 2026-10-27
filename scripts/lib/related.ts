@@ -16,6 +16,8 @@ const SIMILAR_SENSES = 1;
 const OPPOSITE_SENSES = 3;
 const SALIENT_SENSES = 3;
 export const RARE_RANK = 25000;
+/** Gemini links are kept only to words ranked this common or better (null rank counts as rare, so is dropped). */
+export const GEMINI_RARE_RANK = 10000;
 
 export interface Related {
   similar: string[]; // normalized headwords, best first
@@ -110,8 +112,9 @@ export interface GeminiRow { normalized: string; similar: string[]; opposite: st
  * itself, or is already linked (either kind) is skipped; the caps count WordNet's links first.
  * Opposites also work both ways: if A is opposite B, B gets A too, unless B is full, or already links A.
  * Similar links are not made two-way.
+ * A Gemini link (either direction) is kept only when the word linked TO has freq_rank <= GEMINI_RARE_RANK.
  */
-export function mergeGeminiLinks(wordnet: Map<string, Related>, rows: GeminiRow[], isEntry: (word: string) => boolean): Map<string, SourcedRelated> {
+export function mergeGeminiLinks(wordnet: Map<string, Related>, rows: GeminiRow[], isEntry: (word: string) => boolean, rank: Map<string, number>): Map<string, SourcedRelated> {
   const out = new Map<string, SourcedRelated>();
   for (const [word, r] of [...wordnet].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))) {
     out.set(word, {
@@ -129,6 +132,7 @@ export function mergeGeminiLinks(wordnet: Map<string, Related>, rows: GeminiRow[
   const add = (word: string, kind: 'similar' | 'opposite', other: string): boolean => {
     const l = linksOf(word);
     if (other === word || !isEntry(word) || !isEntry(other) || linked(l, other)) return false;
+    if ((rank.get(other) ?? Infinity) > GEMINI_RARE_RANK) return false; // the word being linked to must be common
     // Never contradict: a pair is not similar (either way round) and opposite at once.
     const clash: 'similar' | 'opposite' = kind === 'similar' ? 'opposite' : 'similar';
     if (lists(other, clash, word)) return false;
