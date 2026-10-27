@@ -63,10 +63,11 @@ const wnFixture = new Map<string, Related>([
 const fixtureWords = new Set(['cold', 'hot', 'big', 'large', 'small', 'chilly', 'cool', 'icy', 'frigid', 'warm', 'mild', 'tiny', 'wintry', 'huge']);
 const fixtureRows = [
   { normalized: 'cold', similar: ['wintry', 'icy', 'nope'], opposite: ['warm', 'cold'], model: 'fixture' },
-  { normalized: 'big', similar: ['huge', 'big', 'large'], opposite: ['tiny'], model: 'fixture' },
+  { normalized: 'big', similar: ['huge', 'big', 'large'], opposite: ['tiny', 'small'], model: 'fixture' }, // small is WordNet's: no Gemini reverse
   { normalized: 'hot', similar: ['cold'], opposite: ['huge'], model: 'fixture' },
-  { normalized: 'warm', similar: [], opposite: ['hot'], model: 'fixture' }, // hot is full: no reverse
-  { normalized: 'icy', similar: [], opposite: ['cold'], model: 'fixture' }, // cold lists icy as similar: no reverse
+  { normalized: 'warm', similar: [], opposite: ['hot'], model: 'fixture' }, // hot lists warm as similar: dropped
+  { normalized: 'icy', similar: [], opposite: ['cold'], model: 'fixture' }, // cold lists icy as similar: dropped
+  { normalized: 'tiny', similar: [], opposite: ['hot'], model: 'fixture' }, // hot is full: forward link, no reverse
 ];
 const merged = mergeGeminiLinks(wnFixture, [...fixtureRows].reverse(), (w) => fixtureWords.has(w));
 const words = (w: string, kind: 'similar' | 'opposite', source?: string) =>
@@ -79,9 +80,15 @@ check('Gemini words gain gemini links; non-entries, itself and already-linked ar
   && JSON.stringify(words('cold', 'opposite', 'gemini')) === '["warm"]', [merged.get('cold'), merged.get('big')]);
 check('caps hold (5 similar, 3 opposite), counting WordNet first', [...merged.values()].every((l) => l.similar.length <= MAX_SIMILAR && l.opposite.length <= MAX_OPPOSITE));
 check('a Gemini opposite gets its reverse link', words('tiny', 'opposite', 'gemini').includes('big') && words('warm', 'opposite', 'gemini').includes('cold'));
-check('the reverse opposite is blocked by a full list or an existing similar link',
-  words('warm', 'opposite').includes('hot') && !words('hot', 'opposite').includes('warm') && words('hot', 'opposite').length === MAX_OPPOSITE
-  && words('icy', 'opposite').includes('cold') && !words('cold', 'opposite').includes('icy'), [merged.get('hot'), merged.get('cold')]);
+check('the reverse opposite is blocked by a full list', words('tiny', 'opposite').includes('hot') && !words('hot', 'opposite').includes('tiny')
+  && words('hot', 'opposite').length === MAX_OPPOSITE, merged.get('hot'));
+check('a WordNet opposite gets no Gemini reverse link', words('small', 'opposite', 'gemini').length === 0 && words('big', 'opposite', 'gemini').join() === 'tiny',
+  [merged.get('small'), merged.get('big')]);
+check('a forward opposite is dropped when either word lists the other as similar',
+  !words('warm', 'opposite').includes('hot') && !words('icy', 'opposite').includes('cold') && !words('cold', 'opposite').includes('icy'),
+  [merged.get('warm'), merged.get('icy')]);
+check('no pair is both similar (either way round) and opposite', [...merged].every(([w, l]) => l.opposite.every((o) =>
+  !l.similar.some((x) => x.word === o.word) && !merged.get(o.word)?.similar.some((x) => x.word === w))));
 check('similar links are not made two-way', !words('huge', 'similar').includes('big') && !words('wintry', 'similar').includes('cold'));
 check('merging is deterministic', JSON.stringify([...merged]) === JSON.stringify([...mergeGeminiLinks(wnFixture, fixtureRows, (w) => fixtureWords.has(w))]));
 check('merging without Gemini rows keeps only WordNet links', [...mergeGeminiLinks(wnFixture, [], (w) => fixtureWords.has(w))]

@@ -125,25 +125,28 @@ export function mergeGeminiLinks(wordnet: Map<string, Related>, rows: GeminiRow[
     return l;
   };
   const linked = (l: SourcedRelated, other: string) => [...l.similar, ...l.opposite].some((x) => x.word === other);
+  const lists = (word: string, kind: 'similar' | 'opposite', other: string) => !!out.get(word)?.[kind].some((x) => x.word === other);
   const add = (word: string, kind: 'similar' | 'opposite', other: string): boolean => {
     const l = linksOf(word);
     if (other === word || !isEntry(word) || !isEntry(other) || linked(l, other)) return false;
+    // Never contradict: a pair is not similar (either way round) and opposite at once.
+    const clash: 'similar' | 'opposite' = kind === 'similar' ? 'opposite' : 'similar';
+    if (lists(other, clash, word)) return false;
     if (l[kind].length >= (kind === 'similar' ? MAX_SIMILAR : MAX_OPPOSITE)) return false;
     l[kind].push({ word: other, source: 'gemini' });
     return true;
   };
 
   const sorted = [...rows].sort((a, b) => (a.normalized < b.normalized ? -1 : a.normalized > b.normalized ? 1 : 0));
+  for (const row of sorted) for (const w of row.similar ?? []) add(row.normalized, 'similar', w);
+  // Opposites after every similar link is in place, so a similar link always wins over an opposite.
+  const added: [string, string][] = [];
   for (const row of sorted) {
-    for (const w of row.similar ?? []) add(row.normalized, 'similar', w);
-    for (const w of row.opposite ?? []) add(row.normalized, 'opposite', w);
+    for (const w of row.opposite ?? []) if (add(row.normalized, 'opposite', w)) added.push([row.normalized, w]);
   }
-  // Reverse opposites, after every word has its own links so its own suggestions come first.
-  for (const row of sorted) {
-    for (const w of row.opposite ?? []) {
-      if (out.get(row.normalized)?.opposite.some((x) => x.word === w)) add(w, 'opposite', row.normalized);
-    }
-  }
+  // Reverse only the opposites Gemini actually added (not WordNet's, not skipped ones), after every word has its own
+  // links so its own suggestions come first.
+  for (const [word, other] of added) add(other, 'opposite', word);
   // Drop entries that ended up empty (a skipped link can leave one behind).
   for (const [word, l] of out) if (!l.similar.length && !l.opposite.length) out.delete(word);
   return out;
