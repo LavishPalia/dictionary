@@ -98,6 +98,12 @@ async function main() {
       check(`${sizeName}: closing returns the address to the page`, !(await sheet()) && await evaluate(`location.pathname.startsWith('/page/')`), await evaluate('location.pathname'));
       check(`${sizeName}: nothing overflows sideways`, await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
 
+      // Gemini-added similar words show up as chips too: "know" had none from WordNet.
+      await open('/word/know', size);
+      for (let t = 0; t < 40 && !(await sheet()); t++) await sleep(100);
+      s = await sheet();
+      check(`${sizeName}: Know lists similar words, including Understand`, s?.name === 'know' && s.similar.length >= 1 && s.similar.includes('understand'), s);
+
       // From Saved: the address is left alone; similar words open too.
       await evaluate(`(async () => { localStorage.setItem('panna_saved_words', JSON.stringify([{ ...(await (await fetch('/api/word/also')).json()).entry, saved_at: Date.now() }])); return true; })()`);
       await open('/', size);
