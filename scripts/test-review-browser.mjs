@@ -272,7 +272,7 @@ async function main() {
       const blanked = CEREMONY.en.slice(0, CEREMONY.blank_start) + '______' + CEREMONY.en.slice(CEREMONY.blank_start + CEREMONY.blank_len);
       check(`${sizeName}: the sentence shows ______ where the word was`, (await sentence()) === blanked, await sentence());
       check(`${sizeName}: four distinct options, all lower case like the gap`, s?.options.length === 4 && new Set(s.options).size === 4 && s.options.includes('ceremony') && s.options.every((o) => o === o.toLowerCase()), s?.options);
-      check(`${sizeName}: the Hindi line is hidden before answering`, !(await evaluate(`Boolean(document.querySelector('#review-sentence-hi'))`)));
+      check(`${sizeName}: the Hindi translation is shown before answering, marked lang="hi"`, await evaluate(`document.querySelector('#review-sentence-hi')?.getAttribute('lang') === 'hi' && document.querySelector('#review-sentence-hi').textContent === ${JSON.stringify(CEREMONY.hi)}`));
       if (sizeName === 'phone') check('phone: nothing overflows sideways', await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
       const shot = async (name) => {
         if (!process.env.SHOTS) return;
@@ -290,7 +290,7 @@ async function main() {
       await sleep(300);
       s = await screen();
       check(`${sizeName}: key ${rightAt} answers, and the answer is right`, s?.feedback?.startsWith('Right!'), s?.feedback);
-      check(`${sizeName}: the full sentence shows after answering`, (await sentence()) === CEREMONY.en, await sentence());
+      check(`${sizeName}: the full English sentence shows after answering, the Hindi stays`, (await sentence()) === CEREMONY.en, await sentence());
       check(`${sizeName}: the Hindi translation shows, marked lang="hi"`, await evaluate(`document.querySelector('#review-sentence-hi')?.getAttribute('lang') === 'hi' && document.querySelector('#review-sentence-hi').textContent === ${JSON.stringify(CEREMONY.hi)}`));
       check(`${sizeName}: the answered card has no axe violations`, JSON.stringify(await axe()) === '[]', await axe());
       await shot('after');

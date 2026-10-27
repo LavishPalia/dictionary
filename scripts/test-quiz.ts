@@ -1,7 +1,7 @@
 // Review cards for every entry: three wrong options, none sharing a Hindi meaning with the answer, mostly the
 // same part of speech. Usage: npx tsx scripts/test-quiz.ts   (after npm run build:data)
 import Database from 'better-sqlite3';
-import { getQuizCards } from '../src/lib/book-data';
+import { getQuizCards, meaningInSentence } from '../src/lib/book-data';
 
 let seed = 42;
 const random = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
@@ -32,6 +32,11 @@ for (let i = 0; i < all.length; i += 20) {
       blankCards++;
       const span = entry.example!.en.slice(blank[0], blank[0] + blank[1]);
       if (span.toLowerCase() !== entry.headword.toLowerCase()) fail(`${entry.headword}: blank covers "${span}"`);
+      for (const d of distractors) {
+        const row = db.prepare('SELECT meaning_hi_search FROM entries WHERE normalized = ?').get(d.normalized) as { meaning_hi_search: string };
+        if (meaningInSentence(row.meaning_hi_search, entry.example!.hi)) fail(`${entry.headword}: blank option "${d.headword}" (${d.meaning_hi}) is translated in "${entry.example!.hi}"`);
+        if (d.headword !== d.headword.toLowerCase()) fail(`${entry.headword}: blank option "${d.headword}" is capitalised`);
+      }
       for (const d of distractors) if (d.headword.toLowerCase() === entry.headword.toLowerCase() || d.normalized === entry.normalized) fail(`${entry.headword}: blank option "${d.headword}" equals the answer`);
     }
     // "Which word means the opposite?": exactly one option is one of the word's opposites, none is the word itself

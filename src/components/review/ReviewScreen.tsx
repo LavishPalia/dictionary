@@ -46,11 +46,11 @@ function buildQuestion(card: QuizCard, kind: QuestionKind, retry: boolean): Ques
     return { card, kind, options, retry };
   }
   if (kind === 'fill-blank' && card.entry.example?.blank) {
-    // Options are cased like the gap (the sentence's own capital or lower case), so capitalisation never gives the answer away.
+    // Options are cased like the gap, so capitalisation never gives the answer away (distractors are lower case already).
     const { en, blank } = card.entry.example;
     const span = en.slice(blank[0], blank[0] + blank[1]);
     const upper = span.charAt(0) !== span.charAt(0).toLowerCase();
-    const fit = (w: string) => w.charAt(0)[upper ? 'toUpperCase' : 'toLowerCase']() + w.slice(1);
+    const fit = (w: string) => (upper ? w.charAt(0).toUpperCase() + w.slice(1) : w);
     const options = shuffle([
       { key: card.entry.normalized, text: span, correct: true },
       ...card.distractors.map((d) => ({ key: d.normalized, text: fit(d.headword), correct: false })),
@@ -257,7 +257,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
                   <p className="review-sentence" id="review-sentence">
                     {en.slice(0, start)}{answered ? <b>{en.slice(start, start + len)}</b> : <span className="review-blank">______</span>}{en.slice(start + len)}
                   </p>
-                  {answered && <p className="review-sentence-hi ui-hi" lang="hi" id="review-sentence-hi">{hi}</p>}
+                  <p className="review-sentence-hi ui-hi" lang="hi" id="review-sentence-hi">{hi}</p>
                 </div>
               );
             })()}
