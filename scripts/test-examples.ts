@@ -42,5 +42,12 @@ bad('Hindi over 120 chars', { example_hi: 'क'.repeat(121) });
 bad('Latin in Hindi', { example_hi: 'समारोह postponed हुआ।' });
 bad('no terminal punctuation', { example_en: 'The ceremony was postponed because of rain' });
 
+bad('5 words', { example_en: 'The ceremony was postponed yesterday.' });
+bad('17 words', { example_en: 'The ceremony was postponed because it rained so hard that the guests could not reach the hall.' });
+check('17-word fixture is 17 words', 'The ceremony was postponed because it rained so hard that the guests could not reach the hall.'.split(' ').length === 17);
+const wc = (en: string) => validateExample(req, { ...ok, example_en: en });
+check('accepts 6 words', wc('The ceremony was postponed again today.') === null, String(wc('The ceremony was postponed again today.')));
+const sixteen = 'The ceremony was postponed because it rained so hard that the guests stayed home all day.';
+check('accepts 16 words', wc(sixteen) === null && sixteen.split(' ').length === 16, String(wc(sixteen)));
 if (failed) { console.error(`${failed} check(s) failed.`); process.exit(1); }
 console.log('Example checks passed.');

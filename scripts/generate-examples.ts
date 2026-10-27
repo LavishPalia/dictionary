@@ -31,6 +31,7 @@ interface ProgressRow {
   model?: string;
   raw?: { example_en: string; example_hi: string }; // Gemini's output as received
   status: 'valid' | 'rejected' | 'omitted';
+  rejectionReason?: string; // last validation rejection; survives a later omission so the retry prompt can carry it
   reason?: string; // why it was rejected / omitted (last attempt)
   example?: ExampleRow; // present only when valid
 }
@@ -190,7 +191,7 @@ async function main(): Promise<void> {
   while (pending().length && requests < maxRequests) {
     const batch: Prompted[] = pending().slice(0, BATCH_SIZE).map((c) => {
       const prev = progress.get(c.normalized);
-      return { ...c, retryReason: prev?.status === 'rejected' ? prev.reason : undefined };
+      return { ...c, retryReason: prev?.rejectionReason };
     });
     let result: { model: string; items: Array<{ headword: string; example_en?: string; example_hi?: string }> };
     try {
@@ -217,7 +218,7 @@ async function main(): Promise<void> {
       if (!item) {
         const giveUp = attempts >= MAX_ATTEMPTS;
         progress.set(c.normalized, {
-          ...base, rejections: prev?.rejections ?? 0, final: giveUp, status: 'omitted', raw: prev?.raw,
+          ...base, rejections: prev?.rejections ?? 0, final: giveUp, status: 'omitted', raw: prev?.raw, rejectionReason: prev?.rejectionReason,
           reason: giveUp ? `omitted by Gemini in ${attempts} responses; given up` : `omitted by Gemini (attempt ${attempts})`,
         });
         continue;
@@ -232,7 +233,7 @@ async function main(): Promise<void> {
         });
       } else {
         const rejections = (prev?.rejections ?? 0) + 1;
-        progress.set(c.normalized, { ...base, rejections, final: rejections >= 2, raw, status: 'rejected', reason: reason ?? 'English must contain the word exactly once' });
+        progress.set(c.normalized, { ...base, rejections, final: rejections >= 2, raw, status: 'rejected', rejectionReason: reason ?? 'English must contain the word exactly once', reason: reason ?? 'English must contain the word exactly once' });
       }
     }
     saveProgress(progress);

@@ -29,6 +29,8 @@ export function validateExample(req: ExampleRequest, r: ExampleResult): string |
   const en = (r.example_en ?? '').trim();
   const hi = (r.example_hi ?? '').trim();
   if (!findWord(en, req.headword, req.forms)) return 'English must contain the word exactly once';
+  const words = en.split(/\s+/).filter(Boolean).length;
+  if (words < 6 || words > 16) return `English must be 6-16 words (got ${words})`;
   if (en.length < 20 || en.length > 100) return 'English must be 20-100 characters';
   if (!/[.?!]$/.test(en)) return 'English must end with . ? or !';
   if (DEVANAGARI.test(en)) return 'English must not contain Devanagari';
