@@ -12,7 +12,7 @@ const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized
 const FIRST_WORD = book.prepare('SELECT headword FROM entries WHERE page_number = ? ORDER BY col_idx, position_in_col LIMIT 1').get(CALM_PAGE).headword;
 
 // Example sentences exist only in builds that have them (skipped otherwise).
-const HAS_EXAMPLE = (() => { try { return Boolean(book.prepare("SELECT 1 FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get()); } catch { return false; } })();
+const HAS_EXAMPLE = (() => { try { return Boolean(book.prepare("SELECT 1 FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get()); } catch (e) { if (/no such table: examples/.test(e.message)) return false; throw e; } })();
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9345;

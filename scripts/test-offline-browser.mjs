@@ -9,7 +9,7 @@ import Database from 'better-sqlite3';
 const book = new Database('data/dictionary.db', { readonly: true });
 const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
 // Example sentences exist only in builds that have them (skipped otherwise).
-const CEREMONY = (() => { try { return book.prepare("SELECT n.page_number AS page, e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get(); } catch { return undefined; } })();
+const CEREMONY = (() => { try { return book.prepare("SELECT e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get(); } catch (e) { if (/no such table: examples/.test(e.message)) return undefined; throw e; } })();
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9341;

@@ -13,6 +13,7 @@
 .word-example { margin: 12px 0 0; padding-left: 12px; border-left: 2px solid var(--brass); overflow-wrap: anywhere; }
 .word-example-en { margin: 0; font: italic 16px/1.4 var(--font-fell); color: var(--ink); }
 .word-example-en b { font-style: normal; font-weight: bold; }
+.word-example-note { margin: 4px 0 0; }
 .word-example-hi { margin: 4px 0 0; font: 16px/1.5 var(--font-deva); color: var(--ink-soft); }
 
 .word-related + .word-related { margin-top: 10px; }

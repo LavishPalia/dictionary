@@ -10,9 +10,11 @@ const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
 
 // Example sentences: present only when the build has them (before generation there are none).
 const book = new Database('data/dictionary.db', { readonly: true });
-const rowOf = (sql, ...args) => { try { return book.prepare(sql).get(...args); } catch { return undefined; } };
-const CEREMONY = rowOf('SELECT e.en, e.hi, e.exact FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = ?', 'ceremony');
+// Skip only when the build has no examples table; any other database error is a real failure.
+const rowOf = (sql, ...args) => { try { return book.prepare(sql).get(...args); } catch (e) { if (/no such table: examples/.test(e.message)) return undefined; throw e; } };
+const CEREMONY = rowOf('SELECT e.en, e.hi, e.exact, n.reviewed FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = ?', 'ceremony');
 const INEXACT = rowOf('SELECT n.headword, e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE e.exact = 0 LIMIT 1');
+const UNREVIEWED = rowOf('SELECT n.headword, e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.reviewed = 0 LIMIT 1');
 const NO_EXAMPLE = rowOf('SELECT headword FROM entries WHERE id NOT IN (SELECT entry_id FROM examples) LIMIT 1')?.headword ?? 'About';
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
@@ -121,7 +123,7 @@ async function main() {
       await sleep(600);
       s = await sheet();
       check(`${sizeName}: tapping an entry opens its sheet`, s?.name === 'Camel' && await evaluate(`location.pathname === '/word/Camel'`), s?.name);
-      check(`${sizeName}: reviewed entry has no "not yet checked" note`, s && !s.text.includes('not yet checked'));
+      check(`${sizeName}: reviewed entry has no "not yet checked by a reviewer" note`, s && !s.text.includes('not yet checked by a reviewer'));
       check(`${sizeName}: Hindi meaning is shown large`, await evaluate(`parseFloat(getComputedStyle(document.querySelector('.word-hi')).fontSize) >= 28`));
       await evaluate(`document.querySelector('#see-on-page-btn').click(); true`);
       await sleep(800);
@@ -152,6 +154,21 @@ async function main() {
         check(`${sizeName}: the Hindi translation sits below it, marked as Hindi`, ex?.hi?.text === CEREMONY.hi && ex.hi.lang === 'hi' && ex.hiLangs, ex?.hi);
         check(`${sizeName}: the example fits inside the card`, ex?.fits === true, ex);
         check(`${sizeName}: the example comes after the meaning`, await evaluate(`Boolean(document.querySelector('.word-def').compareDocumentPosition(document.querySelector('#word-example')) & Node.DOCUMENT_POSITION_FOLLOWING)`));
+      }
+      if (!CEREMONY) console.log(`${sizeName}: skipped: no example in this build (provenance note)`);
+      else {
+        const note = (word) => evaluate(`({ example: document.querySelector('#word-example-note')?.textContent ?? null, card: document.querySelector('#word-sheet').innerText.includes('Machine-written · not yet checked by a reviewer'), count: (document.querySelector('#word-sheet').innerText.match(/not yet checked/g) || []).length })`);
+        await open('/word/Ceremony', size);
+        await sleep(600);
+        const r = await note();
+        check(`${sizeName}: a reviewed entry labels its example as machine-written`, CEREMONY.reviewed === 1 ? r.example === 'Example machine-written · not yet checked' && !r.card : r.example === null, r);
+        if (!UNREVIEWED) console.log(`${sizeName}: skipped: no unreviewed entry with an example in this build`);
+        else {
+          await open(`/word/${UNREVIEWED.headword}`, size);
+          await sleep(600);
+          const u = await note();
+          check(`${sizeName}: an unreviewed entry is labelled once, by the card's own note`, u.example === null && u.card && u.count === 1, u);
+        }
       }
       if (!INEXACT) console.log(`${sizeName}: skipped: no inexact example in this build`);
       else {

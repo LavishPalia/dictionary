@@ -134,6 +134,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
         <div id="word-example" className="word-example">
           <p className="word-example-en">{exampleParts(entry.example.en, entry.example.blank)}</p>
           <p className="word-example-hi" lang="hi">{entry.example.hi}</p>
+          {/* An unreviewed entry already carries the card's own note; a reviewed one needs this one. */}
+          {entry.reviewed === 1 && <p className="word-provenance word-example-note" id="word-example-note">Example machine-written · not yet checked</p>}
         </div>
       )}
 
