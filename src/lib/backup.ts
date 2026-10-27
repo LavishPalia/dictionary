@@ -42,7 +42,8 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 const optionalString = (v: unknown) => v === undefined || typeof v === 'string';
 
 const isExample = (v: unknown): boolean => isObject(v) && typeof v.en === 'string' && typeof v.hi === 'string'
-  && (v.blank === undefined || (isArray(v.blank) && v.blank.length === 2 && v.blank.every((n) => Number.isInteger(n))));
+  && (v.blank === undefined || (isArray(v.blank) && v.blank.length === 2 && v.blank.every((n) => Number.isInteger(n))
+    && (v.blank[0] as number) >= 0 && (v.blank[1] as number) >= 1 && (v.blank[0] as number) + (v.blank[1] as number) <= (v.en as string).length));
 
 /** A saved word whose text fields are really text, so a hand-edited file can't crash the Saved page. */
 export function isSavedWord(w: unknown): boolean {

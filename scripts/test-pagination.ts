@@ -126,7 +126,7 @@ check('every example belongs to an entry', exampleRows.every((x) => x.normalized
 check('every example blank lies inside its sentence', exampleRows.every((x) =>
   x.blank_start >= 0 && x.blank_len >= 1 && x.blank_start + x.blank_len <= x.en.length), exampleRows.length);
 const badBlank = exampleRows.filter((x) => x.exact === 1
-  && x.en.substr(x.blank_start, x.blank_len).toLowerCase() !== x.normalized);
+  && x.en.slice(x.blank_start, x.blank_start + x.blank_len).toLowerCase() !== x.normalized);
 check('an exact blank is the headword itself', badBlank.length === 0, badBlank.slice(0, 5));
 console.log(`  (${exampleRows.length} example sentences)`);
 

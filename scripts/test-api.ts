@@ -39,7 +39,7 @@ async function testEndpoints() {
   if (ex) {
     check('GET /api/word/Ceremony carries an example with en, hi and a blank',
       typeof ex.en === 'string' && typeof ex.hi === 'string' && Array.isArray(ex.blank) && ex.blank.length === 2
-      && ex.en.slice(ex.blank[0], ex.blank[1]).toLowerCase() === 'ceremony', ex);
+      && ex.en.slice(ex.blank[0], ex.blank[0] + ex.blank[1]).toLowerCase() === 'ceremony', ex);
     const onPageEntry = [...page.body.column1, ...page.body.column2].find((e: { headword: string }) => e.headword === 'Ceremony');
     check(`GET /api/page/${pageNum} carries the same example`, JSON.stringify(onPageEntry?.example) === JSON.stringify(ex), onPageEntry?.example);
   } else {

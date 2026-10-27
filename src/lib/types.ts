@@ -8,7 +8,7 @@ export interface DictionaryEntry {
   definition_en: string;
   meaning_hi: string;
   etymology?: string;
-  /** One example sentence; blank is [start, end) of the word in `en`, set only when the word appears as written. */
+  /** One example sentence; blank is [start, length] of the word in `en` (en.slice(start, start + length)), set only when the word appears as written. */
   example?: { en: string; hi: string; blank?: [number, number] };
   source?: string;
   license_attribution?: string;

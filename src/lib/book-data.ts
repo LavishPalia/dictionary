@@ -116,7 +116,7 @@ function withExamples(entries: DictionaryEntry[]): DictionaryEntry[] {
   return entries.map((e) => {
     const r = byEntry.get(e.id);
     if (!r) return e;
-    return { ...e, example: { en: r.en, hi: r.hi, ...(r.exact ? { blank: [r.blank_start, r.blank_start + r.blank_len] as [number, number] } : {}) } };
+    return { ...e, example: { en: r.en, hi: r.hi, ...(r.exact ? { blank: [r.blank_start, r.blank_len] as [number, number] } : {}) } };
   });
 }
 
