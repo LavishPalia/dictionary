@@ -742,12 +742,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // A similar or opposite word takes over the open sheet; the book stays where it is. Opened from the book, the address
   // follows the sheet without adding a Back step. The tapped chip is gone, so focus goes to the sheet (which reads out
   // the new word) at its top.
-  const handleOpenRelated = async (word: RelatedWord) => {
-    const found = await fetchWord(word.headword);
-    if (!found) return;
-    setActiveWordEntry(found.entry);
+  // Words passed through by tapping similar/opposite chips, so the sheet can step back. `at` is the word the trail
+  // leads to: if the sheet shows any other word (opened from search, the book, a tour…), the trail no longer applies.
+  const [wordTrail, setWordTrail] = useState<{ back: DictionaryEntry[]; at: string }>({ back: [], at: '' });
+  const showInSheet = (entry: DictionaryEntry) => {
+    setActiveWordEntry(entry);
     if (window.location.pathname.startsWith('/word/')) {
-      window.history.replaceState(window.history.state, '', `/word/${encodeURIComponent(found.entry.headword)}`);
+      window.history.replaceState(window.history.state, '', `/word/${encodeURIComponent(entry.headword)}`);
     }
     requestAnimationFrame(() => {
       const sheet = document.getElementById('word-sheet');
@@ -755,6 +756,24 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       sheet?.focus();
     });
   };
+  const handleOpenRelated = async (word: RelatedWord) => {
+    const from = activeWordEntry;
+    const found = await fetchWord(word.headword);
+    if (!found) return;
+    if (from) {
+      const back = wordTrail.at === from.normalized ? wordTrail.back : [];
+      setWordTrail({ back: [...back, from].slice(-50), at: found.entry.normalized });
+    }
+    showInSheet(found.entry);
+  };
+  const trailBack = activeWordEntry && wordTrail.at === activeWordEntry.normalized ? wordTrail.back : [];
+  const handleWordBack = () => {
+    const prev = trailBack[trailBack.length - 1];
+    if (!prev) return;
+    setWordTrail({ back: trailBack.slice(0, -1), at: prev.normalized });
+    showInSheet(prev);
+  };
+  useEffect(() => { if (!showWordDrawer) setWordTrail({ back: [], at: '' }); }, [showWordDrawer]);
 
   const handleOpenSavedWord = async (word: SavedWord) => {
     const found = await fetchWord(word.headword); // the stored copy may be from an older build of the book
@@ -1043,6 +1062,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         isOpen={showWordDrawer}
         onClose={handleCloseWordDrawer}
         onOpenRelated={handleOpenRelated}
+        backTo={trailBack.length ? trailBack[trailBack.length - 1].headword : null}
+        onBack={handleWordBack}
         onTourCard={() => { if (activeWordEntry) tours.startTour('word', activeWordEntry); }}
         onSelectWord={(word, destPage) => {
           if (section !== 'book') showBookForNavigation();

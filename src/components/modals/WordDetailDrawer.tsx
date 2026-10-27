@@ -18,6 +18,9 @@ interface WordDetailDrawerProps {
   onSelectWord: (headword: string, destPage?: number) => void;
   /** Show a similar or opposite word in this sheet. */
   onOpenRelated: (word: RelatedWord) => void;
+  /** The word this sheet was reached from through a similar/opposite chip, if any; onBack shows it again. */
+  backTo?: string | null;
+  onBack?: () => void;
   /** Starts the word card tour on this word. */
   onTourCard: () => void;
   isBookmarked: boolean;
@@ -37,6 +40,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   onClose,
   onSelectWord,
   onOpenRelated,
+  backTo,
+  onBack,
   onTourCard,
   isBookmarked,
   onToggleBookmark,
@@ -105,6 +110,12 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
     <Sheet open={isOpen} onClose={onClose} labelledBy="word-sheet-title" id="word-sheet" scrimId="word-drawer-backdrop" variant="side">
       <div className="word-head">
         <div>
+          {backTo && onBack && (
+            <button type="button" className="lookup-link word-back" id="word-back-btn" onClick={onBack}
+              aria-label={`Back to “${backTo}”`}>
+              ‹ {backTo}
+            </button>
+          )}
           <div className="word-title-row">
             <h2 id="word-sheet-title" className="word-title">{entry.headword}</h2>
             {entry.pronunciation_deva && (

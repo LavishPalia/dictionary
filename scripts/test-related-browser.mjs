@@ -104,6 +104,32 @@ async function main() {
       s = await sheet();
       check(`${sizeName}: Know lists similar words, including Understand`, s?.name === 'know' && s.similar.length >= 1 && s.similar.includes('understand'), s);
 
+      // Hopping through chips leaves a trail: "‹ know" steps back, one word at a time, and closing forgets it.
+      const back = () => evaluate(`document.querySelector('#word-back-btn')?.textContent.replace('‹', '').trim() ?? null`);
+      check(`${sizeName}: a sheet opened directly has no back link`, (await back()) === null);
+      await chip('similar', 'understand');
+      for (let t = 0; t < 40 && (await sheet())?.name !== 'understand'; t++) await sleep(100);
+      check(`${sizeName}: after a chip, the sheet offers a way back`, (await back()) === 'know', await back());
+      const next = (await sheet())?.similar.find((w) => w !== 'know');
+      await chip('similar', next);
+      for (let t = 0; t < 40 && (await sheet())?.name !== next; t++) await sleep(100);
+      check(`${sizeName}: a second hop points back one word`, (await back()) === 'understand', { next, back: await back() });
+      check(`${sizeName}: the back link is big enough to tap`, await evaluate(`document.querySelector('#word-back-btn').getBoundingClientRect().height >= ${sizeName === 'phone' ? 44 : 24}`));
+      await evaluate(`document.querySelector('#word-back-btn').click(); true`);
+      for (let t = 0; t < 40 && (await sheet())?.name !== 'understand'; t++) await sleep(100);
+      check(`${sizeName}: back returns to the previous word`, (await sheet())?.name === 'understand' && (await back()) === 'know', { s: await sheet(), back: await back() });
+      check(`${sizeName}: the address follows the word`, await evaluate(`location.pathname === '/word/understand'`), await evaluate('location.pathname'));
+      await evaluate(`document.querySelector('#word-back-btn').click(); true`);
+      for (let t = 0; t < 40 && (await sheet())?.name !== 'know'; t++) await sleep(100);
+      check(`${sizeName}: back again reaches the first word, with no back link left`, (await sheet())?.name === 'know' && (await back()) === null, { s: await sheet(), back: await back() });
+      await chip('similar', 'understand');
+      for (let t = 0; t < 40 && (await sheet())?.name !== 'understand'; t++) await sleep(100);
+      await key('Escape');
+      await sleep(400);
+      await clickEntry('know');
+      for (let t = 0; t < 40 && (await sheet())?.name !== 'know'; t++) await sleep(100);
+      check(`${sizeName}: closing the sheet forgets the trail`, (await sheet())?.name === 'know' && (await back()) === null, { s: await sheet(), back: await back() });
+
       // From Saved: the address is left alone; similar words open too.
       await evaluate(`(async () => { localStorage.setItem('panna_saved_words', JSON.stringify([{ ...(await (await fetch('/api/word/also')).json()).entry, saved_at: Date.now() }])); return true; })()`);
       await open('/', size);
