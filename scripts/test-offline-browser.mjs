@@ -182,7 +182,8 @@ async function main() {
       await sleep(400);
       await click('#offline-save-btn');
       let status = '';
-      for (let i = 0; i < 300 && !status.startsWith('Saved on this device'); i++) { await sleep(200); status = await evaluate(`document.querySelector('#offline-status')?.textContent ?? ''`); }
+      // The whole book (3,125 pages) takes about 75 s to save here; allow 120 s.
+      for (let i = 0; i < 600 && !status.startsWith('Saved on this device'); i++) { await sleep(200); status = await evaluate(`document.querySelector('#offline-status')?.textContent ?? ''`); }
       check(`${sizeName}: saving shows when it is done, with the size`, status.startsWith(`Saved on this device · ${total.toLocaleString('en-IN')} pages ·`) && /\d+(\.\d)? (KB|MB)$/.test(status), status);
       check(`${sizeName}: the menu stays open while saving`, await visible('#reading-menu'));
       await key('Escape');
@@ -191,7 +192,10 @@ async function main() {
       // ── Offline with the book saved ──
       await setOffline(true);
       await open(`/page/${CALM_PAGE}`, size);
-      check(`${sizeName}: the notice says the whole book is saved`, (await evaluate(`document.querySelector('#offline-notice')?.innerText ?? ''`)).includes('whole book is saved'));
+      // The notice learns that the book is saved a moment after the page opens.
+      let notice = '';
+      for (let i = 0; i < 20 && !notice.includes('whole book is saved'); i++) { await sleep(150); notice = await evaluate(`document.querySelector('#offline-notice')?.innerText ?? ''`); }
+      check(`${sizeName}: the notice says the whole book is saved`, notice.includes('whole book is saved'), notice);
       await type(far.toLowerCase());
       p = await panel();
       check(`${sizeName}: offline search covers the whole saved book`, p?.options[0] === far && !p.text.includes('only pages you’ve opened'), { far, p });
