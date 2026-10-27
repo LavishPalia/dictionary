@@ -7,16 +7,10 @@ import fs from 'fs';
 import path from 'path';
 import type { Synset, WnPos } from './lexicon';
 import { TRANSITIVE_FRAMES } from './lexicon';
+import { callGeminiJson, DailyQuotaError, GEMINI_MODELS, currentModel } from './gemini';
 
-/** Models tried in order; on a daily-quota 429 the next one is used. Override with GEMINI_MODEL. */
-export const GEMINI_MODELS = (process.env.GEMINI_MODEL || [
-  'gemini-3.8-flash',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash-lite',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-].join(',')).split(',').map((m) => m.trim());
-export const THINKING_LEVEL = process.env.GEMINI_THINKING_LEVEL || ''; // '' = model default
+export { GEMINI_MODELS, currentModel };
+
 export const BATCH_SIZE = Number(process.env.GEMINI_BATCH_SIZE || 20);
 export const MAX_DEF = 140;
 export const MAX_HI = 35;
@@ -150,54 +144,14 @@ function validate(req: GlossRequest, r: GlossResult): string | null {
   return over.length ? over.join('; ') : null;
 }
 
-class DailyQuotaError extends Error {}
-
-let modelIndex = 0;
-export function currentModel(): string {
-  return GEMINI_MODELS[modelIndex];
-}
+const GLOSS_FIELDS = ['headword', 'definition_en', 'meaning_hi', 'pos', 'chosen_sense', 'pronunciation_deva'] as const;
 
 async function callGemini(apiKey: string, contents: unknown[]): Promise<{ model: string; items: Array<GlossResult & { headword: string }> }> {
-  for (let attempt = 0; ; attempt++) {
-    const model = GEMINI_MODELS[modelIndex];
-    if (!model) throw new DailyQuotaError('All configured Gemini models are out of daily quota');
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents,
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
-          ...(THINKING_LEVEL ? { thinkingConfig: { thinkingLevel: THINKING_LEVEL } } : {}),
-        },
-      }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (res.status === 429 && /PerDay/.test(JSON.stringify(body))) {
-      process.stderr.write(`[gemini] ${model}: daily quota exhausted, switching model\n`);
-      modelIndex++;
-      continue;
-    }
-    if (res.status === 429 || res.status >= 500) {
-      if (attempt >= 6) throw new Error(`Gemini HTTP ${res.status} after retries`);
-      process.stderr.write(`[gemini] ${model}: HTTP ${res.status}, backing off ${2 * 2 ** attempt}s\n`);
-      await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt));
-      continue;
-    }
-    if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${JSON.stringify(body).slice(0, 300)}`);
-    const parts = body.candidates?.[0]?.content?.parts ?? [];
-    const text = parts.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('');
-    if (!text) throw new Error(`Empty Gemini response: ${JSON.stringify(body).slice(0, 300)}`);
-    const items = JSON.parse(text) as Array<GlossResult & { headword: string }>;
-    for (const it of items) {
-      for (const k of ['headword', 'definition_en', 'meaning_hi', 'pos', 'chosen_sense', 'pronunciation_deva'] as const) {
-        it[k] = (it[k] ?? '').trim();
-      }
-    }
-    return { model, items };
+  const { model, items } = await callGeminiJson<GlossResult & { headword: string }>(apiKey, { system: SYSTEM_PROMPT, contents, schema: RESPONSE_SCHEMA });
+  for (const it of items) {
+    for (const k of GLOSS_FIELDS) it[k] = (it[k] ?? '').trim();
   }
+  return { model, items };
 }
 
 /** Generates one batch of entries; failing entries are re-sent with feedback, never truncated. */

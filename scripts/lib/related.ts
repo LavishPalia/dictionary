@@ -15,7 +15,9 @@ export const MAX_OPPOSITE = 3;
 const SIMILAR_SENSES = 1;
 const OPPOSITE_SENSES = 3;
 const SALIENT_SENSES = 3;
-const RARE_RANK = 25000;
+export const RARE_RANK = 25000;
+/** Gemini links are kept only to words ranked this common or better (null rank counts as rare, so is dropped). */
+export const GEMINI_RARE_RANK = 10000;
 
 export interface Related {
   similar: string[]; // normalized headwords, best first
@@ -95,5 +97,61 @@ export function findRelated(wn: WordNet, posByWord: Map<string, string>, rank: M
       .slice(0, MAX_SIMILAR).map((s) => s.word);
     if (best.length || opposite.length) out.set(word, { similar: best, opposite });
   }
+  return out;
+}
+
+export type RelatedSource = 'wordnet' | 'gemini';
+export interface SourcedLink { word: string; source: RelatedSource }
+export interface SourcedRelated { similar: SourcedLink[]; opposite: SourcedLink[] }
+/** One line of data/sources/related-gemini.jsonl. */
+export interface GeminiRow { normalized: string; similar: string[]; opposite: string[]; model?: string }
+
+/**
+ * Adds Gemini's links after WordNet's (WordNet's are unchanged and keep their ranks). pure and deterministic:
+ * rows are processed sorted by normalized, words in file order. Defensive: a word that is not an entry, is the word
+ * itself, or is already linked (either kind) is skipped; the caps count WordNet's links first.
+ * Opposites also work both ways: if A is opposite B, B gets A too, unless B is full, or already links A.
+ * Similar links are not made two-way.
+ * A Gemini link (either direction) is kept only when the word linked TO has freq_rank <= GEMINI_RARE_RANK.
+ */
+export function mergeGeminiLinks(wordnet: Map<string, Related>, rows: GeminiRow[], isEntry: (word: string) => boolean, rank: Map<string, number>): Map<string, SourcedRelated> {
+  const out = new Map<string, SourcedRelated>();
+  for (const [word, r] of [...wordnet].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))) {
+    out.set(word, {
+      similar: r.similar.map((w) => ({ word: w, source: 'wordnet' as const })),
+      opposite: r.opposite.map((w) => ({ word: w, source: 'wordnet' as const })),
+    });
+  }
+  const linksOf = (word: string): SourcedRelated => {
+    let l = out.get(word);
+    if (!l) out.set(word, (l = { similar: [], opposite: [] }));
+    return l;
+  };
+  const linked = (l: SourcedRelated, other: string) => [...l.similar, ...l.opposite].some((x) => x.word === other);
+  const lists = (word: string, kind: 'similar' | 'opposite', other: string) => !!out.get(word)?.[kind].some((x) => x.word === other);
+  const add = (word: string, kind: 'similar' | 'opposite', other: string): boolean => {
+    const l = linksOf(word);
+    if (other === word || !isEntry(word) || !isEntry(other) || linked(l, other)) return false;
+    if ((rank.get(other) ?? Infinity) > GEMINI_RARE_RANK) return false; // the word being linked to must be common
+    // Never contradict: a pair is not similar (either way round) and opposite at once.
+    const clash: 'similar' | 'opposite' = kind === 'similar' ? 'opposite' : 'similar';
+    if (lists(other, clash, word)) return false;
+    if (l[kind].length >= (kind === 'similar' ? MAX_SIMILAR : MAX_OPPOSITE)) return false;
+    l[kind].push({ word: other, source: 'gemini' });
+    return true;
+  };
+
+  const sorted = [...rows].sort((a, b) => (a.normalized < b.normalized ? -1 : a.normalized > b.normalized ? 1 : 0));
+  for (const row of sorted) for (const w of row.similar ?? []) add(row.normalized, 'similar', w);
+  // Opposites after every similar link is in place, so a similar link always wins over an opposite.
+  const added: [string, string][] = [];
+  for (const row of sorted) {
+    for (const w of row.opposite ?? []) if (add(row.normalized, 'opposite', w)) added.push([row.normalized, w]);
+  }
+  // Reverse only the opposites Gemini actually added (not WordNet's, not skipped ones), after every word has its own
+  // links so its own suggestions come first.
+  for (const [word, other] of added) add(other, 'opposite', word);
+  // Drop entries that ended up empty (a skipped link can leave one behind).
+  for (const [word, l] of out) if (!l.similar.length && !l.opposite.length) out.delete(word);
   return out;
 }

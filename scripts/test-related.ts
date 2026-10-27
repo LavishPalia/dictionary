@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import Database from 'better-sqlite3';
 import { SOURCES_DIR, WN_POS_LABEL, WnPos, WordNet } from './lib/lexicon';
-import { MAX_OPPOSITE, MAX_SIMILAR, findRelated, wnPosesOf } from './lib/related';
+import { MAX_OPPOSITE, MAX_SIMILAR, Related, findRelated, mergeGeminiLinks, wnPosesOf, GEMINI_RARE_RANK } from './lib/related';
 import { questionKind } from '../src/lib/review';
 
 let failures = 0;
@@ -54,6 +54,54 @@ for (const [word, r] of full) {
 }
 check(`every list is short, in the book, and never the word itself or both similar and opposite (${full.size} words)`, shapeOk);
 
+// Merging Gemini's links (pure function, 3 fixture rows; the real file is not touched).
+const wnFixture = new Map<string, Related>([
+  ['cold', { similar: ['chilly', 'cool', 'icy', 'frigid'], opposite: ['hot'] }],
+  ['hot', { similar: ['warm'], opposite: ['cold', 'mild', 'cool'] }],
+  ['big', { similar: ['large'], opposite: ['small'] }],
+]);
+const fixtureWords = new Set(['cold', 'hot', 'big', 'large', 'small', 'chilly', 'cool', 'icy', 'frigid', 'warm', 'mild', 'tiny', 'wintry', 'huge', 'frequent', 'obscure', 'arcane']);
+const fixtureRank = new Map([...fixtureWords].map((w) => [w, 100] as [string, number]));
+fixtureRank.set('frequent', 9000); fixtureRank.set('obscure', 12000); fixtureRank.delete('arcane'); // arcane has no rank: counts as rare
+const fixtureRows = [
+  { normalized: 'cold', similar: ['wintry', 'icy', 'nope'], opposite: ['warm', 'cold'], model: 'fixture' },
+  { normalized: 'big', similar: ['huge', 'big', 'large'], opposite: ['tiny', 'small'], model: 'fixture' }, // small is WordNet's: no Gemini reverse
+  { normalized: 'hot', similar: ['cold'], opposite: ['huge'], model: 'fixture' },
+  { normalized: 'warm', similar: [], opposite: ['hot'], model: 'fixture' }, // hot lists warm as similar: dropped
+  { normalized: 'icy', similar: [], opposite: ['cold'], model: 'fixture' }, // cold lists icy as similar: dropped
+  { normalized: 'tiny', similar: [], opposite: ['hot'], model: 'fixture' }, // hot is full: forward link, no reverse
+  { normalized: 'large', similar: ['frequent', 'obscure', 'arcane'], opposite: [], model: 'fixture' }, // 9,000 kept; 12,000 and unranked dropped
+  { normalized: 'obscure', similar: [], opposite: ['huge'], model: 'fixture' }, // forward onto common huge is kept; the reverse onto obscure (12,000) is not
+];
+const merged = mergeGeminiLinks(wnFixture, [...fixtureRows].reverse(), (w) => fixtureWords.has(w), fixtureRank);
+const words = (w: string, kind: 'similar' | 'opposite', source?: string) =>
+  (merged.get(w)?.[kind] ?? []).filter((l) => !source || l.source === source).map((l) => l.word);
+check('WordNet links are unchanged and first', JSON.stringify(words('cold', 'similar', 'wordnet')) === JSON.stringify(wnFixture.get('cold')!.similar)
+  && JSON.stringify(words('cold', 'similar').slice(0, 4)) === JSON.stringify(wnFixture.get('cold')!.similar)
+  && JSON.stringify(words('big', 'opposite').slice(0, 1)) === '["small"]', words('cold', 'similar'));
+check('Gemini words gain gemini links; non-entries, itself and already-linked are skipped',
+  JSON.stringify(words('cold', 'similar', 'gemini')) === '["wintry"]' && JSON.stringify(words('big', 'similar', 'gemini')) === '["huge"]'
+  && JSON.stringify(words('cold', 'opposite', 'gemini')) === '["warm"]', [merged.get('cold'), merged.get('big')]);
+check('caps hold (5 similar, 3 opposite), counting WordNet first', [...merged.values()].every((l) => l.similar.length <= MAX_SIMILAR && l.opposite.length <= MAX_OPPOSITE));
+check('a Gemini opposite gets its reverse link', words('tiny', 'opposite', 'gemini').includes('big') && words('warm', 'opposite', 'gemini').includes('cold'));
+check('the reverse opposite is blocked by a full list', words('tiny', 'opposite').includes('hot') && !words('hot', 'opposite').includes('tiny')
+  && words('hot', 'opposite').length === MAX_OPPOSITE, merged.get('hot'));
+check('a WordNet opposite gets no Gemini reverse link', words('small', 'opposite', 'gemini').length === 0 && words('big', 'opposite', 'gemini').join() === 'tiny',
+  [merged.get('small'), merged.get('big')]);
+check('a forward opposite is dropped when either word lists the other as similar',
+  !words('warm', 'opposite').includes('hot') && !words('icy', 'opposite').includes('cold') && !words('cold', 'opposite').includes('icy'),
+  [merged.get('warm'), merged.get('icy')]);
+check('no pair is both similar (either way round) and opposite', [...merged].every(([w, l]) => l.opposite.every((o) =>
+  !l.similar.some((x) => x.word === o.word) && !merged.get(o.word)?.similar.some((x) => x.word === w))));
+check(`Gemini links to words ranked beyond ${GEMINI_RARE_RANK} (or unranked) are dropped, 9,000 is kept`,
+  words('large', 'similar', 'gemini').join() === 'frequent', merged.get('large'));
+check('a reverse opposite onto a rare word is not added, the forward one is', words('obscure', 'opposite', 'gemini').join() === 'huge'
+  && !words('huge', 'opposite').includes('obscure'), [merged.get('obscure'), merged.get('huge')]);
+check('similar links are not made two-way', !words('huge', 'similar').includes('big') && !words('wintry', 'similar').includes('cold'));
+check('merging is deterministic', JSON.stringify([...merged]) === JSON.stringify([...mergeGeminiLinks(wnFixture, fixtureRows, (w) => fixtureWords.has(w), fixtureRank)]));
+check('merging without Gemini rows keeps only WordNet links', [...mergeGeminiLinks(wnFixture, [], (w) => fixtureWords.has(w), fixtureRank)]
+  .every(([, l]) => [...l.similar, ...l.opposite].every((x) => x.source === 'wordnet')));
+
 // The built database.
 const db = new Database('data/dictionary.db', { readonly: true });
 const rows = db.prepare(`SELECT e.normalized w, r.kind, t.normalized o, e.pos wp, t.pos op FROM related r
@@ -62,6 +110,15 @@ const orphans = (db.prepare(`SELECT count(*) n FROM related r LEFT JOIN entries 
 check(`every link in the database opens an entry (${rows.length} links)`, rows.length > 0 && orphans === 0);
 check('linked words share a part of speech', rows.every((r) => wnPosesOf(r.wp).some((p) => wnPosesOf(r.op).includes(p))),
   rows.find((r) => !wnPosesOf(r.wp).some((p) => wnPosesOf(r.op).includes(p))));
+const cols = (db.prepare('PRAGMA table_info(related)').all() as { name: string }[]).map((c) => c.name);
+check('related has a source column', cols.includes('source'), cols);
+const dbCounts = db.prepare(`SELECT entry_id, kind, count(*) n FROM related GROUP BY entry_id, kind`).all() as { kind: string; n: number }[];
+check('no word in the database exceeds 5 similar or 3 opposite', dbCounts.every((c) => c.n <= (c.kind === 'similar' ? MAX_SIMILAR : MAX_OPPOSITE)));
+check('WordNet links of sample words are kept with source wordnet', cols.includes('source') && ['rich:poor', 'buy:sell', 'accept:reject', 'true:false'].every((pair) => {
+  const [w, o] = pair.split(':');
+  return (db.prepare(`SELECT count(*) n FROM related r JOIN entries e ON e.id = r.entry_id JOIN entries t ON t.id = r.related_id
+    WHERE e.normalized = ? AND t.normalized = ? AND r.kind = 'opposite' AND r.source = 'wordnet'`).get(w, o) as { n: number }).n === 1;
+}));
 check('above ↔ below in the book', rows.some((r) => r.w === 'above' && r.kind === 'opposite' && r.o === 'below')
   && rows.some((r) => r.w === 'below' && r.kind === 'opposite' && r.o === 'above'));
 
