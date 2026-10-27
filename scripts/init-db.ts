@@ -16,9 +16,10 @@ import { SEED_ENTRIES } from './seed-entries';
 import { COMPANION_PAGES } from './companion-entries';
 import { EXPANDED_PAGES } from './expanded-entries';
 import { SOURCES_DIR, WordNet, loadAgid, verifyChecksums } from './lib/lexicon';
-import { findRelated } from './lib/related';
+import { GeminiRow, findRelated, mergeGeminiLinks } from './lib/related';
 import { GeneratedGloss, toPhase4Entry } from './lib/phase4';
 
+const RELATED_GEMINI_FILE = path.join(SOURCES_DIR, 'related-gemini.jsonl');
 export const DB_PATH = path.join(process.cwd(), 'data', 'dictionary.db');
 export const ENTRIES_PER_COLUMN = 4;
 export const ENTRIES_PER_PAGE = ENTRIES_PER_COLUMN * 2;
@@ -91,6 +92,7 @@ export function collectEntries(): { entries: SourceEntry[]; duplicates: string[]
   const pinnedInputs = ['data/sources/closed-class-words.jsonl', 'data/sources/infl.txt'];
   const glossFile = path.join(SOURCES_DIR, 'hindi-glosses.jsonl');
   if (fs.existsSync(glossFile)) pinnedInputs.push('data/sources/hindi-glosses.jsonl');
+  if (fs.existsSync(RELATED_GEMINI_FILE)) pinnedInputs.push('data/sources/related-gemini.jsonl');
   verifyChecksums(pinnedInputs);
   const closedClass: SourceEntry[] = fs.readFileSync(path.join(SOURCES_DIR, 'closed-class-words.jsonl'), 'utf8')
     .split('\n').filter((l) => l.trim()).map((l) => {
@@ -192,12 +194,13 @@ CREATE TABLE forms (
   PRIMARY KEY (normalized_form, lemma_id)
 );
 
--- Similar and opposite words (WordNet 3.1, scripts/lib/related.ts); both ends are Panna entries.
+-- Similar and opposite words (WordNet 3.1 first, then Gemini's; scripts/lib/related.ts); both ends are Panna entries.
 CREATE TABLE related (
   entry_id TEXT NOT NULL REFERENCES entries(id),
   kind TEXT NOT NULL CHECK (kind IN ('similar', 'opposite')),
   rank INTEGER NOT NULL,
   related_id TEXT NOT NULL REFERENCES entries(id),
+  source TEXT NOT NULL DEFAULT 'wordnet' CHECK (source IN ('wordnet', 'gemini')),
   PRIMARY KEY (entry_id, kind, rank)
 );
 
@@ -250,9 +253,14 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     if (!freqRank.has(lemma)) freqRank.set(lemma, rank);
   }
   const entryByWord = new Map(laid.map((e) => [e.normalized, e]));
-  const related = [...findRelated(new WordNet(), new Map(laid.map((e) => [e.normalized, e.pos])), freqRank)]
-    .flatMap(([word, r]) => (['similar', 'opposite'] as const).flatMap((kind) => r[kind].map((other, rank) => ({
-      entry_id: entryByWord.get(word)!.id, kind, rank, related_id: entryByWord.get(other)!.id,
+  const wordnetLinks = findRelated(new WordNet(), new Map(laid.map((e) => [e.normalized, e.pos])), freqRank);
+  // Gemini's links (collectEntries has already verified the file's checksum) go after WordNet's.
+  const geminiRows: GeminiRow[] = fs.existsSync(RELATED_GEMINI_FILE)
+    ? fs.readFileSync(RELATED_GEMINI_FILE, 'utf8').split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l) as GeminiRow)
+    : [];
+  const related = [...mergeGeminiLinks(wordnetLinks, geminiRows, (w) => entryByWord.has(w))]
+    .flatMap(([word, r]) => (['similar', 'opposite'] as const).flatMap((kind) => r[kind].map((link, rank) => ({
+      entry_id: entryByWord.get(word)!.id, kind, rank, related_id: entryByWord.get(link.word)!.id, source: link.source,
     }))));
 
   // Content hash of everything the client can see; used to version /api/page caching.
@@ -280,8 +288,8 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
       VALUES (?, ?, ?, ?, ?)`);
     const insertMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
     const insertHinglish = db.prepare('INSERT OR IGNORE INTO hinglish (key, entry_id, hi, whole) VALUES (?, ?, ?, ?)');
-    const insertRelated = db.prepare(`INSERT INTO related (entry_id, kind, rank, related_id)
-      VALUES (@entry_id, @kind, @rank, @related_id)`);
+    const insertRelated = db.prepare(`INSERT INTO related (entry_id, kind, rank, related_id, source)
+      VALUES (@entry_id, @kind, @rank, @related_id, @source)`);
 
     db.transaction(() => {
       laid.forEach((e, i) => insertEntry.run({

@@ -97,3 +97,54 @@ export function findRelated(wn: WordNet, posByWord: Map<string, string>, rank: M
   }
   return out;
 }
+
+export type RelatedSource = 'wordnet' | 'gemini';
+export interface SourcedLink { word: string; source: RelatedSource }
+export interface SourcedRelated { similar: SourcedLink[]; opposite: SourcedLink[] }
+/** One line of data/sources/related-gemini.jsonl. */
+export interface GeminiRow { normalized: string; similar: string[]; opposite: string[]; model?: string }
+
+/**
+ * Adds Gemini's links after WordNet's (WordNet's are unchanged and keep their ranks). pure and deterministic:
+ * rows are processed sorted by normalized, words in file order. Defensive: a word that is not an entry, is the word
+ * itself, or is already linked (either kind) is skipped; the caps count WordNet's links first.
+ * Opposites also work both ways: if A is opposite B, B gets A too, unless B is full, or already links A.
+ * Similar links are not made two-way.
+ */
+export function mergeGeminiLinks(wordnet: Map<string, Related>, rows: GeminiRow[], isEntry: (word: string) => boolean): Map<string, SourcedRelated> {
+  const out = new Map<string, SourcedRelated>();
+  for (const [word, r] of [...wordnet].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))) {
+    out.set(word, {
+      similar: r.similar.map((w) => ({ word: w, source: 'wordnet' as const })),
+      opposite: r.opposite.map((w) => ({ word: w, source: 'wordnet' as const })),
+    });
+  }
+  const linksOf = (word: string): SourcedRelated => {
+    let l = out.get(word);
+    if (!l) out.set(word, (l = { similar: [], opposite: [] }));
+    return l;
+  };
+  const linked = (l: SourcedRelated, other: string) => [...l.similar, ...l.opposite].some((x) => x.word === other);
+  const add = (word: string, kind: 'similar' | 'opposite', other: string): boolean => {
+    const l = linksOf(word);
+    if (other === word || !isEntry(word) || !isEntry(other) || linked(l, other)) return false;
+    if (l[kind].length >= (kind === 'similar' ? MAX_SIMILAR : MAX_OPPOSITE)) return false;
+    l[kind].push({ word: other, source: 'gemini' });
+    return true;
+  };
+
+  const sorted = [...rows].sort((a, b) => (a.normalized < b.normalized ? -1 : a.normalized > b.normalized ? 1 : 0));
+  for (const row of sorted) {
+    for (const w of row.similar ?? []) add(row.normalized, 'similar', w);
+    for (const w of row.opposite ?? []) add(row.normalized, 'opposite', w);
+  }
+  // Reverse opposites, after every word has its own links so its own suggestions come first.
+  for (const row of sorted) {
+    for (const w of row.opposite ?? []) {
+      if (out.get(row.normalized)?.opposite.some((x) => x.word === w)) add(w, 'opposite', row.normalized);
+    }
+  }
+  // Drop entries that ended up empty (a skipped link can leave one behind).
+  for (const [word, l] of out) if (!l.similar.length && !l.opposite.length) out.delete(word);
+  return out;
+}
