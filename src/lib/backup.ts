@@ -2,7 +2,7 @@
 // pages, pencil notes, recent searches and settings. Pure functions over a plain key → JSON-value map, so tests can
 // run without a browser; the menu does the downloading and the writing to localStorage.
 import type { MarginNote } from './types';
-import type { ReviewRecords } from './review';
+import { isReviewRecord, type ReviewRecords } from './review';
 import { relocateMarks, type MarkAnchors } from './marks';
 
 export const BACKUP_FORMAT = 1;
@@ -38,6 +38,29 @@ export function backupFileName(now = new Date()): string {
 const isArray = (v: unknown): v is unknown[] => Array.isArray(v);
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const optionalString = (v: unknown) => v === undefined || typeof v === 'string';
+
+/** A saved word whose text fields are really text, so a hand-edited file can't crash the Saved page. */
+export function isSavedWord(w: unknown): boolean {
+  return isObject(w) && typeof w.normalized === 'string' && typeof w.headword === 'string'
+    && ['pos', 'pronunciation_deva', 'pronunciation_ipa', 'definition_en', 'meaning_hi', 'etymology'].every((k) => optionalString(w[k]))
+    && (w.examples === undefined || (isArray(w.examples) && w.examples.every((e) => typeof e === 'string')))
+    && (w.saved_at === undefined || isNum(w.saved_at))
+    && (w.page_number === undefined || isNum(w.page_number));
+}
+
+export function isMarginNote(n: unknown): boolean {
+  return isObject(n) && typeof n.id === 'string' && Number.isInteger(n.page_number) && typeof n.text === 'string'
+    && ['blue', 'graphite', 'crimson'].includes(n.color as string) && (n.created_at === undefined || isNum(n.created_at))
+    && (n.top_pct === undefined || isNum(n.top_pct)) && optionalString(n.anchor);
+}
+
+/** Keeps only the well-formed items of a stored list (a damaged item is dropped, not allowed to crash the app). */
+export function keepValid<T>(value: unknown, valid: (item: unknown) => boolean): T[] {
+  return isArray(value) ? (value.filter(valid) as T[]) : [];
+}
+
 export interface BackupSummary { words: number; reviewing: number; pages: number; notes: number; created_at: string }
 
 /** Reads a backup file's text; explains plainly what is wrong if it is not a usable Panna backup. */
@@ -48,11 +71,11 @@ export function parseBackup(text: string): { ok: true; backup: Backup; summary: 
   if (typeof raw.format !== 'number' || raw.format > BACKUP_FORMAT) return { ok: false, error: 'This backup was made by a newer version of Panna. Update the app and try again.' };
   const d = raw.data;
   const checks: Array<[BackupKey, (v: unknown) => boolean]> = [
-    ['panna_saved_words', (v) => isArray(v) && v.every((w) => isObject(w) && typeof w.normalized === 'string' && typeof w.headword === 'string')],
-    ['panna_review', isObject],
+    ['panna_saved_words', (v) => isArray(v) && v.every(isSavedWord)],
+    ['panna_review', (v) => isObject(v) && Object.values(v).every(isReviewRecord)],
     ['panna_bookmarks', (v) => isArray(v) && v.every(Number.isInteger)],
     ['panna_dog_ears', (v) => isArray(v) && v.every(Number.isInteger)],
-    ['panna_marginalia', (v) => isArray(v) && v.every((n) => isObject(n) && typeof n.id === 'string' && Number.isInteger(n.page_number))],
+    ['panna_marginalia', (v) => isArray(v) && v.every(isMarginNote)],
     ['panna_mark_anchors', isObject],
     ['panna_settings', isObject],
     ['panna_recent_searches', isArray],

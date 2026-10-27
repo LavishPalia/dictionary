@@ -14,6 +14,13 @@ export interface ReviewRecord {
 
 export type ReviewRecords = Record<string, ReviewRecord>;
 
+const isNum = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
+export function isReviewRecord(r: unknown): boolean {
+  if (!r || typeof r !== 'object' || Array.isArray(r)) return false;
+  const x = r as Record<string, unknown>;
+  return isNum(x.box) && isNum(x.due_at) && isNum(x.right) && isNum(x.wrong) && (x.last_at === undefined || isNum(x.last_at));
+}
+
 /** Days until the next review after reaching box n (index n - 1). */
 export const INTERVAL_DAYS = [1, 3, 7, 16, 35];
 /** From this box on a word counts as mastered (it comes back after 16 days or more). */
@@ -98,7 +105,9 @@ const STORAGE_KEY = 'panna_review';
 export function loadRecords(): ReviewRecords {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    // A damaged record (say, a box that isn't a number) is dropped, not allowed to crash the review.
+    return Object.fromEntries(Object.entries(parsed).filter(([, r]) => isReviewRecord(r))) as ReviewRecords;
   } catch {
     return {};
   }

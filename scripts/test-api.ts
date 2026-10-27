@@ -40,6 +40,7 @@ async function testEndpoints() {
 
   check('GET /api/page/0 is 404', (await getJson('/api/page/0')).status === 404);
   check(`GET /api/page/${meta.body.total_pages + 1} is 404`, (await getJson(`/api/page/${meta.body.total_pages + 1}`)).status === 404);
+  check('GET /api/word/100%25 is 404, not a crash', (await getJson('/api/word/100%25')).status === 404);
   check('GET /api/word/zzzzqx is 404', (await getJson('/api/word/zzzzqx')).status === 404);
 
   const prefix = await getJson('/api/search?q=ceremo');
