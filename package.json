@@ -50,6 +50,7 @@
     "data:lemmas": "tsx scripts/build-lemma-list.ts",
     "data:pilot": "tsx scripts/pilot-glosses.ts",
     "data:phase4": "tsx scripts/generate-hindi-glosses.ts",
+    "data:related-gemini": "tsx scripts/generate-related-gemini.ts",
     "test:phase4-pipeline": "tsx scripts/test-phase4-pipeline.ts",
     "test:gemini-client": "tsx scripts/test-gemini-client.ts"
   },

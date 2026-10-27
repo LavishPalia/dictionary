@@ -28,6 +28,14 @@ export function verifyChecksums(relPaths: string[]): void {
   }
 }
 
+/** Records the current sha256 of a data/sources file (repo-relative, forward slashes) in checksums.json. */
+export function pinChecksum(relPath: string): void {
+  const checksumFile = path.join(SOURCES_DIR, 'checksums.json');
+  const checksums: Record<string, string> = JSON.parse(fs.readFileSync(checksumFile, 'utf8'));
+  checksums[relPath] = sha256File(path.join(process.cwd(), relPath));
+  fs.writeFileSync(checksumFile, JSON.stringify(checksums, null, 2) + '\n');
+}
+
 // ---------------------------------------------------------------------------
 // AGID (infl.txt)
 // ---------------------------------------------------------------------------

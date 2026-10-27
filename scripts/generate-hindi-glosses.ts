@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { collectEntries } from './init-db';
-import { SOURCES_DIR, WordNet, loadCmu, sha256File, verifyChecksums, WnPos } from './lib/lexicon';
+import { SOURCES_DIR, WordNet, loadCmu, pinChecksum, verifyChecksums, WnPos } from './lib/lexicon';
 import { BATCH_SIZE, charLen, currentModel, generateGlossBatch, loadApiKey, GlossRequest } from './lib/gloss';
 import { LemmaCandidate, generatedEntriesNeeded, selectPhase4Candidates } from './lib/phase4';
 import { pronunciationFor } from './phonetics';
@@ -13,7 +13,6 @@ const MAX_REQUESTS = Number(process.env.PHASE4_MAX_REQUESTS || Number.POSITIVE_I
 const GLOSS_FILE = path.join(SOURCES_DIR, 'hindi-glosses.jsonl');
 const PROGRESS_FILE = path.join(SOURCES_DIR, 'hindi-glosses-progress.jsonl');
 const REVIEW_FILE = path.join(SOURCES_DIR, 'PHASE4_TOP5000_REVIEW.csv');
-const CHECKSUM_FILE = path.join(SOURCES_DIR, 'checksums.json');
 
 interface GeneratedRow {
   rank: number;
@@ -77,12 +76,6 @@ function writeReviewSheet(lemmas: LemmaCandidate[], curated: ReturnType<typeof c
 
 function saveProgress(rows: Map<string, GeneratedRow>): void {
   writeJsonlAtomic(PROGRESS_FILE, [...rows.values()].sort((a, b) => a.rank - b.rank));
-}
-
-function pinFinalGlossFile(): void {
-  const checksums: Record<string, string> = JSON.parse(fs.readFileSync(CHECKSUM_FILE, 'utf8'));
-  checksums['data/sources/hindi-glosses.jsonl'] = sha256File(GLOSS_FILE);
-  fs.writeFileSync(CHECKSUM_FILE, JSON.stringify(checksums, null, 2) + '\n');
 }
 
 async function main(): Promise<void> {
@@ -206,7 +199,7 @@ async function main(): Promise<void> {
 
   writeJsonlAtomic(GLOSS_FILE, completed);
   writeReviewSheet(lemmas, curated, completed);
-  pinFinalGlossFile();
+  pinChecksum('data/sources/hindi-glosses.jsonl');
   fs.rmSync(PROGRESS_FILE, { force: true });
   const summary = {
     target_entries: TARGET_ENTRIES,
