@@ -56,3 +56,7 @@
 @media (max-width: 1023px) {
   .review-word { font-size: 32px; }
 }
+.review-sentence-wrap { margin: 10px 0 18px; text-align: center; }
+.review-sentence { margin: 0; font: italic 20px/1.5 var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }
+.review-blank { letter-spacing: 0.04em; }
+.review-sentence-hi { margin: 8px 0 0; font-size: 16px; line-height: 1.5; color: var(--ink-soft, var(--ink)); }

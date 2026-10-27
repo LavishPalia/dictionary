@@ -437,6 +437,8 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
     const picked: HindiSearchRow[] = [];
     const usable = (c: HindiSearchRow) => c.meaning_hi.trim() && c.definition_en.trim()
       && c.definition_en !== row.definition_en
+      // Not a form of the word itself (accept/acceptance): in a fill-in-the-blank sentence it could fit too.
+      && !(Math.min(c.normalized.length, row.normalized.length) >= 3 && (c.normalized.startsWith(row.normalized) || row.normalized.startsWith(c.normalized)))
       && ![...hindiTokens(c.meaning_hi_search)].some((t) => answerTokens.has(t))
       && !picked.some((p) => p.meaning_hi === c.meaning_hi || [...hindiTokens(p.meaning_hi_search)].some((t) => hindiTokens(c.meaning_hi_search).has(t)));
     for (const pool of [nearest(true), nearest(false)]) {

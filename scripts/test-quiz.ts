@@ -9,7 +9,7 @@ const db = new Database('data/dictionary.db', { readonly: true });
 const all = (db.prepare('SELECT normalized FROM entries').all() as { normalized: string }[]).map((r) => r.normalized);
 let failures = 0;
 const fail = (msg: string) => { failures++; if (failures <= 10) console.error(`✗ ${msg}`); };
-let samePos = 0, total = 0, oppositeCards = 0;
+let samePos = 0, total = 0, oppositeCards = 0, blankCards = 0;
 const related = (word: string, kind: 'similar' | 'opposite', source?: 'wordnet') => (db.prepare(`SELECT t.normalized FROM related r
   JOIN entries e ON e.id = r.entry_id JOIN entries t ON t.id = r.related_id WHERE e.normalized = ? AND r.kind = ?
   ${source ? "AND r.source = 'wordnet'" : ''} ORDER BY r.rank`)
@@ -26,6 +26,14 @@ for (let i = 0; i < all.length; i += 20) {
       if (d.pos.split('&')[0].trim() === entry.pos.split('&')[0].trim()) samePos++;
     }
     if (new Set(distractors.map((d) => d.meaning_hi)).size !== distractors.length) fail(`${entry.headword}: two wrong options look the same`);
+    // "Fill in the blank": the blanked span is the headword as written, and no wrong option can fit the gap too.
+    const blank = entry.example?.blank;
+    if (blank) {
+      blankCards++;
+      const span = entry.example!.en.slice(blank[0], blank[0] + blank[1]);
+      if (span.toLowerCase() !== entry.headword.toLowerCase()) fail(`${entry.headword}: blank covers "${span}"`);
+      for (const d of distractors) if (d.headword.toLowerCase() === entry.headword.toLowerCase() || d.normalized === entry.normalized) fail(`${entry.headword}: blank option "${d.headword}" equals the answer`);
+    }
     // "Which word means the opposite?": exactly one option is one of the word's opposites, none is the word itself
     // or something similar to the answer.
     // Gemini opposites stay out of Review: the right answer is always a WordNet opposite, and a word with only Gemini
@@ -45,6 +53,7 @@ for (let i = 0; i < all.length; i += 20) {
 const withOpposite = (db.prepare(`SELECT count(DISTINCT entry_id) n FROM related WHERE kind = 'opposite' AND source = 'wordnet'`).get() as { n: number }).n;
 console.log(`${oppositeCards} of ${withOpposite} words with a WordNet opposite get an opposite card.`);
 if (oppositeCards < withOpposite * 0.9) fail(`only ${oppositeCards} of ${withOpposite} words with a WordNet opposite get an opposite card`);
+console.log(`${blankCards} words have a fill-in-the-blank example.`);
 const share = total ? samePos / total : 0;
 console.log(`${all.length} cards, ${total} wrong options, ${(100 * share).toFixed(1)}% share the answer's part of speech.`);
 if (share < 0.8) fail(`only ${(100 * share).toFixed(1)}% of wrong options share the part of speech`);

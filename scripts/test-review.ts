@@ -44,6 +44,17 @@ check('new and shaky words get English → Hindi', questionKind(undefined, 7) ==
 const later = answer(answer(fresh, true, now), true, now);
 check('later boxes mix question directions', new Set([0, 1, 2].map((s) => questionKind(later, s))).size === 3);
 
+const box1 = answer(fresh, true, now);
+let earlyBlank = false, blankWithout = false, blankSeen = false;
+for (let s = 0; s < 1000; s++) {
+  if (questionKind(box1, s, true, true) === 'fill-blank' || questionKind(undefined, s, true, true) === 'fill-blank') earlyBlank = true;
+  if (questionKind(later, s, true, false) === 'fill-blank' || questionKind(later, s) === 'fill-blank') blankWithout = true;
+  if (questionKind(later, s, false, true) === 'fill-blank') blankSeen = true;
+}
+check('no fill-in-the-blank card under box 2', !earlyBlank);
+check('no fill-in-the-blank card without an exact example', !blankWithout);
+check('fill-in-the-blank appears at box 2 with an exact example', blankSeen);
+
 const d = (offset: number) => localDate(now + offset * DAY);
 check('no review days, no streak', streak([], now) === 0);
 check('reviewing today starts a streak of 1', streak(withReviewDay([], now), now) === 1);

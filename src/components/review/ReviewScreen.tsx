@@ -45,12 +45,24 @@ function buildQuestion(card: QuizCard, kind: QuestionKind, retry: boolean): Ques
     ]);
     return { card, kind, options, retry };
   }
+  if (kind === 'fill-blank' && card.entry.example?.blank) {
+    // Options are cased like the gap (the sentence's own capital or lower case), so capitalisation never gives the answer away.
+    const { en, blank } = card.entry.example;
+    const span = en.slice(blank[0], blank[0] + blank[1]);
+    const upper = span.charAt(0) !== span.charAt(0).toLowerCase();
+    const fit = (w: string) => w.charAt(0)[upper ? 'toUpperCase' : 'toLowerCase']() + w.slice(1);
+    const options = shuffle([
+      { key: card.entry.normalized, text: span, correct: true },
+      ...card.distractors.map((d) => ({ key: d.normalized, text: fit(d.headword), correct: false })),
+    ]);
+    return { card, kind, options, retry };
+  }
   const answerText = (d: { headword: string; meaning_hi: string }) => (kind === 'meaning' ? d.meaning_hi : d.headword);
   const options = shuffle([
     { key: card.entry.normalized, text: answerText(card.entry), correct: true },
     ...card.distractors.map((d) => ({ key: d.normalized, text: answerText(d), correct: false })),
   ]);
-  return { card, kind: kind === 'opposite' ? 'meaning' : kind, options, retry };
+  return { card, kind: kind === 'opposite' || kind === 'fill-blank' ? 'meaning' : kind, options, retry };
 }
 
 const PROMPTS: Record<QuestionKind, string> = {
@@ -58,6 +70,7 @@ const PROMPTS: Record<QuestionKind, string> = {
   'word-from-hindi': 'Which English word means this?',
   'word-from-definition': 'Which word fits this meaning?',
   'opposite': 'Which word means the opposite?',
+  'fill-blank': 'Fill in the blank',
 };
 
 // One review round: up to 20 due words, one calm card at a time, no timer. A word answered wrongly comes back
@@ -92,7 +105,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
       .then((data: { cards: QuizCard[] }) => {
         if (!live) return;
         setQueue(data.cards.filter((c) => c.distractors.length > 0)
-          .map((card, i) => buildQuestion(card, questionKind(records[card.entry.normalized], i + card.entry.normalized.length, !!card.opposite), false)));
+          .map((card, i) => buildQuestion(card, questionKind(records[card.entry.normalized], i + card.entry.normalized.length, !!card.opposite, !!card.entry.example?.blank), false)));
         setIndex(0);
         setChosen(null);
         setFirstTry({});
@@ -236,6 +249,18 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
                 </div>
               </>
             )}
+            {question.kind === 'fill-blank' && entry.example?.blank && (() => {
+              const { en, hi, blank } = entry.example;
+              const [start, len] = blank;
+              return (
+                <div className="review-sentence-wrap">
+                  <p className="review-sentence" id="review-sentence">
+                    {en.slice(0, start)}{answered ? <b>{en.slice(start, start + len)}</b> : <span className="review-blank">______</span>}{en.slice(start + len)}
+                  </p>
+                  {answered && <p className="review-sentence-hi ui-hi" lang="hi" id="review-sentence-hi">{hi}</p>}
+                </div>
+              );
+            })()}
             {question.kind === 'word-from-hindi' && <p className="review-hi-prompt" lang="hi">{entry.meaning_hi}</p>}
             {question.kind === 'word-from-definition' && <p className="review-def-prompt">“{entry.definition_en}”</p>}
 
