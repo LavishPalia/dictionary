@@ -230,6 +230,19 @@ async function main() {
       check(`${sizeName}: a word opened from the book has no Heard strip`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Calm' && !document.querySelector('#word-heard')`));
       await click('#close-word-drawer');
       await sleep(300);
+      // Spoken twice quickly, the first look-up answering late: the second word's card wins.
+      await evaluate(`(() => { const real = window.fetch; window.__realFetch = real; window.fetch = (input, init) => String(input).includes('/api/word/ceremon') ? new Promise((ok) => setTimeout(ok, 900)).then(() => real(input, init)) : real(input, init); return true; })()`);
+      await speak({ transcripts: ['ceremonies'] });
+      await tapMic();
+      await sleep(250);
+      await speak({ transcripts: ['calm'] });
+      await tapMic();
+      await sleep(1600);
+      const raced = await evaluate(`({ title: document.querySelector('#word-sheet-title')?.textContent, heard: document.querySelector('#word-heard i')?.textContent })`);
+      check(`${sizeName}: a slow first look-up does not replace the word spoken after it`, raced.title === 'Calm' && raced.heard === 'calm', raced);
+      await evaluate(`window.fetch = window.__realFetch; true`);
+      await click('#close-word-drawer');
+      await sleep(300);
       // A heard word that isn't in the book: it goes into the search box (path B).
       await speak({ transcripts: ['zzxqvw'] });
       await tapMic();

@@ -885,11 +885,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   useEffect(() => {
     if (heard && (!showWordDrawer || activeWordEntry?.normalized !== heard.at)) setHeard(null);
   }, [heard, showWordDrawer, activeWordEntry]);
+  // Only the newest voice or share look-up may act, and only if no word was opened while it was being looked up (a slow
+  // answer must not replace what the reader has moved on to).
+  const lookupRef = useRef(0);
+  const wordOpensRef = useRef(0);
+  useEffect(() => { if (showWordDrawer && activeWordEntry) wordOpensRef.current++; }, [showWordDrawer, activeWordEntry]);
+  const startLookup = () => {
+    const id = ++lookupRef.current;
+    const opens = wordOpensRef.current;
+    return () => id === lookupRef.current && opens === wordOpensRef.current;
+  };
   // One English word heard. A book word opens its card (path A) with up to 2 other book words it could have been: the
   // recogniser's other guesses that are book words, then the closest spellings. Otherwise it goes into the box (path B).
-  const handleVoiceWord = async (word: string, alternates: string[]) => {
+  const handleVoiceWord = async (word: string, alternates: string[]): Promise<boolean> => {
+    const current = startLookup();
     const found = await fetchWord(word);
-    if (!found) { setLookupFill(word); return; }
+    if (!current()) return false;
+    if (!found) { setLookupFill(word); return false; }
     const [guesses, near] = await Promise.all([
       Promise.all(alternates.slice(0, 2).map((a) => fetchWord(a))),
       fetch(`/api/search?q=${encodeURIComponent(word)}&near=1`)
@@ -897,6 +909,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         .then((data: { results?: Array<{ headword: string; normalized: string }> } | null) => data?.results ?? [])
         .catch(() => []),
     ]);
+    if (!current()) return false;
     const seen = new Set([found.entry.normalized]);
     const picks: string[] = [];
     for (const w of [...guesses.flatMap((g) => (g ? [g.entry] : [])), ...near]) {
@@ -907,6 +920,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setHeard({ text: word, alternates: picks.slice(0, 2), at: found.entry.normalized });
     setActiveWordEntry(found.entry);
     setShowWordDrawer(true);
+    return true;
   };
   const handlePickHeard = async (headword: string) => {
     const found = await fetchWord(headword);
@@ -936,7 +950,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         const words = tokenize(shared.text).filter((t) => t.key);
         if (words.length === 1) {
           const [only] = words;
+          const current = startLookup();
           fetchWord(only.key!).then((found) => {
+            if (!current()) return;
             if (found) { setActiveWordEntry(found.entry); setShowWordDrawer(true); }
             else setLookupFill(only.text);
           });

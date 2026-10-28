@@ -16,8 +16,9 @@ interface LookupBarProps {
   onBrowseLetter: (letter: string) => void;
   totalEntries: number;
   online: boolean;
-  /** One English word was heard: the parent decides whether it is a book word (its card) or fills the box via `query`. */
-  onVoiceWord: (word: string, alternates: string[]) => void;
+  /** One English word was heard: the parent decides whether it is a book word (its card) or fills the box via `query`.
+   *  Resolves true when it opened the card. */
+  onVoiceWord: (word: string, alternates: string[]) => void | Promise<boolean>;
   /** Open voice search with the mic ready to tap (the "Speak a word" shortcut). */
   voiceReady?: boolean;
   onVoiceReadyDone?: () => void;
@@ -249,7 +250,10 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   const heardWord = (word: string, alternates: string[]) => {
     heardWordRef.current = word;
     setVoiceText(null);
-    onVoiceWord(word, alternates);
+    // Its card opened instead: nothing heard is waiting for the box any more.
+    Promise.resolve(onVoiceWord(word, alternates)).then((opened) => {
+      if (opened && heardWordRef.current === word) heardWordRef.current = null;
+    });
   };
 
   const clearQuery = () => {

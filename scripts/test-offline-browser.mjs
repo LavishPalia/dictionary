@@ -170,6 +170,11 @@ async function main() {
       };
       check(`${sizeName}: the study guide opens online`, await openLearn());
       await sleep(1500); // let it cache the page and its files
+      // A share launch is the front page: cached as '/', never under an address holding the shared text.
+      await open('/?share_text=calm', size);
+      await sleep(1500);
+      const pageKeys = await evaluate(`caches.open('panna-pages-v1').then((c) => c.keys()).then((ks) => ks.map((r) => new URL(r.url).pathname + new URL(r.url).search))`);
+      check(`${sizeName}: a share launch is cached as / and the shared text is not kept`, pageKeys.includes('/') && !pageKeys.some((k) => k.includes('share_text')), pageKeys);
       await open(`/page/${CALM_PAGE}`, size);
 
       // ── Offline, before saving the book ──

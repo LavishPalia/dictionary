@@ -45,17 +45,24 @@ async function warm(url) {
   const name = cacheFor(u) ?? (u.origin === self.location.origin && !u.pathname.startsWith('/_next/') ? PAGES : null);
   if (!name) return;
   const cache = await caches.open(name);
-  if (await cache.match(request)) return;
+  if (await cache.match(name === PAGES ? pageKey(request) : request)) return;
   try {
     const res = await fetch(request);
     if (res.ok) await (name === PAGES ? putPage(request, res) : put(name, request, res));
   } catch {}
 }
 
+// A launch address (/?share_text=…, /?voice=1, /?open=review) is the front page: it is cached as '/', so shared text
+// is never kept on the device and launches don't push real pages out of the cache.
+function pageKey(request) {
+  const url = new URL(request.url);
+  return url.pathname === '/' && url.search ? new Request(url.origin + '/') : request;
+}
+
 // A cached page is only usable offline with the app files it names (its own route's scripts, styles and fonts), so
 // those are cached with it.
 async function putPage(request, response) {
-  await put(PAGES, request, response.clone());
+  await put(PAGES, pageKey(request), response.clone());
   const html = await response.text();
   // File names end at a quote, a backslash (escaped inside inline scripts), whitespace or a closing bracket.
   const files = new Set([...html.matchAll(/(?:\/_next\/)?static\/(?:chunks|css|media)\/[^"'\\\s)]+/g)].map((m) => `/_next/${m[0].replace(/^\/_next\//, '')}`));
