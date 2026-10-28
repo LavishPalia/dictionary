@@ -17,8 +17,14 @@ check('blank text is empty', cleanShared({ text: '   ' }).kind === 'empty');
 const long = Array.from({ length: 45 }, (_, i) => `w${i}`).join(' ');
 const c2 = cleanShared({ text: long });
 check('45 words cut to 40', c2.kind === 'text' && c2.truncated && c2.text.split(' ').length === 40, JSON.stringify(c2));
-const c3 = cleanShared({ text: 'a\n\n  b\tc' });
-check('whitespace collapsed', c3.kind === 'text' && c3.text === 'a b c');
+const c3 = cleanShared({ text: '  a \t b \n\n\n  c\td  ' });
+check('whitespace collapsed, newlines kept', c3.kind === 'text' && c3.text === 'a b\nc d', JSON.stringify(c3));
+const c4 = cleanShared({ text: 'Word of the day\nUbiquitous' });
+check('newline kept', c4.kind === 'text' && c4.text === 'Word of the day\nUbiquitous');
+check('line-initial word is not midCap', c4.kind === 'text' && tokenize(c4.text).every((t) => !t.midCap));
+const words30 = (p: string) => Array.from({ length: 30 }, (_, i) => p + i).join(' ');
+const c5 = cleanShared({ text: words30('a') + '\n' + words30('b') });
+check('cut counts words across lines', c5.kind === 'text' && c5.truncated && c5.text.split(/\s+/).length === 40 && c5.text.includes('\n'));
 
 // tokenize
 const t1 = tokenize("The government's plan deepened.");
@@ -45,6 +51,26 @@ check('length picks longest', pickWord([plan, obf], 'length', 0) === 2);
 check('empty list is null', pickWord([], 'rank', 0) === null);
 check('ties go to first', pickWord([{ ...plan, index: 1 }, { ...plan, index: 3 }], 'rank', 0) === 1);
 check('shouting share is 1', capitalisedShare(tokenize('RBI HIKES REPO RATE')) === 1);
+
+check('short text share is 0', capitalisedShare(tokenize('Hello Rose')) === 0);
+check('a name in a normal sentence stays under half', capitalisedShare(tokenize('We met Rose today')) < 0.5);
+check('_ and ~ markup', same(tokenize('_word_ and ~gist~').filter((t) => t.key).map((t) => t.key), ['word', 'and', 'gist']));
+
+function pickFrom(text: string, ranks: Record<string, number>) {
+  const toks = tokenize(text);
+  const cands = toks.map((t, index) => ({ t, index })).filter(({ t }) => t.key && t.key in ranks)
+    .map(({ t, index }) => ({ index, key: t.key!, rank: ranks[t.key!], midCap: t.midCap }));
+  const picked = pickWord(cands, 'rank', capitalisedShare(toks));
+  return { toks, picked };
+}
+{
+  const { toks, picked } = pickFrom('Word of the day: *ubiquitous*', { word: 300, day: 400, ubiquitous: 16572 });
+  check('ubiquitous not midCap and picked', toks.find((t) => t.key === 'ubiquitous')!.midCap === false && picked !== null && toks[picked].key === 'ubiquitous');
+}
+{
+  const { toks, picked } = pickFrom('RBI HIKES REPO RATE AMID INFLATION', { hikes: 9000, repo: 15000, rate: 800, amid: 6000, inflation: 7000 });
+  check('headline picks REPO', picked !== null && toks[picked].text === 'REPO', String(picked));
+}
 
 if (failures) { console.error(`\n${failures} sentence check(s) failed.`); process.exit(1); }
 console.log('Sentence checks passed.');

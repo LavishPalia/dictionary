@@ -14,10 +14,19 @@ export function cleanShared(input: { text?: string | null; title?: string | null
   const raw = (input.text ?? '').slice(0, MAX_RAW);
   const rawUrl = (input.url ?? '').slice(0, MAX_RAW);
   const hadUrl = new RegExp(URL_RE.source, 'i').test(raw) || new RegExp(URL_RE.source, 'i').test(rawUrl) || rawUrl.trim() !== '';
-  const words = raw.replace(URL_RE, ' ').split(/\s+/).filter(Boolean);
-  if (words.length === 0) return hadUrl ? { kind: 'link' } : { kind: 'empty' };
-  const truncated = words.length > MAX_WORDS;
-  return { kind: 'text', text: words.slice(0, MAX_WORDS).join(' '), truncated };
+  const lines = raw.replace(URL_RE, ' ').split(/\r\n|\r|\n/)
+    .map((l) => l.split(/\s+/).filter(Boolean))
+    .filter((w) => w.length > 0);
+  const total = lines.reduce((n, w) => n + w.length, 0);
+  if (total === 0) return hadUrl ? { kind: 'link' } : { kind: 'empty' };
+  let left = MAX_WORDS;
+  const kept: string[] = [];
+  for (const w of lines) {
+    if (left <= 0) break;
+    kept.push(w.slice(0, left).join(' '));
+    left -= w.length;
+  }
+  return { kind: 'text', text: kept.join('\n'), truncated: total > MAX_WORDS };
 }
 
 export interface Token {
@@ -74,11 +83,27 @@ export function pickWord(candidates: Candidate[], by: 'rank' | 'length', capital
   return best.index;
 }
 
-/** Share of word tokens that start with a capital letter. */
+/**
+ * Share of non-sentence-initial word tokens that start with a capital letter.
+ * Returns 0 when there are fewer than 3 such words, so short texts never switch the name rule off.
+ */
 export function capitalisedShare(tokens: Token[]): number {
-  const words = tokens.filter((t) => t.key !== null);
-  if (words.length === 0) return 0;
-  return words.filter((t) => /^[A-Z]/.test(t.text)).length / words.length;
+  let atStart = true;
+  let later = 0;
+  let caps = 0;
+  for (const t of tokens) {
+    if (t.key === null) {
+      if (/[A-Za-z]/.test(t.text)) atStart = false;
+      else if (/[.!?:\n\r]/.test(t.text)) atStart = true;
+      continue;
+    }
+    if (!atStart) {
+      later++;
+      if (/^[A-Z]/.test(t.text)) caps++;
+    }
+    atStart = false;
+  }
+  return later < 3 ? 0 : caps / later;
 }
 
 export interface SentenceToken { text: string; headword?: string; uncommon?: boolean }
