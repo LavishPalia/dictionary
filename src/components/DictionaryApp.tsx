@@ -1086,6 +1086,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           dueCount={dueCount}
           onReview={() => goTo('review')}
           onHowItWorks={() => tours.startTour('review')}
+          onOpenGuide={() => goTo('learn')}
         />
       )}
 
@@ -1108,6 +1109,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           showWelcome={tours.showWelcome}
           onTakeTour={() => tours.startTour('start')}
           onDismissWelcome={tours.dismissWelcome}
+          guideOpened={tours.guideOpened}
+          onOpenGuide={() => goTo('learn')}
         />
       )}
 
@@ -1120,6 +1123,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onClose={() => goTo(homeSection)}
           onOpenSaved={() => goTo('saved')}
           onHowItWorks={() => tours.startTour('review')}
+          onOpenGuide={() => goTo('learn')}
         />
       )}
 
@@ -1177,6 +1181,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onBackup={() => backupRef.current?.backup()}
         onRestore={() => backupRef.current?.restore()}
         onOpenTours={tours.openSheet}
+        onOpenGuide={() => goTo('learn')}
         toursUnseen={unseenTours(tours.state)}
         offline={{ available: offline.available, status: offline.status, saving: offline.saving, onSave: offline.save }}
         onInstall={offline.install}
@@ -1191,6 +1196,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onStart={(id) => tours.startTour(id)}
         onTipsAgain={tours.tipsAgain}
         onTipsOff={tours.tipsOff}
+        onOpenGuide={() => goTo('learn')}
       />
       {tours.layer && <TourLayer key={tours.layer.kind} {...tours.layer} />}
 

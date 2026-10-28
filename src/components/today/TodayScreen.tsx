@@ -30,6 +30,9 @@ interface TodayScreenProps {
   showWelcome: boolean;
   onTakeTour: () => void;
   onDismissWelcome: () => void;
+  /** Whether the study guide has been opened (a card until then, a quiet link after). */
+  guideOpened: boolean;
+  onOpenGuide: () => void;
 }
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
@@ -138,6 +141,17 @@ export function TodayScreen(props: TodayScreenProps) {
               <StarIcon />{saved ? 'Saved' : 'Save word'}
             </Button>
           </div>
+        </Card>
+      )}
+
+      {props.guideOpened ? (
+        <button type="button" className="lookup-link tour-howlink today-learn-link" id="today-learn-link" onClick={props.onOpenGuide}>How to learn with Panna</button>
+      ) : (
+        <Card className="today-card today-learn" id="today-learn">
+          <button type="button" className="today-learn-btn" onClick={props.onOpenGuide}>
+            <span className="today-mid">How to learn with Panna ›</span>
+            <span className="today-muted today-tight">A 15-minute routine that makes words stick.</span>
+          </button>
         </Card>
       )}
     </section>
