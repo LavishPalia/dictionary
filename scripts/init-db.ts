@@ -17,6 +17,7 @@ import { COMPANION_PAGES } from './companion-entries';
 import { EXPANDED_PAGES } from './expanded-entries';
 import { SOURCES_DIR, WordNet, loadAgid, verifyChecksums } from './lib/lexicon';
 import { ExampleRow, toExampleDbRows } from './lib/examples';
+import { CORRECTIONS_FILE, applyEntryCorrections, correctExamples, loadCorrections } from './lib/corrections';
 import { GeminiRow, findRelated, mergeGeminiLinks } from './lib/related';
 import { GeneratedGloss, toPhase4Entry } from './lib/phase4';
 
@@ -58,6 +59,8 @@ export interface BuildReport {
   /** Similar / opposite links stored. */
   related: number;
   examples: number;
+  /** Words fixed or added by data/sources/corrections.jsonl. */
+  corrected: { changed: string[]; added: string[] };
   data_version: string;
 }
 
@@ -76,7 +79,8 @@ function validate(e: SourceEntry, origin: string): void {
 }
 
 /** Merges the source layers into one entry per normalized headword, in collation order. */
-export function collectEntries(): { entries: SourceEntry[]; duplicates: string[]; overrides: string[]; editorial: number; closed: number; generated: number } {
+export function collectEntries(): { entries: SourceEntry[]; duplicates: string[]; overrides: string[]; editorial: number; closed: number; generated: number;
+  corrected: { changed: string[]; added: string[] } } {
   // Editorial precedence for duplicate headwords: seed list, then companion pages, then expanded pages.
   const byPage = (pages: Record<number, Omit<SourceEntry, 'reviewed'>[]>) =>
     Object.keys(pages).map(Number).sort((a, b) => a - b).flatMap((p) => pages[p]);
@@ -98,6 +102,7 @@ export function collectEntries(): { entries: SourceEntry[]; duplicates: string[]
   if (fs.existsSync(RELATED_GEMINI_FILE)) pinnedInputs.push('data/sources/related-gemini.jsonl');
   // examples.jsonl is pinned like the others; an EXAMPLES_FILE override (test fixtures) is not.
   if (fs.existsSync(EXAMPLES_REAL_FILE) && !process.env.EXAMPLES_FILE) pinnedInputs.push('data/sources/examples.jsonl');
+  if (fs.existsSync(CORRECTIONS_FILE)) pinnedInputs.push('data/sources/corrections.jsonl');
   verifyChecksums(pinnedInputs);
   const closedClass: SourceEntry[] = fs.readFileSync(path.join(SOURCES_DIR, 'closed-class-words.jsonl'), 'utf8')
     .split('\n').filter((l) => l.trim()).map((l) => {
@@ -123,9 +128,12 @@ export function collectEntries(): { entries: SourceEntry[]; duplicates: string[]
     }
   }
 
+  // Hand-made corrections go last, so they win over every generated layer.
+  const corrected = applyEntryCorrections(merged, loadCorrections());
+
   const entries = [...merged.values()].sort((a, b) =>
     collator.compare(a.headword, b.headword) || (a.normalized < b.normalized ? -1 : a.normalized > b.normalized ? 1 : 0));
-  return { entries, duplicates: [...duplicates].sort(), overrides: overrides.sort(), editorial, closed: closedClass.length, generated };
+  return { entries, duplicates: [...duplicates].sort(), overrides: overrides.sort(), editorial, closed: closedClass.length, generated, corrected };
 }
 
 export function layOut(entries: SourceEntry[]): { laid: LaidOutEntry[]; pages: PageRow[]; thumbIndex: Record<string, number> } {
@@ -258,7 +266,7 @@ CREATE VIRTUAL TABLE entries_fts USING fts5(
 
 /** Builds the database at outPath (replacing it) and returns a summary. */
 export function buildDatabase(outPath = DB_PATH): BuildReport {
-  const { entries, duplicates, overrides, editorial, closed, generated } = collectEntries();
+  const { entries, duplicates, overrides, editorial, closed, generated, corrected } = collectEntries();
   const { laid, pages, thumbIndex } = layOut(entries);
   verifyChecksums(['data/sources/infl.txt', 'data/sources/lemmas.jsonl']);
   const agid = loadAgid();
@@ -283,7 +291,8 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
   const exampleRows: ExampleRow[] = fs.existsSync(examplesFile)
     ? fs.readFileSync(examplesFile, 'utf8').split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l) as ExampleRow)
     : [];
-  const examples = toExampleDbRows(exampleRows, entryByWord);
+  const formsOf = new Map([...agid.lemmaForms].map(([lemma, byPos]) => [lemma, [...byPos.values()].flatMap((set) => [...set])]));
+  const examples = toExampleDbRows(process.env.EXAMPLES_FILE ? exampleRows : correctExamples(exampleRows, loadCorrections(), formsOf), entryByWord);
 
   // Content hash of everything the client can see; used to version /api/page caching.
   const dataVersion = crypto.createHash('sha256')
@@ -367,6 +376,7 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     generated,
     related: related.length,
     examples: examples.length,
+    corrected,
     editorial_duplicates_dropped: duplicates,
     closed_class_overrides: overrides,
     data_version: dataVersion,
@@ -382,6 +392,9 @@ if (require.main === module) {
     if (report.editorial_duplicates_dropped.length) {
       console.log(`  ${report.editorial_duplicates_dropped.length} duplicate editorial headwords kept once: ` +
         report.editorial_duplicates_dropped.join(', '));
+    }
+    if (report.corrected.changed.length || report.corrected.added.length) {
+      console.log(`  Corrections: fixed ${report.corrected.changed.join(', ') || 'none'}; added ${report.corrected.added.join(', ') || 'none'}`);
     }
     if (report.closed_class_overrides.length) {
       console.log(`  Closed-class sense kept over editorial entry: ${report.closed_class_overrides.join(', ')}`);

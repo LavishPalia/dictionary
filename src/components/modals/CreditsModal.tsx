@@ -46,7 +46,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({ isOpen, onClose }) =
           </section>
           <section>
             <h3 style={{ margin: '0 0 3px', color: '#7a2b22', font: '18px var(--font-fell)' }}>AGID / SCOWL</h3>
-            <p style={{ margin: 0, fontSize: '14px' }}>Inflection data supports lookup of forms such as plurals and verb tenses. AGID is by Kevin Atkinson and is free to use with its copyright notice; SCOWL materials carry their own notices. See <a href="http://wordlist.aspell.net/" target="_blank" rel="noreferrer" style={{ color: '#7a2b22' }}>SCOWL</a> and the included data-source notices.</p>
+            <p style={{ margin: 0, fontSize: '14px' }}>Inflection data supports lookup of forms such as plurals and verb tenses. AGID is by Kevin Atkinson and is free to use with its copyright notice; SCOWL materials carry their own notices. See <a href="https://wordlist.aspell.net/" target="_blank" rel="noreferrer" style={{ color: '#7a2b22' }}>SCOWL</a> and the included data-source notices.</p>
           </section>
           <section style={{ borderTop: '1px solid #b9a57c', paddingTop: '12px' }}>
             <h3 style={{ margin: '0 0 5px', color: '#7a2b22', font: '18px var(--font-fell)' }}>Editorial and review status</h3>
