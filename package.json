@@ -42,6 +42,7 @@
     "test:quiz": "tsx scripts/test-quiz.ts",
     "test:related": "tsx scripts/test-related.ts",
     "test:sentence": "tsx scripts/test-sentence.ts",
+    "test:quick": "tsx scripts/test-quick.ts",
     "test:related-gemini": "tsx scripts/test-related-gemini.ts",
     "test:examples": "tsx scripts/test-examples.ts",
     "test:hinglish": "tsx scripts/test-hinglish.ts",

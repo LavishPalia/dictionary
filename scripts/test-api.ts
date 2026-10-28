@@ -135,6 +135,13 @@ async function testEndpoints() {
   check('GET /api/search near=1 excludes the word itself', near.status === 200 && Array.isArray(near.body.results)
     && !near.body.results.some((r: { normalized: string }) => r.normalized === 'principal'), near.body);
 
+  const quick = await fetch(`${BASE}/api/quick?q=${encodeURIComponent('obfuscate')}`);
+  const quickBody = await quick.text();
+  check('GET /api/quick is plain text, cached a day, short', quick.status === 200
+    && quick.headers.get('content-type') === 'text/plain; charset=utf-8'
+    && quick.headers.get('cache-control') === 'public, max-age=86400'
+    && quickBody.startsWith('obfuscate (') && quickBody.length <= 600, { type: quick.headers.get('content-type'), cache: quick.headers.get('cache-control') });
+
   if (failures) {
     console.error(`\n${failures} check(s) failed.`);
     process.exit(1);
