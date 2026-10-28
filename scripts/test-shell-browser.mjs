@@ -85,6 +85,9 @@ async function main() {
     await sleep(300);
     check('desktop: ⋯ opens the reading settings dialog', await evaluate(`Boolean(document.querySelector('#reading-menu[role="dialog"]'))`));
     check('desktop: focus moves into the menu', await evaluate(`Boolean(document.activeElement?.closest('#reading-menu'))`));
+    check('desktop: the menu row "How to learn with Panna" comes directly after Guided tours',
+      await evaluate(`(() => { const rows = [...document.querySelectorAll('#reading-menu .menu-row')]; const i = rows.findIndex((r) => r.id === 'guided-tours-btn'); return i >= 0 && rows[i + 1]?.id === 'learn-btn'; })()`),
+      await evaluate(`[...document.querySelectorAll('#reading-menu .menu-row')].map((r) => r.id)`));
     await evaluate(`document.querySelector('[role="radio"][aria-checked="true"]').focus(); true`);
     await key('ArrowRight');
     await sleep(800);
@@ -145,6 +148,9 @@ async function main() {
     await sleep(300);
     const sheet = await evaluate(`(() => { const r = document.querySelector('#reading-menu').getBoundingClientRect(); return { left: r.left, right: r.right, bottom: Math.round(r.bottom), top: r.top, h: innerHeight }; })()`);
     check('phone: menu is a full-width sheet anchored to the bottom', sheet && sheet.left === 0 && sheet.right === 390 && sheet.bottom === sheet.h && sheet.top > 0, sheet);
+    check('phone: the menu row "How to learn with Panna" comes directly after Guided tours',
+      await evaluate(`(() => { const rows = [...document.querySelectorAll('#reading-menu .menu-row')]; const i = rows.findIndex((r) => r.id === 'guided-tours-btn'); return i >= 0 && rows[i + 1]?.id === 'learn-btn'; })()`),
+      await evaluate(`[...document.querySelectorAll('#reading-menu .menu-row')].map((r) => r.id)`));
     await evaluate(`document.querySelector('#open-credits-btn').click(); true`);
     await sleep(300);
     check('phone: Sources & credits opens from the menu', await evaluate(`Boolean(document.querySelector('[aria-labelledby="credits-title"]')) && !document.querySelector('#reading-menu')`));

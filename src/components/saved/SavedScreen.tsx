@@ -36,6 +36,8 @@ interface SavedScreenProps {
   onReview: () => void;
   /** Starts the Saving and Review tour. */
   onHowItWorks: () => void;
+  /** Opens the study guide. */
+  onOpenGuide: () => void;
 }
 
 type Tab = 'words' | 'pages' | 'notes';
@@ -165,7 +167,10 @@ export function SavedScreen(props: SavedScreenProps) {
                   : 'No new words. Every saved word has had at least one review.'}
             </p>
           ) : (
-            <p className="saved-empty">No saved words yet. Open any word and tap <b>Save word</b> to keep it here.</p>
+            <>
+              <p className="saved-empty">No saved words yet. Open any word and tap <b>Save word</b> to keep it here.</p>
+              <button type="button" className="lookup-link tour-howlink tour-howlink--desk" id="saved-learn-link" onClick={props.onOpenGuide}>How to learn with Panna ›</button>
+            </>
           )
         ) : (
           <div className="ui-list saved-list">

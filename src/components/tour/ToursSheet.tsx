@@ -5,13 +5,14 @@ import { ChevronIcon } from '@/components/ui/icons';
 import { TOURS, tourById, type TourId, type ToursState } from '@/lib/tours';
 
 // ⋯ → Guided tours: every tour, with a tick once seen, and the switch for one-time tips.
-export function ToursSheet({ open, state, onClose, onStart, onTipsAgain, onTipsOff }: {
+export function ToursSheet({ open, state, onClose, onStart, onTipsAgain, onTipsOff, onOpenGuide }: {
   open: boolean;
   state: ToursState;
   onClose: () => void;
   onStart: (id: TourId) => void;
   onTipsAgain: () => void;
   onTipsOff: () => void;
+  onOpenGuide: () => void;
 }) {
   const anyTipShown = Object.keys(state.tips).length > 0;
   return (
@@ -39,6 +40,7 @@ export function ToursSheet({ open, state, onClose, onStart, onTipsAgain, onTipsO
           ? <Button size="small" id="tips-again-btn" onClick={onTipsAgain}>Show tips again</Button>
           : <Button size="small" id="tips-off-sheet-btn" onClick={onTipsOff}>Turn off tips</Button>}
       </div>
+      <button type="button" className="lookup-link tour-howlink" id="tours-learn-link" onClick={() => { onClose(); onOpenGuide(); }}>How to learn with Panna ›</button>
     </Sheet>
   );
 }

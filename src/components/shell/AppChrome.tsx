@@ -51,7 +51,7 @@ function DueCount({ count }: { count: number }) {
   return <>{' '}<span className="ui-badge">{count > 99 ? '99+' : count}</span><span className="ui-visually-hidden"> word{count === 1 ? '' : 's'} due</span></>;
 }
 
-export type Section = 'today' | 'book' | 'saved' | 'review';
+export type Section = 'today' | 'book' | 'saved' | 'review' | 'learn';
 
 export function BottomNav({ active, savedCount, dueCount, onToday, onBook, onSaved, onReview }: {
   active: Section;

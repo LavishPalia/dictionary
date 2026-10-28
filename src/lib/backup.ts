@@ -113,7 +113,7 @@ export function wordsToLocate(backup: Backup, currentVersion: string): string[] 
   return [...new Set([...Object.values(anchors.ribbons ?? {}), ...Object.values(anchors.dogEars ?? {}), ...notes.map((n) => n.anchor).filter((a): a is string => !!a)])];
 }
 
-type ToursLike = { seen?: Record<string, number>; tips?: Record<string, number>; welcomeDone?: boolean; tipsOff?: boolean; listOpened?: boolean };
+type ToursLike = { seen?: Record<string, number>; tips?: Record<string, number>; welcomeDone?: boolean; tipsOff?: boolean; listOpened?: boolean; guideOpened?: boolean };
 
 /** Tours and tips seen on either side stay seen; this browser's choice about tips wins. */
 function mergeTours(current: unknown, backup: unknown): ToursLike {
@@ -128,6 +128,7 @@ function mergeTours(current: unknown, backup: unknown): ToursLike {
     seen: earliest(c.seen, b.seen), tips: earliest(c.tips, b.tips),
     welcomeDone: Boolean(c.welcomeDone || b.welcomeDone), tipsOff: c.tipsOff ?? b.tipsOff ?? false,
     listOpened: Boolean(c.listOpened || b.listOpened),
+    guideOpened: Boolean(c.guideOpened || b.guideOpened),
   };
 }
 

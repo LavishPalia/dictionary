@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import type { BookPage, DictionaryEntry } from '@/lib/types';
 import { describePos } from '@/lib/pos';
-import { localDate } from '@/lib/review';
+import { localDate, SECONDS_PER_CARD } from '@/lib/review';
 import { Button, Card } from '@/components/ui';
 import { StarIcon } from '@/components/ui/icons';
 import { ProgressBar, ReviewCalendar } from '@/components/progress/Progress';
@@ -30,9 +30,10 @@ interface TodayScreenProps {
   showWelcome: boolean;
   onTakeTour: () => void;
   onDismissWelcome: () => void;
+  /** Whether the study guide has been opened (a card until then, a quiet link after); null until known. */
+  guideOpened: boolean | null;
+  onOpenGuide: () => void;
 }
-
-const SECONDS_PER_CARD = 20;
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
 export function TodayScreen(props: TodayScreenProps) {
@@ -140,6 +141,18 @@ export function TodayScreen(props: TodayScreenProps) {
               <StarIcon />{saved ? 'Saved' : 'Save word'}
             </Button>
           </div>
+        </Card>
+      )}
+
+      {props.guideOpened === null ? null : props.guideOpened ? (
+        // On the desk, like Saved's link: the plain link colour is too dark there.
+        <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-learn-link" id="today-learn-link" onClick={props.onOpenGuide}>How to learn with Panna ›</button>
+      ) : (
+        <Card className="today-card today-learn" id="today-learn">
+          <button type="button" className="today-learn-btn" onClick={props.onOpenGuide}>
+            <span className="today-mid">How to learn with Panna ›</span>
+            <span className="today-muted today-tight">A 15-minute routine that makes words stick.</span>
+          </button>
         </Card>
       )}
     </section>

@@ -21,6 +21,8 @@ interface ReviewScreenProps {
   onOpenSaved: () => void;
   /** Starts the Saving and Review tour. */
   onHowItWorks: () => void;
+  /** Opens the study guide. */
+  onOpenGuide: () => void;
 }
 
 interface Option { key: string; text: string; correct: boolean }
@@ -77,7 +79,7 @@ const PROMPTS: Record<QuestionKind, string> = {
 
 // One review round: up to 20 due words, one calm card at a time, no timer. A word answered wrongly comes back
 // once at the end of the round so the reader leaves having got it right.
-export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, onHowItWorks }: ReviewScreenProps) {
+export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, onHowItWorks, onOpenGuide }: ReviewScreenProps) {
   // The round is fixed when the screen opens; answering moves words out of "due" but not out of this round.
   const [round] = useState(() => {
     const now = Date.now();
@@ -205,6 +207,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
             </>
           )}
           {howLink}
+          <button type="button" className="lookup-link tour-howlink" id="review-learn-link" onClick={onOpenGuide}>How to learn with Panna ›</button>
         </div>
         <Button variant="desk" full onClick={saved.length ? onOpenSaved : onClose}>{saved.length ? 'See saved words' : 'Done'}</Button>
       </section>

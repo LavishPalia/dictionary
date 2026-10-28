@@ -26,6 +26,8 @@ export const INTERVAL_DAYS = [1, 3, 7, 16, 35];
 /** From this box on a word counts as mastered (it comes back after 16 days or more). */
 export const MASTERED_BOX = 4;
 export const SESSION_SIZE = 20;
+/** Rough time per review card, for "about N minutes" estimates. */
+export const SECONDS_PER_CARD = 20;
 
 const DAY = 24 * 60 * 60 * 1000;
 

@@ -9,7 +9,8 @@ import {
 } from '@/lib/tours';
 import type { TourLayerProps } from './TourLayer';
 
-type Screen = 'today' | 'book' | 'saved' | 'review';
+// The study guide ('learn') can start a tour, so a tour can return to it.
+type Screen = 'today' | 'book' | 'saved' | 'review' | 'learn';
 
 /** What a tour needs from the app to set up each step's scene. */
 export interface TourApp {
@@ -96,7 +97,9 @@ export function useTours(app: TourApp) {
   /** Starts a tour; `demo` is the word the word card tour shows (the open card's word when started from it). */
   const startTour = useCallback(async (id: TourId, demoWord?: DictionaryEntry) => {
     const a = appRef.current;
-    const opener = document.activeElement as HTMLElement | null;
+    // A click that does not focus its button (Safari) leaves focus on <body>: no opener then.
+    const active = document.activeElement as HTMLElement | null;
+    const opener = active && active !== document.body ? active : null;
     setSheetOpen(false);
     a.setMenu(false);
     setTip(null);
@@ -117,7 +120,8 @@ export function useTours(app: TourApp) {
     a.openWord(t.startWord);
     if (a.section !== t.start) a.goTo(t.start);
     requestAnimationFrame(() => {
-      const back = t.opener?.isConnected ? t.opener : document.getElementById('menu-btn');
+      // Without its opener, focus goes to the guide's title (a tour started from the guide) or the ⋯ menu button.
+      const back = t.opener?.isConnected ? t.opener : document.getElementById(t.start === 'learn' ? 'learn-title' : 'menu-btn');
       back?.focus();
     });
     pointToTours();
@@ -201,6 +205,9 @@ export function useTours(app: TourApp) {
     sheetOpen,
     openSheet: () => { update((s) => ({ ...s, listOpened: true })); setSheetOpen(true); },
     closeSheet: () => setSheetOpen(false),
+    /** The study guide has been opened once (Today then shows a small link instead of its card). */
+    guideOpened: state.guideOpened === true,
+    markGuideOpened: () => { if (!stateRef.current.guideOpened) update((s) => ({ ...s, guideOpened: true })); },
     tipsAgain: () => update((s) => ({ ...s, tips: {}, tipsOff: false })),
     tipsOff: () => update((s) => ({ ...s, tipsOff: true })),
   };

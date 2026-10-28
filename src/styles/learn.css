@@ -1,0 +1,54 @@
+/* How to learn with Panna. Headings sit on the desk (as on Saved); each section is a paper card (as on Today). */
+
+.learn { width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: 14px; color: var(--brass-soft); }
+.learn-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-2); }
+.learn-head > div { min-width: 0; }
+.learn-title { margin: 0; font: 32px/1.15 var(--font-fell); color: var(--brass); outline: none; }
+
+/* Hindi lines: always wrap, even a long run with no spaces. */
+.learn-hi { margin: 2px 0 0; font: 15px/1.55 var(--font-deva); color: var(--ink-soft); overflow-wrap: anywhere; }
+/* Modifiers come after .learn-hi so they win at equal specificity. */
+.learn-title-hi { color: var(--brass-muted); font-size: 17px; }
+
+.learn-card { min-width: 0; }
+.learn-next { border-color: var(--sepia); }
+.learn-next-label { margin: 0; font-weight: normal; }
+.learn-next-text { margin: 6px 0 0; font: 21px/1.3 var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }
+.learn-next-btn { margin-top: var(--space-3); }
+
+.learn-h2 { margin: 0; font: 20px var(--font-fell-sc); color: var(--ink); }
+.learn-h2-hi { margin-bottom: var(--space-2); }
+
+.learn-list { list-style: none; margin: 0; padding: 0; }
+.learn-item { padding: 10px 0; border-top: 1px solid var(--rule-faint); }
+.learn-item:first-child { border-top: 0; }
+.learn-en { margin: 0; font: 16px/1.45 var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }
+.learn-btn { margin-top: var(--space-2); max-width: 100%; padding-top: 6px; padding-bottom: 6px; text-align: center; }
+
+/* The method: numbered steps, stacked on phones, four in a row on desktop. */
+.learn-section--method .learn-list { counter-reset: learn-step; }
+.learn-section--method .learn-item { counter-increment: learn-step; position: relative; padding-left: 38px; }
+.learn-section--method .learn-item::before {
+  content: counter(learn-step); position: absolute; left: 0; top: 10px;
+  width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--crimson);
+  display: grid; place-items: center; font: 15px/1 var(--font-fell-sc); color: var(--crimson);
+}
+
+/* "Avoid these mistakes": a quiet mark, no buttons. */
+.learn-section--mistakes .learn-item { position: relative; padding-left: 22px; }
+.learn-section--mistakes .learn-item::before { content: '×'; position: absolute; left: 2px; top: 9px; font: 18px/1 var(--font-fell); color: var(--crimson); }
+
+@media (min-width: 1024px) {
+  .learn-section--method .learn-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+  .learn-section--method .learn-item {
+    display: flex; flex-direction: column; border-top: 0; padding: 40px 0 0;
+  }
+  .learn-section--method .learn-item::before { top: 0; }
+  .learn-section--method .learn-item:not(:last-child)::after {
+    content: '→'; position: absolute; top: 2px; right: -6px; font: 18px/1 var(--font-fell); color: var(--rule);
+  }
+  .learn-section--method .learn-btn { margin-top: auto; align-self: flex-start; }
+  .learn-section--method .learn-hi { margin-bottom: var(--space-2); }
+  .learn-btn { min-height: 36px; font-size: 14px; }
+}
+.learn-next-label-hi { margin-left: 6px; font-size: 13px; letter-spacing: 0; }

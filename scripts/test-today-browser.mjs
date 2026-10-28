@@ -83,7 +83,7 @@ async function main() {
     })()`);
     const where = () => evaluate(`({
       path: location.pathname,
-      screen: document.querySelector('#today-screen') ? 'today' : document.querySelector('#review-screen') ? 'review' : document.querySelector('#saved-screen') ? 'saved' : 'book',
+      screen: document.querySelector('#learn-screen') ? 'learn' : document.querySelector('#today-screen') ? 'today' : document.querySelector('#review-screen') ? 'review' : document.querySelector('#saved-screen') ? 'saved' : 'book',
     })`);
     const type = async (text) => {
       await evaluate(`(() => { const input = document.querySelector('#lookup-input'); input.focus(); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ${JSON.stringify(text)}); input.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
@@ -113,6 +113,14 @@ async function main() {
       check(`${sizeName}: Today shows the word of the day`, (await evaluate(`document.querySelector('#today-word')?.innerText ?? ''`)).includes(wod), wod);
       check(`${sizeName}: Today is the current tab`, await evaluate(`document.querySelector('${todayBtn}').getAttribute(${JSON.stringify(sizeName === 'phone' ? 'aria-current' : 'aria-pressed')}) === ${JSON.stringify(sizeName === 'phone' ? 'page' : 'true')}`));
       check(`${sizeName}: nothing overflows sideways`, await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
+
+      // The study guide: a card on Today until it has been opened, then a quiet link.
+      check(`${sizeName}: Today shows the study guide card before it is opened`, await visible('#today-learn') && !(await evaluate(`Boolean(document.querySelector('#today-learn-link'))`)));
+      w = await go(`document.querySelector('#today-learn button').click()`);
+      check(`${sizeName}: the card opens the study guide`, w.screen === 'learn', w);
+      w = await go(`document.querySelector('#learn-back').click()`);
+      check(`${sizeName}: the guide's Back returns to Today`, w.screen === 'today' && w.path === '/', w);
+      check(`${sizeName}: once opened, Today shows the guide as a link, not a card`, await visible('#today-learn-link') && !(await evaluate(`Boolean(document.querySelector('#today-learn'))`)));
 
       // Word of the day: save it, and open it.
       await evaluate(`document.querySelector('#today-word-save').click(); true`);
