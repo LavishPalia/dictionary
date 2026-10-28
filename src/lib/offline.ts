@@ -8,6 +8,10 @@ export interface SavedBook { data_version: string; pages: number; saved_at: numb
 
 export const pageUrl = (page: number, version: string) => `/api/page/${page}?v=${version}`;
 
+/** Pages per request when saving the whole book (/api/chunk/N); each is still cached under its own pageUrl. */
+export const CHUNK_PAGES = 100;
+export const chunkUrl = (chunk: number, version: string) => `/api/chunk/${chunk}?v=${version}`;
+
 /**
  * Registers the service worker (production builds only: in development it would serve stale code). Once it is
  * active it is told which files this page already loaded, so they are cached too, plus `extraUrls` (the data of the
@@ -48,8 +52,10 @@ export async function savedBook(): Promise<SavedBook | null> {
 }
 
 /**
- * Downloads every page of the book (this build) into the cache, a few at a time, skipping pages already there, then
- * drops pages from older builds. Asks the browser to keep the data even when storage runs low.
+ * Downloads the book (this build) into the cache CHUNK_PAGES pages per request, a few requests at a time, and stores
+ * each page under its own pageUrl, so the app and the service worker read them exactly like pages fetched one by one.
+ * Chunks whose pages are all cached already are skipped, so a cancelled save resumes. Then drops pages from older
+ * builds and asks the browser to keep the data even when storage runs low.
  */
 export async function saveBook(
   meta: { total_pages: number; data_version: string },
@@ -58,25 +64,33 @@ export async function saveBook(
 ): Promise<SavedBook> {
   const cache = await caches.open(BOOK_CACHE);
   const total = meta.total_pages;
+  const cached = new Set((await cache.keys()).map((key) => new URL(key.url).pathname + new URL(key.url).search));
   let done = 0;
   let bytes = 0;
-  const queue = Array.from({ length: total }, (_, i) => i + 1);
+  const queue = Array.from({ length: Math.ceil(total / CHUNK_PAGES) }, (_, i) => i + 1);
   const worker = async () => {
-    for (let page = queue.shift(); page !== undefined; page = queue.shift()) {
+    for (let chunk = queue.shift(); chunk !== undefined; chunk = queue.shift()) {
       if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
-      const url = pageUrl(page, meta.data_version);
-      let hit = await cache.match(url);
-      if (!hit) {
-        const res = await fetch(url, { signal });
-        if (!res.ok) throw new Error(`Page ${page}: ${res.status}`);
-        await cache.put(url, res.clone());
-        hit = res;
+      const first = (chunk - 1) * CHUNK_PAGES + 1;
+      const numbers = Array.from({ length: Math.min(CHUNK_PAGES, total - first + 1) }, (_, i) => first + i);
+      if (numbers.every((n) => cached.has(pageUrl(n, meta.data_version)))) {
+        for (const n of numbers) bytes += (await (await cache.match(pageUrl(n, meta.data_version)))!.blob()).size;
+      } else {
+        const res = await fetch(chunkUrl(chunk, meta.data_version), { signal });
+        if (!res.ok) throw new Error(`Pages ${first}–${numbers.at(-1)}: ${res.status}`); // 409: a newer build was deployed
+        const { pages } = (await res.json()) as { pages: Array<{ page_number: number }> };
+        if (pages.length !== numbers.length) throw new Error(`Pages ${first}–${numbers.at(-1)}: got ${pages.length}`);
+        for (const page of pages) {
+          const body = JSON.stringify(page);
+          bytes += new Blob([body]).size;
+          await cache.put(pageUrl(page.page_number, meta.data_version), new Response(body, { headers: { 'Content-Type': 'application/json' } }));
+        }
       }
-      bytes += (await hit.clone().blob()).size;
-      onProgress(++done, total);
+      done += numbers.length;
+      onProgress(done, total);
     }
   };
-  await Promise.all(Array.from({ length: 4 }, worker));
+  await Promise.all(Array.from({ length: 3 }, worker));
   for (const key of await cache.keys()) {
     const url = new URL(key.url);
     if (url.pathname.startsWith('/api/page/') && url.searchParams.get('v') !== meta.data_version) await cache.delete(key);
