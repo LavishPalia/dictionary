@@ -65,7 +65,7 @@ async function main() {
       for (let i = 0; i < 60; i++) {
         await sleep(250);
         try {
-          if (await evaluate(`(() => { const el = document.querySelector('#lookup-input'); return Boolean(el && document.querySelector('.entry-text') && Object.keys(el).some((k) => k.startsWith('__reactFiber$'))); })()`)) return true;
+          if (await evaluate(`(() => { const el = document.querySelector('#lookup-input'); return Boolean(el && document.querySelector('.entry-text, #learn-title') && Object.keys(el).some((k) => k.startsWith('__reactFiber$'))); })()`)) return true;
         } catch {}
       }
       return false;
@@ -102,6 +102,7 @@ async function main() {
       { name: 'search results', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await type('cam'); } },
       { name: 'search no entry', go: async () => { await type('ceremonis'); } },
       { name: 'search hindi', go: async () => { await type('छोड़'); } },
+      { name: 'learn', go: async (size) => { await seed(quiet, saveWords); await open('/learn', size); await sleep(800); } },
       { name: 'saved', go: async (size) => { await seed(quiet, saveWords); await open(`/page/${CALM_PAGE}`, size); await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn'); await sleep(900); } },
       { name: 'review question', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await click(size.mobile ? '#nav-review-btn' : '#open-review-btn'); await sleep(1500); } },
       { name: 'review answered', go: async () => { await click('.review-option'); await sleep(600); } },
