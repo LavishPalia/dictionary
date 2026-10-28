@@ -82,10 +82,10 @@ function selectCandidates(db: Database.Database, top: number): Candidate[] {
   const rows = db.prepare(`SELECT id, normalized, headword, pos, definition_en, meaning_hi, freq_rank FROM entries
     WHERE freq_rank IS NOT NULL AND freq_rank <= ? AND ${GRAMMAR_POS.map(() => 'pos NOT LIKE ?').join(' AND ')}
     ORDER BY freq_rank, normalized`).all(top, ...GRAMMAR_POS.map((p) => `${p}%`)) as
-    Array<{ id: number; normalized: string; headword: string; pos: string; definition_en: string; meaning_hi: string; freq_rank: number }>;
+    Array<{ id: string; normalized: string; headword: string; pos: string; definition_en: string; meaning_hi: string; freq_rank: number }>;
   const formRows = db.prepare(`SELECT f.lemma_id AS id, f.normalized_form AS form FROM forms f
-    JOIN entries e ON e.id = f.lemma_id WHERE e.freq_rank <= ?`).all(top) as { id: number; form: string }[];
-  const formsOf = new Map<number, string[]>();
+    JOIN entries e ON e.id = f.lemma_id WHERE e.freq_rank <= ?`).all(top) as { id: string; form: string }[];
+  const formsOf = new Map<string, string[]>();
   for (const f of formRows) formsOf.set(f.id, [...(formsOf.get(f.id) ?? []), f.form]);
   const seen = new Set<string>();
   const out: Candidate[] = [];

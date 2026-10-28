@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { QuizCard } from '@/lib/book-data';
 import { describePos } from '@/lib/pos';
+import { exampleBlank } from '@/lib/example';
 import {
   comesBackLabel, daysUntil, dueWords, nextDue, questionKind, type QuestionKind, type ReviewRecords, SESSION_SIZE,
 } from '@/lib/review';
@@ -45,9 +46,10 @@ function buildQuestion(card: QuizCard, kind: QuestionKind, retry: boolean): Ques
     ]);
     return { card, kind, options, retry };
   }
-  if (kind === 'fill-blank' && card.entry.example?.blank) {
+  const blank = exampleBlank(card.entry.example);
+  if (kind === 'fill-blank' && card.entry.example && blank) {
     // Options are cased like the gap, so capitalisation never gives the answer away (distractors are lower case already).
-    const { en, blank } = card.entry.example;
+    const { en } = card.entry.example;
     const span = en.slice(blank[0], blank[0] + blank[1]);
     const upper = span.charAt(0) !== span.charAt(0).toLowerCase();
     const fit = (w: string) => (upper ? w.charAt(0).toUpperCase() + w.slice(1) : w);
@@ -105,7 +107,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
       .then((data: { cards: QuizCard[] }) => {
         if (!live) return;
         setQueue(data.cards.filter((c) => c.distractors.length > 0)
-          .map((card, i) => buildQuestion(card, questionKind(records[card.entry.normalized], i + card.entry.normalized.length, !!card.opposite, !!card.entry.example?.blank), false)));
+          .map((card, i) => buildQuestion(card, questionKind(records[card.entry.normalized], i + card.entry.normalized.length, !!card.opposite, !!exampleBlank(card.entry.example)), false)));
         setIndex(0);
         setChosen(null);
         setFirstTry({});
@@ -249,13 +251,13 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
                 </div>
               </>
             )}
-            {question.kind === 'fill-blank' && entry.example?.blank && (() => {
-              const { en, hi, blank } = entry.example;
-              const [start, len] = blank;
+            {question.kind === 'fill-blank' && entry.example && exampleBlank(entry.example) && (() => {
+              const { en, hi } = entry.example;
+              const [start, len] = exampleBlank(entry.example)!;
               return (
                 <div className="review-sentence-wrap">
                   <p className="review-sentence" id="review-sentence">
-                    {en.slice(0, start)}{answered ? <b>{en.slice(start, start + len)}</b> : <span className="review-blank">______</span>}{en.slice(start + len)}
+                    {en.slice(0, start)}{answered ? <b>{en.slice(start, start + len)}</b> : <span className="review-blank"><span aria-hidden="true">______</span><span className="ui-visually-hidden">blank</span></span>}{en.slice(start + len)}
                   </p>
                   <p className="review-sentence-hi ui-hi" lang="hi" id="review-sentence-hi">{hi}</p>
                 </div>

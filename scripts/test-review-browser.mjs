@@ -269,8 +269,10 @@ async function main() {
       let s = await screen();
       const sentence = () => evaluate(`document.querySelector('#review-sentence')?.textContent`);
       check(`${sizeName}: Ceremony at box 2 gets the "Fill in the blank" prompt`, s?.prompt === 'Fill in the blank', s?.prompt);
-      const blanked = CEREMONY.en.slice(0, CEREMONY.blank_start) + '______' + CEREMONY.en.slice(CEREMONY.blank_start + CEREMONY.blank_len);
+      // The gap's text is "______" (hidden from screen readers) followed by a visually hidden "blank".
+      const blanked = CEREMONY.en.slice(0, CEREMONY.blank_start) + '______blank' + CEREMONY.en.slice(CEREMONY.blank_start + CEREMONY.blank_len);
       check(`${sizeName}: the sentence shows ______ where the word was`, (await sentence()) === blanked, await sentence());
+      check(`${sizeName}: screen readers hear "blank", not underscores`, await evaluate(`(() => { const g = document.querySelector('#review-sentence .review-blank'); return g?.querySelector('[aria-hidden="true"]')?.textContent === '______' && g?.querySelector('.ui-visually-hidden')?.textContent === 'blank'; })()`));
       check(`${sizeName}: four distinct options, all lower case like the gap`, s?.options.length === 4 && new Set(s.options).size === 4 && s.options.includes('ceremony') && s.options.every((o) => o === o.toLowerCase()), s?.options);
       check(`${sizeName}: the Hindi translation is shown before answering, marked lang="hi"`, await evaluate(`document.querySelector('#review-sentence-hi')?.getAttribute('lang') === 'hi' && document.querySelector('#review-sentence-hi').textContent === ${JSON.stringify(CEREMONY.hi)}`));
       if (sizeName === 'phone') check('phone: nothing overflows sideways', await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
