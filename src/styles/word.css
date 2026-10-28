@@ -20,6 +20,9 @@
 .word-review-note { margin: 8px 0 0; font: 14px var(--font-fell); color: var(--green); }
 .word-provenance { font: italic 13px var(--font-fell); color: var(--ink-soft); }
 .word-goto { margin: 0; padding: 10px 0; font-size: 14px; }
+/* "‹ know": back to the word whose chip opened this one. */
+.lookup-link.word-back { display: inline-block; margin: 0 0 6px; padding: 6px 0; font: 16px var(--font-fell); }
+.word-back:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .word-goto:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
 /* Desktop side panel: a little more room for the word. */
