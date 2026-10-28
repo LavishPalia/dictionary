@@ -151,6 +151,19 @@ async function main() {
       await key('Escape');
       await sleep(300);
 
+      // The study guide, visited once while online, so the worker has its page.
+      const openLearn = async () => {
+        await send('Page.navigate', { url: `${BASE}/learn` });
+        for (let i = 0; i < 60; i++) {
+          await sleep(250);
+          try { if (await evaluate(`document.querySelector('#learn-title')?.textContent === 'How to learn with Panna'`)) return true; } catch {}
+        }
+        return false;
+      };
+      check(`${sizeName}: the study guide opens online`, await openLearn());
+      await sleep(1500); // let it cache the page and its files
+      await open(`/page/${CALM_PAGE}`, size);
+
       // ── Offline, before saving the book ──
       await setOffline(true);
       await open(`/page/${CALM_PAGE}`, size);
@@ -173,6 +186,15 @@ async function main() {
       check(`${sizeName}: a page never opened falls back to Today offline`, await evaluate(`Boolean(document.querySelector('#today-screen')) && Boolean(document.querySelector('#offline-notice'))`),
         await evaluate(`(async () => ({ title: document.title, path: location.pathname, today: Boolean(document.querySelector('#today-screen')), notice: Boolean(document.querySelector('#offline-notice')),
           body: document.body.innerText.slice(0, 120), pages: (await (await caches.open('panna-pages-v1')).keys()).map((k) => k.url) }))()`));
+
+      // The study guide, visited before, opens offline; unvisited (its cached copy removed), it falls back to Today like any other address.
+      check(`${sizeName}: the study guide opens offline once visited`, await openLearn(), await evaluate(`({ path: location.pathname, title: document.querySelector('#learn-title')?.textContent ?? null })`));
+      check(`${sizeName}: the visited guide is kept in the pages cache`, await evaluate(`caches.open('panna-pages-v1').then((c) => c.keys()).then((ks) => ks.some((k) => new URL(k.url).pathname === '/learn'))`));
+      await evaluate(`caches.open('panna-pages-v1').then(async (c) => { for (const k of await c.keys()) if (new URL(k.url).pathname === '/learn') await c.delete(k); return true; })`);
+      await send('Page.navigate', { url: `${BASE}/learn` });
+      await sleep(2500);
+      check(`${sizeName}: the study guide, never visited, falls back to Today offline`, await evaluate(`Boolean(document.querySelector('#today-screen')) && location.pathname === '/' && !document.querySelector('#learn-title')`),
+        await evaluate(`({ path: location.pathname, today: Boolean(document.querySelector('#today-screen')), learn: Boolean(document.querySelector('#learn-title')) })`));
 
       // ── Back online: save the whole book ──
       await setOffline(false);
