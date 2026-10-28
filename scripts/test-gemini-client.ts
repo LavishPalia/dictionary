@@ -9,12 +9,13 @@ function check(label: string, ok: boolean, detail?: unknown) {
   else { failures++; console.error(`✗ ${label}${detail !== undefined ? ` — ${JSON.stringify(detail)}` : ''}`); }
 }
 
-type Stub = { status: number; body: unknown };
+type Stub = { status: number; body: unknown } | { throws: string };
 const calls: Array<{ url: string; body: any }> = [];
 let queue: Stub[] = [];
 globalThis.fetch = (async (url: unknown, init?: { body?: string }) => {
   calls.push({ url: String(url), body: JSON.parse(init?.body ?? '{}') });
   const s = queue.shift() ?? { status: 500, body: {} };
+  if ('throws' in s) throw new TypeError(s.throws);
   return { status: s.status, ok: s.status >= 200 && s.status < 300, json: async () => s.body } as Response;
 }) as typeof fetch;
 
@@ -37,6 +38,13 @@ async function main() {
   check('body carries contents', JSON.stringify(b.contents) === JSON.stringify(req.contents));
   check('body carries generationConfig.responseSchema', JSON.stringify(b.generationConfig?.responseSchema) === JSON.stringify(req.schema));
   check('body asks for JSON', b.generationConfig?.responseMimeType === 'application/json');
+
+  // A dropped connection (fetch throws) is retried like a 5xx.
+  const before = calls.length;
+  queue = [{ throws: 'fetch failed' }, { status: 200, body: okBody([{ a: 2 }]) }];
+  const rn = await callGeminiJson<{ a: number }>('KEY', req);
+  check('network error is retried then succeeds', calls.length - before === 2 && rn.items[0].a === 2);
+
 
   // Per-day 429 on model 1 moves to model 2, and it sticks for the next call.
   calls.length = 0;

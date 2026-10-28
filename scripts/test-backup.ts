@@ -1,5 +1,5 @@
 // Checks backup and restore (src/lib/backup.ts). Usage: npx tsx scripts/test-backup.ts
-import { keepValid, backupFileName, createBackup, parseBackup, restoreData, wordsToLocate, type BackupData } from '../src/lib/backup';
+import { isSavedWord, keepValid, backupFileName, createBackup, parseBackup, restoreData, wordsToLocate, type BackupData } from '../src/lib/backup';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -69,6 +69,16 @@ check('only marks from another build need looking up', wordsToLocate(backup, 'v1
 const moved = restoreData({}, oldBackup, 'merge', book, { calm: 9, classic: 12, ceremony: 9 });
 check('marks from an older build land on their words’ current pages', JSON.stringify(moved.panna_bookmarks) === '[8]' && JSON.stringify(moved.panna_dog_ears) === '[12]'
   && (moved.panna_marginalia as Array<{ page_number: number }>)[0].page_number === 9, moved);
+
+{
+  const w = (example: unknown) => ({ normalized: 'ceremony', headword: 'Ceremony', example });
+  const en = 'The ceremony was postponed.';
+  check('saved word accepts a well-formed example with a blank', isSavedWord(w({ en, hi: 'x', blank: [4, 8] })));
+  check('saved word accepts an example without a blank', isSavedWord(w({ en, hi: 'x' })));
+  check('saved word still accepts an old examples list', isSavedWord({ normalized: 'a', headword: 'A', examples: ['x'] }));
+  check('saved word rejects a blank running past the sentence', !isSavedWord(w({ en, hi: 'x', blank: [20, 20] })));
+  check('saved word rejects a negative or empty blank', !isSavedWord(w({ en, hi: 'x', blank: [-1, 3] })) && !isSavedWord(w({ en, hi: 'x', blank: [2, 0] })));
+}
 
 if (failures) { console.error(`\n${failures} backup check(s) failed.`); process.exit(1); }
 console.log('\nBackup checks passed.');

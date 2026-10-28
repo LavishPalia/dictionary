@@ -9,6 +9,16 @@ import Database from 'better-sqlite3';
 const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
   .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
 
+// Skip the fill-in-the-blank checks only when the build has no examples table or Ceremony has no exact example;
+// any other database error is a real failure.
+const CEREMONY = (() => {
+  try {
+    return new Database('data/dictionary.db', { readonly: true }).prepare(`SELECT e.en, e.hi, e.blank_start, e.blank_len FROM examples e
+      JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony' AND e.exact = 1`).get();
+  } catch (e) { if (/no such table: examples/.test(e.message)) return undefined; throw e; }
+})();
+const AXE = fs.readFileSync(path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
+
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9327;
 const BASE = 'http://localhost:3000';
@@ -230,6 +240,64 @@ async function main() {
       await evaluate(`document.querySelector('#close-review-btn').click(); true`);
       await sleep(500);
       check(`${sizeName}: after a reload, closing Review still returns to the book`, !(await screen()) && await visible('.entry-text'));
+    }
+
+    // ── "Fill in the blank": Ceremony at box 2, placed in the round where the question kind is fill-blank ──
+    for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
+      if (!CEREMONY) { console.log(`${sizeName}: skipped: no exact example for Ceremony in this build (fill in the blank)`); continue; }
+      const reviewBtn = sizeName === 'phone' ? '#nav-review-btn' : '#open-review-btn';
+      await open(`/page/${CAMEL_PAGE}`, size);
+      // questionKind picks kinds[(position + headword length) % kinds.length]; fill-blank is the last kind.
+      const hasOpposite = await evaluate(`fetch('/api/quiz?w=ceremony').then((r) => r.json()).then((d) => Boolean(d.cards[0].opposite))`);
+      const kinds = hasOpposite ? 5 : 4;
+      const fillers = ['Camel', 'Abandon', 'Charity', 'Calm'];
+      let position = 0;
+      while ((position + 'ceremony'.length) % kinds !== kinds - 1) position++;
+      const list = [...fillers.slice(0, position), 'Ceremony'];
+      const recs = Object.fromEntries(list.map((h, i) => [h.toLowerCase(), h === 'Ceremony'
+        ? { box: 2, due_at: Date.now() - DAY, right: 2, wrong: 0 } : { box: 0, due_at: Date.now() - (20 - i) * DAY, right: 0, wrong: 0 }]));
+      await seed(list, recs);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await evaluate(`document.querySelector('${reviewBtn}').click(); true`);
+      await waitForCard();
+      for (let i = 0; i < position; i++) {
+        await evaluate(`document.querySelector('.review-option').click(); true`);
+        await sleep(150);
+        await evaluate(`document.querySelector('#review-next-btn').click(); true`);
+        await sleep(250);
+      }
+      let s = await screen();
+      const sentence = () => evaluate(`document.querySelector('#review-sentence')?.textContent`);
+      check(`${sizeName}: Ceremony at box 2 gets the "Fill in the blank" prompt`, s?.prompt === 'Fill in the blank', s?.prompt);
+      // The gap's text is "______" (hidden from screen readers) followed by a visually hidden "blank".
+      const blanked = CEREMONY.en.slice(0, CEREMONY.blank_start) + '______blank' + CEREMONY.en.slice(CEREMONY.blank_start + CEREMONY.blank_len);
+      check(`${sizeName}: the sentence shows ______ where the word was`, (await sentence()) === blanked, await sentence());
+      check(`${sizeName}: screen readers hear "blank", not underscores`, await evaluate(`(() => { const g = document.querySelector('#review-sentence .review-blank'); return g?.querySelector('[aria-hidden="true"]')?.textContent === '______' && g?.querySelector('.ui-visually-hidden')?.textContent === 'blank'; })()`));
+      check(`${sizeName}: four distinct options, all lower case like the gap`, s?.options.length === 4 && new Set(s.options).size === 4 && s.options.includes('ceremony') && s.options.every((o) => o === o.toLowerCase()), s?.options);
+      check(`${sizeName}: the Hindi translation is shown before answering, marked lang="hi"`, await evaluate(`document.querySelector('#review-sentence-hi')?.getAttribute('lang') === 'hi' && document.querySelector('#review-sentence-hi').textContent === ${JSON.stringify(CEREMONY.hi)}`));
+      if (sizeName === 'phone') check('phone: nothing overflows sideways', await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
+      const shot = async (name) => {
+        if (!process.env.SHOTS) return;
+        const res = await send('Page.captureScreenshot', { format: 'png' });
+        fs.mkdirSync('scratch/shots', { recursive: true });
+        fs.writeFileSync(`scratch/shots/task5-${sizeName}-${name}.png`, Buffer.from(res.data, 'base64'));
+      };
+      const axe = () => evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })() &&
+        axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] }, exclude: [['nextjs-portal']] })
+          .then((r) => r.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target.join(' ')) })))`);
+      check(`${sizeName}: the question has no axe violations`, JSON.stringify(await axe()) === '[]', await axe());
+      await shot('before');
+      const rightAt = (await evaluate(`[...document.querySelectorAll('.review-option')].findIndex((o) => o.textContent.slice(1) === 'ceremony')`)) + 1;
+      await key(String(rightAt), `Digit${rightAt}`, String(rightAt));
+      await sleep(300);
+      s = await screen();
+      check(`${sizeName}: key ${rightAt} answers, and the answer is right`, s?.feedback?.startsWith('Right!'), s?.feedback);
+      check(`${sizeName}: the full English sentence shows after answering, the Hindi stays`, (await sentence()) === CEREMONY.en, await sentence());
+      check(`${sizeName}: the Hindi translation shows, marked lang="hi"`, await evaluate(`document.querySelector('#review-sentence-hi')?.getAttribute('lang') === 'hi' && document.querySelector('#review-sentence-hi').textContent === ${JSON.stringify(CEREMONY.hi)}`));
+      check(`${sizeName}: the answered card has no axe violations`, JSON.stringify(await axe()) === '[]', await axe());
+      await shot('after');
+      await evaluate(`document.querySelector('#close-review-btn').click(); true`);
+      await sleep(300);
     }
     await evaluate(`['panna_saved_words', 'panna_review'].forEach((k) => localStorage.removeItem(k)); true`);
   } finally {

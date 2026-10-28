@@ -16,9 +16,11 @@ import { SEED_ENTRIES } from './seed-entries';
 import { COMPANION_PAGES } from './companion-entries';
 import { EXPANDED_PAGES } from './expanded-entries';
 import { SOURCES_DIR, WordNet, loadAgid, verifyChecksums } from './lib/lexicon';
+import { ExampleRow, toExampleDbRows } from './lib/examples';
 import { GeminiRow, findRelated, mergeGeminiLinks } from './lib/related';
 import { GeneratedGloss, toPhase4Entry } from './lib/phase4';
 
+const EXAMPLES_REAL_FILE = path.join(SOURCES_DIR, 'examples.jsonl');
 const RELATED_GEMINI_FILE = path.join(SOURCES_DIR, 'related-gemini.jsonl');
 export const DB_PATH = path.join(process.cwd(), 'data', 'dictionary.db');
 export const ENTRIES_PER_COLUMN = 4;
@@ -55,6 +57,7 @@ export interface BuildReport {
   closed_class_overrides: string[];
   /** Similar / opposite links stored. */
   related: number;
+  examples: number;
   data_version: string;
 }
 
@@ -93,6 +96,8 @@ export function collectEntries(): { entries: SourceEntry[]; duplicates: string[]
   const glossFile = path.join(SOURCES_DIR, 'hindi-glosses.jsonl');
   if (fs.existsSync(glossFile)) pinnedInputs.push('data/sources/hindi-glosses.jsonl');
   if (fs.existsSync(RELATED_GEMINI_FILE)) pinnedInputs.push('data/sources/related-gemini.jsonl');
+  // examples.jsonl is pinned like the others; an EXAMPLES_FILE override (test fixtures) is not.
+  if (fs.existsSync(EXAMPLES_REAL_FILE) && !process.env.EXAMPLES_FILE) pinnedInputs.push('data/sources/examples.jsonl');
   verifyChecksums(pinnedInputs);
   const closedClass: SourceEntry[] = fs.readFileSync(path.join(SOURCES_DIR, 'closed-class-words.jsonl'), 'utf8')
     .split('\n').filter((l) => l.trim()).map((l) => {
@@ -204,6 +209,17 @@ CREATE TABLE related (
   PRIMARY KEY (entry_id, kind, rank)
 );
 
+-- One example sentence per word (data/sources/examples.jsonl). The blank is a character span of en; exact = 1 when
+-- the span is the headword itself (so the card can hide it), 0 when it is an inflected form.
+CREATE TABLE examples (
+  entry_id TEXT PRIMARY KEY REFERENCES entries(id),
+  en TEXT NOT NULL,
+  hi TEXT NOT NULL,
+  blank_start INTEGER NOT NULL,
+  blank_len INTEGER NOT NULL,
+  exact INTEGER NOT NULL
+);
+
 -- Hinglish search keys (src/lib/hinglish.ts): each Hindi meaning, and each word in it, as a loose Latin key.
 -- whole = 1 when hi is a complete meaning (छोड़ना), 0 for a word inside one (त्याग in त्याग देना).
 CREATE TABLE hinglish (
@@ -263,9 +279,15 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
       entry_id: entryByWord.get(word)!.id, kind, rank, related_id: entryByWord.get(link.word)!.id, source: link.source,
     }))));
 
+  const examplesFile = process.env.EXAMPLES_FILE ? path.resolve(process.env.EXAMPLES_FILE) : EXAMPLES_REAL_FILE;
+  const exampleRows: ExampleRow[] = fs.existsSync(examplesFile)
+    ? fs.readFileSync(examplesFile, 'utf8').split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l) as ExampleRow)
+    : [];
+  const examples = toExampleDbRows(exampleRows, entryByWord);
+
   // Content hash of everything the client can see; used to version /api/page caching.
   const dataVersion = crypto.createHash('sha256')
-    .update(JSON.stringify({ laid, pages, thumbIndex, related }))
+    .update(JSON.stringify({ laid, pages, thumbIndex, related, examples }))
     .digest('hex').slice(0, 12);
 
   // Build into a temp file and swap it in, so a reader never sees a half-written database.
@@ -291,6 +313,9 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     const insertRelated = db.prepare(`INSERT INTO related (entry_id, kind, rank, related_id, source)
       VALUES (@entry_id, @kind, @rank, @related_id, @source)`);
 
+    const insertExample = db.prepare(`INSERT INTO examples (entry_id, en, hi, blank_start, blank_len, exact)
+      VALUES (@entry_id, @en, @hi, @blank_start, @blank_len, @exact)`);
+
     db.transaction(() => {
       laid.forEach((e, i) => insertEntry.run({
         rowid: i + 1, id: e.id, headword: e.headword, normalized: e.normalized, pos: e.pos,
@@ -302,6 +327,7 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
       }));
       for (const p of pages) insertPage.run({ ...p, entry_ids: JSON.stringify(p.entry_ids) });
       for (const r of related) insertRelated.run(r);
+      for (const x of examples) insertExample.run(x);
       for (const e of laid) {
         for (const meaning of e.meaning_hi.split(/[,;]/).map((m) => m.replace(/\([^)]*\)/g, '').trim()).filter(Boolean)) {
           const words = meaning.split(/\s+/);
@@ -340,6 +366,7 @@ export function buildDatabase(outPath = DB_PATH): BuildReport {
     closed_class: closed,
     generated,
     related: related.length,
+    examples: examples.length,
     editorial_duplicates_dropped: duplicates,
     closed_class_overrides: overrides,
     data_version: dataVersion,
@@ -351,7 +378,7 @@ if (require.main === module) {
     const report = buildDatabase();
     console.log(`✓ Built ${path.relative(process.cwd(), DB_PATH)}: ${report.entries} entries on ${report.pages} pages ` +
       `(${report.editorial} editorial + ${report.closed_class} closed-class + ${report.generated} generated), ` +
-      `${report.related} similar/opposite links, data version ${report.data_version}`);
+      `${report.related} similar/opposite links, ${report.examples} example sentences, data version ${report.data_version}`);
     if (report.editorial_duplicates_dropped.length) {
       console.log(`  ${report.editorial_duplicates_dropped.length} duplicate editorial headwords kept once: ` +
         report.editorial_duplicates_dropped.join(', '));

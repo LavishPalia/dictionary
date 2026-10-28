@@ -40,6 +40,7 @@
     "test:quiz": "tsx scripts/test-quiz.ts",
     "test:related": "tsx scripts/test-related.ts",
     "test:related-gemini": "tsx scripts/test-related-gemini.ts",
+    "test:examples": "tsx scripts/test-examples.ts",
     "test:hinglish": "tsx scripts/test-hinglish.ts",
     "test:report": "tsx scripts/test-report.ts",
     "test:progress": "tsx scripts/test-progress.ts",
@@ -50,6 +51,7 @@
     "data:lemmas": "tsx scripts/build-lemma-list.ts",
     "data:pilot": "tsx scripts/pilot-glosses.ts",
     "data:phase4": "tsx scripts/generate-hindi-glosses.ts",
+    "data:examples": "tsx scripts/generate-examples.ts",
     "data:related-gemini": "tsx scripts/generate-related-gemini.ts",
     "test:phase4-pipeline": "tsx scripts/test-phase4-pipeline.ts",
     "test:gemini-client": "tsx scripts/test-gemini-client.ts"

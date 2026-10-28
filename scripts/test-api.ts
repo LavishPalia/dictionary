@@ -34,6 +34,21 @@ async function testEndpoints() {
   const page = await getJson(`/api/page/${pageNum}?v=${meta.body.data_version}`);
   const onPage = [...page.body.column1, ...page.body.column2].map((e: { headword: string }) => e.headword);
   check(`GET /api/page/${pageNum} contains Ceremony`, page.status === 200 && onPage.includes('Ceremony'), onPage);
+  // Example sentences: present only once examples exist for the word (the fixture or the real data has ceremony).
+  const ex = word.body.entry?.example;
+  if (ex) {
+    check('GET /api/word/Ceremony carries an example with en, hi and a blank',
+      typeof ex.en === 'string' && typeof ex.hi === 'string' && Array.isArray(ex.blank) && ex.blank.length === 2
+      && ex.en.slice(ex.blank[0], ex.blank[0] + ex.blank[1]).toLowerCase() === 'ceremony', ex);
+    const onPageEntry = [...page.body.column1, ...page.body.column2].find((e: { headword: string }) => e.headword === 'Ceremony');
+    check(`GET /api/page/${pageNum} carries the same example`, JSON.stringify(onPageEntry?.example) === JSON.stringify(ex), onPageEntry?.example);
+  } else {
+    console.log('- skipped: Ceremony has no example in this build');
+  }
+  const pageEntries = [...page.body.column1, ...page.body.column2] as Array<Record<string, unknown>>;
+  const without = pageEntries.filter((e) => !e.example);
+  check('an entry without an example has no example key', without.every((e) => !('example' in e)), without.find((e) => 'example' in e));
+  check('no entry carries the retired "examples" list', pageEntries.every((e) => !('examples' in e)));
   check('versioned page responses are immutable', page.cache?.includes('immutable') === true, page.cache);
   const unversioned = await getJson(`/api/page/${pageNum}`);
   check('unversioned page responses are not immutable', unversioned.cache?.includes('immutable') === false, unversioned.cache);

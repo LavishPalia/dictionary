@@ -117,6 +117,19 @@ const plural = db.prepare(`SELECT e.normalized FROM forms f JOIN entries e ON e.
   WHERE f.normalized_form = 'ceremonies'`).get() as { normalized: string } | undefined;
 check('AGID inflection ceremonies resolves to ceremony', plural?.normalized === 'ceremony', plural);
 
+// 9. Example sentences (empty until data/sources/examples.jsonl exists): each belongs to an entry and its blank fits.
+const exampleRows = db.prepare(`SELECT x.entry_id, x.en, x.blank_start, x.blank_len, x.exact, e.normalized
+  FROM examples x LEFT JOIN entries e ON e.id = x.entry_id`).all() as
+  Array<{ entry_id: string; en: string; blank_start: number; blank_len: number; exact: number; normalized: string | null }>;
+check('every example belongs to an entry', exampleRows.every((x) => x.normalized !== null),
+  exampleRows.filter((x) => x.normalized === null).slice(0, 5));
+check('every example blank lies inside its sentence', exampleRows.every((x) =>
+  x.blank_start >= 0 && x.blank_len >= 1 && x.blank_start + x.blank_len <= x.en.length), exampleRows.length);
+const badBlank = exampleRows.filter((x) => x.exact === 1
+  && x.en.slice(x.blank_start, x.blank_start + x.blank_len).toLowerCase() !== x.normalized);
+check('an exact blank is the headword itself', badBlank.length === 0, badBlank.slice(0, 5));
+console.log(`  (${exampleRows.length} example sentences)`);
+
 db.close();
 if (failures) {
   console.error(`${failures} invariant(s) failed.`);

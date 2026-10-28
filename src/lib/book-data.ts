@@ -105,6 +105,21 @@ function withRelated(entries: DictionaryEntry[]): DictionaryEntry[] {
   });
 }
 
+/** Adds each entry's example sentence (one query for the lot); an entry without one gets no `example` key. */
+function withExamples(entries: DictionaryEntry[]): DictionaryEntry[] {
+  if (!entries.length) return entries;
+  const rows = db().prepare(`
+    SELECT entry_id, en, hi, blank_start, blank_len, exact FROM examples WHERE entry_id IN (${entries.map(() => '?').join(',')})
+  `).all(...entries.map((e) => e.id)) as { entry_id: string; en: string; hi: string; blank_start: number; blank_len: number; exact: number }[];
+  if (!rows.length) return entries;
+  const byEntry = new Map(rows.map((r) => [r.entry_id, r]));
+  return entries.map((e) => {
+    const r = byEntry.get(e.id);
+    if (!r) return e;
+    return { ...e, example: { en: r.en, hi: r.hi, ...(r.exact ? { blank: [r.blank_start, r.blank_len] as [number, number] } : {}) } };
+  });
+}
+
 let cachedMeta: BookMeta | null = null;
 
 export function getMeta(): BookMeta {
@@ -128,7 +143,7 @@ export function getPage(pageNum: number): BookPage | null {
   const entries = (db().prepare(
     'SELECT * FROM entries WHERE page_number = ? ORDER BY col_idx, position_in_col',
   ).all(pageNum) as EntryRow[]).map(toEntry);
-  const withLinks = withRelated(entries);
+  const withLinks = withExamples(withRelated(entries));
   return {
     page_number: page.page_number,
     first_headword: page.first_headword,
@@ -166,7 +181,7 @@ export function getWordEntry(headword: string): {
   if (!row) return { entry: null, pageNumber: null, neighbours: [] };
   const page = getPage(row.page_number);
   return {
-    entry: withRelated([toEntry(row)])[0],
+    entry: withExamples(withRelated([toEntry(row)]))[0],
     pageNumber: row.page_number,
     neighbours: page ? [...page.column1, ...page.column2] : [],
     ...(form ? { redirectedFrom: headword } : {}),
@@ -399,6 +414,13 @@ function hindiTokens(meaningSearch: string): Set<string> {
   return tokens;
 }
 
+/** True if a Hindi meaning (folded, as in meaning_hi_search) shows up in a Hindi sentence: such a word could fit its gap too. */
+export function meaningInSentence(meaningSearch: string, hiSentence: string): boolean {
+  const folded = normalizeHindi(hiSentence);
+  const words = new Set(folded.split(/[\s।,.;:!?"'()\-]+/).filter(Boolean));
+  return [...hindiTokens(meaningSearch)].some((t) => (t.includes(' ') ? folded.includes(t) : words.has(t)));
+}
+
 /**
  * Review cards for saved words. Wrong options share the word's part of speech and are close to it in frequency
  * (so they look like real alternatives), and never share a Hindi meaning or meaning-word with it (so there is
@@ -419,9 +441,15 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
       LIMIT 40
     `).all(...(samePos ? [row.normalized, pos, pos, rank] : [row.normalized, rank])) as HindiSearchRow[];
 
+    // With an exact example the card is a fill-in-the-blank: the Hindi sentence is shown, so no wrong option may be
+    // translated in it, and options stay lower case (a capital would show in a lower-case gap).
+    const ex = db().prepare('SELECT hi FROM examples WHERE entry_id = ? AND exact = 1').get(row.id) as { hi: string } | undefined;
     const picked: HindiSearchRow[] = [];
-    const usable = (c: HindiSearchRow) => c.meaning_hi.trim() && c.definition_en.trim()
+    const usable = (c: HindiSearchRow) => c.meaning_hi.trim()
+      && (!ex || (c.headword === c.headword.toLowerCase() && !meaningInSentence(c.meaning_hi_search, ex.hi))) && c.definition_en.trim()
       && c.definition_en !== row.definition_en
+      // Not a form of the word itself (accept/acceptance): in a fill-in-the-blank sentence it could fit too.
+      && !(Math.min(c.normalized.length, row.normalized.length) >= 3 && (c.normalized.startsWith(row.normalized) || row.normalized.startsWith(c.normalized)))
       && ![...hindiTokens(c.meaning_hi_search)].some((t) => answerTokens.has(t))
       && !picked.some((p) => p.meaning_hi === c.meaning_hi || [...hindiTokens(p.meaning_hi_search)].some((t) => hindiTokens(c.meaning_hi_search).has(t)));
     for (const pool of [nearest(true), nearest(false)]) {
@@ -437,7 +465,9 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
     const opposite = oppositeQuestion(row, nearest(true), random);
     cards.push({ entry: toEntry(row), distractors: picked.map(toOption), ...(opposite ? { opposite } : {}) });
   }
-  return cards;
+  // Examples for all the cards' entries in one query.
+  const withEx = withExamples(cards.map((c) => c.entry));
+  return cards.map((c, i) => ({ ...c, entry: withEx[i] }));
 }
 
 /** Current page of each word (normalized), for moving bookmarks and notes after the book is rebuilt. */
@@ -468,5 +498,5 @@ export function getWordOfDay(date: string): DictionaryEntry | null {
   let hash = 0x811c9dc5;
   for (const ch of date) { hash ^= ch.charCodeAt(0); hash = Math.imul(hash, 0x01000193) >>> 0; }
   const row = db().prepare('SELECT * FROM entries WHERE normalized = ?').get(pool[hash % pool.length].normalized) as EntryRow;
-  return withRelated([toEntry(row)])[0];
+  return withExamples(withRelated([toEntry(row)]))[0];
 }

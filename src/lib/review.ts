@@ -87,16 +87,17 @@ export function nextDue(saved: string[], records: ReviewRecords, now: number): {
   return { at: day, count: future.filter((at) => startOfDay(at) === day).length };
 }
 
-export type QuestionKind = 'meaning' | 'word-from-hindi' | 'word-from-definition' | 'opposite';
+export type QuestionKind = 'meaning' | 'word-from-hindi' | 'word-from-definition' | 'opposite' | 'fill-blank';
 
 /**
  * New and shaky words get the easiest question (English → Hindi); later boxes mix in the reverse directions, and
- * "which word means the opposite?" for words that have an opposite in Panna.
+ * "which word means the opposite?" for words that have an opposite in Panna, and "fill in the blank" for words with
+ * an example sentence in which the word appears exactly as written.
  */
-export function questionKind(record: ReviewRecord | undefined, seed: number, hasOpposite = false): QuestionKind {
+export function questionKind(record: ReviewRecord | undefined, seed: number, hasOpposite = false, hasBlank = false): QuestionKind {
   const box = record?.box ?? 0;
   if (box < 2) return 'meaning';
-  const kinds: QuestionKind[] = ['meaning', 'word-from-hindi', 'word-from-definition', ...(hasOpposite ? ['opposite' as const] : [])];
+  const kinds: QuestionKind[] = ['meaning', 'word-from-hindi', 'word-from-definition', ...(hasOpposite ? ['opposite' as const] : []), ...(hasBlank ? ['fill-blank' as const] : [])];
   return kinds[Math.abs(seed) % kinds.length];
 }
 

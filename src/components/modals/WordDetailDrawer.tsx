@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DictionaryEntry, RelatedWord } from '@/lib/types';
 import { describePos } from '@/lib/pos';
+import { exampleBlank } from '@/lib/example';
 import { flyToSaved } from '@/lib/motion';
 import { SpeechLang, speechUnavailableReason, useSpeechVoices } from '@/lib/speech';
 import { Button, Chip, IconButton, Sheet } from '@/components/ui';
@@ -29,6 +30,15 @@ interface WordDetailDrawerProps {
   reviewNote?: string | null;
   /** The book build being read, sent with a problem report. */
   dataVersion: string;
+}
+
+/** The sentence with the headword in <b>; a blank that does not fit the sentence is ignored. */
+function exampleParts(example: NonNullable<DictionaryEntry['example']>): React.ReactNode {
+  const { en } = example;
+  const blank = exampleBlank(example);
+  if (!blank) return en;
+  const [start, length] = blank;
+  return <>{en.slice(0, start)}<b>{en.slice(start, start + length)}</b>{en.slice(start + length)}</>;
 }
 
 // The word sheet: a bottom sheet on phones, a side panel beside the book on desktop. Hindi is the largest
@@ -88,7 +98,6 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   };
 
   const pos = describePos(entry.pos);
-  const examples = entry.examples?.filter(Boolean) ?? [];
   const related = ([['similar', 'Similar'], ['opposite', 'Opposite']] as const)
     .map(([kind, label]) => ({ kind, label, words: entry[kind] ?? [] }))
     .filter((r) => r.words.length > 0);
@@ -134,19 +143,19 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
       {reporting ? <ReportForm entry={entry} dataVersion={dataVersion} onBack={backFromReport} /> : (<>
       <p className="word-hi" lang="hi">{entry.meaning_hi}</p>
       <p className="word-def">{entry.definition_en}</p>
+      {entry.example && (
+        <div id="word-example" className="word-example">
+          <p className="word-example-en">{exampleParts(entry.example)}</p>
+          <p className="word-example-hi" lang="hi">{entry.example.hi}</p>
+          {/* An unreviewed entry already carries the card's own note; a reviewed one needs this one. */}
+          {entry.reviewed === 1 && <p className="word-provenance word-example-note" id="word-example-note">Example machine-written · not yet checked</p>}
+        </div>
+      )}
 
       <div className="word-actions">
         {speakButton('en', 'English', 'English word')}
         {speakButton('hi', <span lang="hi">हिंदी</span>, 'Hindi meaning')}
       </div>
-
-      {examples.length > 0 && (
-        <>
-          <hr className="ui-divider" />
-          <div className="ui-label">Example</div>
-          {examples.map((example) => <p key={example} className="word-example">{example}</p>)}
-        </>
-      )}
 
       {related.length > 0 && (
         <>

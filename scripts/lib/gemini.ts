@@ -30,19 +30,28 @@ export async function callGeminiJson<T>(apiKey: string, req: GeminiJsonRequest):
   for (let attempt = 0; ; attempt++) {
     const model = GEMINI_MODELS[modelIndex];
     if (!model) throw new DailyQuotaError('All configured Gemini models are out of daily quota');
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: req.system }] },
-        contents: req.contents,
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: req.schema,
-          ...(THINKING_LEVEL ? { thinkingConfig: { thinkingLevel: THINKING_LEVEL } } : {}),
-        },
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: req.system }] },
+          contents: req.contents,
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: req.schema,
+            ...(THINKING_LEVEL ? { thinkingConfig: { thinkingLevel: THINKING_LEVEL } } : {}),
+          },
+        }),
+      });
+    } catch (err) {
+      // Network drops (ECONNRESET, DNS) are transient: back off like a 5xx.
+      if (attempt >= 6) throw err;
+      process.stderr.write(`[gemini] ${model}: network error (${(err as Error).message}), backing off ${(backoffMs * 2 ** attempt) / 1000}s\n`);
+      await new Promise((r) => setTimeout(r, backoffMs * 2 ** attempt));
+      continue;
+    }
     const body = await res.json().catch(() => ({}));
     if (res.status === 429 && /PerDay/.test(JSON.stringify(body))) {
       process.stderr.write(`[gemini] ${model}: daily quota exhausted, switching model\n`);

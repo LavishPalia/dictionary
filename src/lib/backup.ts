@@ -41,11 +41,15 @@ const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v =
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const optionalString = (v: unknown) => v === undefined || typeof v === 'string';
 
+const isExample = (v: unknown): boolean => isObject(v) && typeof v.en === 'string' && typeof v.hi === 'string'
+  && (v.blank === undefined || (isArray(v.blank) && v.blank.length === 2 && v.blank.every((n) => Number.isInteger(n))
+    && (v.blank[0] as number) >= 0 && (v.blank[1] as number) >= 1 && (v.blank[0] as number) + (v.blank[1] as number) <= (v.en as string).length));
+
 /** A saved word whose text fields are really text, so a hand-edited file can't crash the Saved page. */
 export function isSavedWord(w: unknown): boolean {
   return isObject(w) && typeof w.normalized === 'string' && typeof w.headword === 'string'
     && ['pos', 'pronunciation_deva', 'pronunciation_ipa', 'definition_en', 'meaning_hi', 'etymology'].every((k) => optionalString(w[k]))
-    && (w.examples === undefined || (isArray(w.examples) && w.examples.every((e) => typeof e === 'string')))
+    && (w.example === undefined || isExample(w.example)) // an older saved copy may carry `examples`; it is ignored
     && (w.saved_at === undefined || isNum(w.saved_at))
     && (w.page_number === undefined || isNum(w.page_number));
 }

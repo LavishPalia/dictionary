@@ -8,6 +8,8 @@ import Database from 'better-sqlite3';
 // The page Calm is on: tests open it to use a known entry (page numbers change when the book grows).
 const book = new Database('data/dictionary.db', { readonly: true });
 const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
+// Example sentences exist only in builds that have them (skipped otherwise).
+const CEREMONY = (() => { try { return book.prepare("SELECT e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get(); } catch (e) { if (/no such table: examples/.test(e.message)) return undefined; throw e; } })();
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9341;
@@ -196,6 +198,19 @@ async function main() {
       let notice = '';
       for (let i = 0; i < 20 && !notice.includes('whole book is saved'); i++) { await sleep(150); notice = await evaluate(`document.querySelector('#offline-notice')?.innerText ?? ''`); }
       check(`${sizeName}: the notice says the whole book is saved`, notice.includes('whole book is saved'), notice);
+      if (!CEREMONY) console.log(`${sizeName}: skipped: no example in this build (offline example)`);
+      else {
+        // Reached the way a reader would offline: search the saved book, then tap the word on its page.
+        await type('ceremony');
+        await click('#lookup-panel [role="option"]');
+        await sleep(2500);
+        await evaluate(`[...document.querySelectorAll('.entry-text')].find((e) => e.textContent.startsWith('Ceremony') && e.style.cursor === 'pointer').click(); true`);
+        await sleep(900);
+        const ex = await evaluate(`({ en: document.querySelector('#word-example p')?.textContent, hi: document.querySelector('#word-example .word-example-hi')?.getAttribute('lang'), title: document.querySelector('#word-sheet-title')?.textContent ?? null, path: location.pathname })`);
+        check(`${sizeName}: the example still shows offline`, ex.en === CEREMONY.en && ex.hi === 'hi', ex);
+        await key('Escape');
+        await sleep(300);
+      }
       await type(far.toLowerCase());
       p = await panel();
       check(`${sizeName}: offline search covers the whole saved book`, p?.options[0] === far && !p.text.includes('only pages you’ve opened'), { far, p });

@@ -7,6 +7,7 @@ const TABLES: Array<[table: string, orderBy: string]> = [
   ['entries', 'rowid'],
   ['forms', 'normalized_form, lemma_id'],
   ['related', 'entry_id, kind, rank'], // every column incl. source (SELECT *)
+  ['examples', 'entry_id'],
   ['hinglish', 'key, entry_id, hi'],
   ['pages', 'page_number'],
   ['meta', 'key'],
