@@ -116,6 +116,8 @@ async function main() {
     // The server HTML of /learn has the guide's title before any script runs.
     const html = await (await fetch(`${BASE}/learn`)).text();
     check('the server HTML of /learn contains the title', html.includes(TITLE));
+    // The server cannot know the reader's saved words, so it names no next step (no "Save your first word" flash).
+    check('the server HTML of /learn names no next step', !html.includes('Save your first word') && html.includes('learn-next-pending'));
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       const phone = size.mobile;
@@ -151,6 +153,10 @@ async function main() {
       w = await go(`history.back()`);
       check(`${sizeName}: the browser's Back from the guide returns to Today`, w.screen === 'today' && w.path === '/', w);
 
+      // Before the saved tour state is read, Today shows neither the card nor the link (no swap on a returning visit).
+      check(`${sizeName}: the server HTML of Today has neither the guide's card nor its link`,
+        await evaluate(`fetch('/').then((r) => r.text()).then((h) => !h.includes('id="today-learn"') && !h.includes('id="today-learn-link"'))`));
+
       // ── The ⋯ menu, from the book ──
       await seed();
       await open(`/page/${CAMEL_PAGE}`, size);
@@ -176,6 +182,31 @@ async function main() {
       check(`${sizeName}: focus lands on the guide's title (from the tours sheet)`, await focused() === 'learn-title', await focused());
       w = await go(`document.querySelector('#learn-back').click()`);
       check(`${sizeName}: Back returns to the book (from the tours sheet)`, w.screen === 'book', w);
+
+      // ── A tour started from the guide over the book passes through Today; Back still returns to the book ──
+      await seed();
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await click('#menu-btn');
+      await sleep(500);
+      w = await go(`document.querySelector('#learn-btn').click()`);
+      await evaluate(`[...document.querySelectorAll('#learn-screen button')].find((x) => x.textContent.trim() === 'Take the Saving and Review tour').click(); true`);
+      let passedToday = false;
+      for (let i = 0; i < 8; i++) {
+        await sleep(900);
+        if ((await where()).screen === 'today') passedToday = true;
+        if (!(await click('#tour-next-btn'))) break;
+      }
+      await sleep(1200);
+      w = await where();
+      check(`${sizeName}: the Saving and Review tour passes through Today and ends at the guide`, passedToday && w.screen === 'learn', { passedToday, w });
+      check(`${sizeName}: after that tour, Back still says "Back to the book"`, (await evaluate(`document.querySelector('#learn-back').textContent`)).includes('Back to the book'),
+        await evaluate(`document.querySelector('#learn-back').textContent`));
+      w = await go(`document.querySelector('#learn-back').click()`);
+      check(`${sizeName}: and returns to the book at the same page`, w.screen === 'book' && w.path === `/page/${CAMEL_PAGE}`, w);
+      w = await go(`history.back()`);
+      check(`${sizeName}: the browser's Back from there is Today (where the tour went), not a copy of the same page`, w.screen === 'today' && w.path === '/', w);
+      w = await go(`history.back()`);
+      check(`${sizeName}: and Back again is the book the guide was opened over`, w.screen === 'book' && w.path === `/page/${CAMEL_PAGE}`, w);
 
       // ── Review, with nothing due ──
       await seed();
@@ -209,6 +240,10 @@ async function main() {
       w = await go(`document.querySelector('.learn-next-btn').click()`);
       check(`${sizeName}: its button opens Review`, w.screen === 'review', w);
 
+      await seed({ count: 1, due: true });
+      await open('/learn', size);
+      check(`${sizeName}: 1 due word → singular, in English and Hindi`, (await nextText()).includes('Review your 1 due word (about 1 minute)') && (await nextText()).includes('आपका 1 शब्द तैयार है'), await nextText());
+
       await seed({ count: 25 });
       await open('/learn', size);
       check(`${sizeName}: 25 saved, no backup → "Back up your words"`, (await nextText()).includes('Back up your words'), await nextText());
@@ -224,10 +259,45 @@ async function main() {
       w = await where();
       check(`${sizeName}: its button opens the book at the last page read`, w.screen === 'book' && w.path === '/page/40', w);
 
+      await seed({ count: 9, savedAgo: 0 });
+      await open('/learn', size);
+      check(`${sizeName}: 9 saved today → "Add 1 more new word today"`, (await nextText()).includes('Add 1 more new word today') && (await nextText()).includes('आज 1 और नया शब्द जोड़ें'), await nextText());
+
       await seed({ count: 10, savedAgo: 0 });
       await open('/learn', size);
       check(`${sizeName}: 10 saved today → "Done for today"`, (await nextText()).includes('Done for today'), await nextText());
       check(`${sizeName}: "Done for today" has no button`, !(await evaluate(`Boolean(document.querySelector('#learn-next button'))`)));
+
+      // ── Install and offline saving: a button only where this browser shows the ⋯ menu row ──
+      await seed();
+      await open('/learn', size);
+      const guideBtn = (label) => evaluate(`[...document.querySelectorAll('#learn-screen button')].some((b) => b.textContent.trim() === ${JSON.stringify(label)})`);
+      const hasInstall = await guideBtn('Install Panna');
+      const hasOffline = await guideBtn('Save the book for offline');
+      check(`${sizeName}: the Install tip keeps its text`, await evaluate(`document.querySelector('#learn-last').innerText.includes('Install Panna, so it opens like any other app.')`));
+      check(`${sizeName}: the offline tip keeps its text`, await evaluate(`document.querySelector('#learn-last').innerText.includes('Save the book for offline, to study without internet.')`));
+      await click('#menu-btn');
+      await sleep(600);
+      const menuInstall = await evaluate(`Boolean(document.querySelector('#install-btn, #install-hint'))`);
+      const menuOffline = await evaluate(`Boolean(document.querySelector('#offline-save-btn'))`);
+      console.log(`  install: guide ${hasInstall}, menu ${menuInstall}; offline: guide ${hasOffline}, menu ${menuOffline}`);
+      check(`${sizeName}: "Install Panna" is a button only when the menu has its row`, hasInstall === menuInstall, { hasInstall, menuInstall });
+      check(`${sizeName}: "Save the book for offline" is a button only when the menu has its row`, hasOffline === menuOffline, { hasOffline, menuOffline });
+      // Then a browser with neither: no install prompt (as once installed) and no service worker (offline saving
+      // unavailable). Both tips keep their text; neither has a button.
+      const { identifier: blocker } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `
+        window.addEventListener('beforeinstallprompt', (e) => e.stopImmediatePropagation(), true);
+        delete Navigator.prototype.serviceWorker;` });
+      await open('/learn', size);
+      const noInstall = await guideBtn('Install Panna');
+      const noOffline = await guideBtn('Save the book for offline');
+      const tipsKept = await evaluate(`(() => { const t = document.querySelector('#learn-last').innerText; return t.includes('Install Panna, so it opens like any other app.') && t.includes('Save the book for offline, to study without internet.'); })()`);
+      await click('#menu-btn');
+      await sleep(600);
+      const rowsGone = await evaluate(`!document.querySelector('#install-btn, #install-hint, #offline-save-btn')`);
+      check(`${sizeName}: with no install prompt and no offline saving, the menu has neither row`, rowsGone);
+      check(`${sizeName}: …and the guide shows neither button, keeping both tips`, !noInstall && !noOffline && tipsKept, { noInstall, noOffline, tipsKept });
+      await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: blocker });
 
       // ── Accessibility ──
       await seed({ count: 3, due: true });

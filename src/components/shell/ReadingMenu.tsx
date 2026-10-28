@@ -143,7 +143,8 @@ export function ReadingMenu(props: ReadingMenuProps) {
           <ChevronIcon />
         </button>
       ) : props.installHint === 'ios' ? (
-        <div className="menu-row" id="install-hint">
+        // tabIndex -1: the study guide's "Install Panna" button opens the menu here.
+        <div className="menu-row" id="install-hint" tabIndex={-1}>
           <span>
             <span className="menu-title">Install Panna</span>
             <span className="menu-sub menu-sub--block">In Safari, tap Share, then “Add to Home Screen”</span>

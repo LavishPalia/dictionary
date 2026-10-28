@@ -136,6 +136,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   }, []);
   const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
   const [bookmarkedWords, setBookmarkedWords] = useState<SavedWord[]>([]);
+  // Saved words are read from this device after the first render: until then the guide's next step is unknown.
+  const [savedLoaded, setSavedLoaded] = useState(false);
 
   // ── Page cache & prefetching ────────────────────────────────────────────
   // Pages arrive from /api/page/[n]; the map is LRU-ordered (oldest first) and cacheVersion re-renders on arrival.
@@ -219,6 +221,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     };
     const savedWords = keepValid<SavedWord>(read<unknown>('panna_saved_words', []), isSavedWord);
     if (savedWords.length) setBookmarkedWords(savedWords);
+    setSavedLoaded(true);
     const marks = {
       ribbons: keepValid<number>(read<unknown>('panna_bookmarks', []), Number.isInteger),
       dogEars: keepValid<number>(read<unknown>('panna_dog_ears', []), Number.isInteger),
@@ -657,6 +660,21 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       window.history.back(); // the popstate handler shows the home screen
       return;
     }
+    // Leaving Saved, Review or the guide (with its own entry) for the other home screen: that entry becomes the
+    // home screen's, so no dead copy of the screen it opened over is left behind (a tour started from the guide over
+    // the book passes through Today this way).
+    if (!isHome(section) && sectionEntryRef.current && window.history.state?.panna) {
+      if (target === 'today') {
+        window.history.replaceState({ ...stripSection(), panna: 'today' }, '', '/');
+        sectionEntryRef.current = true; // Today over the book: Back returns to it
+      } else {
+        window.history.replaceState(stripSection(), '', `/page/${currentPage}`);
+        sectionEntryRef.current = false;
+      }
+      setHomeSection(target);
+      setSection(target);
+      return;
+    }
     if (!isHome(section)) {
       window.history.replaceState(stripSection(), '', window.location.pathname);
       sectionEntryRef.current = false;
@@ -785,11 +803,14 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       case 'tour-review': tours.startTour('review'); break;
       case 'offline-save': openMenuAt('offline-save-btn'); break;
       case 'backup': openMenuAt('backup-btn'); break;
-      case 'install': openMenuAt('install-btn'); break;
+      // iOS Safari has no install prompt: its row is a hint (Share → Add to Home Screen), focused the same way.
+      case 'install': openMenuAt(offline.install ? 'install-btn' : 'install-hint'); break;
       case 'tours': tours.openSheet(); break;
     }
   };
-  const learnBack: Section = learnFrom === 'saved' || learnFrom === 'review' ? learnFrom : homeSection;
+  // Back returns to the screen the guide was opened from, even after a tour started there passed through the other
+  // home screen; opened at /learn (or reached by the browser's Back), the home screen under it.
+  const learnBack: Section = learnFrom && learnFrom !== 'learn' ? learnFrom : homeSection;
   const backLabels: Record<Section, string> = {
     today: 'Back to Today', book: 'Back to the book', saved: 'Back to Saved', review: 'Back to Review', learn: 'Back',
   };
@@ -1109,7 +1130,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           showWelcome={tours.showWelcome}
           onTakeTour={() => tours.startTour('start')}
           onDismissWelcome={tours.dismissWelcome}
-          guideOpened={tours.guideOpened}
+          guideOpened={tours.loaded ? tours.guideOpened : null}
           onOpenGuide={() => goTo('learn')}
         />
       )}
@@ -1129,7 +1150,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
       {section === 'learn' && (
         <LearnScreen
-          step={nextStep({ saved: bookmarkedWords, dueCount, lastBackupAt, now: Date.now() })}
+          step={savedLoaded ? nextStep({ saved: bookmarkedWords, dueCount, lastBackupAt, now: Date.now() }) : null}
+          // A tip whose ⋯ menu row this browser does not show keeps its text, without a button.
+          canDo={(a) => (a === 'install' ? Boolean(offline.install) || offline.installHint === 'ios' : a === 'offline-save' ? offline.available : true)}
           dueMinutes={Math.max(1, Math.round((dueCount * SECONDS_PER_CARD) / 60))}
           onAction={handleLearnAction}
           onBack={() => goTo(learnBack)}

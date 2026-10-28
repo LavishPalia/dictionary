@@ -93,6 +93,9 @@ async function main() {
     // Each view: how to reach it. Run in order per size.
     const VIEWS = [
       { name: 'today (first visit)', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await seed(null); await open('/', size); await sleep(1200); } },
+      // A returning reader: the guide has been opened, so Today shows its small link on the desk.
+      { name: 'today (guide opened)', go: async (size) => { await seed({ ...quiet, guideOpened: true }, saveWords); await open('/', size); await sleep(1200);
+        if (!(await visible('#today-learn-link'))) throw new Error('Today shows no #today-learn-link'); } },
       { name: 'book', go: async (size) => { await seed(quiet, saveWords); await open(`/page/${CALM_PAGE}`, size); await sleep(800); } },
       { name: 'book tip', go: async (size) => { await seed({ seen: {}, tips: {}, welcomeDone: true }); await open(`/page/${CALM_PAGE}`, size); await sleep(2000); } },
       { name: 'word card', go: async (size) => { await seed(quiet); await open(`/page/${CALM_PAGE}`, size); await openEntry('Calm'); await sleep(900); } },
@@ -130,6 +133,30 @@ async function main() {
         results.push({ size: sizeName, view: view.name, violations: out ?? [] });
         check(`${sizeName}: ${view.name} has no WCAG 2.1 A/AA or best-practice violations`, Array.isArray(out) && out.length === 0,
           out?.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })));
+        if (view.name === 'today (guide opened)') {
+          // axe leaves text over the desk's gradient "incomplete", so the link is also measured against every colour
+          // stop of the first background behind it.
+          const link = await evaluate(`axe.run(document.querySelector('#today-learn-link'), { runOnly: ['color-contrast'] }).then((r) => ({ violations: r.violations.length,
+            unknown: r.incomplete.flatMap((i) => i.nodes.flatMap((n) => n.any.map((a) => a.data?.messageKey))) }))`);
+          check(`${sizeName}: axe finds no contrast problem in Today's guide link`, link?.violations === 0, link);
+          const worst = await evaluate(`(() => {
+            const rgb = (c) => c.match(/[\\d.]+/g).slice(0, 3).map(Number);
+            const lum = (c) => { const [r, g, b] = rgb(c).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+            const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+            const el = document.querySelector('#today-learn-link');
+            const fg = getComputedStyle(el).color;
+            for (let n = el; n; n = n.parentElement) {
+              const cs = getComputedStyle(n);
+              const stops = (cs.backgroundImage.match(/rgba?\\([^)]*\\)/g) ?? []).filter((c) => !/,\\s*0\\)$/.test(c));
+              const solid = /rgba\\(.*,\\s*0\\)$/.test(cs.backgroundColor) ? [] : [cs.backgroundColor];
+              const all = [...stops, ...solid];
+              if (all.length) return Math.min(...all.map((c) => ratio(fg, c)));
+            }
+            return 0; })()`);
+          console.log(`  Today's guide link, worst contrast on the desk: ${worst?.toFixed(2)}:1`);
+          check(`${sizeName}: Today's guide link has 4.5:1 contrast on every part of the desk behind it`, worst >= 4.5, worst);
+          check(`${sizeName}: Today's guide link ends with ›, like Saved's`, (await evaluate(`document.querySelector('#today-learn-link').textContent`)).trim().endsWith('›'));
+        }
         if (view.name === 'offline notice') await send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
       }
     }

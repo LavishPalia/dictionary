@@ -30,8 +30,8 @@ interface TodayScreenProps {
   showWelcome: boolean;
   onTakeTour: () => void;
   onDismissWelcome: () => void;
-  /** Whether the study guide has been opened (a card until then, a quiet link after). */
-  guideOpened: boolean;
+  /** Whether the study guide has been opened (a card until then, a quiet link after); null until known. */
+  guideOpened: boolean | null;
   onOpenGuide: () => void;
 }
 
@@ -144,8 +144,9 @@ export function TodayScreen(props: TodayScreenProps) {
         </Card>
       )}
 
-      {props.guideOpened ? (
-        <button type="button" className="lookup-link tour-howlink today-learn-link" id="today-learn-link" onClick={props.onOpenGuide}>How to learn with Panna</button>
+      {props.guideOpened === null ? null : props.guideOpened ? (
+        // On the desk, like Saved's link: the plain link colour is too dark there.
+        <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-learn-link" id="today-learn-link" onClick={props.onOpenGuide}>How to learn with Panna ›</button>
       ) : (
         <Card className="today-card today-learn" id="today-learn">
           <button type="button" className="today-learn-btn" onClick={props.onOpenGuide}>
