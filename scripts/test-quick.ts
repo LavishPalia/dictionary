@@ -1,4 +1,4 @@
-import { quickText } from '../src/lib/quick';
+import { limitQuick, quickText } from '../src/lib/quick';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail = '') {
@@ -29,6 +29,14 @@ const samples = [ob, cer, sen, nf, near, hi, quickText('the'), quickText('govern
   quickText(Array.from({ length: 40 }, () => 'obfuscate').join(' ')), quickText('pyar')];
 check('all results <= 600 chars', samples.every((s) => s.length <= 600), samples.map((s) => s.length).join());
 check('no emoji', samples.every((s) => !/\p{Extended_Pictographic}/u.test(s)));
+
+check('no "tried –" in sentence', !sen.includes('tried –'), sen);
+const withNl = 'a'.repeat(300) + '\n' + 'b'.repeat(250) + '\n' + 'c'.repeat(200);
+const cutNl = limitQuick(withNl);
+check('cut at last newline before 600', cutNl === 'a'.repeat(300) + '\n' + 'b'.repeat(250), String(cutNl.length));
+const cutLine = limitQuick('x'.repeat(900));
+check('single long line -> 599 + ellipsis', cutLine.length === 600 && cutLine.endsWith('…') && cutLine.slice(0, 599) === 'x'.repeat(599), String(cutLine.length));
+check('short text untouched', limitQuick('hi') === 'hi');
 
 if (failures) {
   console.error(`\n${failures} check(s) failed.`);

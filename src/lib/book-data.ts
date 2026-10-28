@@ -374,12 +374,15 @@ export function analyseSentence(text: string, truncated: boolean): SentenceAnaly
     for (const r of db().prepare(`SELECT * FROM entries WHERE normalized IN (${keys.map(() => '?').join(',')})`).all(...keys) as Row[]) {
       rows.set(r.normalized, r);
     }
-    const missing = keys.filter((k) => !rows.has(k));
-    if (missing.length) {
-      const formRows = db().prepare(`SELECT e.*, f.normalized_form AS form_key FROM forms f JOIN entries e ON e.id = f.lemma_id
-        WHERE f.normalized_form IN (${missing.map(() => '?').join(',')}) ORDER BY e.normalized`)
-        .all(...missing) as (Row & { form_key: string })[];
-      for (const r of formRows) if (!rows.has(r.form_key)) rows.set(r.form_key, r);
+    // Forms of every key (including keys that are also headwords): an inflected form like "tried" or "said" is
+    // also an adjective headword, so take whichever reading is more common (null rank = rarest; tie = exact entry).
+    const formRows = db().prepare(`SELECT e.*, f.normalized_form AS form_key FROM forms f JOIN entries e ON e.id = f.lemma_id
+      WHERE f.normalized_form IN (${keys.map(() => '?').join(',')}) ORDER BY e.normalized`)
+      .all(...keys) as (Row & { form_key: string })[];
+    const rankOf = (r: Row) => (r.freq_rank === null ? Infinity : r.freq_rank);
+    for (const r of formRows) {
+      const cur = rows.get(r.form_key);
+      if (!cur || (cur.normalized !== r.normalized && rankOf(r) < rankOf(cur))) rows.set(r.form_key, r);
     }
   }
   const rowOf = (key: string | null) => (key === null ? undefined : rows.get(key));

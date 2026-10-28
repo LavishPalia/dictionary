@@ -83,6 +83,10 @@ function pickFrom(text: string, ranks: Record<string, number>) {
   check('obfuscate uncommon', by('obfuscated')?.uncommon === true);
   check('government not uncommon', !by("government's")?.uncommon);
   check('obfuscate meaning_hi non-empty', !!a.entries.obfuscate?.meaning_hi);
+  const tr = analyseSentence('The government tried to obfuscate the facts.', false);
+  const trTok = tr.tokens.find((t) => t.text === 'tried');
+  check('tried -> try, not uncommon', trTok?.headword === 'try' && !trTok.uncommon, JSON.stringify(trTok));
+  check('exact non-form headword maps to itself', tr.tokens.find((t) => t.text === 'government')?.headword === 'government');
   const z = analyseSentence('Ram met Zxqv today', false);
   check('Zxqv has no headword', z.tokens.find((t) => t.text === 'Zxqv')?.headword === undefined);
   const near = nearSpellings('principal', 3).map((r) => r.normalized);

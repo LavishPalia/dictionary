@@ -5,7 +5,7 @@ import type { DictionaryEntry } from './types';
 const MAX_LEN = 600;
 const DEVANAGARI = /[ऀ-ॿ]/;
 
-function limit(text: string): string {
+export function limitQuick(text: string): string {
   if (text.length <= MAX_LEN) return text;
   const cut = text.lastIndexOf('\n', MAX_LEN - 1);
   return cut > 0 ? text.slice(0, cut).trimEnd() : text.slice(0, MAX_LEN - 1) + '…';
@@ -28,7 +28,7 @@ export function quickText(q: string): string {
 
   if (DEVANAGARI.test(text)) {
     const hits = searchWords(text.replace(/\s+/g, ' ').trim(), 3);
-    return limit(hits.length ? hits.map(short).join('\n') : 'Nothing in Panna matches that.');
+    return limitQuick(hits.length ? hits.map(short).join('\n') : 'Nothing in Panna matches that.');
   }
 
   const keys = tokenize(text).filter((t) => t.key !== null);
@@ -37,14 +37,14 @@ export function quickText(q: string): string {
   if (keys.length === 1) {
     const word = keys[0].text;
     const { entry, redirectedFrom } = getWordEntry(keys[0].key!);
-    if (entry) return limit(full(entry, redirectedFrom ? word : undefined));
+    if (entry) return limitQuick(full(entry, redirectedFrom ? word : undefined));
     const hits = searchWords(word, 3);
     if (hits[0]?.match === 'hinglish') {
-      return limit(hits.filter((h) => h.match === 'hinglish').map(short).join('\n'));
+      return limitQuick(hits.filter((h) => h.match === 'hinglish').map(short).join('\n'));
     }
     const close = nearSpellings(word.toLowerCase(), 3).map((r) => r.headword);
     const base = `“${word}” isn't in Panna.`;
-    return limit(close.length ? `${base} Closest: ${close.join(', ')}.` : base);
+    return limitQuick(close.length ? `${base} Closest: ${close.join(', ')}.` : base);
   }
 
   const a = analyseSentence(text, shared.truncated);
@@ -60,5 +60,5 @@ export function quickText(q: string): string {
   }
   const parts = [full(a.entries[pickedHw])];
   if (others.length) parts.push(others.map(short).join('\n'));
-  return limit(parts.join('\n\n'));
+  return limitQuick(parts.join('\n\n'));
 }
