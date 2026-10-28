@@ -7,7 +7,7 @@ import { exampleBlank } from '@/lib/example';
 import { flyToSaved } from '@/lib/motion';
 import { SpeechLang, speechUnavailableReason, useSpeechVoices } from '@/lib/speech';
 import { Button, Chip, IconButton, Sheet } from '@/components/ui';
-import { CloseIcon, SpeakerIcon, StarIcon } from '@/components/ui/icons';
+import { CloseIcon, MicIcon, SpeakerIcon, StarIcon } from '@/components/ui/icons';
 import { ReportForm } from './ReportForm';
 import { REPORTS_ENABLED } from '@/lib/report';
 
@@ -30,6 +30,10 @@ interface WordDetailDrawerProps {
   reviewNote?: string | null;
   /** The book build being read, sent with a problem report. */
   dataVersion: string;
+  /** Opened by voice: what was heard, and up to 2 other book words it could have been. */
+  heard?: { text: string; alternates: string[] } | null;
+  /** Show one of the heard alternates in this sheet (the strip stays). */
+  onPickHeard?: (headword: string) => void;
 }
 
 /** The sentence with the headword in <b>; a blank that does not fit the sentence is ignored. */
@@ -57,6 +61,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   onToggleBookmark,
   reviewNote,
   dataVersion,
+  heard,
+  onPickHeard,
 }) => {
   const [speaking, setSpeaking] = useState<SpeechLang | null>(null);
   const speech = useSpeechVoices();
@@ -117,6 +123,19 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
 
   return (
     <Sheet open={isOpen} onClose={onClose} labelledBy="word-sheet-title" id="word-sheet" scrimId="word-drawer-backdrop" variant="side">
+      {heard && (
+        <p className="word-heard" id="word-heard" role="status">
+          <MicIcon />Heard <i>{heard.text}</i>
+          {heard.alternates.length > 0 && onPickHeard && (
+            <> · Did you mean {heard.alternates.slice(0, 2).map((h, i) => (
+              <React.Fragment key={h}>
+                {i > 0 && ', '}
+                <button type="button" className="lookup-link word-heard-alt" onClick={() => onPickHeard(h)}>{h}</button>
+              </React.Fragment>
+            ))}?</>
+          )}
+        </p>
+      )}
       <div className="word-head">
         <div>
           {backTo && onBack && (

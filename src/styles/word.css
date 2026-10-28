@@ -1,5 +1,12 @@
 /* Word sheet (WordDetailDrawer). */
 
+/* Opened by voice: "Heard ceremonies · Did you mean serenity, ceremonial?" above the word. */
+.word-heard { margin: 0 0 10px; font: 15px/1.5 var(--font-fell); color: var(--ink-soft); overflow-wrap: anywhere; }
+.word-heard .ui-icon { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+.word-heard i { color: var(--ink); }
+.lookup-link.word-heard-alt { margin: 0; padding: 2px 0; font: 15px var(--font-fell); text-decoration: underline; }
+.word-heard-alt:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
 .word-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
 .word-title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
 .word-title { margin: 0; font: bold 32px/1.1 var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }

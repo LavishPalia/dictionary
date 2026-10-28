@@ -1,4 +1,5 @@
-// Reach Panna fast: voice search in the search box (mic, listening overlay, English/Hindi, errors, offline), at
+// Reach Panna fast: voice search in the search box (mic, listening overlay, English/Hindi, errors, offline), a heard
+// word opening its card with a Heard strip, and launches (share target, icon shortcuts), at
 // desktop and phone sizes. Speech is faked: window.__pannaRecognition is a test stand-in for SpeechRecognition.
 // Usage: node scripts/test-reach-browser.mjs   (needs a production build running on localhost:3000)
 import { spawn, spawnSync } from 'child_process';
@@ -107,6 +108,10 @@ async function main() {
     const speak = (speech) => evaluate(`window.__fakeSpeech = ${JSON.stringify(speech)}; true`);
     const tapMic = async () => { await click('#voice-btn'); await sleep(150); };
     const results = () => evaluate(`(() => { const p = document.querySelector('#lookup-panel'); return p ? [...p.querySelectorAll('[role="option"]')].map((o) => o.querySelector('.lookup-hw')?.textContent) : null; })()`);
+    const strip = () => evaluate(`(() => { const s = document.querySelector('#word-heard'); if (!s) return null; const sheet = document.querySelector('#word-sheet');
+      return { text: s.innerText.replace(/\\s+/g, ' ').trim(), role: s.getAttribute('role'), italic: s.querySelector('i')?.textContent,
+        first: [...sheet.children].find((c) => !c.classList.contains('ui-sheet-grab')) === s,
+        buttons: [...s.querySelectorAll('button')].map((b) => ({ text: b.textContent, h: b.getBoundingClientRect().height })) }; })()`);
     const quiet = { seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true };
     const AXE = fs.readFileSync(path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
 
@@ -178,6 +183,8 @@ async function main() {
       const value = await evaluate(`document.querySelector('#lookup-input').value`);
       let list = await results();
       check(`${sizeName}: a heard sentence fills the search box`, value === 'so many words here', value);
+      const focused = await evaluate('document.activeElement?.id');
+      check(`${sizeName}: after hearing, focus is ${size.mobile ? 'on the mic (no keyboard)' : 'in the search box'}`, focused === (size.mobile ? 'voice-btn' : 'lookup-input'), focused);
       check(`${sizeName}: it shows at most 3 options`, list && list.length <= 3, list);
       check(`${sizeName}: the overlay closed after hearing`, !(await dialog()));
       await evaluate(`document.querySelector('.lookup-clear')?.click(); document.activeElement.blur(); true`);
@@ -198,13 +205,68 @@ async function main() {
       await evaluate(`document.querySelector('.lookup-clear')?.click(); document.activeElement.blur(); true`);
       await key('Escape');
 
-      // One English word goes to onVoiceWord; until the word card handles it (Task 5) it fills the box too.
-      await speak({ transcripts: ['calm', 'come', 'Calm', 'kam lo'] });
+      // Path A: one heard book word opens its card, with a "Heard …" strip offering other words it could have been.
+      await speak({ transcripts: ['ceremonies', 'serenities'] });
       await tapMic();
-      await waitFor(`document.querySelector('#lookup-input').value === 'calm'`);
-      check(`${sizeName}: one heard English word fills the box for now`, await evaluate(`document.querySelector('#lookup-input').value === 'calm'`), await evaluate(`document.querySelector('#lookup-input').value`));
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`, 40);
+      await sleep(200);
+      check(`${sizeName}: one heard book word opens its card (ceremonies → Ceremony)`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`), await evaluate(`document.querySelector('#word-sheet-title')?.textContent`));
+      let s = await strip();
+      check(`${sizeName}: the card starts with a "Heard ceremonies" status strip`, s?.role === 'status' && s.first && s.text.startsWith('Heard ceremonies') && s.italic === 'ceremonies', s);
+      check(`${sizeName}: it offers a heard alternate that is a book word, then the closest spelling`, s?.text === 'Heard ceremonies · Did you mean serenity, ceremonial?' && JSON.stringify(s.buttons.map((b) => b.text)) === '["serenity","ceremonial"]', s);
+      if (size.mobile) check(`${sizeName}: the strip's buttons are 44px targets`, s?.buttons.every((b) => b.h >= 44), s?.buttons);
+      check(`${sizeName}: the search box stays empty`, await evaluate(`document.querySelector('#lookup-input').value === ''`));
+      await evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })()`);
+      const sheetAxe = await evaluate(`axe.run(document.querySelector('#word-sheet'), { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } }).then((r) => r.violations.map((v) => v.id + ': ' + v.nodes.map((n) => n.target).join(' ')))`);
+      check(`${sizeName}: axe finds nothing wrong in the card with its strip`, Array.isArray(sheetAxe) && sheetAxe.length === 0, sheetAxe);
+      await evaluate(`document.querySelector('#word-heard button').click(); true`);
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'serenity'`, 40);
+      s = await strip();
+      check(`${sizeName}: tapping an alternate swaps the card, and the strip stays`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'serenity'`) && s?.text.startsWith('Heard ceremonies'), { title: await evaluate(`document.querySelector('#word-sheet-title')?.textContent`), s });
+      await click('#close-word-drawer');
+      await sleep(300);
+      await evaluate(`[...document.querySelectorAll('.entry-text')].find((p) => p.textContent.startsWith('Calm') && p.style.cursor === 'pointer')?.click(); true`);
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Calm'`, 40);
+      check(`${sizeName}: a word opened from the book has no Heard strip`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Calm' && !document.querySelector('#word-heard')`));
+      await click('#close-word-drawer');
+      await sleep(300);
+      // A heard word that isn't in the book: it goes into the search box (path B).
+      await speak({ transcripts: ['zzxqvw'] });
+      await tapMic();
+      await waitFor(`document.querySelector('#lookup-input').value === 'zzxqvw'`, 40);
+      await sleep(300);
+      const missed = await evaluate(`({ value: document.querySelector('#lookup-input').value, sheet: Boolean(document.querySelector('#word-sheet')), focus: document.activeElement?.id })`);
+      check(`${sizeName}: a heard word not in the book fills the search box, no card`, missed.value === 'zzxqvw' && !missed.sheet, missed);
+      check(`${sizeName}: then focus is ${size.mobile ? 'on the mic (no keyboard)' : 'in the search box'}`, missed.focus === (size.mobile ? 'voice-btn' : 'lookup-input'), missed);
       await evaluate(`document.querySelector('.lookup-clear')?.click(); document.activeElement.blur(); true`);
       await key('Escape');
+
+      // Launches: the "Speak a word" shortcut, the Review shortcut, and the share target.
+      await open('/?voice=1', size);
+      await waitFor(`Boolean(document.querySelector(${JSON.stringify(DIALOG)}))`, 40);
+      d = await dialog();
+      const launched = await evaluate(`({ lang: window.__fakeSpeechLang, address: location.pathname + location.search, orb: Boolean(document.querySelector('${DIALOG} .voice-orb--ready')) })`);
+      check(`${sizeName}: /?voice=1 opens voice search with the big mic, not listening yet`, Boolean(d) && launched.orb && launched.lang === undefined, { d, launched });
+      check(`${sizeName}: the launch address becomes /`, launched.address === '/', launched);
+      await click(`${DIALOG} .voice-orb--ready`);
+      await sleep(200);
+      check(`${sizeName}: tapping the big mic starts listening`, await evaluate(`window.__fakeSpeechLang === 'en-IN'`), await evaluate('window.__fakeSpeechLang'));
+      await key('Escape');
+      await sleep(200);
+      await open('/?open=review', size);
+      check(`${sizeName}: /?open=review shows Review, at /`, await waitFor(`Boolean(document.querySelector('#review-screen')) && location.search === ''`, 40));
+      await open('/?share_text=calm', size);
+      check(`${sizeName}: sharing one book word opens its card`, await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Calm'`, 40) && (await evaluate(`!document.querySelector('#word-heard') && location.search === ''`)));
+      await open('/?share_text=zzxqvw', size);
+      check(`${sizeName}: sharing a word not in the book puts it in the search box`, await waitFor(`document.querySelector('#lookup-input').value === 'zzxqvw' && !document.querySelector('#word-sheet')`, 40));
+      await open('/?share_url=https%3A%2F%2Fx.com', size);
+      const NOTE = `[...document.querySelectorAll('#share-note')].some((n) => n.textContent === 'Share a word or sentence, not a link')`;
+      check(`${sizeName}: sharing only a link says to share a word or sentence`, await waitFor(NOTE, 40) && (await evaluate(`document.querySelector('#lookup-input').value === ''`)));
+      await evaluate(`document.querySelector('#lookup-input').focus(); true`);
+      await key('a', 'KeyA', 'a');
+      await sleep(200);
+      check(`${sizeName}: the note goes at the next keystroke`, await evaluate(`!document.querySelector('#share-note')`));
+      await open(`/page/${CALM_PAGE}`, size);
 
       // Errors.
       await speak({ error: 'not-allowed' });

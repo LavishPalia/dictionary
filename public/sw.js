@@ -127,7 +127,13 @@ async function page(request) {
   } catch {
     const hit = await caches.match(request, { cacheName: PAGES });
     if (hit) return hit;
-    if (new URL(request.url).pathname !== '/' && await caches.match('/', { cacheName: PAGES })) return Response.redirect('/', 302);
+    const url = new URL(request.url);
+    // A launch (/?share_text=…, /?voice=1, /?open=review) is the front page with a query: the cached front page reads it.
+    if (url.pathname === '/' && url.search) {
+      const home = await caches.match('/', { cacheName: PAGES });
+      if (home) return home;
+    }
+    if (url.pathname !== '/' && await caches.match('/', { cacheName: PAGES })) return Response.redirect('/', 302);
     return new Response('<!doctype html><meta charset="utf-8"><title>Panna</title><p style="font:18px Georgia,serif;padding:2em">You’re offline, and Panna hasn’t been opened on this device before. Connect once, and it will work offline after that.</p>',
         { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }

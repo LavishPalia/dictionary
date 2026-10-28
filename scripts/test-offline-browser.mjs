@@ -136,6 +136,14 @@ async function main() {
         check('the manifest names the app and opens it full screen at Today', m.short_name === 'Panna' && m.start_url === '/' && m.display === 'standalone', m);
         const icons = await evaluate(`Promise.all(${JSON.stringify(m.icons)}.map((i) => new Promise((ok) => { const img = new Image(); img.onload = () => ok(i.sizes === img.naturalWidth + 'x' + img.naturalHeight); img.onerror = () => ok(false); img.src = i.src; })))`);
         check('every manifest icon loads at its stated size, including a maskable one', icons.length === 3 && icons.every(Boolean) && m.icons.some((i) => i.purpose === 'maskable'), { icons, m: m.icons });
+        // Android: Panna is a share target, and the icon's long-press menu has "Speak a word" and "Review".
+        check('the manifest takes shared text as /?share_text=…', m.share_target?.action === '/' && m.share_target.method === 'GET' && m.share_target.params?.text === 'share_text' && m.share_target.params.title === 'share_title' && m.share_target.params.url === 'share_url', m.share_target);
+        check('the manifest has two icon shortcuts: Speak a word and Review', JSON.stringify((m.shortcuts ?? []).map((s) => [s.name, s.url])) === JSON.stringify([['Speak a word', '/?voice=1'], ['Review', '/?open=review']]), m.shortcuts);
+        const shortcutIcons = await Promise.all((m.shortcuts ?? []).flatMap((s) => s.icons ?? []).map(async (i) => {
+          const res = await fetch(`${BASE}${i.src}`);
+          return { src: i.src, status: res.status, type: res.headers.get('content-type'), size: i.sizes };
+        }));
+        check('each shortcut icon loads as a 96×96 PNG', shortcutIcons.length === 2 && shortcutIcons.every((i) => i.status === 200 && i.type === 'image/png' && i.size === '96x96'), shortcutIcons);
         check('iOS gets a home-screen icon and the browser a theme colour', await evaluate(`Boolean(document.querySelector('link[rel="apple-touch-icon"]')) && document.querySelector('meta[name="theme-color"]')?.content === '#2b1d14' && Boolean(document.querySelector('link[rel="icon"]'))`));
       }
 

@@ -80,11 +80,24 @@ export const LookupBar: React.FC<LookupBarProps> = ({
 
   useEffect(() => { setRecent(loadRecent()); }, []);
 
+  // The word last heard by voice, until the parent either opens its card or puts it in the box (a fill of the same
+  // text is voice; any other fill is not).
+  const heardWordRef = useRef<string | null>(null);
+  // Desktop: focus the box after voice fills it, so the arrows and Enter work. Phones keep focus on the mic, so the
+  // keyboard doesn't cover the list. A frame later, after the overlay has handed focus back to the mic.
+  const focusAfterVoice = () => {
+    if (window.matchMedia('(min-width: 1024px)').matches) requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   useEffect(() => {
     if (fill === undefined) return;
+    const heard = heardWordRef.current !== null && fill === heardWordRef.current;
+    heardWordRef.current = null;
     justSelectedRef.current = null;
+    setVoiceText(heard ? fill : null);
     setQuery(fill);
     setSelectedIndex(0);
+    if (heard) { setIsOpen(true); focusAfterVoice(); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fill]);
 
@@ -223,15 +236,19 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   };
 
   const heardText = (text: string) => {
+    heardWordRef.current = null;
     justSelectedRef.current = null;
     setVoiceText(text);
     setQuery(text);
     setIsOpen(true);
     setSelectedIndex(0);
+    focusAfterVoice();
   };
 
+  // The parent opens the word's card, or fills the box with it through `query` (then it counts as heard).
   const heardWord = (word: string, alternates: string[]) => {
-    setVoiceText(word);
+    heardWordRef.current = word;
+    setVoiceText(null);
     onVoiceWord(word, alternates);
   };
 
