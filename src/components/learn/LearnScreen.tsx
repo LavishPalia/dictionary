@@ -24,7 +24,7 @@ export function LearnScreen(props: LearnScreenProps) {
     <section className="learn" id="learn-screen" aria-labelledby="learn-title">
       <div className="learn-head">
         <div>
-          <h1 id="learn-title" className="learn-title">{LEARN_TITLE.en}</h1>
+          <h1 id="learn-title" className="learn-title" tabIndex={-1}>{LEARN_TITLE.en}</h1>
           <p className="learn-hi learn-title-hi" lang="hi">{LEARN_TITLE.hi}</p>
         </div>
         <Button variant="desk" id="learn-back" onClick={props.onBack}><span aria-hidden="true">‹</span> {props.backLabel}</Button>
@@ -46,7 +46,8 @@ export function LearnScreen(props: LearnScreenProps) {
             aria-labelledby={`learn-${section.id}-title`}>
             <h2 className="learn-h2" id={`learn-${section.id}-title`}>{section.title.en}</h2>
             <p className="learn-hi learn-h2-hi" lang="hi">{section.title.hi}</p>
-            <List className="learn-list">
+            {/* role="list": list-style:none drops list semantics in Safari/VoiceOver. */}
+            <List className="learn-list" role="list">
               {section.items.map((item) => (
                 <li key={item.en} className="learn-item">
                   <p className="learn-en">{item.en}</p>

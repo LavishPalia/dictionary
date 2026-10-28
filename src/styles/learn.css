@@ -4,10 +4,11 @@
 .learn-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-2); }
 .learn-head > div { min-width: 0; }
 .learn-title { margin: 0; font: 32px/1.15 var(--font-fell); color: var(--brass); outline: none; }
-.learn-title-hi { color: var(--brass-muted); font-size: 17px; }
 
 /* Hindi lines: always wrap, even a long run with no spaces. */
 .learn-hi { margin: 2px 0 0; font: 15px/1.55 var(--font-deva); color: var(--ink-soft); overflow-wrap: anywhere; }
+/* Modifiers come after .learn-hi so they win at equal specificity. */
+.learn-title-hi { color: var(--brass-muted); font-size: 17px; }
 
 .learn-card { min-width: 0; }
 .learn-next { border-color: var(--sepia); }
