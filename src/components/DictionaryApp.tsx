@@ -701,6 +701,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   };
   // Guided tours and one-time tips (src/components/tour). A tour step sets up its own scene through these.
   const offline = useOffline(meta, initialPages.map(p => p.page_number));
+  // Text to put in the search box (voice search). Reset once the box has it, so the same text can be put in again.
+  const [lookupFill, setLookupFill] = useState<string>();
   // Problem reports written offline are sent once the connection is back (and on the next visit).
   useEffect(() => { if (REPORTS_ENABLED && offline.online) flushQueue(); }, [offline.online]);
   const tours = useTours({
@@ -981,6 +983,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onSelectRecent={handleSelectSavedWord}
             onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) { showBookForSearch(); handleSelectLetter(letter, page); } }}
             totalEntries={meta.total_entries}
+            online={offline.online}
+            query={lookupFill}
+            onQueryChange={lookupFill === undefined ? undefined : () => setLookupFill(undefined)}
+            // For now a heard word goes into the box like any other heard text.
+            onVoiceWord={(word) => setLookupFill(word)}
           />
         }
         savedCount={savedCount}

@@ -5,6 +5,7 @@ import type { SearchMatch, SearchResult } from '@/lib/book-data';
 import { splitMatch } from '@/lib/highlight';
 import { clearRecent, loadRecent, rememberRecent, type RecentWord } from '@/lib/recent';
 import { NoEntryCard } from './NoEntryCard';
+import { VoiceSearch } from './VoiceSearch';
 import { SearchIcon } from '@/components/ui/icons';
 import { Chip } from '@/components/ui';
 
@@ -14,6 +15,16 @@ interface LookupBarProps {
   onSelectRecent: (headword: string, savedPage: number) => void;
   onBrowseLetter: (letter: string) => void;
   totalEntries: number;
+  online: boolean;
+  /** One English word was heard: the parent decides whether it is a book word (its card) or fills the box via `query`. */
+  onVoiceWord: (word: string, alternates: string[]) => void;
+  /** Open voice search with the mic ready to tap (the "Speak a word" shortcut). */
+  voiceReady?: boolean;
+  onVoiceReadyDone?: () => void;
+  /** Puts this text in the box whenever it changes (the box keeps its own state, so typing doesn't re-render the parent). */
+  query?: string;
+  /** Called with every change of the box's text, typed or filled. */
+  onQueryChange?: (query: string) => void;
 }
 
 // Display order of result groups, and their labels. Hindi labels lead for Hindi groups, as in the mockups.
@@ -41,8 +52,15 @@ function snippet(text: string, query: string): string {
   return `${start > 0 ? '…' : ''}${text.slice(start, end).trim()}${end < text.length ? '…' : ''}`;
 }
 
-export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRecent, onBrowseLetter, totalEntries }) => {
-  const [query, setQuery] = useState('');
+export const LookupBar: React.FC<LookupBarProps> = ({
+  onSelectWord, onSelectRecent, onBrowseLetter, totalEntries, online, onVoiceWord, voiceReady, onVoiceReadyDone, query: fill, onQueryChange,
+}) => {
+  const [query, setOwnQuery] = useState('');
+  const onQueryChangeRef = useRef(onQueryChange);
+  onQueryChangeRef.current = onQueryChange;
+  const setQuery = (next: string) => { setOwnQuery(next); onQueryChangeRef.current?.(next); };
+  // What voice search last heard. While the box still holds it, the list is cut to the 3 closest matches.
+  const [voiceText, setVoiceText] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
   // The query the current results belong to, so nothing (not even "No entry") shows for a stale query.
   const [resultsFor, setResultsFor] = useState('');
@@ -61,6 +79,14 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
   const justSelectedRef = useRef<string | null>(null);
 
   useEffect(() => { setRecent(loadRecent()); }, []);
+
+  useEffect(() => {
+    if (fill === undefined) return;
+    justSelectedRef.current = null;
+    setQuery(fill);
+    setSelectedIndex(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fill]);
 
   // Debounced search; a newer query aborts the request for an older one.
   useEffect(() => {
@@ -134,6 +160,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
   const showRecent = !trimmed && recent.length > 0;
   const fresh = trimmed !== '' && resultsFor === trimmed;
   const noEntry = fresh && (results.length === 0 || Boolean(results[0]?.suggestion));
+  const fromVoice = voiceText !== null && trimmed !== '' && trimmed === voiceText.trim();
 
   // Results in display order (grouped), which is also the order the arrow keys move through.
   const groups = useMemo(() => {
@@ -143,11 +170,16 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
       .filter((g) => g.items.length > 0);
   }, [fresh, noEntry, results]);
 
+  // Heard by voice: the first 3 in display order, as one list without group headings.
+  const shownResults = useMemo(() => {
+    const ordered = noEntry ? results : groups.flatMap((g) => g.items);
+    return fromVoice ? ordered.slice(0, 3) : ordered;
+  }, [noEntry, results, groups, fromVoice]);
+
   const options: Option[] = useMemo(() => {
     if (showRecent) return recent.map((r) => ({ kind: 'recent' as const, recent: r }));
-    if (noEntry) return results.map((r) => ({ kind: 'result' as const, result: r }));
-    return groups.flatMap((g) => g.items.map((r) => ({ kind: 'result' as const, result: r })));
-  }, [showRecent, recent, noEntry, results, groups]);
+    return shownResults.map((r) => ({ kind: 'result' as const, result: r }));
+  }, [showRecent, recent, shownResults]);
 
   const panelOpen = isOpen && (showRecent || fresh);
   const active = panelOpen && options[selectedIndex] ? selectedIndex : -1;
@@ -190,7 +222,21 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
     }
   };
 
+  const heardText = (text: string) => {
+    justSelectedRef.current = null;
+    setVoiceText(text);
+    setQuery(text);
+    setIsOpen(true);
+    setSelectedIndex(0);
+  };
+
+  const heardWord = (word: string, alternates: string[]) => {
+    setVoiceText(word);
+    onVoiceWord(word, alternates);
+  };
+
   const clearQuery = () => {
+    setVoiceText(null);
     setQuery('');
     setIsOpen(true);
     setSelectedIndex(0);
@@ -240,7 +286,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
 
   let statusText = '';
   if (panelOpen && showRecent) statusText = `${recent.length} recent word${recent.length === 1 ? '' : 's'}`;
-  else if (panelOpen && noEntry) statusText = results.length ? `No entry for ${trimmed}. ${results.length} suggestion${results.length === 1 ? '' : 's'}.` : `No entry for ${trimmed}.`;
+  else if (panelOpen && noEntry) statusText = shownResults.length ? `No entry for ${trimmed}. ${shownResults.length} suggestion${shownResults.length === 1 ? '' : 's'}.` : `No entry for ${trimmed}.`;
   else if (panelOpen) statusText = `${options.length} result${options.length === 1 ? '' : 's'}`;
 
   return (
@@ -261,6 +307,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
         value={query}
         onChange={(e) => {
           justSelectedRef.current = null;
+          setVoiceText(null);
           setQuery(e.target.value);
           setIsOpen(true);
         }}
@@ -273,6 +320,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
       ) : (
         <span className="app-lookup-key app-desktop-only" aria-hidden="true">Press <kbd>/</kbd></span>
       )}
+      <VoiceSearch online={online} ready={voiceReady} onReadyDone={onVoiceReadyDone} onHeardText={heardText} onHeardWord={heardWord} />
       <div className="ui-visually-hidden" role="status" aria-live="polite">{statusText}</div>
 
       {panelOpen && (
@@ -316,8 +364,13 @@ export const LookupBar: React.FC<LookupBarProps> = ({ onSelectWord, onSelectRece
               totalEntries={totalEntries}
               onBrowseLetter={/^[a-z]/i.test(trimmed) ? () => { setIsOpen(false); onBrowseLetter(trimmed[0].toUpperCase()); } : undefined}
             >
-              {results.map((item, i) => renderResult(item, i))}
+              {shownResults.map((item, i) => renderResult(item, i))}
             </NoEntryCard>
+          ) : fromVoice ? (
+            <div id={listboxId} role="listbox" aria-label="Closest matches">
+              {offline === 'partial' && <div className="lookup-group" id="lookup-offline-note">Offline · only pages you’ve opened</div>}
+              {shownResults.map((item, i) => renderResult(item, i))}
+            </div>
           ) : (
             <div id={listboxId} role="listbox" aria-label="Search results">
               {offline === 'partial' && <div className="lookup-group" id="lookup-offline-note">Offline · only pages you’ve opened</div>}
