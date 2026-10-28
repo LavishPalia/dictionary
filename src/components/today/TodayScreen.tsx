@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import type { BookPage, DictionaryEntry } from '@/lib/types';
 import { describePos } from '@/lib/pos';
-import { localDate } from '@/lib/review';
+import { localDate, SECONDS_PER_CARD } from '@/lib/review';
 import { Button, Card } from '@/components/ui';
 import { StarIcon } from '@/components/ui/icons';
 import { ProgressBar, ReviewCalendar } from '@/components/progress/Progress';
@@ -31,8 +31,6 @@ interface TodayScreenProps {
   onTakeTour: () => void;
   onDismissWelcome: () => void;
 }
-
-const SECONDS_PER_CARD = 20;
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
 export function TodayScreen(props: TodayScreenProps) {
