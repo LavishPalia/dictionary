@@ -1,3 +1,4 @@
+import { analyseSentence, nearSpellings, searchWords } from '../src/lib/book-data';
 import { cleanShared, tokenize, pickWord, capitalisedShare } from '../src/lib/sentence';
 
 let failures = 0;
@@ -70,6 +71,24 @@ function pickFrom(text: string, ranks: Record<string, number>) {
 {
   const { toks, picked } = pickFrom('RBI HIKES REPO RATE AMID INFLATION', { hikes: 9000, repo: 15000, rate: 800, amid: 6000, inflation: 7000 });
   check('headline picks REPO', picked !== null && toks[picked].text === 'REPO', String(picked));
+}
+
+// DB-level: analyseSentence, nearSpellings
+{
+  const a = analyseSentence("The government's plan deepened and obfuscated the facts.", false);
+  const by = (text: string) => a.tokens.find((t) => t.text === text);
+  check('picked token is obfuscated -> obfuscate', a.picked !== null && a.tokens[a.picked].headword === 'obfuscate', String(a.picked));
+  check("government's -> government", by("government's")?.headword === 'government');
+  check('deepened -> deepen', by('deepened')?.headword === 'deepen');
+  check('obfuscate uncommon', by('obfuscated')?.uncommon === true);
+  check('government not uncommon', !by("government's")?.uncommon);
+  check('obfuscate meaning_hi non-empty', !!a.entries.obfuscate?.meaning_hi);
+  const z = analyseSentence('Ram met Zxqv today', false);
+  check('Zxqv has no headword', z.tokens.find((t) => t.text === 'Zxqv')?.headword === undefined);
+  const near = nearSpellings('principal', 3).map((r) => r.normalized);
+  check('nearSpellings excludes itself, includes principle', !near.includes('principal') && near.includes('principle'), near.join(','));
+  const ex = searchWords('exacrbate');
+  check('searchWords still suggests for exacrbate', ex.length > 0 && ex.every((r) => r.match === 'suggestion'), JSON.stringify(ex.map((r) => r.normalized)));
 }
 
 if (failures) { console.error(`\n${failures} sentence check(s) failed.`); process.exit(1); }

@@ -127,6 +127,14 @@ async function testEndpoints() {
   check('Hindi meaning match is labelled "hindi"', hindiKinds[0]?.h === 'Camel' && hindiKinds[0]?.m === 'hindi', hindiKinds);
   check('typo suggestion is labelled "suggestion"', (await kinds('ceremonis'))[0]?.m === 'suggestion');
 
+  const sent = await getJson('/api/sentence?text=obfuscate%20the%20facts');
+  check('GET /api/sentence picks a word', sent.status === 200 && typeof sent.body.picked === 'number' && sent.cache === 'public, max-age=300', sent.body.picked);
+  const link = await getJson('/api/sentence?url=https://x.com');
+  check('GET /api/sentence with only a url is a link', link.status === 200 && link.body.kind === 'link', link.body);
+  const near = await getJson('/api/search?q=principal&near=1');
+  check('GET /api/search near=1 excludes the word itself', near.status === 200 && Array.isArray(near.body.results)
+    && !near.body.results.some((r: { normalized: string }) => r.normalized === 'principal'), near.body);
+
   if (failures) {
     console.error(`\n${failures} check(s) failed.`);
     process.exit(1);

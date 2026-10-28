@@ -6,6 +6,7 @@ import { BookMeta, BookPage, DictionaryEntry } from './types';
 import { damerauLevenshtein } from './search-distance';
 import { normalizeHindi } from './hindi';
 import { hinglishKey, spellingDistance } from './hinglish';
+import { tokenize, pickWord, capitalisedShare, UNCOMMON_RANK, type SentenceAnalysis, type SentenceToken } from './sentence';
 
 const DB_FILE = path.join(process.cwd(), 'data', 'dictionary.db');
 
@@ -320,8 +321,14 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
   }
   if (results.length) return results;
 
+  return nearSpellings(q, Math.min(3, limit));
+}
+
+/** Closest spellings by Damerau–Levenshtein (same initial, length window, max distance 1 for <=5 letters else 2), excluding the word itself. */
+export function nearSpellings(word: string, limit: number): SearchResult[] {
   // A typo scan is intentionally the final fallback. Restrict the pool by initial letter and
   // a narrow length window so the JS distance calculation stays cheap on the full dictionary.
+  const q = word.toLowerCase().trim();
   if (q.length < 3 || q.length > 48 || limit < 1 || !/^[a-z]/.test(q)) return [];
   const lengthSlack = q.length > 6 ? 2 : 1;
   const minLength = Math.max(1, q.length - lengthSlack);
@@ -353,8 +360,45 @@ export function searchWords(query: string, limit: number = 8): SearchResult[] {
   return [...ranked.values()]
     .filter((candidate) => candidate.distance > 0 && candidate.distance <= maxDistance)
     .sort((a, b) => a.distance - b.distance || a.row.normalized.localeCompare(b.row.normalized))
-    .slice(0, Math.min(3, limit))
+    .slice(0, limit)
     .map(({ row, form }) => toResult(row, 'suggestion', { ...(form ? { matched_form: form } : {}), suggestion: true }));
+}
+
+/** Book words of a cleaned text: each token key looked up as entries.normalized, then forms.normalized_form. */
+export function analyseSentence(text: string, truncated: boolean): SentenceAnalysis {
+  type Row = EntryRow & { freq_rank: number | null };
+  const toks = tokenize(text);
+  const keys = [...new Set(toks.map((t) => t.key).filter((k): k is string => k !== null))];
+  const rows = new Map<string, Row>();
+  if (keys.length) {
+    for (const r of db().prepare(`SELECT * FROM entries WHERE normalized IN (${keys.map(() => '?').join(',')})`).all(...keys) as Row[]) {
+      rows.set(r.normalized, r);
+    }
+    const missing = keys.filter((k) => !rows.has(k));
+    if (missing.length) {
+      const formRows = db().prepare(`SELECT e.*, f.normalized_form AS form_key FROM forms f JOIN entries e ON e.id = f.lemma_id
+        WHERE f.normalized_form IN (${missing.map(() => '?').join(',')}) ORDER BY e.normalized`)
+        .all(...missing) as (Row & { form_key: string })[];
+      for (const r of formRows) if (!rows.has(r.form_key)) rows.set(r.form_key, r);
+    }
+  }
+  const rowOf = (key: string | null) => (key === null ? undefined : rows.get(key));
+  const tokens: SentenceToken[] = toks.map((t) => {
+    const r = rowOf(t.key);
+    if (!r) return { text: t.text };
+    const uncommon = r.freq_rank === null || r.freq_rank > UNCOMMON_RANK;
+    return { text: t.text, headword: r.normalized, ...(uncommon ? { uncommon: true } : {}) };
+  });
+  const candidates = toks.flatMap((t, index) => {
+    const r = rowOf(t.key);
+    return r ? [{ index, key: t.key!, rank: r.freq_rank, midCap: t.midCap }] : [];
+  });
+  const picked = pickWord(candidates, 'rank', capitalisedShare(toks));
+  const byNorm = new Map([...rows.values()].map((r) => [r.normalized, r]));
+  const used = [...new Set(tokens.flatMap((t) => (t.headword ? [t.headword] : [])))];
+  const entries: Record<string, DictionaryEntry> = {};
+  for (const en of withExamples(withRelated(used.map((h) => toEntry(byNorm.get(h)!))))) entries[en.normalized] = en;
+  return { tokens, picked, entries, truncated };
 }
 
 /** One review card: the word, and three wrong options a learner could plausibly confuse with it. */
