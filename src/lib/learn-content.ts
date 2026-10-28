@@ -85,16 +85,18 @@ const mins = (n: number) => (n === 1 ? '1 minute' : `${n} minutes`);
 
 /** The "Your next step" card. count: total due for 'review', K for 'add-words'; minutes: the Review estimate. */
 export const NEXT_STEP_TEXT: Record<StepId, (count?: number, minutes?: number) => LearnItem> = {
-  'first-save': () => ({ en: 'Save your first word: open any word and tap Save.', hi: 'अपना पहला शब्द सहेजें: कोई भी शब्द खोलें और Save छुएँ।', ...OPEN_BOOK }),
+  // The word sheet's button reads "Save word".
+  'first-save': () => ({ en: 'Save your first word: open any word and tap Save word.', hi: 'अपना पहला शब्द सहेजें: कोई भी शब्द खोलें और Save word छुएँ।', ...OPEN_BOOK }),
   review: (count = 0, minutes = 1) => ({
     en: `Review your ${count} due ${count === 1 ? 'word' : 'words'} (about ${mins(minutes)}).`,
-    hi: `Review में आपके ${count} शब्द तैयार हैं (लगभग ${minutes} मिनट)।`,
+    hi: count === 1 ? `Review में आपका 1 शब्द तैयार है (लगभग ${minutes} मिनट)।` : `Review में आपके ${count} शब्द तैयार हैं (लगभग ${minutes} मिनट)।`,
     ...OPEN_REVIEW,
   }),
   backup: () => ({ en: 'Back up your words: they live only on this device.', hi: 'अपने शब्दों का बैकअप लें — वे सिर्फ़ इसी डिवाइस पर हैं।', ...BACKUP }),
+  // "Up to 1" reads oddly: one word left is "1 more".
   'add-words': (count = NEW_WORDS_PER_DAY) => ({
-    en: `Add up to ${count} new ${count === 1 ? 'word' : 'words'} today.`,
-    hi: `आज ${count} तक नए शब्द जोड़ें।`,
+    en: count === 1 ? 'Add 1 more new word today.' : `Add up to ${count} new words today.`,
+    hi: count === 1 ? 'आज 1 और नया शब्द जोड़ें।' : `आज ${count} तक नए शब्द जोड़ें।`,
     ...CONTINUE,
   }),
   'done-today': () => ({ en: 'Done for today: come back tomorrow for Review.', hi: 'आज का काम पूरा — कल Review के लिए लौटें।' }),
