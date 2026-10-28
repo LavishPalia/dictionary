@@ -89,7 +89,7 @@
 @media (max-width: 1023px) {
   .ui-btn--small, .ui-seg button, .tour-tip .tour-btn, .tour-tip .tour-link { min-height: 44px; }
   .ui-iconbtn, .tour-close, .lookup-clear { min-width: 44px; min-height: 44px; }
-  .tour-howlink, .word-goto { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  .tour-howlink, .word-goto, .word-back { min-height: 44px; padding-top: 0; padding-bottom: 0; }
   #goto-page-input { min-height: 44px; }
   /* The phone's page arrows set their size inline. */
   button[aria-label='Previous page'], button[aria-label='Next page'] { min-width: 44px !important; min-height: 44px !important; }
