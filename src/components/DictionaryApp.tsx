@@ -9,7 +9,7 @@ import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
 import { ReviewScreen } from '@/components/review/ReviewScreen';
 import { TodayScreen } from '@/components/today/TodayScreen';
-import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, loadReviewDays, newRecord, nextDue, saveRecords, saveReviewDays, statusOf, streak, withReviewDay, type ReviewRecords } from '@/lib/review';
+import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, loadReviewDays, newRecord, nextDue, saveRecords, saveReviewDays, SECONDS_PER_CARD, statusOf, streak, withReviewDay, type ReviewRecords } from '@/lib/review';
 import type { Section } from '@/components/shell/AppChrome';
 import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocateMarks, type MarkAnchors } from '@/lib/marks';
 import { CreditsModal } from '@/components/modals/CreditsModal';
@@ -30,6 +30,9 @@ import { unseenTours } from '@/lib/tours';
 import { bestStreak, calendar, progressOf } from '@/lib/progress';
 import { useOffline } from '@/components/shell/useOffline';
 import { REPORTS_ENABLED, flushQueue } from '@/lib/report';
+import { LearnScreen } from '@/components/learn/LearnScreen';
+import { nextStep } from '@/lib/learn';
+import type { LearnAction } from '@/lib/learn-content';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -96,8 +99,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialEntry));
   // Which screen is showing. The book stays mounted (hidden) under Saved and Review, so its place and state survive.
   const [section, setSection] = useState<Section>(initialSection);
-  // The home screen (Today or Book) that Saved and Review return to.
-  const [homeSection, setHomeSection] = useState<Section>(initialSection);
+  // The home screen (Today or Book) that Saved, Review and the study guide return to. The guide opened at /learn
+  // sits over Today, as the front page would.
+  const [homeSection, setHomeSection] = useState<Section>(initialSection === 'book' ? 'book' : 'today');
+  // The screen the study guide was opened from, so its back control returns there (Saved and Review included).
+  const [learnFrom, setLearnFrom] = useState<Section | null>(null);
   // Last page read, for "Continue reading" on Today. null until known.
   const [lastReadPage, setLastReadPage] = useState<number | null>(null);
   const [reviewDays, setReviewDays] = useState<string[]>([]);
@@ -427,11 +433,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const handlePopState = async () => {
       const shown = window.history.state?.panna;
       const path = window.location.pathname;
-      const isSection = shown === 'saved' || shown === 'review' || shown === 'today';
+      const isSection = shown === 'saved' || shown === 'review' || shown === 'today' || shown === 'learn';
       sectionEntryRef.current = isSection;
-      // The front page with no screen recorded is Today.
-      const next: Section = isSection ? shown : path === '/' ? 'today' : 'book';
+      // The front page with no screen recorded is Today; /learn is the study guide.
+      const next: Section = isSection ? shown : path === '/' ? 'today' : path === '/learn' ? 'learn' : 'book';
       setSection(next);
+      if (next === 'learn') setLearnFrom(null);
       if (next === 'book' || next === 'today') setHomeSection(next);
       if (path.startsWith('/page/')) {
         const pNum = parseInt(path.replace('/page/', ''), 10);
@@ -620,6 +627,21 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setShowMenu(false);
     if (target === 'review') setReviewRound(n => n + 1);
     window.scrollTo(0, 0);
+    // The study guide returns to where it was opened from; a tour started from the guide passing through other
+    // screens does not count.
+    if (target === 'learn' && !tours.active) setLearnFrom(section);
+    // The guide opened at its own address (/learn): leaving it takes the address of the screen shown, and spends no
+    // Back step on the guide. Saved and Review open over Today, with their own entry, as from the front page.
+    if (section === 'learn' && window.location.pathname === '/learn') {
+      window.history.replaceState(stripSection(), '', target === 'book' ? `/page/${currentPage}` : '/');
+      sectionEntryRef.current = false;
+      if (!isHome(target)) {
+        window.history.pushState({ panna: target }, '', '/');
+        sectionEntryRef.current = true;
+      } else setHomeSection(target);
+      setSection(target);
+      return;
+    }
     if (!isHome(target)) {
       if (isHome(section)) {
         window.history.pushState({ panna: target }, '', window.location.pathname);
@@ -727,6 +749,51 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [bookmarkedWords, reviewRecords, clock],
   );
+  // ── Study guide ("How to learn with Panna") ──
+  // Opening it is remembered (Today then shows a small link instead of its card); wait for the saved state to load,
+  // so this does not write over it.
+  const { loaded: toursLoaded, markGuideOpened } = tours;
+  useEffect(() => {
+    if (section === 'learn' && toursLoaded) markGuideOpened();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section, toursLoaded]);
+  // Opened from another screen: move focus to its heading, as Saved and Review do (not on a fresh load of /learn).
+  const shownSectionRef = useRef(section);
+  useEffect(() => {
+    if (section === 'learn' && shownSectionRef.current !== 'learn') document.getElementById('learn-title')?.focus();
+    shownSectionRef.current = section;
+  }, [section]);
+  // A guide button that opens the ⋯ menu at one row. The menu focuses itself as it opens (its effect runs first),
+  // then this moves focus to the row; a row this browser does not show leaves the menu as it normally opens.
+  const [menuFocus, setMenuFocus] = useState<string | null>(null);
+  useEffect(() => {
+    if (!showMenu || !menuFocus) return;
+    document.getElementById(menuFocus)?.focus();
+    setMenuFocus(null);
+  }, [showMenu, menuFocus]);
+  const openMenuAt = (id: string) => { setMenuFocus(id); setShowMenu(true); };
+  const handleLearnAction = (action: LearnAction) => {
+    switch (action) {
+      case 'review': goTo('review'); break;
+      case 'book': goTo('book'); if (!isBookOpen) setIsBookOpen(true); break;
+      case 'continue':
+        // As Today's "Continue reading"; with no page read yet, the book where it is.
+        if (lastReadPage) { showBookForNavigation(); setHighlightedWord(''); turnToPage(lastReadPage); } else goTo('book');
+        if (!isBookOpen) setIsBookOpen(true);
+        break;
+      case 'tour-word': tours.startTour('word'); break;
+      case 'tour-review': tours.startTour('review'); break;
+      case 'offline-save': openMenuAt('offline-save-btn'); break;
+      case 'backup': openMenuAt('backup-btn'); break;
+      case 'install': openMenuAt('install-btn'); break;
+      case 'tours': tours.openSheet(); break;
+    }
+  };
+  const learnBack: Section = learnFrom === 'saved' || learnFrom === 'review' ? learnFrom : homeSection;
+  const backLabels: Record<Section, string> = {
+    today: 'Back to Today', book: 'Back to the book', saved: 'Back to Saved', review: 'Back to Review', learn: 'Back',
+  };
+
   // "In review · comes back in 3 days" under Save in the word sheet.
   const reviewNoteFor = (entry: DictionaryEntry | null): string | null => {
     if (!entry || !bookmarkedWords.some(w => w.normalized === entry.normalized)) return null;
@@ -834,6 +901,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     if (section === 'today') title = `${brand} — A Pocket Dictionary`;
     else if (section === 'saved') title = `Saved — ${brand}`;
     else if (section === 'review') title = `Review — ${brand}`;
+    else if (section === 'learn') title = `How to learn with Panna — ${brand}`;
     else if (showWordDrawer && activeWordEntry) {
       const pron = activeWordEntry.pronunciation_deva ? ` (${activeWordEntry.pronunciation_deva})` : '';
       title = `${activeWordEntry.headword}${pron} — ${brand} Dictionary`;
@@ -1052,6 +1120,16 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onClose={() => goTo(homeSection)}
           onOpenSaved={() => goTo('saved')}
           onHowItWorks={() => tours.startTour('review')}
+        />
+      )}
+
+      {section === 'learn' && (
+        <LearnScreen
+          step={nextStep({ saved: bookmarkedWords, dueCount, lastBackupAt, now: Date.now() })}
+          dueMinutes={Math.max(1, Math.round((dueCount * SECONDS_PER_CARD) / 60))}
+          onAction={handleLearnAction}
+          onBack={() => goTo(learnBack)}
+          backLabel={backLabels[learnBack]}
         />
       )}
 

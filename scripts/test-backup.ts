@@ -57,6 +57,13 @@ check('merge keeps this browser’s settings', JSON.stringify(merged.panna_setti
     .panna_tours as { seen: Record<string, number>; tips: Record<string, number>; welcomeDone: boolean; tipsOff: boolean };
   check('merge keeps tours and tips seen on either side, and this browser’s tips choice',
     t.seen.start === 100 && t.seen.word === 300 && t.tips.book === 5 && t.tips.review === 7 && t.welcomeDone && t.tipsOff, t);
+  const guideBackup = { ...backup, data: { panna_tours: { seen: {}, tips: {}, guideOpened: true } } };
+  const guideHere = { panna_tours: { seen: {}, tips: {} } };
+  const guideOf = (d: BackupData) => (d.panna_tours as { guideOpened?: boolean }).guideOpened;
+  check('a backup with the study guide opened restores it opened, in add and in replace',
+    guideOf(restoreData(guideHere, guideBackup, 'merge', book)) === true && guideOf(restoreData(guideHere, guideBackup, 'replace', book)) === true);
+  check('merge keeps the study guide opened when only this browser opened it',
+    guideOf(restoreData({ panna_tours: { seen: {}, tips: {}, guideOpened: true } }, { ...backup, data: { panna_tours: { seen: {}, tips: {} } } }, 'merge', book)) === true);
   check('a backup with damaged tour progress is refused', !parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, panna_tours: [] } })).ok);
 }
 check('merge combines recent searches without duplicates', (merged.panna_recent_searches as Array<{ headword: string }>).map((r) => r.headword).join() === 'camel,Heal', merged.panna_recent_searches);

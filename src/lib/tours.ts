@@ -204,6 +204,8 @@ export interface ToursState {
   tipsOff?: boolean;
   /** The Guided tours list has been opened: the reader knows where tours are. */
   listOpened?: boolean;
+  /** The study guide (How to learn with Panna) has been opened once. */
+  guideOpened?: boolean;
 }
 
 export const emptyToursState = (): ToursState => ({ seen: {}, tips: {} });
@@ -213,7 +215,8 @@ export function loadToursState(): ToursState {
     const raw = JSON.parse(localStorage.getItem(TOURS_KEY) || 'null');
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
       return { seen: raw.seen && typeof raw.seen === 'object' ? raw.seen : {}, tips: raw.tips && typeof raw.tips === 'object' ? raw.tips : {},
-        welcomeDone: raw.welcomeDone === true, tipsOff: raw.tipsOff === true, listOpened: raw.listOpened === true };
+        welcomeDone: raw.welcomeDone === true, tipsOff: raw.tipsOff === true, listOpened: raw.listOpened === true,
+        guideOpened: raw.guideOpened === true };
     }
   } catch {}
   return emptyToursState();

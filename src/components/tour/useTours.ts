@@ -9,7 +9,8 @@ import {
 } from '@/lib/tours';
 import type { TourLayerProps } from './TourLayer';
 
-type Screen = 'today' | 'book' | 'saved' | 'review';
+// The study guide ('learn') can start a tour, so a tour can return to it.
+type Screen = 'today' | 'book' | 'saved' | 'review' | 'learn';
 
 /** What a tour needs from the app to set up each step's scene. */
 export interface TourApp {
@@ -201,6 +202,9 @@ export function useTours(app: TourApp) {
     sheetOpen,
     openSheet: () => { update((s) => ({ ...s, listOpened: true })); setSheetOpen(true); },
     closeSheet: () => setSheetOpen(false),
+    /** The study guide has been opened once (Today then shows a small link instead of its card). */
+    guideOpened: state.guideOpened === true,
+    markGuideOpened: () => { if (!stateRef.current.guideOpened) update((s) => ({ ...s, guideOpened: true })); },
     tipsAgain: () => update((s) => ({ ...s, tips: {}, tipsOff: false })),
     tipsOff: () => update((s) => ({ ...s, tipsOff: true })),
   };
