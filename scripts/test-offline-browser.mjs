@@ -204,11 +204,18 @@ async function main() {
       const far = await evaluate(`fetch('/api/page/80').then((r) => r.json()).then((p) => p.column1[0].headword)`);
       await click('#menu-btn');
       await sleep(400);
+      await evaluate(`performance.setResourceTimingBufferSize(10000), performance.clearResourceTimings()`);
+      const started = Date.now();
       await click('#offline-save-btn');
       let status = '';
-      // The whole book (3,125 pages) takes about 75 s to save here; allow 120 s.
+      // Allow 120 s, as the per-page save needed; in chunks it takes a fraction of that.
       for (let i = 0; i < 600 && !status.startsWith('Saved on this device'); i++) { await sleep(200); status = await evaluate(`document.querySelector('#offline-status')?.textContent ?? ''`); }
+      const seconds = Math.round((Date.now() - started) / 1000);
       check(`${sizeName}: saving shows when it is done, with the size`, status.startsWith(`Saved on this device · ${total.toLocaleString('en-IN')} pages ·`) && /\d+(\.\d)? (KB|MB)$/.test(status), status);
+      const requests = await evaluate(`(() => { const names = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname);
+        return { chunks: names.filter((n) => n.startsWith('/api/chunk/')).length, pages: names.filter((n) => n.startsWith('/api/page/')).length }; })()`);
+      check(`${sizeName}: the book downloads in chunks of 100 pages, not page by page (${seconds} s)`,
+        requests.chunks <= Math.ceil(total / 100) && requests.pages < 10, requests);
       check(`${sizeName}: the menu stays open while saving`, await visible('#reading-menu'));
       await key('Escape');
       await sleep(300);

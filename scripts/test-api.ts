@@ -1,6 +1,8 @@
 // Smoke test against a running server (npm run dev / npm start). Resolves pages through the API instead of
 // assuming page numbers.
 // Usage: npx tsx scripts/test-api.ts [baseUrl]
+import { CHUNK_PAGES } from '../src/lib/offline';
+
 const BASE = process.argv[2] || 'http://localhost:3000';
 
 let failures = 0;
@@ -55,6 +57,26 @@ async function testEndpoints() {
 
   check('GET /api/page/0 is 404', (await getJson('/api/page/0')).status === 404);
   check(`GET /api/page/${meta.body.total_pages + 1} is 404`, (await getJson(`/api/page/${meta.body.total_pages + 1}`)).status === 404);
+
+  // Chunks: the offline save downloads the book CHUNK_PAGES pages at a time.
+  const v = meta.body.data_version;
+  const chunkOf = Math.ceil(pageNum / CHUNK_PAGES);
+  const chunk = await getJson(`/api/chunk/${chunkOf}?v=${v}`);
+  const inChunk = chunk.body.pages?.find((p: { page_number: number }) => p.page_number === pageNum);
+  check(`GET /api/chunk/${chunkOf} holds page ${pageNum} exactly as /api/page serves it`,
+    chunk.status === 200 && JSON.stringify(inChunk) === JSON.stringify(page.body), chunk.status);
+  check(`chunk ${chunkOf} holds pages ${(chunkOf - 1) * CHUNK_PAGES + 1}–${chunkOf * CHUNK_PAGES} in order`,
+    chunk.body.pages?.length === CHUNK_PAGES && chunk.body.pages.every((p: { page_number: number }, i: number) => p.page_number === (chunkOf - 1) * CHUNK_PAGES + 1 + i));
+  check('chunk responses are immutable', chunk.cache?.includes('immutable') === true, chunk.cache);
+  const lastChunk = Math.ceil(meta.body.total_pages / CHUNK_PAGES);
+  const last = await getJson(`/api/chunk/${lastChunk}?v=${v}`);
+  check(`the last chunk (${lastChunk}) ends at page ${meta.body.total_pages}`,
+    last.status === 200 && last.body.pages?.at(-1)?.page_number === meta.body.total_pages, last.body.pages?.length);
+  check('GET /api/chunk/0 is 404', (await getJson(`/api/chunk/0?v=${v}`)).status === 404);
+  check(`GET /api/chunk/${lastChunk + 1} is 404`, (await getJson(`/api/chunk/${lastChunk + 1}?v=${v}`)).status === 404);
+  check('a chunk for another book version is 409, so a save never mixes two builds',
+    (await getJson(`/api/chunk/1?v=stale`)).status === 409);
+  check('a chunk without a version is 409', (await getJson('/api/chunk/1')).status === 409);
   check('GET /api/word/100%25 is 404, not a crash', (await getJson('/api/word/100%25')).status === 404);
   check('GET /api/word/zzzzqx is 404', (await getJson('/api/word/zzzzqx')).status === 404);
 
