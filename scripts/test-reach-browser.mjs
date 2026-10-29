@@ -242,6 +242,7 @@ async function main() {
       await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`, 40);
       await sleep(200);
       check(`${sizeName}: one heard book word opens its card (ceremonies → Ceremony)`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`), await evaluate(`document.querySelector('#word-sheet-title')?.textContent`));
+      await waitFor(`document.querySelectorAll('#word-heard button').length === 2`, 50);
       let s = await strip();
       check(`${sizeName}: the card starts with a "Heard ceremonies" status strip`, s?.role === 'status' && s.first && s.text.startsWith('Heard ceremonies') && s.italic === 'ceremonies', s);
       check(`${sizeName}: it offers a heard alternate that is a book word, then the closest spelling`, s?.text === 'Heard ceremonies · Did you mean serenity, ceremonial?' && JSON.stringify(s.buttons.map((b) => b.text)) === '["serenity","ceremonial"]', s);
@@ -252,6 +253,7 @@ async function main() {
       check(`${sizeName}: axe finds nothing wrong in the card with its strip`, Array.isArray(sheetAxe) && sheetAxe.length === 0, sheetAxe);
       await evaluate(`document.querySelector('#word-heard button').click(); true`);
       await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'serenity'`, 40);
+      await waitFor(`/^Heard ceremonies/.test(document.querySelector('#word-heard')?.textContent || '')`, 30);
       s = await strip();
       check(`${sizeName}: tapping an alternate swaps the card, and the strip stays`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'serenity'`) && s?.text.startsWith('Heard ceremonies'), { title: await evaluate(`document.querySelector('#word-sheet-title')?.textContent`), s });
       await click('#close-word-drawer');
