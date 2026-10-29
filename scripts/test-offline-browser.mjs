@@ -165,6 +165,15 @@ async function main() {
           waiting: r?.waiting?.state, regs: (await navigator.serviceWorker.getRegistrations()).length, url: location.href };
       })()`));
       await sleep(1500); // let it cache what the page already loaded
+      // A phone that installed Panna before a manifest change still holds the old manifest: online, the new one wins.
+      const freshManifest = await evaluate(`(async () => {
+        const c = await caches.open('panna-static-v1');
+        await c.put('/manifest.webmanifest', new Response(JSON.stringify({ short_name: 'Old' }), { headers: { 'Content-Type': 'application/manifest+json' } }));
+        const m = await fetch('/manifest.webmanifest').then((r) => r.json());
+        const kept = await c.match('/manifest.webmanifest').then((r) => r.json());
+        return { served: m.short_name, share: Boolean(m.share_target), kept: kept.short_name };
+      })()`);
+      check(`${sizeName}: online, an old cached manifest is replaced by the server's`, freshManifest.served === 'Panna' && freshManifest.share && freshManifest.kept === 'Panna', freshManifest);
       await click('#menu-btn');
       await sleep(400);
       check(`${sizeName}: the menu offers to save the book for offline`, (await evaluate(`document.querySelector('#offline-save-btn')?.innerText ?? ''`)).includes('Read and search the whole book without a connection'));
@@ -195,6 +204,8 @@ async function main() {
       await setOffline(true);
       await open(`/page/${CALM_PAGE}`, size);
       check(`${sizeName}: a page opened before still loads offline`, await appShows('Calm'));
+      const offlineManifest = await evaluate(`fetch('/manifest.webmanifest').then((r) => r.json()).then((m) => m.short_name).catch((e) => String(e))`);
+      check(`${sizeName}: offline, the manifest comes from the cache`, offlineManifest === 'Panna', offlineManifest);
       check(`${sizeName}: an offline notice says what still works`, (await evaluate(`document.querySelector('#offline-notice')?.innerText ?? ''`)).includes('Pages you’ve opened still work'));
       await evaluate(`[...document.querySelectorAll('.entry-text')].find((e) => e.textContent.startsWith('Calm') && e.style.cursor === 'pointer').click(); true`);
       await sleep(700);
