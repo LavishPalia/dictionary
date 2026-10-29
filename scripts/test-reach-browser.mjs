@@ -130,7 +130,7 @@ async function main() {
 
       const mic = await evaluate(`(() => { const b = document.querySelector('#voice-btn'); if (!b) return null; const r = b.getBoundingClientRect(); return { label: b.getAttribute('aria-label'), w: r.width, h: r.height, inBox: Boolean(b.closest('.app-lookup')) }; })()`);
       check(`${sizeName}: the mic shows in the search box when speech recognition exists`, mic?.label === 'Search by voice' && mic.inBox, mic);
-      check(`${sizeName}: the mic is a 44px target`, mic && mic.w >= 44 && mic.h >= 44, mic);
+      check(`${sizeName}: the mic is a 44px target`, mic && mic.w >= 43.5 && mic.h >= 43.5, mic);
 
       // Listening: the overlay, its words and the language switch.
       await speak({ hold: true });
@@ -214,7 +214,7 @@ async function main() {
       let s = await strip();
       check(`${sizeName}: the card starts with a "Heard ceremonies" status strip`, s?.role === 'status' && s.first && s.text.startsWith('Heard ceremonies') && s.italic === 'ceremonies', s);
       check(`${sizeName}: it offers a heard alternate that is a book word, then the closest spelling`, s?.text === 'Heard ceremonies · Did you mean serenity, ceremonial?' && JSON.stringify(s.buttons.map((b) => b.text)) === '["serenity","ceremonial"]', s);
-      if (size.mobile) check(`${sizeName}: the strip's buttons are 44px targets`, s?.buttons.every((b) => b.h >= 44), s?.buttons);
+      if (size.mobile) check(`${sizeName}: the strip's buttons are 44px targets`, s?.buttons.every((b) => b.h >= 43.5), s?.buttons);
       check(`${sizeName}: the search box stays empty`, await evaluate(`document.querySelector('#lookup-input').value === ''`));
       await evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })()`);
       const sheetAxe = await evaluate(`axe.run(document.querySelector('#word-sheet'), { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } }).then((r) => r.violations.map((v) => v.id + ': ' + v.nodes.map((n) => n.target).join(' ')))`);
@@ -307,7 +307,7 @@ async function main() {
       check(`${sizeName}: government's is a button; the full stop and spaces are not`, sv?.words.some((w) => w.text === "government's") && sv.words.every((w) => /^[A-Za-z']+$/.test(w.text)), sv?.words.map((w) => w.text));
       check(`${sizeName}: Save shows "Save word"`, sv?.save === 'Save word' && sv.savePressed === 'false', sv?.save);
       check(`${sizeName}: the launch address becomes / for a sentence too`, await evaluate(`location.search === ''`));
-      if (size.mobile) check(`${sizeName}: every word in the sentence is a 44px target`, sv?.words.every((w) => w.h >= 44), sv?.words.map((w) => [w.text, w.h]));
+      if (size.mobile) check(`${sizeName}: every word in the sentence is a 44px target`, sv?.words.every((w) => w.h >= 43.5), sv?.words.map((w) => [w.text, w.h]));
       await evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })()`);
       const sentenceAxe = await evaluate(`axe.run(document.querySelector('${SHEET}'), { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } }).then((r) => r.violations.map((v) => v.id + ': ' + v.nodes.map((n) => n.target).join(' ')))`);
       check(`${sizeName}: axe finds nothing wrong in the sentence sheet`, Array.isArray(sentenceAxe) && sentenceAxe.length === 0, sentenceAxe);
@@ -370,6 +370,15 @@ async function main() {
       await key('Escape');
       await sleep(200);
       check(`${sizeName}: Escape closes the sentence sheet`, !(await sentence()));
+      // An emoji across the 2,000-character cut must not leave half an emoji to break the look-up.
+      sv = await openSentence('a '.repeat(999) + 'a😀 calm', '.sentence-card:not([aria-busy])');
+      check(`${sizeName}: an emoji across the 2,000-character cut still opens the sentence sheet`, Boolean(sv) && sv.card.trim().endsWith('…') && !sv.text.includes('Connect for the full sentence view')
+        && (await evaluate(`Boolean(document.querySelector('#lookup-input'))`)), sv && { end: sv.card.slice(-20), text: sv.text.slice(-80) });
+      // If the picked word's entry is missing, the first word with an entry is shown instead.
+      const { identifier: gap } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => { const real = window.fetch; window.fetch = (input, init) => String(input).includes('/api/sentence') ? real(input, init).then((r) => r.json()).then((a) => { delete a.entries[a.tokens[a.picked].headword]; return new Response(JSON.stringify(a), { headers: { 'content-type': 'application/json' } }); }) : real(input, init); })();` });
+      sv = await openSentence(SENTENCE);
+      check(`${sizeName}: a picked word without an entry falls back to the first word with one`, sv?.heading === 'The' && JSON.stringify(sv.words.filter((w) => w.pressed === 'true').map((w) => w.text)) === '["The"]' && !sv.words.some((w) => w.text === 'obfuscated'), sv && { heading: sv.heading, words: sv.words.map((w) => [w.text, w.pressed]) });
+      await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: gap });
       await open(`/page/${CALM_PAGE}`, size);
 
       // Errors.

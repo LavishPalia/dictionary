@@ -39,12 +39,17 @@ export function SentenceSheet({ open, text, onClose, isSaved, onToggleSave, onOp
     const controller = new AbortController();
     setLoaded(null);
     setChosen(null);
-    fetch(`/api/sentence?text=${encodeURIComponent(text)}`, { signal: controller.signal })
+    // Promise.resolve().then: a text that cannot be encoded (half an emoji) lands in .catch as a failed look-up.
+    Promise.resolve()
+      .then(() => fetch(`/api/sentence?text=${encodeURIComponent(text)}`, { signal: controller.signal }))
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
       .then((body: SentenceAnalysis | { kind: 'link' | 'empty' }) => {
         if ('tokens' in body) {
           setLoaded({ text, result: { kind: 'analysis', analysis: body } });
-          setChosen(body.picked);
+          // The picked word, or the first word that has an entry if the picked one has none.
+          const hasEntry = (i: number | null) => i !== null && Boolean(body.tokens[i]?.headword && body.entries[body.tokens[i].headword!]);
+          const first = body.tokens.findIndex((_, i) => hasEntry(i));
+          setChosen(hasEntry(body.picked) ? body.picked : first >= 0 ? first : null);
         } else setLoaded({ text, result: { kind: 'none' } });
       })
       .catch(() => { if (!controller.signal.aborted) setLoaded({ text, result: { kind: 'failed' } }); });

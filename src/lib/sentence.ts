@@ -7,12 +7,18 @@ const MAX_WORD_LEN = 100;
 
 export type Shared = { kind: 'empty' } | { kind: 'link' } | { kind: 'text'; text: string; truncated: boolean };
 
+/** The first n UTF-16 units of s, never ending on half an emoji (a lone high surrogate breaks encodeURIComponent). */
+export function cutText(s: string, n: number = MAX_RAW): string {
+  const cut = s.slice(0, n);
+  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
+}
+
 const URL_RE = /\bhttps?:\/\/\S+|\bwww\.\S+/gi;
 
 /** title is ignored; URLs are stripped from text and url; whitespace collapsed; cut to MAX_WORDS words. */
 export function cleanShared(input: { text?: string | null; title?: string | null; url?: string | null }): Shared {
-  const raw = (input.text ?? '').slice(0, MAX_RAW);
-  const rawUrl = (input.url ?? '').slice(0, MAX_RAW);
+  const raw = cutText(input.text ?? '');
+  const rawUrl = cutText(input.url ?? '');
   const hadUrl = new RegExp(URL_RE.source, 'i').test(raw) || new RegExp(URL_RE.source, 'i').test(rawUrl) || rawUrl.trim() !== '';
   const lines = raw.replace(URL_RE, ' ').split(/\r\n|\r|\n/)
     .map((l) => l.split(/\s+/).filter(Boolean))

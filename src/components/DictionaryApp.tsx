@@ -34,7 +34,7 @@ import { LearnScreen } from '@/components/learn/LearnScreen';
 import { nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
 import { readLaunch } from '@/lib/launch';
-import { cleanShared, tokenize } from '@/lib/sentence';
+import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
@@ -958,7 +958,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             else setLookupFill(only.text);
           });
         } else if (words.length > 1) {
-          setShareText((launch.text ?? '').slice(0, 2000)); // as shared: /api/sentence cleans it and says if it was cut
+          setShareText(cutText(launch.text ?? '')); // as shared: /api/sentence cleans it and says if it was cut
         } else {
           setLookupFill(shared.text); // no English word (Hindi, say): search for it
         }
