@@ -34,7 +34,8 @@ function Message({ phase }: { phase: Exclude<Phase, 'closed' | 'ready' | 'listen
   );
 }
 
-// The mic button in the search box and its listening overlay. Hidden where the browser has no speech recognition.
+// The mic button in the search box and its listening overlay. Hidden where the browser has no speech recognition
+// (then only a launch that asks for voice opens the overlay, to say it isn't available).
 export function VoiceSearch({ online, ready, onReadyDone, onHeardText, onHeardWord }: VoiceSearchProps) {
   // null until checked after mount: the server can't know, and guessing would mismatch on hydration.
   const [supported, setSupported] = useState<boolean | null>(null);
@@ -53,39 +54,54 @@ export function VoiceSearch({ online, ready, onReadyDone, onHeardText, onHeardWo
   useEffect(() => {
     if (!ready || supported === null) return;
     onReadyDone?.();
-    if (supported) setPhase(online ? 'ready' : 'offline');
+    // Asked for voice where there is none: say so rather than do nothing.
+    setPhase(!supported ? 'unavailable' : online ? 'ready' : 'offline');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, supported]);
 
-  // One utterance per listening phase; changing the language (or closing) cancels it, and a new one starts.
-  useEffect(() => {
-    if (phase !== 'listening') return;
-    return listen(lang, {
+  // One utterance at a time. It starts inside the tap itself (Safari may only allow the microphone from a tap), and
+  // closing or changing the language cancels it.
+  const cancelRef = useRef<(() => void) | null>(null);
+  const stop = () => { cancelRef.current?.(); cancelRef.current = null; };
+  useEffect(() => stop, []);
+  const startListening = (language: VoiceLang) => {
+    stop();
+    setPhase('listening');
+    const cancel = listen(language, {
       onResult: (transcripts) => {
+        cancelRef.current = null;
         setPhase('closed');
-        const result = decideHeard(transcripts, lang);
+        const result = decideHeard(transcripts, language);
         if (result.kind === 'word') heard.current.onHeardWord(result.word, result.alternates);
         else heard.current.onHeardText(result.text);
       },
       // Nothing heard: back to the search box without a word.
-      onError: (error) => setPhase(error === 'nothing' ? 'closed' : error),
+      onError: (error) => { cancelRef.current = null; setPhase(error === 'nothing' ? 'closed' : error); },
     });
-  }, [phase, lang]);
+    cancelRef.current = cancel;
+  };
 
   const showsError = phase === 'blocked' || phase === 'unavailable' || phase === 'offline';
   useEffect(() => { if (showsError) closeRef.current?.focus(); }, [showsError]);
 
-  if (!supported) return null;
+  if (supported === null || (!supported && phase === 'closed')) return null;
 
-  const close = () => setPhase('closed');
-  const chooseLang = (next: VoiceLang) => { setLang(next); saveVoiceLang(next); };
+  const close = () => { stop(); setPhase('closed'); };
+  const chooseLang = (next: VoiceLang) => {
+    if (next === lang) return;
+    setLang(next);
+    saveVoiceLang(next);
+    if (phase === 'listening') startListening(next);
+  };
 
   return (
     <>
-      <button ref={micRef} id="voice-btn" type="button" className="lookup-mic" aria-label="Search by voice" aria-haspopup="dialog"
-        onClick={() => setPhase(online ? 'listening' : 'offline')}>
-        <MicIcon />
-      </button>
+      {supported && (
+        <button ref={micRef} id="voice-btn" type="button" className="lookup-mic" aria-label="Search by voice" aria-haspopup="dialog"
+          onClick={() => (online ? startListening(lang) : setPhase('offline'))}>
+          <MicIcon />
+        </button>
+      )}
       {phase !== 'closed' && createPortal(
         <Sheet open onClose={close} ariaLabel="Voice search" className="voice-sheet" returnFocusTo={() => micRef.current}>
           {showsError ? (
@@ -98,7 +114,7 @@ export function VoiceSearch({ online, ready, onReadyDone, onHeardText, onHeardWo
               <h2 className="voice-title">Say a word</h2>
               <p className="voice-title-hi" lang="hi">कोई शब्द बोलिए</p>
               {phase === 'ready' ? (
-                <button type="button" className="voice-orb voice-orb--ready" aria-label="Start listening" onClick={() => setPhase('listening')}>
+                <button type="button" className="voice-orb voice-orb--ready" aria-label="Start listening" onClick={() => startListening(lang)}>
                   <span className="voice-ring" aria-hidden="true" /><MicIcon />
                 </button>
               ) : (

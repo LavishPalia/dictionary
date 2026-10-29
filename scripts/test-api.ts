@@ -128,7 +128,7 @@ async function testEndpoints() {
   check('typo suggestion is labelled "suggestion"', (await kinds('ceremonis'))[0]?.m === 'suggestion');
 
   const sent = await getJson('/api/sentence?text=obfuscate%20the%20facts');
-  check('GET /api/sentence picks a word', sent.status === 200 && typeof sent.body.picked === 'number' && sent.cache === 'public, max-age=300', sent.body.picked);
+  check('GET /api/sentence picks a word', sent.status === 200 && typeof sent.body.picked === 'number' && sent.cache === 'private, no-store', { picked: sent.body.picked, cache: sent.cache });
   const link = await getJson('/api/sentence?url=https://x.com');
   check('GET /api/sentence with only a url is a link', link.status === 200 && link.body.kind === 'link', link.body);
   const near = await getJson('/api/search?q=principal&near=1');

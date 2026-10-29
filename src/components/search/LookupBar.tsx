@@ -9,6 +9,10 @@ import { VoiceSearch } from './VoiceSearch';
 import { SearchIcon } from '@/components/ui/icons';
 import { Chip } from '@/components/ui';
 
+/** Text for the box. `show` opens the list for it too ('closest': only the 3 closest matches, as for a heard sentence).
+ *  Without it, the list opens only for a word just heard by voice. */
+export interface LookupFill { text: string; show?: 'list' | 'closest' }
+
 interface LookupBarProps {
   onSelectWord: (headword: string, pageNumber: number) => void;
   /** Recent words are looked up again: their stored page may be from an older build of the book. */
@@ -23,7 +27,7 @@ interface LookupBarProps {
   voiceReady?: boolean;
   onVoiceReadyDone?: () => void;
   /** Puts this text in the box whenever it changes (the box keeps its own state, so typing doesn't re-render the parent). */
-  query?: string;
+  fill?: LookupFill;
   /** Called with every change of the box's text, typed or filled. */
   onQueryChange?: (query: string) => void;
 }
@@ -54,13 +58,14 @@ function snippet(text: string, query: string): string {
 }
 
 export const LookupBar: React.FC<LookupBarProps> = ({
-  onSelectWord, onSelectRecent, onBrowseLetter, totalEntries, online, onVoiceWord, voiceReady, onVoiceReadyDone, query: fill, onQueryChange,
+  onSelectWord, onSelectRecent, onBrowseLetter, totalEntries, online, onVoiceWord, voiceReady, onVoiceReadyDone, fill, onQueryChange,
 }) => {
   const [query, setOwnQuery] = useState('');
   const onQueryChangeRef = useRef(onQueryChange);
   onQueryChangeRef.current = onQueryChange;
   const setQuery = (next: string) => { setOwnQuery(next); onQueryChangeRef.current?.(next); };
-  // What voice search last heard. While the box still holds it, the list is cut to the 3 closest matches.
+  // What voice search last heard (or a shared word that isn't in the book). While the box still holds it, the list is
+  // cut to the 3 closest matches.
   const [voiceText, setVoiceText] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[]>([]);
   // The query the current results belong to, so nothing (not even "No entry") shows for a stale query.
@@ -84,21 +89,21 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   // The word last heard by voice, until the parent either opens its card or puts it in the box (a fill of the same
   // text is voice; any other fill is not).
   const heardWordRef = useRef<string | null>(null);
-  // Desktop: focus the box after voice fills it, so the arrows and Enter work. Phones keep focus on the mic, so the
-  // keyboard doesn't cover the list. A frame later, after the overlay has handed focus back to the mic.
+  // Desktop: focus the box after voice (or a share) fills it, so the arrows and Enter work. Phones keep focus where it
+  // was (the mic), so the keyboard doesn't cover the list. A frame later, after the overlay has handed focus back to the mic.
   const focusAfterVoice = () => {
     if (window.matchMedia('(min-width: 1024px)').matches) requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   useEffect(() => {
     if (fill === undefined) return;
-    const heard = heardWordRef.current !== null && fill === heardWordRef.current;
+    const heard = heardWordRef.current !== null && fill.text === heardWordRef.current;
     heardWordRef.current = null;
     justSelectedRef.current = null;
-    setVoiceText(heard ? fill : null);
-    setQuery(fill);
+    setVoiceText(heard || fill.show === 'closest' ? fill.text : null);
+    setQuery(fill.text);
     setSelectedIndex(0);
-    if (heard) { setIsOpen(true); focusAfterVoice(); }
+    if (heard || fill.show) { setIsOpen(true); focusAfterVoice(); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fill]);
 

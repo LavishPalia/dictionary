@@ -31,6 +31,8 @@ const FAKE_SPEECH = `
     start() {
       window.__fakeSpeechLang = this.lang;
       window.__fakeSpeechStarts = (window.__fakeSpeechStarts || 0) + 1;
+      // Safari may only allow the microphone from inside the tap: was start() called while a click was dispatched?
+      (window.__fakeSpeechFrom = window.__fakeSpeechFrom || []).push(window.event?.type ?? null);
       window.__fakeSpeechSettings = { maxAlternatives: this.maxAlternatives, interimResults: this.interimResults, continuous: this.continuous };
       const speech = window.__fakeSpeech || {};
       if (speech.hold) return;
@@ -101,6 +103,31 @@ async function main() {
     };
     await send('Page.enable');
     await send('Runtime.enable');
+    // The URLs Panna's service worker fetches, through a browser-level DevTools connection attached to it.
+    const browserEndpoint = (await (await fetch(`http://127.0.0.1:${PORT}/json/version`)).json()).webSocketDebuggerUrl;
+    const watchWorker = async () => {
+      const ws = new WebSocket(browserEndpoint);
+      await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
+      let id = 1;
+      const pending = new Map();
+      const urls = [];
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.id && pending.has(message.id)) { pending.get(message.id)(message.result); pending.delete(message.id); }
+        else if (message.method === 'Network.requestWillBeSent') urls.push(message.params.request.url);
+      };
+      const call = (method, params = {}, sessionId) => new Promise((resolve) => {
+        const n = id++;
+        pending.set(n, resolve);
+        ws.send(JSON.stringify({ id: n, method, params, ...(sessionId && { sessionId }) }));
+      });
+      const workers = ((await call('Target.getTargets'))?.targetInfos ?? []).filter((t) => t.type === 'service_worker' && t.url.startsWith(BASE));
+      for (const w of workers) {
+        const attached = await call('Target.attachToTarget', { targetId: w.targetId, flatten: true });
+        await call('Network.enable', {}, attached?.sessionId);
+      }
+      return { count: workers.length, urls, close: () => ws.close() };
+    };
 
     const DIALOG = '[role="dialog"][aria-label="Voice search"]';
     const dialog = () => evaluate(`(() => { const d = document.querySelector(${JSON.stringify(DIALOG)}); return d ? { text: d.innerText, modal: d.getAttribute('aria-modal') } : null; })()`);
@@ -151,6 +178,8 @@ async function main() {
       await click(`${DIALOG} [role="radio"]:last-child`);
       await sleep(200);
       check(`${sizeName}: switching to हिंदी listens again in hi-IN`, await evaluate(`window.__fakeSpeechLang === 'hi-IN' && window.__fakeSpeechStarts === ${starts + 1} && window.__fakeSpeechAborts >= 1`), await evaluate('[window.__fakeSpeechLang, window.__fakeSpeechStarts, window.__fakeSpeechAborts]'));
+      const from = await evaluate('window.__fakeSpeechFrom');
+      check(`${sizeName}: the mic tap and the language switch start listening inside the tap itself`, Array.isArray(from) && from.length >= 2 && from.every((t) => t === 'click'), from);
       await key('Escape');
       await sleep(200);
       check(`${sizeName}: Escape cancels listening`, !(await dialog()) && (await evaluate('window.__fakeSpeechAborts')) >= 2);
@@ -245,6 +274,27 @@ async function main() {
       await evaluate(`window.fetch = window.__realFetch; true`);
       await click('#close-word-drawer');
       await sleep(300);
+      // Slow "Did you mean" look-ups don't hold the card back: it opens with the strip, and the other words join it.
+      await evaluate(`(() => { const real = window.__realFetch; window.fetch = (input, init) => /near=1|\\/api\\/word\\/serenit/.test(String(input)) ? new Promise((ok) => setTimeout(ok, 1500)).then(() => real(input, init)) : real(input, init); return true; })()`);
+      await speak({ transcripts: ['ceremonies', 'serenities'] });
+      await tapMic();
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`, 10);
+      const early = await strip();
+      check(`${sizeName}: with slow "Did you mean" look-ups the card and its "Heard" strip show at once`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`) && early?.text === 'Heard ceremonies', early);
+      await waitFor(`document.querySelectorAll('#word-heard button').length === 2`, 30);
+      s = await strip();
+      check(`${sizeName}: the other words join the strip when they arrive`, s?.text === 'Heard ceremonies · Did you mean serenity, ceremonial?', s);
+      await evaluate(`window.fetch = window.__realFetch; true`);
+      await click('#close-word-drawer');
+      await sleep(300);
+      // A recogniser's full stop after one word still opens its card.
+      await speak({ transcripts: ['Obfuscate.'] });
+      await tapMic();
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'obfuscate'`, 40);
+      check(`${sizeName}: a heard "Obfuscate." opens the card for obfuscate`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'obfuscate' && document.querySelector('#word-heard i')?.textContent === 'Obfuscate'`),
+        await evaluate(`({ title: document.querySelector('#word-sheet-title')?.textContent, heard: document.querySelector('#word-heard i')?.textContent, value: document.querySelector('#lookup-input').value })`));
+      await click('#close-word-drawer');
+      await sleep(300);
       // A heard word that isn't in the book: it goes into the search box (path B).
       await speak({ transcripts: ['zzxqvw'] });
       await tapMic();
@@ -267,6 +317,7 @@ async function main() {
       await click(`${DIALOG} .voice-orb--ready`);
       await sleep(200);
       check(`${sizeName}: tapping the big mic starts listening`, await evaluate(`window.__fakeSpeechLang === 'en-IN'`), await evaluate('window.__fakeSpeechLang'));
+      check(`${sizeName}: the big mic starts listening inside the tap itself`, await evaluate(`JSON.stringify(window.__fakeSpeechFrom) === '["click"]'`), await evaluate('window.__fakeSpeechFrom'));
       await key('Escape');
       await sleep(200);
       await open('/?open=review', size);
@@ -275,6 +326,18 @@ async function main() {
       check(`${sizeName}: sharing one book word opens its card`, await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Calm'`, 40) && (await evaluate(`!document.querySelector('#word-heard') && location.search === ''`)));
       await open('/?share_text=zzxqvw', size);
       check(`${sizeName}: sharing a word not in the book puts it in the search box`, await waitFor(`document.querySelector('#lookup-input').value === 'zzxqvw' && !document.querySelector('#word-sheet')`, 40));
+      check(`${sizeName}: and opens the list for it (No entry)`, await waitFor(`Boolean(document.querySelector('#lookup-panel .noentry')) && document.querySelector('#lookup-input').getAttribute('aria-expanded') === 'true'`, 30));
+      // A shared word not in the book that starts many (plann: planned, planner…): only its 3 closest matches show, as for a
+      // heard word; a phone keeps the keyboard away.
+      await open('/?share_text=plann', size);
+      await waitFor(`document.querySelectorAll('#lookup-panel [role="listbox"] [role="option"]').length > 0`, 40);
+      const missList = await evaluate(`({ n: document.querySelectorAll('#lookup-panel [role="listbox"] [role="option"]').length, value: document.querySelector('#lookup-input').value, focus: document.activeElement?.id })`);
+      check(`${sizeName}: sharing a word not in the book shows a list of its closest matches, at most 3`, missList?.value === 'plann' && missList.n >= 1 && missList.n <= 3, missList);
+      if (size.mobile) check(`${sizeName}: the shared miss does not focus the search box (no keyboard)`, missList?.focus !== 'lookup-input', missList);
+      // Hindi only: searched, with its results open.
+      await open(`/?share_text=${encodeURIComponent('प्यार')}`, size);
+      check(`${sizeName}: sharing Hindi only searches for it, with the results open`, await waitFor(`document.querySelector('#lookup-input').value === 'प्यार' && Boolean(document.querySelector('#lookup-panel'))`, 40),
+        await evaluate(`({ value: document.querySelector('#lookup-input').value, panel: Boolean(document.querySelector('#lookup-panel')) })`));
       await open('/?share_url=https%3A%2F%2Fx.com', size);
       const NOTE = `[...document.querySelectorAll('#share-note')].some((n) => n.textContent === 'Share a word or sentence, not a link')`;
       check(`${sizeName}: sharing only a link says to share a word or sentence`, await waitFor(NOTE, 40) && (await evaluate(`document.querySelector('#lookup-input').value === ''`)));
@@ -282,6 +345,27 @@ async function main() {
       await key('a', 'KeyA', 'a');
       await sleep(200);
       check(`${sizeName}: the note goes at the next keystroke`, await evaluate(`!document.querySelector('#share-note')`));
+      await open('/?share_url=https%3A%2F%2Fx.com', size);
+      await waitFor(NOTE, 40);
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 5, y: size.height - 5, button: 'left', clickCount: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 5, y: size.height - 5, button: 'left', clickCount: 1 });
+      await sleep(200);
+      check(`${sizeName}: the note goes at a tap anywhere`, await evaluate(`!document.querySelector('#share-note')`));
+      await open('/?share_url=https%3A%2F%2Fx.com', size);
+      await waitFor(NOTE, 40);
+      await evaluate(`document.querySelector(${JSON.stringify(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn')}).click(); true`);
+      await sleep(300);
+      check(`${sizeName}: the note goes when another section opens`, await evaluate(`!document.querySelector('#share-note') && Boolean(document.querySelector('#saved-screen'))`));
+      if (!size.mobile) {
+        await open('/?share_url=https%3A%2F%2Fx.com', size);
+        await waitFor(NOTE, 40);
+        await sleep(8500);
+        check(`${sizeName}: the note goes by itself after about 8 seconds`, await evaluate(`!document.querySelector('#share-note')`));
+      }
+      // Nothing shared at all (an empty share).
+      await open('/?share_text=%20', size);
+      check(`${sizeName}: an empty share says to share a word or sentence`, await waitFor(`document.querySelector('#share-note')?.textContent === 'Share a word or sentence'`, 40),
+        await evaluate(`document.querySelector('#share-note')?.textContent ?? null`));
 
       // The sentence sheet: a shared sentence on a paper card, its rarest book word chosen, with the meaning below.
       const SENTENCE = "The government's plan deepened and obfuscated the facts.";
@@ -361,6 +445,7 @@ async function main() {
       await click('#sentence-search-btn');
       await waitFor(`document.querySelector('#lookup-input').value === 'Zxqv'`, 30);
       check(`${sizeName}: its Search button closes the sheet and puts the first word in the search box`, await evaluate(`!document.querySelector('${SHEET}') && document.querySelector('#lookup-input').value === 'Zxqv'`), await evaluate(`document.querySelector('#lookup-input').value`));
+      check(`${sizeName}: and opens the list for it`, await waitFor(`Boolean(document.querySelector('#lookup-panel')) && document.querySelector('#lookup-input').getAttribute('aria-expanded') === 'true'`, 30));
       await evaluate(`document.querySelector('.lookup-clear')?.click(); document.activeElement.blur(); true`);
       await key('Escape');
       // A reduced (offline) analysis says so in one line under the card.
@@ -377,6 +462,17 @@ async function main() {
       sv = await openSentence('a '.repeat(999) + 'a😀 calm', '.sentence-card:not([aria-busy])');
       check(`${sizeName}: an emoji across the 2,000-character cut still opens the sentence sheet`, Boolean(sv) && sv.card.trim().endsWith('…') && !sv.text.includes('Connect for the full sentence view')
         && (await evaluate(`Boolean(document.querySelector('#lookup-input'))`)), sv && { end: sv.card.slice(-20), text: sv.text.slice(-80) });
+      // The shared text stays on the device: the service worker asks the server for / only, so a very long share works.
+      await open('/', size);
+      check(`${sizeName}: the service worker controls the page`, await waitFor('Boolean(navigator.serviceWorker.controller)', 80));
+      const worker = await watchWorker();
+      sv = await openSentence(SENTENCE);
+      await sleep(300);
+      worker.close();
+      check(`${sizeName}: a share launch sends no shared text to the server (the worker fetches / only)`, worker.count > 0 && worker.urls.includes(`${BASE}/`) && !worker.urls.some((u) => u.includes('share_text')) && sv?.heading === 'obfuscate',
+        { workers: worker.count, urls: worker.urls.filter((u) => !u.includes('/_next/')).map((u) => u.slice(0, 80)), heading: sv?.heading });
+      sv = await openSentence('calm '.repeat(4000));
+      check(`${sizeName}: a 20,000-character share still opens the sentence sheet`, sv?.words.length === 40 && sv.card.trim().endsWith('…'), sv && { n: sv.words.length, end: sv.card?.slice(-12) });
       // If the picked word's entry is missing, the first word with an entry is shown instead.
       const { identifier: gap } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => { const real = window.fetch; window.fetch = (input, init) => String(input).includes('/api/sentence') ? real(input, init).then((r) => r.json()).then((a) => { delete a.entries[a.tokens[a.picked].headword]; return new Response(JSON.stringify(a), { headers: { 'content-type': 'application/json' } }); }) : real(input, init); })();` });
       sv = await openSentence(SENTENCE);
@@ -440,6 +536,12 @@ async function main() {
       await open(`/page/${CALM_PAGE}`, size);
       await sleep(300);
       check(`${sizeName}: without speech recognition the mic is hidden`, await evaluate(`!document.querySelector('#voice-btn') && !('webkitSpeechRecognition' in window)`));
+      // "Speak a word" there: it says voice isn't available, with a Close button.
+      await open('/?voice=1', size);
+      await waitFor(`Boolean(document.querySelector(${JSON.stringify(DIALOG)}))`, 40);
+      d = await dialog();
+      check(`${sizeName}: without speech recognition, /?voice=1 says voice isn't available`, d?.text.includes("Voice isn't available here"), d);
+      check(`${sizeName}: and its Close button closes it`, await click(`${DIALOG} button.voice-close`) && (await sleep(200), !(await dialog())));
       await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: none });
     }
 

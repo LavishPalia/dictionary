@@ -90,11 +90,13 @@ export function saveVoiceLang(lang: VoiceLang): void {
  * distinct, case-insensitive, excluding word }; otherwise { kind: 'text', text: first transcript }. Hindi is always text. */
 export function decideHeard(transcripts: string[], lang: VoiceLang):
   { kind: 'word'; word: string; alternates: string[] } | { kind: 'text'; text: string } {
-  const [first = ''] = transcripts;
-  if (lang !== 'en' || !ONE_WORD.test(first)) return { kind: 'text', text: first };
+  const [raw = ''] = transcripts;
+  // Recognisers may end a lone word with a full stop or a question mark ("Obfuscate."): one is dropped.
+  const [first = '', ...rest] = transcripts.map((t) => t.replace(/\s*[.,!?]\s*$/, '').trim());
+  if (lang !== 'en' || !ONE_WORD.test(first)) return { kind: 'text', text: raw };
   const seen = new Set([first.toLowerCase()]);
   const alternates: string[] = [];
-  for (const t of transcripts.slice(1)) {
+  for (const t of rest) {
     if (!ONE_WORD.test(t) || seen.has(t.toLowerCase())) continue;
     seen.add(t.toLowerCase());
     alternates.push(t);

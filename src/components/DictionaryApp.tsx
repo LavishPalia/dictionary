@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { BookSpread } from '@/components/book/BookSpread';
 import { ScaledSpread } from '@/components/book/ScaledSpread';
 import { MobilePage } from '@/components/book/MobilePage';
-import { LookupBar } from '@/components/search/LookupBar';
+import { LookupBar, type LookupFill } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
 import { ReviewScreen } from '@/components/review/ReviewScreen';
@@ -706,17 +706,29 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Guided tours and one-time tips (src/components/tour). A tour step sets up its own scene through these.
   const offline = useOffline(meta, initialPages.map(p => p.page_number));
   // Text to put in the search box (voice search, launches). Reset once the box has it, so the same text can be put in again.
-  const [lookupFill, setLookupFill] = useState<string>();
+  const [lookupFill, setLookupFill] = useState<LookupFill>();
   // The "Speak a word" shortcut: voice search opens with its mic ready to tap.
   const [voiceReady, setVoiceReady] = useState(false);
-  // Shared only a link: a note under the search box, until the next keystroke.
-  const [shareNote, setShareNote] = useState(false);
+  // Shared only a link, or nothing: a note under the search box, until the next key or tap, another section, or 8 s.
+  const [shareNote, setShareNote] = useState<string | null>(null);
   useEffect(() => {
     if (!shareNote) return;
-    const hide = () => setShareNote(false);
+    const hide = () => setShareNote(null);
+    const timer = setTimeout(hide, 8000);
     document.addEventListener('keydown', hide, true);
-    return () => document.removeEventListener('keydown', hide, true);
+    document.addEventListener('pointerdown', hide, true);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('keydown', hide, true);
+      document.removeEventListener('pointerdown', hide, true);
+    };
   }, [shareNote]);
+  const noteSectionRef = useRef(section);
+  useEffect(() => {
+    if (noteSectionRef.current === section) return;
+    noteSectionRef.current = section;
+    setShareNote(null);
+  }, [section]);
   // Shared text of more than one word: the sentence sheet shows it until closed.
   const [shareText, setShareText] = useState<string | null>(null);
   // Problem reports written offline are sent once the connection is back (and on the next visit).
@@ -903,11 +915,22 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   };
   // One English word heard. A book word opens its card (path A) with up to 2 other book words it could have been: the
   // recogniser's other guesses that are book words, then the closest spellings. Otherwise it goes into the box (path B).
+  // The card opens at once; the other words join its strip when they arrive.
   const handleVoiceWord = async (word: string, alternates: string[]): Promise<boolean> => {
     const current = startLookup();
+    const id = lookupRef.current;
     const found = await fetchWord(word);
     if (!current()) return false;
-    if (!found) { setLookupFill(word); return false; }
+    if (!found) { setLookupFill({ text: word }); return false; }
+    const at = found.entry.normalized;
+    setHeard({ text: word, alternates: [], at });
+    setActiveWordEntry(found.entry);
+    setShowWordDrawer(true);
+    void fillHeardAlternates(word, alternates, at, () => id === lookupRef.current);
+    return true;
+  };
+  // Only while no newer voice or share look-up has started and the sheet still shows this heard word.
+  const fillHeardAlternates = async (word: string, alternates: string[], at: string, current: () => boolean) => {
     const [guesses, near] = await Promise.all([
       Promise.all(alternates.slice(0, 2).map((a) => fetchWord(a))),
       fetch(`/api/search?q=${encodeURIComponent(word)}&near=1`)
@@ -915,18 +938,16 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         .then((data: { results?: Array<{ headword: string; normalized: string }> } | null) => data?.results ?? [])
         .catch(() => []),
     ]);
-    if (!current()) return false;
-    const seen = new Set([found.entry.normalized]);
+    if (!current()) return;
+    const seen = new Set([at]);
     const picks: string[] = [];
     for (const w of [...guesses.flatMap((g) => (g ? [g.entry] : [])), ...near]) {
       if (seen.has(w.normalized)) continue;
       seen.add(w.normalized);
       picks.push(w.headword);
     }
-    setHeard({ text: word, alternates: picks.slice(0, 2), at: found.entry.normalized });
-    setActiveWordEntry(found.entry);
-    setShowWordDrawer(true);
-    return true;
+    if (!picks.length) return;
+    setHeard((h) => (h && h.text === word && h.at === at && !h.alternates.length ? { ...h, alternates: picks.slice(0, 2) } : h));
   };
   const handlePickHeard = async (headword: string) => {
     const found = await fetchWord(headword);
@@ -951,8 +972,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     else if (launch.kind === 'open') goTo(launch.section);
     else {
       const shared = cleanShared(launch);
-      if (shared.kind === 'link') { setLookupFill(''); setShareNote(true); }
-      else if (shared.kind === 'text') {
+      if (shared.kind === 'link') { setLookupFill({ text: '' }); setShareNote('Share a word or sentence, not a link'); }
+      else if (shared.kind === 'empty') setShareNote('Share a word or sentence');
+      else {
         const words = tokenize(shared.text).filter((t) => t.key);
         if (words.length === 1) {
           const [only] = words;
@@ -960,12 +982,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           fetchWord(only.key!).then((found) => {
             if (!current()) return;
             if (found) { setActiveWordEntry(found.entry); setShowWordDrawer(true); }
-            else setLookupFill(only.text);
+            else setLookupFill({ text: only.text, show: 'closest' }); // not a book word: its closest matches, as for voice
           });
         } else if (words.length > 1) {
           setShareText(cutText(launch.text ?? '')); // as shared: /api/sentence cleans it and says if it was cut
         } else {
-          setLookupFill(shared.text); // no English word (Hindi, say): search for it
+          setLookupFill({ text: shared.text, show: 'list' }); // no English word (Hindi, say): search for it
         }
       }
     }
@@ -1086,7 +1108,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) { showBookForSearch(); handleSelectLetter(letter, page); } }}
             totalEntries={meta.total_entries}
             online={offline.online}
-            query={lookupFill}
+            fill={lookupFill}
             onQueryChange={lookupFill === undefined ? undefined : () => setLookupFill(undefined)}
             onVoiceWord={handleVoiceWord}
             voiceReady={voiceReady}
@@ -1103,7 +1125,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         menuOpen={showMenu}
       />
 
-      {shareNote && <p className="app-share-note" id="share-note" role="status">Share a word or sentence, not a link</p>}
+      {shareNote && <p className="app-share-note" id="share-note" role="status">{shareNote}</p>}
 
       {!offline.online && (
         <p className="app-offline" id="offline-notice" role="status">
@@ -1307,7 +1329,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           setActiveWordEntry(entry);
           setShowWordDrawer(true);
         }}
-        onSearch={(word) => { setShareText(null); setLookupFill(word); }}
+        onSearch={(word) => { setShareText(null); setLookupFill({ text: word, show: 'list' }); }}
       />
 
       <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />

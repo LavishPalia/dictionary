@@ -45,9 +45,10 @@ async function warm(url) {
   const name = cacheFor(u) ?? (u.origin === self.location.origin && !u.pathname.startsWith('/_next/') ? PAGES : null);
   if (!name) return;
   const cache = await caches.open(name);
-  if (await cache.match(name === PAGES ? pageKey(request) : request)) return;
+  const key = name === PAGES ? pageKey(request) : request;
+  if (await cache.match(key)) return;
   try {
-    const res = await fetch(request);
+    const res = await fetch(key);
     if (res.ok) await (name === PAGES ? putPage(request, res) : put(name, request, res));
   } catch {}
 }
@@ -130,20 +131,18 @@ async function networkFirst(request, url) {
   }
 }
 
+// A launch (/?share_text=…, /?voice=1, /?open=review) is the front page with a query, and the page reads the query
+// itself: only '/' is asked for, so shared text never reaches the server (its logs, or a too-long request line).
 async function page(request) {
+  const key = pageKey(request);
   try {
-    const res = await fetch(request);
-    if (res.ok) await putPage(request, res.clone());
+    const res = await fetch(key);
+    if (res.ok) await putPage(key, res.clone());
     return res;
   } catch {
-    const hit = await caches.match(request, { cacheName: PAGES });
+    const hit = await caches.match(key, { cacheName: PAGES });
     if (hit) return hit;
     const url = new URL(request.url);
-    // A launch (/?share_text=…, /?voice=1, /?open=review) is the front page with a query: the cached front page reads it.
-    if (url.pathname === '/' && url.search) {
-      const home = await caches.match('/', { cacheName: PAGES });
-      if (home) return home;
-    }
     if (url.pathname !== '/' && await caches.match('/', { cacheName: PAGES })) return Response.redirect('/', 302);
     return new Response('<!doctype html><meta charset="utf-8"><title>Panna</title><p style="font:18px Georgia,serif;padding:2em">You’re offline, and Panna hasn’t been opened on this device before. Connect once, and it will work offline after that.</p>',
         { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
