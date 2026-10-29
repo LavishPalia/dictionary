@@ -428,6 +428,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Saved or History, a tour, Back, or the card's back link are not lookups.
   const [history, setHistory] = useState<HistoryWord[]>([]);
   useEffect(() => { setHistory(loadHistory()); }, []);
+  const searchRecents = useMemo(() => recentWords(history), [history]);
   // The most recent card open, and whether it was a lookup that counts (read by the repeat-lookup nudge).
   const lastLookupRef = useRef<{ normalized: string; counted: boolean } | null>(null);
   const recordShown = useCallback((word: LookupWord, source: LookupSource) => {
@@ -1156,7 +1157,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           <LookupBar
             onSelectWord={handleSelectWord}
             onSelectRecent={handleSelectSavedWord}
-            recent={recentWords(history)}
+            recent={searchRecents}
             onOpenHistory={() => goTo('saved')}
             onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) { showBookForSearch(); handleSelectLetter(letter, page); } }}
             totalEntries={meta.total_entries}

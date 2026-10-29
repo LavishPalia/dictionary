@@ -210,7 +210,22 @@ async function main() {
       await waitFor(`Boolean(localStorage.getItem('panna_history'))`, 20);
       h = await history();
       check(`${sizeName}: old recents migrate`, h?.[0]?.normalized === 'heal' && h[0].source === 'search', h?.[0]);
-      check(`${sizeName}: the old recents key is no longer written`, await evaluate(`localStorage.getItem('panna_recent_searches')`) === JSON.stringify([{ headword: 'Heal', page: 40 }]));
+      // Look words up after the migration (a search pick, then a search-box recent): the old key stays as it was.
+      const SEEDED = JSON.stringify([{ headword: 'Heal', page: 40 }]);
+      await type('camel');
+      await evaluate(`[...document.querySelectorAll('#lookup-panel [role="option"]')].find((o) => o.querySelector('.lookup-hw')?.textContent === 'Camel').click(); true`);
+      await sleep(1500);
+      await evaluate(`(() => { const input = document.querySelector('#lookup-input'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ''); input.dispatchEvent(new Event('input', { bubbles: true })); input.blur(); input.focus(); return true; })()`);
+      await waitFor(`Boolean(document.querySelector('#lookup-panel .lookup-recent-word'))`, 20);
+      const link = await evaluate(`(() => { const r = document.querySelector('#lookup-history-link')?.getBoundingClientRect(); return r ? { w: r.width, h: r.height } : null; })()`);
+      check(`${sizeName}: "History ›" is a 44px target`, link && link.h >= 43.5 && link.w >= 43.5, link);
+      await evaluate(`[...document.querySelectorAll('#lookup-panel [role="option"]')].find((o) => o.textContent.includes('Heal'))?.click(); true`);
+      await sleep(1500);
+      await evaluate(`document.activeElement?.blur(); true`);
+      h = await history();
+      const old = await evaluate(`localStorage.getItem('panna_recent_searches')`);
+      check(`${sizeName}: lookups after the migration go to history`, h?.[0]?.normalized === 'heal' && h.some((x) => x.normalized === 'camel' && x.source === 'search'), h?.slice(0, 2));
+      check(`${sizeName}: the old recents key is no longer written`, (old === null || old === SEEDED) && !String(old).toLowerCase().includes('camel'), old);
     }
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
