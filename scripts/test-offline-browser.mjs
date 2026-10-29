@@ -10,6 +10,16 @@ const book = new Database('data/dictionary.db', { readonly: true });
 const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
 // Example sentences exist only in builds that have them (skipped otherwise).
 const CEREMONY = (() => { try { return book.prepare("SELECT e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get(); } catch (e) { if (/no such table: examples/.test(e.message)) return undefined; throw e; } })();
+// The shared sentence for the offline sentence view. Offline there is no forms table: a word is tried as it is, then
+// without s, es, ed, ing (ed and ing also with an e back), against the book. The longest matched word is pressed.
+const SHARED = 'Calm seas calmed everyone';
+const inBook = (w) => Boolean(book.prepare('SELECT 1 FROM entries WHERE normalized = ?').get(w));
+const SHARED_MATCHED = SHARED.split(' ').map((word) => {
+  const k = word.toLowerCase();
+  const tries = [k, ...[['es', ''], ['s', ''], ['ed', 'e'], ['ing', 'e']].flatMap(([suf, back]) => (k.endsWith(suf) ? [k.slice(0, -suf.length), ...(back ? [k.slice(0, -suf.length) + back] : [])] : []))];
+  return { word, key: k, hit: tries.some(inBook) };
+}).filter((m) => m.hit);
+const SHARED_PICK = SHARED_MATCHED.reduce((best, m) => (m.key.length > best.key.length ? m : best)).word;
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9341;
@@ -253,6 +263,19 @@ async function main() {
         await key('Escape');
         await sleep(300);
       }
+      // A shared sentence, offline: Today loads (not the 503 page) and the sheet shows the reduced view from the saved book.
+      await key('Escape');
+      await send('Page.navigate', { url: `${BASE}/?share_text=${encodeURIComponent(SHARED)}` });
+      let sheet = null;
+      for (let i = 0; i < 60 && !sheet?.words.length; i++) {
+        await sleep(250);
+        try { sheet = await evaluate(`(() => { const s = document.querySelector('#sentence-sheet'); return s ? { today: Boolean(document.querySelector('#today-screen')), note: document.querySelector('#sentence-offline-note')?.textContent ?? '', words: [...s.querySelectorAll('.sentence-word')].map((b) => [b.textContent, b.getAttribute('aria-pressed')]) } : null; })()`); } catch {}
+      }
+      check(`${sizeName}: a shared sentence offline shows Today, not the 503 page`, Boolean(sheet?.today), sheet);
+      check(`${sizeName}: the sentence sheet says to connect for the full view`, sheet?.note === 'Connect for the full sentence view', sheet);
+      check(`${sizeName}: matched words are buttons (calmed included)`, JSON.stringify(sheet?.words.map(([w]) => w)) === JSON.stringify(SHARED_MATCHED.map((m) => m.word)), sheet);
+      check(`${sizeName}: the longest matched word (${SHARED_PICK}) is pressed`, JSON.stringify(sheet?.words.filter(([, on]) => on === 'true').map(([w]) => w)) === JSON.stringify([SHARED_PICK]), sheet);
+      await open(`/page/${CALM_PAGE}`, size);
       await type(far.toLowerCase());
       p = await panel();
       check(`${sizeName}: offline search covers the whole saved book`, p?.options[0] === far && !p.text.includes('only pages you’ve opened'), { far, p });

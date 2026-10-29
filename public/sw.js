@@ -3,7 +3,7 @@
 //   App files (/_next/static, fonts, icons)   cache first: their names change whenever their content does
 //   Book pages (/api/page/N?v=<version>)      cache first: a rebuilt book has a new version, so new URLs
 //   Other API calls                           network first, falling back to the last copy
-//   Search and word look-ups, offline         answered from the book pages in the cache (all of them once
+//   Search, word, sentence look-ups, offline  answered from the book pages in the cache (all of them once
 //                                             "Save the book for offline" has run, else the pages visited)
 //   Page visits (HTML)                        network first; offline, the cached copy of that address, else a
 //                                             redirect to Today (Next cannot run Today's page under another address)
@@ -122,6 +122,9 @@ async function networkFirst(request, url) {
     if (hit) return hit;
     if (url.pathname === '/api/search') return offlineSearch(url.searchParams.get('q') || '');
     if (url.pathname.startsWith('/api/word/')) return offlineWord(decodeURIComponent(url.pathname.slice('/api/word/'.length)));
+    if (url.pathname === '/api/sentence') {
+      return offlineSentence(url.searchParams.get('text') || '', url.searchParams.get('title') || '', url.searchParams.get('url') || '');
+    }
     throw error;
   }
 }
@@ -148,7 +151,7 @@ async function page(request) {
 
 // ── Offline look-ups from the cached book pages ──
 
-let bookIndex = null; // { entries: [...], pages: Map<number, entries[]>, complete: boolean }
+let bookIndex = null; // { entries: [...], pages: Map<number, entries[]>, byNorm: Map<normalized, entry>, complete: boolean }
 
 async function loadBook() {
   if (bookIndex) return bookIndex;
@@ -170,7 +173,9 @@ async function loadBook() {
   }));
   // In book order, so results do not depend on which page was read first.
   const entries = [...pages.entries()].sort((a, b) => a[0] - b[0]).flatMap(([, onPage]) => onPage);
-  bookIndex = { entries, pages, complete: Boolean(saved && saved.pages && pages.size >= saved.pages) };
+  const byNorm = new Map();
+  for (const e of entries) if (!byNorm.has(e.normalized)) byNorm.set(e.normalized, e);
+  bookIndex = { entries, pages, byNorm, complete: Boolean(saved && saved.pages && pages.size >= saved.pages) };
   return bookIndex;
 }
 
@@ -202,4 +207,122 @@ async function offlineWord(headword) {
   const entry = entries.find((e) => e.normalized === headword.toLowerCase().trim());
   if (!entry) return json({ error: 'Word not found', offline: true }, 404);
   return json({ entry, pageNumber: entry.page_number, neighbours: pages.get(entry.page_number) ?? [], offline: true });
+}
+
+// ── Offline sentence view ──
+// cleanShared, tokenize and capitalisedShare below are plain-JS copies of the ones in src/lib/sentence.ts (a service
+// worker cannot import TypeScript modules): keep them behaving the same. The match is simpler than online (no forms
+// table): a word is tried as it is, then without s, es, ed, ing (ed and ing also with an e put back).
+
+const MAX_WORDS = 40;
+const MAX_RAW = 2000;
+const MAX_WORD_LEN = 100;
+const URL_RE = /\bhttps?:\/\/\S+|\bwww\.\S+/gi;
+const WORD_RE = /[A-Za-z]+(?:['’][A-Za-z]+)*/g;
+
+function cutText(s, n = MAX_RAW) {
+  const cut = s.slice(0, n);
+  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
+}
+
+// The title is ignored, as online.
+function cleanShared(text, url) {
+  const raw = cutText(text);
+  const rawUrl = cutText(url);
+  const hadUrl = new RegExp(URL_RE.source, 'i').test(raw) || rawUrl.trim() !== '';
+  const lines = raw.replace(URL_RE, ' ').split(/\r\n|\r|\n/).map((l) => l.split(/\s+/).filter(Boolean)).filter((w) => w.length > 0);
+  const total = lines.reduce((n, w) => n + w.length, 0);
+  if (total === 0) return { kind: hadUrl ? 'link' : 'empty' };
+  let left = MAX_WORDS;
+  const kept = [];
+  for (const w of lines) {
+    if (left <= 0) break;
+    kept.push(w.slice(0, left).join(' '));
+    left -= w.length;
+  }
+  return { kind: 'text', text: kept.join('\n'), truncated: total > MAX_WORDS };
+}
+
+function tokenize(text) {
+  const tokens = [];
+  let pos = 0;
+  let atStart = true;
+  const pushGap = (gap) => {
+    if (!gap) return;
+    if (/[.!?:\n\r]/.test(gap)) atStart = true;
+    tokens.push({ text: gap, key: null, midCap: false });
+  };
+  for (const m of text.matchAll(WORD_RE)) {
+    const start = m.index ?? 0;
+    pushGap(text.slice(pos, start));
+    const word = m[0];
+    pos = start + word.length;
+    if (word.length > MAX_WORD_LEN) tokens.push({ text: word, key: null, midCap: false });
+    else tokens.push({ text: word, key: word.toLowerCase().replace(/’/g, "'").replace(/'s$/, ''), midCap: /^[A-Z]/.test(word) && !atStart });
+    atStart = false;
+  }
+  pushGap(text.slice(pos));
+  return tokens;
+}
+
+function capitalisedShare(tokens) {
+  let atStart = true;
+  let later = 0;
+  let caps = 0;
+  for (const t of tokens) {
+    if (t.key === null) {
+      if (/[A-Za-z]/.test(t.text)) atStart = false;
+      else if (/[.!?:\n\r]/.test(t.text)) atStart = true;
+      continue;
+    }
+    if (!atStart) {
+      later++;
+      if (/^[A-Z]/.test(t.text)) caps++;
+    }
+    atStart = false;
+  }
+  return later < 3 ? 0 : caps / later;
+}
+
+// pickWord(…, 'length') of src/lib/sentence.ts: the longest key, ties to the first; names (capitals mid-sentence) are
+// skipped unless nothing else is left, and the rule is off when most words are capitalised.
+function pickLongest(candidates, share) {
+  if (candidates.length === 0) return null;
+  let pool = candidates;
+  if (share <= 0.5) {
+    const plain = candidates.filter((c) => !c.midCap);
+    if (plain.length > 0) pool = plain;
+  }
+  let best = pool[0];
+  for (const c of pool) if (c.key.length > best.key.length) best = c;
+  return best.index;
+}
+
+function matchEntry(key, byNorm) {
+  const tries = [key];
+  for (const [suffix, back] of [['es', ''], ['s', ''], ['ed', 'e'], ['ing', 'e']]) {
+    if (key.length > suffix.length + 1 && key.endsWith(suffix)) {
+      const stem = key.slice(0, -suffix.length);
+      tries.push(stem);
+      if (back) tries.push(stem + back);
+    }
+  }
+  for (const t of tries) if (byNorm.has(t)) return byNorm.get(t);
+  return undefined;
+}
+
+async function offlineSentence(text, title, url) {
+  const shared = cleanShared(text, url);
+  if (shared.kind !== 'text') return json({ kind: shared.kind });
+  const { byNorm } = await loadBook();
+  const toks = tokenize(shared.text);
+  const matched = toks.map((t) => (t.key === null ? undefined : matchEntry(t.key, byNorm)));
+  const entries = {};
+  const tokens = toks.map((t, i) => {
+    if (!matched[i]) return { text: t.text };
+    entries[matched[i].normalized] = matched[i];
+    return { text: t.text, headword: matched[i].normalized };
+  });
+  const candidates = toks.flatMap((t, index) => (matched[index] ? [{ index, key: t.key, midCap: t.midCap }] : []));
+  return json({ tokens, picked: pickLongest(candidates, capitalisedShare(toks)), entries, truncated: shared.truncated, offline: true });
 }
