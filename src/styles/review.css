@@ -8,6 +8,12 @@
 .review-progress i { display: block; height: 100%; background: var(--brass); transition: width 0.3s ease; }
 
 .review-card { padding: 22px 18px 18px; }
+/* Each new word is dealt face up: the card turns over from its edge, like a flash card. */
+.review-card--turn { transform-origin: 50% 50%; animation: review-turn 0.34s cubic-bezier(.3, .7, .3, 1) both; backface-visibility: hidden; }
+@keyframes review-turn {
+  from { transform: perspective(1100px) rotateY(-88deg); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
 .review-prompt { text-align: center; }
 .review-word { margin: 8px 0 2px; text-align: center; font: bold 38px/1.15 var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }
 .review-meta { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
@@ -31,11 +37,27 @@
 .review-option--right .review-key { color: var(--green); font-weight: bold; }
 .review-option--wrong { border-color: var(--crimson); background: rgba(122, 43, 34, 0.1); animation: review-shake 0.3s ease-out; }
 .review-option--wrong .review-key { color: var(--crimson); }
+/* The ink tick: one pen stroke drawn left to right, a little heavier where the nib turns. */
+.review-tick { display: block; margin: 0 auto; overflow: visible; }
+.review-tick path {
+  fill: none; stroke: var(--green); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; stroke-dashoffset: 0; animation: review-ink 0.42s cubic-bezier(.5, 0, .3, 1) 0.06s both;
+}
+@keyframes review-ink {
+  from { stroke-dashoffset: 1; stroke-width: 1.6; }
+  70% { stroke-width: 2.9; }
+  to { stroke-dashoffset: 0; stroke-width: 2.6; }
+}
 .review-option--dim { opacity: 0.5; }
 @keyframes review-pop { 50% { transform: scale(1.02); } }
 @keyframes review-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 
-.review-feedback { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-md); animation: ui-sheet-up 0.2s ease-out; }
+/* The answer folds down from under the options, like the back of the card turned towards you. */
+.review-feedback { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-md); transform-origin: 50% 0; animation: review-unfold 0.3s cubic-bezier(.3, .7, .3, 1) both; }
+@keyframes review-unfold {
+  from { transform: perspective(700px) rotateX(-70deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
 .review-feedback--right { background: rgba(61, 90, 42, 0.1); border: 1px solid rgba(61, 90, 42, 0.3); }
 .review-feedback--wrong { background: rgba(122, 43, 34, 0.07); border: 1px solid rgba(122, 43, 34, 0.25); }
 .review-feedback-main { margin: 0; font: 16px/1.45 var(--font-fell); color: var(--ink); }
@@ -60,3 +82,8 @@
 .review-sentence { margin: 0; font: italic 20px/1.5 var(--font-fell); color: var(--ink); overflow-wrap: anywhere; }
 .review-blank { letter-spacing: 0.04em; }
 .review-sentence-hi { margin: 8px 0 0; font-size: 16px; line-height: 1.5; color: var(--ink-soft, var(--ink)); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* No turning or folding, and the tick is simply there (the shared rule shortens durations but not delays). */
+  .review-card--turn, .review-feedback, .review-tick path { animation: none; }
+}

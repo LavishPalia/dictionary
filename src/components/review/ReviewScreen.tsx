@@ -69,6 +69,15 @@ function buildQuestion(card: QuizCard, kind: QuestionKind, retry: boolean): Ques
   return { card, kind: kind === 'opposite' || kind === 'fill-blank' ? 'meaning' : kind, options, retry };
 }
 
+// A right first pick gets its tick drawn in ink, one stroke, the way a teacher marks a page.
+function InkTick() {
+  return (
+    <svg className="review-tick" viewBox="0 0 20 20" width="18" height="18" focusable="false">
+      <path d="M3.5 10.5 L8 15 L16.5 4.5" pathLength={1} />
+    </svg>
+  );
+}
+
 const PROMPTS: Record<QuestionKind, string> = {
   'meaning': 'What does this mean?',
   'word-from-hindi': 'Which English word means this?',
@@ -239,7 +248,7 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
         const pickedCorrect = question.options.find((o) => o.key === chosen)?.correct;
         const days = !practice && !question.retry && records[entry.normalized] ? daysUntil(records[entry.normalized], Date.now()) : null;
         return (
-          <div className="ui-card review-card" key={`${entry.normalized}-${index}`}>
+          <div className="ui-card review-card review-card--turn" key={`${entry.normalized}-${index}`}>
             <div className="ui-label review-prompt">{question.retry ? 'One more try' : PROMPTS[question.kind]}</div>
             {(question.kind === 'meaning' || question.kind === 'opposite') && (
               <>
@@ -276,7 +285,9 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
                   <button key={o.key} type="button" className={`review-option ${state && `review-option--${state}`}`}
                     lang={question.kind === 'meaning' ? 'hi' : undefined}
                     disabled={answered} aria-disabled={answered} onClick={() => choose(o)}>
-                    <span className="review-key" aria-hidden="true">{state === 'right' ? '✓' : state === 'wrong' ? '✗' : LETTERS[i]}</span>
+                    <span className="review-key" aria-hidden="true">
+                      {state === 'right' && pickedCorrect ? <InkTick /> : state === 'right' ? '✓' : state === 'wrong' ? '✗' : LETTERS[i]}
+                    </span>
                     <span>{o.text}</span>
                     {answered && (o.correct || o.key === chosen) && (
                       <span className="ui-visually-hidden" lang="en">{o.correct ? ' (right answer)' : ' (your answer)'}</span>
