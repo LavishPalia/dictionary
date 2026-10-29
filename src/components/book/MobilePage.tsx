@@ -5,6 +5,7 @@ import { BookPage } from '@/lib/types';
 import { GuideWords } from './GuideWords';
 import { PageColumn } from './PageColumn';
 import { PronunciationFooter } from './PronunciationFooter';
+import { InkLines } from './InkLines';
 
 interface MobilePageProps {
   page: BookPage | null;
@@ -18,6 +19,8 @@ interface MobilePageProps {
   canNext?: boolean;
   /** Slide pages off and on after a swipe (off for reduced motion and Instant speed; the drag still follows). */
   animate?: boolean;
+  /** A page being fetched (slow connection): faint ink lines show over this one until it arrives. */
+  loadingPage?: number | null;
 }
 
 // A swipe turns the page past a quarter of the page's width, or as a quick flick.
@@ -38,6 +41,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   canPrev = true,
   canNext = true,
   animate = true,
+  loadingPage = null,
 }) => {
   // The page follows the finger sideways; vertical moves are left to the browser (touch-action: pan-y).
   const cardRef = useRef<HTMLDivElement>(null);
@@ -274,6 +278,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           →
         </button>
       </div>
+      {loadingPage !== null && <InkLines page={loadingPage} />}
     </div>
   );
 };

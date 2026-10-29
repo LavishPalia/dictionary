@@ -196,6 +196,50 @@ async function main() {
     check('phone: the saved star lands on the Saved tab',
       landing.last && Math.abs(landing.last[0] - landing.tab[0]) < 30 && Math.abs(landing.last[1] - landing.tab[1]) < 30, landing);
     await evaluate(`document.querySelector('#save-word-btn').click(); localStorage.removeItem('panna_settings'); true`);
+
+    // ── Ink lines while a page loads (a slow connection) ──
+    // Page requests are held back 2.5 s from the very start, so even the pages fetched ahead are still on their way.
+    await send('Page.addScriptToEvaluateOnNewDocument', { source: `if (localStorage.getItem('test-slow-pages')) {
+      const real = window.fetch.bind(window);
+      window.fetch = (input, init) => (String(input?.url ?? input).includes('/api/page/') ? new Promise((r) => setTimeout(r, 2500)).then(() => real(input, init)) : real(input, init));
+    }` });
+    const slowTurn = (label, inside) => evaluate(`(async () => {
+      const from = location.pathname;
+      document.querySelector('button[aria-label="${label}"]').click();
+      const seen = { at300: null, inside: false, said: '' };
+      await new Promise((r) => setTimeout(r, 120));
+      seen.early = Boolean(document.querySelector('#page-loading'));
+      await new Promise((r) => setTimeout(r, 180));
+      const lines = document.querySelector('#page-loading');
+      seen.at300 = Boolean(lines);
+      seen.inside = Boolean(lines?.closest('${inside}'));
+      seen.said = lines?.textContent ?? '';
+      seen.anim = lines ? getComputedStyle(lines.querySelector('i')).animationName : null;
+      for (let i = 0; i < 200; i++) { await new Promise((r) => setTimeout(r, 25)); if (location.pathname !== from) break; }
+      await new Promise((r) => setTimeout(r, 100));
+      seen.turned = location.pathname !== from;
+      seen.gone = !document.querySelector('#page-loading');
+      return seen;
+    })()`);
+    for (const [name, size, label, inside] of [['desktop', desktop, 'Next spread', '#book-spread-container'], ['phone', phone, 'Next page', '#mobile-page']]) {
+      await reduce(false);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await evaluate(`localStorage.setItem('test-slow-pages', '1'); true`);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      const seen = await slowTurn(label, inside);
+      check(`${name}: a slow page shows ink lines over the book, and says it is loading`,
+        seen.at300 && seen.inside && seen.said.startsWith('Loading page') && seen.anim === 'ink-write', seen);
+      check(`${name}: a quick wait shows nothing (no lines in the first 120 ms)`, seen.early === false, seen);
+      check(`${name}: the lines go once the page arrives and the turn happens`, seen.turned && seen.gone, seen);
+      if (name === 'desktop') {
+        await reduce(true);
+        await open(`/page/${CAMEL_PAGE}`, size);
+        const still = await slowTurn(label, inside);
+        check('reduce motion: the ink lines show still, without writing', still.at300 && still.anim === 'none' && still.turned && still.gone, still);
+        await reduce(false);
+      }
+      await evaluate(`localStorage.removeItem('test-slow-pages'); true`);
+    }
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

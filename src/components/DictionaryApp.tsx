@@ -41,6 +41,8 @@ import { SentenceSheet } from '@/components/share/SentenceSheet';
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
 const MAX_CACHED_PAGES = 20;
+// How long a page may take before the book shows ink lines (a cached or quick page shows none).
+const PAGE_WAIT_MS = 180;
 
 // Left pages are even; page 1 is a right-hand page facing the endpaper.
 const spreadLeftOf = (p: number): number => (p % 2 === 0 ? p : p - 1);
@@ -205,6 +207,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [riffleInfo, setRiffleInfo] = useState<{ from: number; to: number; pages: number } | null>(null);
   // True while a navigation waits for its target pages to load (blocks a second navigation meanwhile).
   const loadingTargetRef = useRef<boolean>(false);
+  // The page being waited for, once the wait is long enough to notice (the book shows ink lines meanwhile).
+  const [loadingPage, setLoadingPage] = useState<number | null>(null);
 
   // Detect mobile screen
   useEffect(() => {
@@ -355,10 +359,14 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     }
 
     loadingTargetRef.current = true;
+    // A page already cached arrives at once; only a wait the reader would notice shows the ink lines.
+    const slow = window.setTimeout(() => setLoadingPage(clampedTarget), PAGE_WAIT_MS);
     try {
       const targetLeft = spreadLeftOf(clampedTarget);
       await Promise.all(isMobile ? [fetchPage(clampedTarget)] : [fetchPage(targetLeft), fetchPage(targetLeft + 1)]);
     } finally {
+      window.clearTimeout(slow);
+      setLoadingPage(null);
       loadingTargetRef.current = false;
     }
 
@@ -1171,6 +1179,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         /* Mobile single-page layout */
         <MobilePage
           page={singleMobilePage}
+          loadingPage={loadingPage}
           highlightedWord={highlightedWord}
           isBookmarked={isSpreadBookmarked}
           onToggleBookmark={handleToggleSpreadBookmark}
@@ -1189,6 +1198,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             rightPage={rightPage}
             targetLeftPage={targetLeftPage}
             targetRightPage={targetRightPage}
+            loadingPage={loadingPage}
             highlightedWord={highlightedWord}
             activeLetter={activeLetter}
             thumbMap={meta.thumb_index}
