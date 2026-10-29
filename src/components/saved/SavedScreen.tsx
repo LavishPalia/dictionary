@@ -370,7 +370,7 @@ export function SavedScreen(props: SavedScreenProps) {
                           </IconButton>
                         ) : (
                           <button type="button" className="history-star" aria-pressed={saved} aria-busy={pending.has(w.normalized)}
-                            aria-label={saved ? `Remove ${w.headword} from saved` : `Save ${w.headword}`}
+                            aria-label={`Save ${w.headword}`}
                             onClick={() => toggleStar(w)}>
                             <StarIcon />
                           </button>

@@ -1,6 +1,6 @@
 // Checks the lookup history store (src/lib/history.ts). Usage: npx tsx scripts/test-history.ts
 import {
-  isHistoryWord, recordLookup, touchWord, removeWord, markNudged, shouldNudge, foldRecent, mergeHistory,
+  isHistoryWord, recordLookup, touchWord, removeWord, markNudged, shouldNudge, foldRecent, mergeHistory, clearHistory,
   loadHistory, sourceLabel, HISTORY_MAX, type HistoryWord,
 } from '../src/lib/history';
 
@@ -108,6 +108,10 @@ check('loadHistory drops broken items', loadHistory().length === 1);
 const store = stub({ panna_recent_searches: JSON.stringify([{ headword: 'Camel', page: 16 }]) });
 const loaded = loadHistory();
 check('loadHistory folds recent once and saves', loaded.length === 1 && loaded[0].normalized === 'camel' && store.has('panna_history'), loaded);
+check('loadHistory removes the old recents key after folding', !store.has('panna_recent_searches'));
+store.set('panna_recent_searches', '[{"headword":"Heal"}]');
+clearHistory();
+check('clearHistory empties history and leaves no old recents', store.get('panna_history') === '[]' && !store.has('panna_recent_searches'));
 
 if (failures) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
 console.log('\nAll history checks passed');

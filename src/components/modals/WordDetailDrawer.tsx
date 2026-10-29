@@ -205,7 +205,7 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
       <hr className="ui-divider" />
       {nudge && !isBookmarked && (
         <p className="word-nudge" id="word-nudge">
-          You&apos;ve looked this up <b>{nudge.times} times</b> this {nudge.span}. Save it, and Review will help it stick.
+          You’ve looked this up <b>{nudge.times} times</b> this {nudge.span}. Save it, and Review will help it stick.
         </p>
       )}
       <div className="word-actions">

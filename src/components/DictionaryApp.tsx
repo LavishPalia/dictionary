@@ -37,7 +37,7 @@ import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
-import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
+import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, clearHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -1362,7 +1362,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onToggleSaveHistory={toggleSaveHistory}
           onRemoveHistory={(key) => setHistory(saveHistory(removeWord(loadHistory(), key)))}
           onRestoreHistory={(list) => setHistory(saveHistory(mergeHistory(loadHistory(), list)))}
-          onClearHistory={() => setHistory(saveHistory([]))}
+          onClearHistory={() => setHistory(clearHistory())}
           initialTab={savedTab.tab}
           tabRequest={savedTab.n}
         />

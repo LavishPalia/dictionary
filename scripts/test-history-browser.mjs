@@ -311,7 +311,7 @@ async function main() {
       const savedCandid = await evaluate(`JSON.parse(localStorage.getItem('panna_saved_words') || '[]').find((w) => w.normalized === 'candid') ?? null`);
       const badge = await evaluate(`document.querySelector('${reviewBtn} .ui-badge')?.textContent ?? null`);
       check(`${sizeName}: a double tap leaves the word saved, and the star shows it is busy`, busy === 'true' && Boolean(savedCandid) && t?.rows[1].star === 'true' && t.rows[1].busy === 'false', { savedCandid: Boolean(savedCandid), busy, row: t?.rows[1] });
-      check(`${sizeName}: the star saves into Review`, Boolean(savedCandid?.definition_en) && t?.rows[1].star === 'true' && t.rows[1].label === 'Remove candid from saved' && badge === '1', { savedCandid, row: t?.rows[1], badge });
+      check(`${sizeName}: the star saves into Review`, Boolean(savedCandid?.definition_en) && t?.rows[1].star === 'true' && t.rows[1].label === 'Save candid' && badge === '1', { savedCandid, row: t?.rows[1], badge });
       await click('#history-filter-unsaved');
       await sleep(200);
       t = await tabHist();
@@ -376,7 +376,7 @@ async function main() {
       check(`${sizeName}: Saved opened from the nav starts on Words`, await evaluate(`document.querySelector('#saved-screen [role="radio"][aria-checked="true"]')?.textContent.startsWith('Words')`));
 
       // ── The nudge: the 3rd lookup in a week (or a month) of an unsaved word, once ──
-      const NUDGE = (span) => `You've looked this up 3 times this ${span}. Save it, and Review will help it stick.`;
+      const NUDGE = (span) => `You’ve looked this up 3 times this ${span}. Save it, and Review will help it stick.`;
       const nudgeText = () => evaluate(`document.querySelector('#word-nudge')?.textContent ?? null`);
       const firstLooked = () => evaluate(`document.querySelector('#word-first-looked')?.textContent ?? null`);
       const speak = async (word) => {

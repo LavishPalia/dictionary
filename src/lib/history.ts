@@ -133,7 +133,9 @@ export function loadHistory(): HistoryWord[] {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (raw === null) {
       const folded = foldRecent(JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'), Date.now());
-      return saveHistory(folded);
+      const saved = saveHistory(folded);
+      try { localStorage.removeItem(RECENT_KEY); } catch {}
+      return saved;
     }
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter(isHistoryWord).slice(0, HISTORY_MAX) : [];
@@ -145,6 +147,12 @@ export function loadHistory(): HistoryWord[] {
 export function saveHistory(list: HistoryWord[]): HistoryWord[] {
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch {}
   return list;
+}
+
+/** Empties history, and leaves no pre-upgrade recents behind either. */
+export function clearHistory(): HistoryWord[] {
+  try { localStorage.removeItem(RECENT_KEY); } catch {}
+  return saveHistory([]);
 }
 
 export function sourceLabel(word: HistoryWord): string {

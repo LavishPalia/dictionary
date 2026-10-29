@@ -28,7 +28,8 @@ export interface Backup {
 interface SavedWordLike { normalized: string; headword: string; saved_at?: number }
 
 export function createBackup(data: BackupData, dataVersion: string, now = new Date()): Backup {
-  return { app: 'panna', format: BACKUP_FORMAT, created_at: now.toISOString(), data_version: dataVersion, data };
+  const { panna_recent_searches: _old, ...kept } = data; // history replaced recent searches; never write them again
+  return { app: 'panna', format: BACKUP_FORMAT, created_at: now.toISOString(), data_version: dataVersion, data: kept };
 }
 
 export function backupFileName(now = new Date()): string {
@@ -144,6 +145,8 @@ export function restoreData(
   book: { dataVersion: string; totalPages: number }, located: Record<string, number> = {},
 ): BackupData {
   const b = { ...backup.data };
+  // Old files have no history: fold their recents at the file's own time, so merging the same file twice adds nothing.
+  const madeAt = Date.parse(backup.created_at) || 0;
   const anchors = b.panna_mark_anchors as MarkAnchors | undefined;
   if (anchors && anchors.data_version !== book.dataVersion) {
     const moved = relocateMarks(
@@ -156,7 +159,7 @@ export function restoreData(
   if (mode === 'replace') {
     const out = Object.fromEntries(BACKUP_KEYS.filter((k) => k !== 'panna_recent_searches' && k !== 'panna_history')
       .map((k) => [k, b[k] ?? (k === 'panna_review' || k === 'panna_settings' || k === 'panna_tours' ? {} : [])])) as BackupData;
-    out.panna_history = b.panna_history ?? foldRecent(b.panna_recent_searches, Date.now());
+    out.panna_history = b.panna_history ?? foldRecent(b.panna_recent_searches, madeAt);
     return out;
   }
 
@@ -175,7 +178,8 @@ export function restoreData(
   for (const n of [...((current.panna_marginalia as MarginNote[]) ?? []), ...((b.panna_marginalia as MarginNote[]) ?? [])]) if (!notes.has(n.id)) notes.set(n.id, n);
   const curAnchors = current.panna_mark_anchors as MarkAnchors | undefined;
   const bAnchors = b.panna_mark_anchors as MarkAnchors | undefined;
-  const historyOf = (d: BackupData) => (d.panna_history as HistoryWord[] | undefined) ?? foldRecent(d.panna_recent_searches, Date.now());
+  // This browser's own recents (no history yet) are folded at the backup's time too, which keeps the merge repeatable.
+  const historyOf = (d: BackupData) => (d.panna_history as HistoryWord[] | undefined) ?? foldRecent(d.panna_recent_searches, madeAt);
   return {
     panna_saved_words: [...words.values()],
     panna_review: review,

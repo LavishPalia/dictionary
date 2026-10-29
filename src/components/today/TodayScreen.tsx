@@ -121,7 +121,7 @@ export function TodayScreen(props: TodayScreenProps) {
       {props.lookedUpToday.total > 0 && (
         // On the desk, like the study guide's link.
         <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-lookups" id="today-lookups" onClick={props.onOpenHistory}>
-          {props.lookedUpToday.total} word{props.lookedUpToday.total === 1 ? '' : 's'} looked up today · {props.lookedUpToday.unsaved} not saved ›
+          {`${props.lookedUpToday.total} word${props.lookedUpToday.total === 1 ? '' : 's'} looked up today${props.lookedUpToday.unsaved > 0 ? ` · ${props.lookedUpToday.unsaved} not saved` : ''} ›`}
         </button>
       )}
 
