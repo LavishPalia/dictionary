@@ -10,6 +10,18 @@ const book = new Database('data/dictionary.db', { readonly: true });
 const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
 // Example sentences exist only in builds that have them (skipped otherwise).
 const CEREMONY = (() => { try { return book.prepare("SELECT e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get(); } catch (e) { if (/no such table: examples/.test(e.message)) return undefined; throw e; } })();
+// Shared sentences for the offline sentence view. Offline there is no forms table: a word is tried as it is, then
+// without s, es, ed, ing (e put back first for ed and ing), against the book. Expectations are hard-coded to pin the rules.
+const SHARED = 'Calm seas calmed everyone'; // all four match; the longest, everyone, is pressed
+const SHARED_WORDS = ['Calm', 'seas', 'calmed', 'everyone'];
+const SHARED_PICK = 'everyone';
+const SHARED_FORMS = 'hopes hoped boxes'; // hope (not hop) twice, box (not boxe)
+const FORMS_HEADWORDS = ['hope', 'hope', 'box'];
+for (const w of ['calm', 'sea', 'calmed', 'everyone', 'hope', 'hop', 'box', 'hopes', 'hoped', 'boxes']) {
+  const present = Boolean(book.prepare('SELECT 1 FROM entries WHERE normalized = ?').get(w));
+  const expected = !['calmed', 'hopes', 'hoped', 'boxes'].includes(w);
+  if (present !== expected) throw new Error(`the test's expectations assume "${w}" ${expected ? 'is' : 'is not'} a headword`);
+}
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9341;
@@ -136,6 +148,14 @@ async function main() {
         check('the manifest names the app and opens it full screen at Today', m.short_name === 'Panna' && m.start_url === '/' && m.display === 'standalone', m);
         const icons = await evaluate(`Promise.all(${JSON.stringify(m.icons)}.map((i) => new Promise((ok) => { const img = new Image(); img.onload = () => ok(i.sizes === img.naturalWidth + 'x' + img.naturalHeight); img.onerror = () => ok(false); img.src = i.src; })))`);
         check('every manifest icon loads at its stated size, including a maskable one', icons.length === 3 && icons.every(Boolean) && m.icons.some((i) => i.purpose === 'maskable'), { icons, m: m.icons });
+        // Android: Panna is a share target, and the icon's long-press menu has "Speak a word" and "Review".
+        check('the manifest takes shared text as /?share_text=…', m.share_target?.action === '/' && m.share_target.method === 'GET' && m.share_target.params?.text === 'share_text' && m.share_target.params.title === 'share_title' && m.share_target.params.url === 'share_url', m.share_target);
+        check('the manifest has two icon shortcuts: Speak a word and Review', JSON.stringify((m.shortcuts ?? []).map((s) => [s.name, s.url])) === JSON.stringify([['Speak a word', '/?voice=1'], ['Review', '/?open=review']]), m.shortcuts);
+        const shortcutIcons = await Promise.all((m.shortcuts ?? []).flatMap((s) => s.icons ?? []).map(async (i) => {
+          const res = await fetch(`${BASE}${i.src}`);
+          return { src: i.src, status: res.status, type: res.headers.get('content-type'), size: i.sizes };
+        }));
+        check('each shortcut icon loads as a 96×96 PNG', shortcutIcons.length === 2 && shortcutIcons.every((i) => i.status === 200 && i.type === 'image/png' && i.size === '96x96'), shortcutIcons);
         check('iOS gets a home-screen icon and the browser a theme colour', await evaluate(`Boolean(document.querySelector('link[rel="apple-touch-icon"]')) && document.querySelector('meta[name="theme-color"]')?.content === '#2b1d14' && Boolean(document.querySelector('link[rel="icon"]'))`));
       }
 
@@ -162,6 +182,13 @@ async function main() {
       };
       check(`${sizeName}: the study guide opens online`, await openLearn());
       await sleep(1500); // let it cache the page and its files
+      // A share launch is the front page: cached as '/', never under an address holding the shared text.
+      await open('/?share_text=calm', size);
+      await sleep(1500);
+      const pageKeys = await evaluate(`caches.open('panna-pages-v1').then((c) => c.keys()).then((ks) => ks.map((r) => new URL(r.url).pathname + new URL(r.url).search))`);
+      check(`${sizeName}: a share launch is cached as / and the shared text is not kept`, pageKeys.includes('/') && !pageKeys.some((k) => k.includes('share_text')), pageKeys);
+      const dataKeys = await evaluate(`caches.open('panna-data-v1').then((c) => c.keys()).then((ks) => ks.map((r) => new URL(r.url).pathname + new URL(r.url).search))`);
+      check(`${sizeName}: an online share leaves no /api/sentence in the data cache`, !dataKeys.some((k) => k.includes('/api/sentence')), dataKeys);
       await open(`/page/${CALM_PAGE}`, size);
 
       // ── Offline, before saving the book ──
@@ -240,6 +267,29 @@ async function main() {
         await key('Escape');
         await sleep(300);
       }
+      // A shared sentence, offline: Today loads (not the 503 page) and the sheet shows the reduced view from the saved book.
+      await key('Escape');
+      await send('Page.navigate', { url: `${BASE}/?share_text=${encodeURIComponent(SHARED)}` });
+      let sheet = null;
+      for (let i = 0; i < 60 && !sheet?.words.length; i++) {
+        await sleep(250);
+        try { sheet = await evaluate(`(() => { const s = document.querySelector('#sentence-sheet'); return s ? { today: Boolean(document.querySelector('#today-screen')), note: document.querySelector('#sentence-offline-note')?.textContent ?? '', words: [...s.querySelectorAll('.sentence-word')].map((b) => [b.textContent, b.getAttribute('aria-pressed')]) } : null; })()`); } catch {}
+      }
+      check(`${sizeName}: a shared sentence offline shows Today, not the 503 page`, Boolean(sheet?.today), sheet);
+      check(`${sizeName}: the sentence sheet says to connect for the full view`, sheet?.note === 'Connect for the full sentence view', sheet);
+      check(`${sizeName}: matched words are buttons (calmed included)`, JSON.stringify(sheet?.words.map(([w]) => w)) === JSON.stringify(SHARED_WORDS), sheet);
+      check(`${sizeName}: the longest matched word (${SHARED_PICK}) is pressed`, JSON.stringify(sheet?.words.filter(([, on]) => on === 'true').map(([w]) => w)) === JSON.stringify([SHARED_PICK]), sheet);
+      // Endings: hopes, hoped and boxes reach hope, hope and box (not hop, boxe); tap each to read its card.
+      await send('Page.navigate', { url: `${BASE}/?share_text=${encodeURIComponent(SHARED_FORMS)}` });
+      const shownHeads = [];
+      for (let i = 0; i < 3; i++) {
+        for (let t = 0; t < 60; t++) { if (await evaluate(`document.querySelectorAll('#sentence-sheet .sentence-word').length === 3`)) break; await sleep(250); }
+        await evaluate(`document.querySelectorAll('#sentence-sheet .sentence-word')[${i}]?.click(); true`);
+        await sleep(300);
+        shownHeads.push(await evaluate(`document.querySelector('#sentence-entry-title')?.textContent ?? null`));
+      }
+      check(`${sizeName}: hopes, hoped and boxes reach hope, hope and box offline`, JSON.stringify(shownHeads) === JSON.stringify(FORMS_HEADWORDS), shownHeads);
+      await open(`/page/${CALM_PAGE}`, size);
       await type(far.toLowerCase());
       p = await panel();
       check(`${sizeName}: offline search covers the whole saved book`, p?.options[0] === far && !p.text.includes('only pages you’ve opened'), { far, p });

@@ -78,8 +78,8 @@
 .restore-actions { display: grid; gap: var(--space-2); }
 .restore-actions .menu-sub { margin: -2px 0 var(--space-2); }
 
-/* Shown under the header while there is no connection. */
-.app-offline {
+/* Shown under the header while there is no connection, or after sharing only a link. */
+.app-offline, .app-share-note {
   margin: -16px 0 16px; padding: 6px 14px; border-radius: var(--radius-pill); border: 1px solid var(--brass-line);
   font: italic 14px var(--font-fell); color: var(--brass-soft); background: rgba(0, 0, 0, 0.25); text-align: center;
 }
@@ -90,6 +90,7 @@
   .ui-btn--small, .ui-seg button, .tour-tip .tour-btn, .tour-tip .tour-link { min-height: 44px; }
   .ui-iconbtn, .tour-close, .lookup-clear { min-width: 44px; min-height: 44px; }
   .tour-howlink, .word-goto, .word-back { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+  .word-heard-alt { min-height: 44px; }
   #goto-page-input { min-height: 44px; }
   /* The phone's page arrows set their size inline. */
   button[aria-label='Previous page'], button[aria-label='Next page'] { min-width: 44px !important; min-height: 44px !important; }

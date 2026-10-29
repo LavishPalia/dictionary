@@ -94,13 +94,14 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 // outside, keeps Tab inside, locks page scroll, and returns focus to whatever opened it. Pass returnFocusTo
 // when the opener is known: Safari does not focus a button when it is clicked, so "whatever had focus" is not it.
 // variant "side" docks to the right edge on wide screens (still a bottom sheet on phones). Pass labelledBy to
-// use a heading inside children as the dialog's name instead of the built-in title.
-export function Sheet({ open, onClose, title, hideTitle, labelledBy, children, id, scrimId, className, returnFocusTo, variant = 'center' }: {
+// use a heading inside children as the dialog's name instead of the built-in title, or ariaLabel to name it without one.
+export function Sheet({ open, onClose, title, hideTitle, labelledBy, ariaLabel, children, id, scrimId, className, returnFocusTo, variant = 'center' }: {
   open: boolean;
   onClose: () => void;
   title?: string;
   hideTitle?: boolean;
   labelledBy?: string;
+  ariaLabel?: string;
   scrimId?: string;
   variant?: 'center' | 'side';
   children: ReactNode;
@@ -122,7 +123,8 @@ export function Sheet({ open, onClose, title, hideTitle, labelledBy, children, i
     document.body.style.overflow = 'hidden';
     // Focus the sheet itself: screen readers announce its name, and no button shows a focus ring
     // before the reader has pressed a key. Tab then reaches the first control.
-    panel.current?.focus();
+    const node = panel.current;
+    node?.focus();
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') { event.stopPropagation(); onCloseRef.current(); return; }
       if (event.key !== 'Tab' || !panel.current) return;
@@ -136,6 +138,9 @@ export function Sheet({ open, onClose, title, hideTitle, labelledBy, children, i
     return () => {
       document.removeEventListener('keydown', onKey, true);
       document.body.style.overflow = overflow;
+      // Focus already sent elsewhere (say, to the search box a voice result filled) stays where it is.
+      const now = document.activeElement;
+      if (now && now !== document.body && !node?.contains(now)) return;
       const target = returnFocusRef.current?.() ?? opener;
       if (target && target !== document.body) target.focus();
     };
@@ -150,12 +155,13 @@ export function Sheet({ open, onClose, title, hideTitle, labelledBy, children, i
         id={id}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={labelledBy ?? titleId}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabel ? undefined : labelledBy ?? titleId}
         tabIndex={-1}
         className={cx('ui-sheet', variant === 'side' && 'ui-sheet--side', className)}
       >
         <div className="ui-sheet-grab" aria-hidden="true" />
-        {!labelledBy && <h2 id={titleId} className={hideTitle ? 'ui-visually-hidden' : 'ui-sheet-title'}>{title}</h2>}
+        {!labelledBy && !ariaLabel && <h2 id={titleId} className={hideTitle ? 'ui-visually-hidden' : 'ui-sheet-title'}>{title}</h2>}
         {children}
       </div>
     </div>

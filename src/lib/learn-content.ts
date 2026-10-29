@@ -3,11 +3,11 @@
 import { NEW_WORDS_PER_DAY, type StepId } from './learn';
 import { INTERVAL_DAYS } from './review';
 
-export type LearnAction = 'review' | 'book' | 'continue' | 'tour-word' | 'tour-review' | 'offline-save' | 'backup' | 'install' | 'tours';
+export type LearnAction = 'review' | 'book' | 'continue' | 'tour-word' | 'tour-review' | 'offline-save' | 'backup' | 'install' | 'tours' | 'ios-shortcut';
 
 export interface LearnText { en: string; hi: string }
 
-type LearnItem = LearnText & { action?: LearnAction; actionLabel?: string };
+type LearnItem = LearnText & { action?: LearnAction; actionLabel?: string; hideUnlessAvailable?: boolean };
 
 // Button labels, from the Design's action table.
 const OPEN_REVIEW = { action: 'review', actionLabel: 'Open Review' } as const;
@@ -18,6 +18,7 @@ const REVIEW_TOUR = { action: 'tour-review', actionLabel: 'Take the Saving and R
 const OFFLINE = { action: 'offline-save', actionLabel: 'Save the book for offline' } as const;
 const BACKUP = { action: 'backup', actionLabel: 'Back up my words' } as const;
 const INSTALL = { action: 'install', actionLabel: 'Install Panna' } as const;
+const IOS_SHORTCUT = { action: 'ios-shortcut', actionLabel: 'Look up from any app' } as const;
 const ALL_TOURS = { action: 'tours', actionLabel: 'All guided tours' } as const;
 
 const LAST_INTERVAL = INTERVAL_DAYS[INTERVAL_DAYS.length - 1];
@@ -77,6 +78,7 @@ export const LEARN_SECTIONS: Array<{ id: 'method' | 'day' | 'tips' | 'mistakes' 
       { en: 'Install Panna, so it opens like any other app.', hi: 'पन्ना इंस्टॉल करें, ताकि यह बाकी ऐप की तरह खुले।', ...INSTALL },
       { en: 'Save the book for offline, to study without internet.', hi: 'किताब ऑफ़लाइन सहेजें, ताकि बिना इंटरनेट भी पढ़ सकें।', ...OFFLINE },
       { en: 'Back up your words once a month.', hi: 'महीने में एक बार अपने शब्दों का बैकअप लें।', ...BACKUP },
+      { en: 'Look up words from any app with a Shortcut.', hi: 'शॉर्टकट से किसी भी ऐप में शब्द देखें।', ...IOS_SHORTCUT, hideUnlessAvailable: true },
     ],
   },
 ];

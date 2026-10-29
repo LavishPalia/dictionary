@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { BookSpread } from '@/components/book/BookSpread';
 import { ScaledSpread } from '@/components/book/ScaledSpread';
 import { MobilePage } from '@/components/book/MobilePage';
-import { LookupBar } from '@/components/search/LookupBar';
+import { LookupBar, type LookupFill } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
 import { ReviewScreen } from '@/components/review/ReviewScreen';
@@ -33,6 +33,10 @@ import { REPORTS_ENABLED, flushQueue } from '@/lib/report';
 import { LearnScreen } from '@/components/learn/LearnScreen';
 import { nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
+import { iosShortcutLink } from '@/lib/ios-shortcut';
+import { readLaunch } from '@/lib/launch';
+import { cleanShared, cutText, tokenize } from '@/lib/sentence';
+import { SentenceSheet } from '@/components/share/SentenceSheet';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -122,7 +126,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     // entry that "Back to the book" would step onto.
     if (window.history.state?.panna) {
       const { panna, ...rest } = window.history.state;
-      window.history.replaceState(rest, '', window.location.pathname);
+      window.history.replaceState(rest, '', window.location.pathname + window.location.search); // a launch reads the query
     }
     const timer = setInterval(() => setClock(Date.now()), 60_000);
     return () => clearInterval(timer);
@@ -701,6 +705,32 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   };
   // Guided tours and one-time tips (src/components/tour). A tour step sets up its own scene through these.
   const offline = useOffline(meta, initialPages.map(p => p.page_number));
+  // Text to put in the search box (voice search, launches). Reset once the box has it, so the same text can be put in again.
+  const [lookupFill, setLookupFill] = useState<LookupFill>();
+  // The "Speak a word" shortcut: voice search opens with its mic ready to tap.
+  const [voiceReady, setVoiceReady] = useState(false);
+  // Shared only a link, or nothing: a note under the search box, until the next key or tap, another section, or 8 s.
+  const [shareNote, setShareNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!shareNote) return;
+    const hide = () => setShareNote(null);
+    const timer = setTimeout(hide, 8000);
+    document.addEventListener('keydown', hide, true);
+    document.addEventListener('pointerdown', hide, true);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('keydown', hide, true);
+      document.removeEventListener('pointerdown', hide, true);
+    };
+  }, [shareNote]);
+  const noteSectionRef = useRef(section);
+  useEffect(() => {
+    if (noteSectionRef.current === section) return;
+    noteSectionRef.current = section;
+    setShareNote(null);
+  }, [section]);
+  // Shared text of more than one word: the sentence sheet shows it until closed.
+  const [shareText, setShareText] = useState<string | null>(null);
   // Problem reports written offline are sent once the connection is back (and on the next visit).
   useEffect(() => { if (REPORTS_ENABLED && offline.online) flushQueue(); }, [offline.online]);
   const tours = useTours({
@@ -790,6 +820,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setMenuFocus(null);
   }, [showMenu, menuFocus]);
   const openMenuAt = (id: string) => { setMenuFocus(id); setShowMenu(true); };
+  // The iPhone Shortcut's link, found after mount (it depends on the browser); '' hides its rows.
+  const [iosShortcut, setIosShortcut] = useState('');
+  useEffect(() => { setIosShortcut(iosShortcutLink(navigator.userAgent)); }, []);
   const handleLearnAction = (action: LearnAction) => {
     switch (action) {
       case 'review': goTo('review'); break;
@@ -806,6 +839,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // iOS Safari has no install prompt: its row is a hint (Share → Add to Home Screen), focused the same way.
       case 'install': openMenuAt(offline.install ? 'install-btn' : 'install-hint'); break;
       case 'tours': tours.openSheet(); break;
+      case 'ios-shortcut': if (iosShortcut) window.location.href = iosShortcut; break;
     }
   };
   // Back returns to the screen the guide was opened from, even after a tour started there passed through the other
@@ -863,11 +897,103 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   };
   useEffect(() => { if (!showWordDrawer) setWordTrail({ back: [], at: '' }); }, [showWordDrawer]);
 
+  // Opened by voice: what was heard, shown at the top of the sheet. `at` is the word it was opened at (or an alternate
+  // picked from it); any other word in the sheet (the book, search, a chip…) drops it, and so does closing the sheet.
+  const [heard, setHeard] = useState<{ text: string; alternates: string[]; at: string } | null>(null);
+  useEffect(() => {
+    if (heard && (!showWordDrawer || activeWordEntry?.normalized !== heard.at)) setHeard(null);
+  }, [heard, showWordDrawer, activeWordEntry]);
+  // Only the newest voice or share look-up may act, and only if no word was opened while it was being looked up (a slow
+  // answer must not replace what the reader has moved on to).
+  const lookupRef = useRef(0);
+  const wordOpensRef = useRef(0);
+  useEffect(() => { if (showWordDrawer && activeWordEntry) wordOpensRef.current++; }, [showWordDrawer, activeWordEntry]);
+  const startLookup = () => {
+    const id = ++lookupRef.current;
+    const opens = wordOpensRef.current;
+    return () => id === lookupRef.current && opens === wordOpensRef.current;
+  };
+  // One English word heard. A book word opens its card (path A) with up to 2 other book words it could have been: the
+  // recogniser's other guesses that are book words, then the closest spellings. Otherwise it goes into the box (path B).
+  // The card opens at once; the other words join its strip when they arrive.
+  const handleVoiceWord = async (word: string, alternates: string[]): Promise<boolean> => {
+    const current = startLookup();
+    const id = lookupRef.current;
+    const found = await fetchWord(word);
+    if (!current()) return false;
+    if (!found) { setLookupFill({ text: word }); return false; }
+    const at = found.entry.normalized;
+    setHeard({ text: word, alternates: [], at });
+    setActiveWordEntry(found.entry);
+    setShowWordDrawer(true);
+    void fillHeardAlternates(word, alternates, at, () => id === lookupRef.current);
+    return true;
+  };
+  // Only while no newer voice or share look-up has started and the sheet still shows this heard word.
+  const fillHeardAlternates = async (word: string, alternates: string[], at: string, current: () => boolean) => {
+    const [guesses, near] = await Promise.all([
+      Promise.all(alternates.slice(0, 2).map((a) => fetchWord(a))),
+      fetch(`/api/search?q=${encodeURIComponent(word)}&near=1`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { results?: Array<{ headword: string; normalized: string }> } | null) => data?.results ?? [])
+        .catch(() => []),
+    ]);
+    if (!current()) return;
+    const seen = new Set([at]);
+    const picks: string[] = [];
+    for (const w of [...guesses.flatMap((g) => (g ? [g.entry] : [])), ...near]) {
+      if (seen.has(w.normalized)) continue;
+      seen.add(w.normalized);
+      picks.push(w.headword);
+    }
+    if (!picks.length) return;
+    setHeard((h) => (h && h.text === word && h.at === at && !h.alternates.length ? { ...h, alternates: picks.slice(0, 2) } : h));
+  };
+  const handlePickHeard = async (headword: string) => {
+    const found = await fetchWord(headword);
+    if (!found) return;
+    setHeard((h) => (h ? { ...h, at: found.entry.normalized } : h));
+    showInSheet(found.entry);
+  };
+  const heardShown = heard && activeWordEntry && heard.at === activeWordEntry.normalized ? heard : null;
+
   const handleOpenSavedWord = async (word: SavedWord) => {
     const found = await fetchWord(word.headword); // the stored copy may be from an older build of the book
     setActiveWordEntry(found ? found.entry : word);
     setShowWordDrawer(true);
   };
+
+  // Opened from the share sheet or an icon shortcut (src/app/manifest.ts): act on it once, and give the address back.
+  useEffect(() => {
+    const launch = readLaunch(window.location.search);
+    if (!launch) return;
+    window.history.replaceState(window.history.state, '', window.location.pathname);
+    if (launch.kind === 'voice') setVoiceReady(true);
+    else if (launch.kind === 'open') goTo(launch.section);
+    else {
+      const shared = cleanShared(launch);
+      if (shared.kind === 'link') { setLookupFill({ text: '' }); setShareNote('Share a word or sentence, not a link'); }
+      else if (shared.kind === 'empty') setShareNote('Share a word or sentence');
+      else {
+        const words = tokenize(shared.text).filter((t) => t.key);
+        if (words.length === 1) {
+          const [only] = words;
+          const current = startLookup();
+          fetchWord(only.key!).then((found) => {
+            if (!current()) return;
+            if (found) { setActiveWordEntry(found.entry); setShowWordDrawer(true); }
+            else setLookupFill({ text: only.text, show: 'closest' }); // not a book word: its closest matches, as for voice
+          });
+        } else if (words.length > 1) {
+          setShareText(cutText(launch.text ?? '')); // as shared: /api/sentence cleans it and says if it was cut
+        } else {
+          setLookupFill({ text: shared.text, show: 'list' }); // no English word (Hindi, say): search for it
+        }
+      }
+    }
+  // Once, on the launch address.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const savedCount = bookmarkedPages.length + dogEaredPages.length + marginNotes.length + bookmarkedWords.length;
 
@@ -981,6 +1107,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onSelectRecent={handleSelectSavedWord}
             onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) { showBookForSearch(); handleSelectLetter(letter, page); } }}
             totalEntries={meta.total_entries}
+            online={offline.online}
+            fill={lookupFill}
+            onQueryChange={lookupFill === undefined ? undefined : () => setLookupFill(undefined)}
+            onVoiceWord={handleVoiceWord}
+            voiceReady={voiceReady}
+            onVoiceReadyDone={() => setVoiceReady(false)}
           />
         }
         savedCount={savedCount}
@@ -992,6 +1124,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onOpenMenu={() => setShowMenu(true)}
         menuOpen={showMenu}
       />
+
+      {shareNote && <p className="app-share-note" id="share-note" role="status">{shareNote}</p>}
 
       {!offline.online && (
         <p className="app-offline" id="offline-notice" role="status">
@@ -1152,7 +1286,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         <LearnScreen
           step={savedLoaded ? nextStep({ saved: bookmarkedWords, dueCount, lastBackupAt, now: Date.now() }) : null}
           // A tip whose ⋯ menu row this browser does not show keeps its text, without a button.
-          canDo={(a) => (a === 'install' ? Boolean(offline.install) || offline.installHint === 'ios' : a === 'offline-save' ? offline.available : true)}
+          canDo={(a) => (a === 'install' ? Boolean(offline.install) || offline.installHint === 'ios' : a === 'offline-save' ? offline.available : a === 'ios-shortcut' ? Boolean(iosShortcut) : true)}
           dueMinutes={Math.max(1, Math.round((dueCount * SECONDS_PER_CARD) / 60))}
           onAction={handleLearnAction}
           onBack={() => goTo(learnBack)}
@@ -1179,6 +1313,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onToggleBookmark={handleToggleWordBookmark}
         reviewNote={reviewNoteFor(activeWordEntry)}
         dataVersion={meta.data_version}
+        heard={heardShown}
+        onPickHeard={handlePickHeard}
+      />
+
+      <SentenceSheet
+        open={shareText !== null}
+        text={shareText}
+        onClose={() => setShareText(null)}
+        isSaved={(entry) => bookmarkedWords.some(w => w.normalized === entry.normalized)}
+        onToggleSave={handleToggleWordBookmark}
+        onOpenCard={(entry) => {
+          // One sheet at a time: this one closes, then the word sheet opens as it does from Saved.
+          setShareText(null);
+          setActiveWordEntry(entry);
+          setShowWordDrawer(true);
+        }}
+        onSearch={(word) => { setShareText(null); setLookupFill({ text: word, show: 'list' }); }}
       />
 
       <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />
@@ -1209,6 +1360,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         offline={{ available: offline.available, status: offline.status, saving: offline.saving, onSave: offline.save }}
         onInstall={offline.install}
         installHint={offline.installHint}
+        iosShortcut={iosShortcut}
         backupLabel={lastBackupLabel(lastBackupAt)}
       />
 

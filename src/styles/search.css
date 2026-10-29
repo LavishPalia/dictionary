@@ -57,3 +57,34 @@
 @media (max-width: 1023px) {
   .lookup-panel { right: calc(-1 * (var(--tap) + var(--space-2))); max-height: calc(100dvh - 170px); }
 }
+
+/* Voice search: the mic at the end of the search box and its listening overlay (VoiceSearch). */
+.lookup-mic {
+  flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin-right: -12px;
+  border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--crimson); cursor: pointer;
+}
+.lookup-mic .ui-icon { width: 22px; height: 22px; }
+.lookup-mic:hover { background: rgba(138, 116, 82, 0.15); }
+.lookup-mic:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
+
+.voice-sheet { text-align: center; }
+.voice-body { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; }
+.voice-title { margin: 0; font: 26px var(--font-fell); color: var(--ink); }
+.voice-title-hi { margin: -8px 0 0; font: 18px var(--font-deva); color: var(--ink-soft); }
+.voice-orb {
+  position: relative; display: grid; place-items: center; width: 96px; height: 96px; margin: var(--space-3) 0;
+  border: 0; border-radius: 50%; background: var(--binding); color: var(--on-binding);
+}
+.voice-orb .ui-icon { position: relative; width: 40px; height: 40px; }
+.voice-orb--ready { cursor: pointer; box-shadow: 0 4px 14px rgba(60, 20, 10, 0.35); }
+.voice-orb--ready:focus-visible { outline: 3px solid var(--brass); outline-offset: 4px; }
+.voice-ring { position: absolute; inset: -10px; border-radius: 50%; border: 2px solid var(--crimson); opacity: 0.5; }
+.voice-orb--listening .voice-ring { animation: voice-pulse 1.4s ease-out infinite; }
+@keyframes voice-pulse { from { transform: scale(0.9); opacity: 0.7; } to { transform: scale(1.35); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .voice-orb--listening .voice-ring { animation: none; }
+}
+.voice-sheet .ui-seg button { min-height: var(--tap); padding: 0 var(--space-4); font-size: 15px; }
+.voice-message { margin: var(--space-2) 0 0; font: 18px/1.4 var(--font-fell); color: var(--ink); max-width: 30em; }
+.voice-message-hi { margin: var(--space-1) 0 0; font: 16px var(--font-deva); color: var(--ink-soft); }
+.voice-cancel, .voice-close { min-width: 120px; }

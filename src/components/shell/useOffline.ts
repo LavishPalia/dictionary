@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { IOS_DEVICE } from '@/lib/ios-shortcut';
 import { formatBytes, pageUrl, registerServiceWorker, saveBook, savedBook, type SavedBook } from '@/lib/offline';
 
 interface InstallPromptEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
@@ -33,7 +34,7 @@ export function useOffline(meta: { total_pages: number; data_version: string }, 
     const onInstalled = () => setInstallEvent(null);
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
-    if (!standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) setInstallHint('ios');
+    if (!standalone && IOS_DEVICE.test(navigator.userAgent)) setInstallHint('ios');
     return () => {
       live = false;
       window.removeEventListener('online', update);

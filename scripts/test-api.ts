@@ -127,6 +127,21 @@ async function testEndpoints() {
   check('Hindi meaning match is labelled "hindi"', hindiKinds[0]?.h === 'Camel' && hindiKinds[0]?.m === 'hindi', hindiKinds);
   check('typo suggestion is labelled "suggestion"', (await kinds('ceremonis'))[0]?.m === 'suggestion');
 
+  const sent = await getJson('/api/sentence?text=obfuscate%20the%20facts');
+  check('GET /api/sentence picks a word', sent.status === 200 && typeof sent.body.picked === 'number' && sent.cache === 'private, no-store', { picked: sent.body.picked, cache: sent.cache });
+  const link = await getJson('/api/sentence?url=https://x.com');
+  check('GET /api/sentence with only a url is a link', link.status === 200 && link.body.kind === 'link', link.body);
+  const near = await getJson('/api/search?q=principal&near=1');
+  check('GET /api/search near=1 excludes the word itself', near.status === 200 && Array.isArray(near.body.results)
+    && !near.body.results.some((r: { normalized: string }) => r.normalized === 'principal'), near.body);
+
+  const quick = await fetch(`${BASE}/api/quick?q=${encodeURIComponent('obfuscate')}`);
+  const quickBody = await quick.text();
+  check('GET /api/quick is plain text, cached a day, short', quick.status === 200
+    && quick.headers.get('content-type') === 'text/plain; charset=utf-8'
+    && quick.headers.get('cache-control') === 'public, max-age=86400'
+    && quickBody.startsWith('obfuscate (') && quickBody.length <= 600, { type: quick.headers.get('content-type'), cache: quick.headers.get('cache-control') });
+
   if (failures) {
     console.error(`\n${failures} check(s) failed.`);
     process.exit(1);
