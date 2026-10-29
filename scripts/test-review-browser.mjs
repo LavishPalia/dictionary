@@ -149,6 +149,16 @@ async function main() {
       check(`${sizeName}: number keys answer, and a right answer says when it comes back`, s?.feedback?.startsWith('Right!') && s.feedback.includes('Comes back tomorrow'), s?.feedback);
       check(`${sizeName}: the answer is saved (box 1, due tomorrow)`, r[firstKey]?.box === 1 && r[firstKey].right === 1 && r[firstKey].due_at > Date.now() && r[firstKey].due_at <= Date.now() + 2 * DAY, r[firstKey]);
       check(`${sizeName}: focus moves to "Next word"`, await evaluate(`document.activeElement?.id === 'review-next-btn'`));
+      await sleep(400);
+      const motion = await evaluate(`(() => {
+        const path = document.querySelector('.review-option--right .review-key .review-tick path');
+        return { tick: Boolean(path), drawn: path ? getComputedStyle(path).strokeDashoffset : null,
+          ink: path ? getComputedStyle(path).animationName : null,
+          card: getComputedStyle(document.querySelector('.review-card--turn')).animationName,
+          answer: getComputedStyle(document.querySelector('.review-feedback')).animationName };
+      })()`);
+      check(`${sizeName}: a right answer gets an ink tick that draws itself`, motion.tick && motion.ink === 'review-ink' && parseFloat(motion.drawn) === 0, motion);
+      check(`${sizeName}: the card turns in and the answer folds down`, motion.card === 'review-turn' && motion.answer === 'review-unfold', motion);
       if (sizeName === 'phone') {
         const nextBox = await evaluate(`(() => { const b = document.querySelector('#review-next-btn'); b.scrollIntoView({ block: 'nearest' }); const r = b.getBoundingClientRect(); return { bottom: r.bottom, bar: document.querySelector('.app-bottomnav').getBoundingClientRect().top }; })()`);
         check('phone: "Next word" can be scrolled clear of the bottom bar', nextBox.bottom <= nextBox.bar, nextBox);
@@ -168,6 +178,7 @@ async function main() {
         s?.feedback?.startsWith('Not quite.') && s.feedback.includes('end of this round') && s.title === 'Review · 2 of 4', s);
       check(`${sizeName}: the wrong answer is saved`, r[second.toLowerCase()]?.wrong === 1 && r[second.toLowerCase()].box === 1);
       check(`${sizeName}: the right option is marked`, await evaluate(`Boolean(document.querySelector('.review-option--right')) && Boolean(document.querySelector('.review-option--wrong'))`));
+      check(`${sizeName}: a wrong pick gets plain ✓ and ✗ marks, no ink tick`, await evaluate(`!document.querySelector('.review-tick') && document.querySelector('.review-option--right .review-key').textContent === '✓' && document.querySelector('.review-option--wrong .review-key').textContent === '✗'`));
 
       // Finish the round with right answers.
       for (let i = 0; i < 4; i++) {
@@ -195,6 +206,18 @@ async function main() {
       const before = JSON.stringify(await records());
       await evaluate(`document.querySelector('#practice-btn').click(); true`);
       await waitForCard();
+      // With reduce motion on, the tick is simply there, fully drawn, and nothing turns.
+      await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+      await evaluate(`document.querySelectorAll('.review-option')[${await rightIndex()}].click(); true`);
+      await sleep(60);
+      const still = await evaluate(`(() => {
+        const path = document.querySelector('.review-tick path');
+        return { drawn: path ? getComputedStyle(path).strokeDashoffset : null, card: getComputedStyle(document.querySelector('.review-card--turn')).transform };
+      })()`);
+      check(`${sizeName}: reduce motion: the tick is already drawn and the card is still`, parseFloat(still.drawn) === 0 && ['none', 'matrix(1, 0, 0, 1, 0, 0)'].includes(still.card), still);
+      await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+      await evaluate(`document.querySelector('#review-next-btn')?.click(); true`);
+      await sleep(400);
       await evaluate(`document.querySelector('.review-option').click(); true`);
       await sleep(200);
       check(`${sizeName}: practice rounds leave the schedule alone`, (await screen())?.title.startsWith('Practice') && JSON.stringify(await records()) === before);
