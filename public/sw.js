@@ -115,7 +115,8 @@ async function cacheFirst(name, request) {
 async function networkFirst(request, url) {
   try {
     const res = await fetch(request);
-    if (res.ok) await put(DATA, request, res.clone());
+    // What a reader shared stays off the device: a shared sentence (or quick answer) is not kept for later.
+    if (res.ok && !/^\/api\/(sentence|quick)$/.test(url.pathname)) await put(DATA, request, res.clone());
     return res;
   } catch (error) {
     const hit = await caches.match(request, { cacheName: DATA });
@@ -212,7 +213,7 @@ async function offlineWord(headword) {
 // ── Offline sentence view ──
 // cleanShared, tokenize and capitalisedShare below are plain-JS copies of the ones in src/lib/sentence.ts (a service
 // worker cannot import TypeScript modules): keep them behaving the same. The match is simpler than online (no forms
-// table): a word is tried as it is, then without s, es, ed, ing (ed and ing also with an e put back).
+// table): a word is tried as it is, then without s, es, ed, ing (ed and ing try the e put back first); s is tried before es.
 
 const MAX_WORDS = 40;
 const MAX_RAW = 2000;
@@ -300,11 +301,11 @@ function pickLongest(candidates, share) {
 
 function matchEntry(key, byNorm) {
   const tries = [key];
-  for (const [suffix, back] of [['es', ''], ['s', ''], ['ed', 'e'], ['ing', 'e']]) {
+  for (const [suffix, back] of [['s', ''], ['es', ''], ['ed', 'e'], ['ing', 'e']]) {
     if (key.length > suffix.length + 1 && key.endsWith(suffix)) {
       const stem = key.slice(0, -suffix.length);
+      if (back) tries.push(stem + back); // hated is hate before it is hat
       tries.push(stem);
-      if (back) tries.push(stem + back);
     }
   }
   for (const t of tries) if (byNorm.has(t)) return byNorm.get(t);

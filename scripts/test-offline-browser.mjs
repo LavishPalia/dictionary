@@ -10,16 +10,18 @@ const book = new Database('data/dictionary.db', { readonly: true });
 const CALM_PAGE = book.prepare("SELECT page_number FROM entries WHERE normalized = 'calm'").get().page_number;
 // Example sentences exist only in builds that have them (skipped otherwise).
 const CEREMONY = (() => { try { return book.prepare("SELECT e.en FROM examples e JOIN entries n ON n.id = e.entry_id WHERE n.normalized = 'ceremony'").get(); } catch (e) { if (/no such table: examples/.test(e.message)) return undefined; throw e; } })();
-// The shared sentence for the offline sentence view. Offline there is no forms table: a word is tried as it is, then
-// without s, es, ed, ing (ed and ing also with an e back), against the book. The longest matched word is pressed.
-const SHARED = 'Calm seas calmed everyone';
-const inBook = (w) => Boolean(book.prepare('SELECT 1 FROM entries WHERE normalized = ?').get(w));
-const SHARED_MATCHED = SHARED.split(' ').map((word) => {
-  const k = word.toLowerCase();
-  const tries = [k, ...[['es', ''], ['s', ''], ['ed', 'e'], ['ing', 'e']].flatMap(([suf, back]) => (k.endsWith(suf) ? [k.slice(0, -suf.length), ...(back ? [k.slice(0, -suf.length) + back] : [])] : []))];
-  return { word, key: k, hit: tries.some(inBook) };
-}).filter((m) => m.hit);
-const SHARED_PICK = SHARED_MATCHED.reduce((best, m) => (m.key.length > best.key.length ? m : best)).word;
+// Shared sentences for the offline sentence view. Offline there is no forms table: a word is tried as it is, then
+// without s, es, ed, ing (e put back first for ed and ing), against the book. Expectations are hard-coded to pin the rules.
+const SHARED = 'Calm seas calmed everyone'; // all four match; the longest, everyone, is pressed
+const SHARED_WORDS = ['Calm', 'seas', 'calmed', 'everyone'];
+const SHARED_PICK = 'everyone';
+const SHARED_FORMS = 'hopes hoped boxes'; // hope (not hop) twice, box (not boxe)
+const FORMS_HEADWORDS = ['hope', 'hope', 'box'];
+for (const w of ['calm', 'sea', 'calmed', 'everyone', 'hope', 'hop', 'box', 'hopes', 'hoped', 'boxes']) {
+  const present = Boolean(book.prepare('SELECT 1 FROM entries WHERE normalized = ?').get(w));
+  const expected = !['calmed', 'hopes', 'hoped', 'boxes'].includes(w);
+  if (present !== expected) throw new Error(`the test's expectations assume "${w}" ${expected ? 'is' : 'is not'} a headword`);
+}
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9341;
@@ -185,6 +187,8 @@ async function main() {
       await sleep(1500);
       const pageKeys = await evaluate(`caches.open('panna-pages-v1').then((c) => c.keys()).then((ks) => ks.map((r) => new URL(r.url).pathname + new URL(r.url).search))`);
       check(`${sizeName}: a share launch is cached as / and the shared text is not kept`, pageKeys.includes('/') && !pageKeys.some((k) => k.includes('share_text')), pageKeys);
+      const dataKeys = await evaluate(`caches.open('panna-data-v1').then((c) => c.keys()).then((ks) => ks.map((r) => new URL(r.url).pathname + new URL(r.url).search))`);
+      check(`${sizeName}: an online share leaves no /api/sentence in the data cache`, !dataKeys.some((k) => k.includes('/api/sentence')), dataKeys);
       await open(`/page/${CALM_PAGE}`, size);
 
       // ── Offline, before saving the book ──
@@ -273,8 +277,18 @@ async function main() {
       }
       check(`${sizeName}: a shared sentence offline shows Today, not the 503 page`, Boolean(sheet?.today), sheet);
       check(`${sizeName}: the sentence sheet says to connect for the full view`, sheet?.note === 'Connect for the full sentence view', sheet);
-      check(`${sizeName}: matched words are buttons (calmed included)`, JSON.stringify(sheet?.words.map(([w]) => w)) === JSON.stringify(SHARED_MATCHED.map((m) => m.word)), sheet);
+      check(`${sizeName}: matched words are buttons (calmed included)`, JSON.stringify(sheet?.words.map(([w]) => w)) === JSON.stringify(SHARED_WORDS), sheet);
       check(`${sizeName}: the longest matched word (${SHARED_PICK}) is pressed`, JSON.stringify(sheet?.words.filter(([, on]) => on === 'true').map(([w]) => w)) === JSON.stringify([SHARED_PICK]), sheet);
+      // Endings: hopes, hoped and boxes reach hope, hope and box (not hop, boxe); tap each to read its card.
+      await send('Page.navigate', { url: `${BASE}/?share_text=${encodeURIComponent(SHARED_FORMS)}` });
+      const shownHeads = [];
+      for (let i = 0; i < 3; i++) {
+        for (let t = 0; t < 60; t++) { if (await evaluate(`document.querySelectorAll('#sentence-sheet .sentence-word').length === 3`)) break; await sleep(250); }
+        await evaluate(`document.querySelectorAll('#sentence-sheet .sentence-word')[${i}]?.click(); true`);
+        await sleep(300);
+        shownHeads.push(await evaluate(`document.querySelector('#sentence-entry-title')?.textContent ?? null`));
+      }
+      check(`${sizeName}: hopes, hoped and boxes reach hope, hope and box offline`, JSON.stringify(shownHeads) === JSON.stringify(FORMS_HEADWORDS), shownHeads);
       await open(`/page/${CALM_PAGE}`, size);
       await type(far.toLowerCase());
       p = await panel();
