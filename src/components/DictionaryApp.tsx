@@ -1009,19 +1009,26 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setShowWordDrawer(true);
   };
   const handleOpenSavedWord = (word: SavedWord) => openWordCard(word.headword, word);
-  // A row in History: not a lookup, but the row moves to the top.
-  const openFromHistory = (word: HistoryWord) => {
+  // A row in History: not a lookup, but once its card opens the row moves to the top. Resolves false when the word
+  // could not be loaded (offline, and its page isn't saved): the list is left as it was.
+  const openFromHistory = async (word: HistoryWord) => {
+    const found = await fetchWord(word.headword);
+    if (!found) return false;
     setHistory(saveHistory(touchWord(loadHistory(), word.normalized, Date.now())));
-    return openWordCard(word.headword, null);
+    notALookup(found.entry);
+    setActiveWordEntry(found.entry);
+    setShowWordDrawer(true);
+    return true;
   };
-  // The ☆ on a History row: the same save as the card's button, with the full entry when it can be fetched.
+  // The ☆ on a History row: the same save as the card's button. A saved word is always a full entry (Review asks
+  // for its definition), so this resolves false, saving nothing, when the entry can't be loaded.
   const toggleSaveHistory = async (word: HistoryWord) => {
     const saved = bookmarkedWords.find((w) => w.normalized === word.normalized);
-    if (saved) { handleToggleWordBookmark(saved); return; }
+    if (saved) { handleToggleWordBookmark(saved); return true; }
     const found = await fetchWord(word.headword);
-    handleToggleWordBookmark(found?.entry.normalized === word.normalized
-      ? found.entry
-      : { normalized: word.normalized, headword: word.headword, meaning_hi: word.meaning_hi } as DictionaryEntry);
+    if (!found || found.entry.normalized !== word.normalized) return false;
+    handleToggleWordBookmark(found.entry);
+    return true;
   };
   // Which tab Saved opens on; the request number lets "History ›" switch tabs while Saved is already open.
   const [savedTab, setSavedTab] = useState<{ tab: SavedTab; n: number }>({ tab: 'words', n: 0 });

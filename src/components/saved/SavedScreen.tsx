@@ -43,9 +43,9 @@ interface SavedScreenProps {
   history: HistoryWord[];
   isSaved: (normalized: string) => boolean;
   /** Opens the word card (not a lookup; the row moves to the top). */
-  onOpenHistoryWord: (word: HistoryWord) => void;
+  onOpenHistoryWord: (word: HistoryWord) => Promise<boolean>;
   /** Saves or unsaves the word, as the card's Save button does. */
-  onToggleSaveHistory: (word: HistoryWord) => void;
+  onToggleSaveHistory: (word: HistoryWord) => Promise<boolean>;
   onRemoveHistory: (normalized: string) => void;
   /** Puts words back (Undo), merged into the current history. */
   onRestoreHistory: (list: HistoryWord[]) => void;
@@ -112,9 +112,15 @@ export function SavedScreen(props: SavedScreenProps) {
   }, [props.tabRequest, props.initialTab]);
   const [historyFilter, setHistoryFilter] = useState<'all' | 'unsaved'>('all');
   const [editing, setEditing] = useState(false);
+  // Leave Edit mode on another tab, or when there is nothing left to edit.
+  useEffect(() => { setEditing(false); }, [tab]);
+  useEffect(() => { if (props.history.length === 0) setEditing(false); }, [props.history.length]);
+  // Stars waiting for their word to load: further taps do nothing until it has (the ref sees taps in the same tick).
+  const pendingRef = useRef(new Set<string>());
+  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   // Words by review status: all, or only new / learning / mastered.
   const [filter, setFilter] = useState<'all' | ReviewStatus>('all');
-  const [toast, setToast] = useState<{ text: string; undo: () => void } | null>(null);
+  const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -122,10 +128,26 @@ export function SavedScreen(props: SavedScreenProps) {
   useEffect(() => { headingRef.current?.focus(); }, []);
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
-  const removed = (text: string, undo: () => void) => {
+  // The undo message; without `undo` it is a plain notice.
+  const removed = (text: string, undo?: () => void) => {
     clearTimeout(toastTimer.current);
     setToast({ text, undo });
     toastTimer.current = setTimeout(() => setToast(null), 6000);
+  };
+
+  const toggleStar = async (w: HistoryWord) => {
+    if (pendingRef.current.has(w.normalized)) return;
+    pendingRef.current.add(w.normalized);
+    setPending(new Set(pendingRef.current));
+    try {
+      if (!(await props.onToggleSaveHistory(w))) removed(`Connect to the internet to save ${w.headword}`);
+    } finally {
+      pendingRef.current.delete(w.normalized);
+      setPending(new Set(pendingRef.current));
+    }
+  };
+  const openRow = async (w: HistoryWord) => {
+    if (!(await props.onOpenHistoryWord(w))) removed(`Connect to the internet to open ${w.headword}`);
   };
 
   const pages = [
@@ -331,7 +353,7 @@ export function SavedScreen(props: SavedScreenProps) {
                     const time = lookupTime(w.last_at, now);
                     return (
                       <div key={w.normalized} className="ui-list-item saved-item history-row">
-                        <button type="button" className="saved-open history-open" onClick={() => props.onOpenHistoryWord(w)}>
+                        <button type="button" className="saved-open history-open" onClick={() => openRow(w)}>
                           <span className="history-line">
                             <span className="saved-hw history-hw">{w.headword}</span>
                             {w.count >= 3 && <span className="history-count">{w.count}×<span className="ui-visually-hidden"> looked up</span></span>}
@@ -347,9 +369,9 @@ export function SavedScreen(props: SavedScreenProps) {
                             <CloseIcon />
                           </IconButton>
                         ) : (
-                          <button type="button" className="history-star" aria-pressed={saved}
+                          <button type="button" className="history-star" aria-pressed={saved} aria-busy={pending.has(w.normalized)}
                             aria-label={saved ? `Remove ${w.headword} from saved` : `Save ${w.headword}`}
-                            onClick={() => props.onToggleSaveHistory(w)}>
+                            onClick={() => toggleStar(w)}>
                             <StarIcon />
                           </button>
                         )}
@@ -369,11 +391,13 @@ export function SavedScreen(props: SavedScreenProps) {
         )
       )}
 
-      <div className="saved-toast-slot"role="status" aria-live="polite">
+      <div className="saved-toast-slot" role="status" aria-live="polite">
         {toast && (
           <div className="saved-toast">
             <span>{toast.text}</span>
-            <button type="button" className="saved-undo" onClick={() => { toast.undo(); clearTimeout(toastTimer.current); setToast(null); }}>Undo</button>
+            {toast.undo && (
+              <button type="button" className="saved-undo" onClick={() => { toast.undo?.(); clearTimeout(toastTimer.current); setToast(null); }}>Undo</button>
+            )}
           </div>
         )}
       </div>

@@ -9,6 +9,9 @@ import Database from 'better-sqlite3';
 // The page Camel is on: tests open it to tap a known entry (page numbers change when the book grows).
 const CAMEL_PAGE = new Database('data/dictionary.db', { readonly: true })
   .prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get().page_number;
+// Two words from the book's last pages, which no part of this test opens: offline, the service worker can't load them.
+const FAR_WORDS = new Database('data/dictionary.db', { readonly: true })
+  .prepare('SELECT normalized, headword, meaning_hi FROM entries WHERE page_number >= (SELECT MAX(page_number) - 1 FROM entries) ORDER BY page_number DESC, normalized LIMIT 2').all();
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PORT = 9363;
@@ -100,6 +103,29 @@ async function main() {
     await send('Runtime.enable');
     // Headless Edge can lose window focus, and then focus events never fire (the search box's panel opens on focus).
     await send('Emulation.setFocusEmulationEnabled', { enabled: true });
+    // "Offline" must cover the service worker as well as the page, as in test-offline-browser.mjs.
+    const workers = new Set();
+    socket.addEventListener('message', (event) => {
+      const m = JSON.parse(event.data);
+      if (m.method === 'Target.attachedToTarget' && m.params.targetInfo.type === 'service_worker') workers.add(m.params.sessionId);
+      if (m.method === 'Target.detachedFromTarget') workers.delete(m.params.sessionId);
+    });
+    const sendTo = (sessionId, method, params = {}) => new Promise((resolve) => {
+      const id = 500000 + Math.floor(Math.random() * 400000);
+      const done = (result) => { clearTimeout(timer); socket.removeEventListener('message', onMessage); resolve(result); };
+      const onMessage = (event) => { const m = JSON.parse(event.data); if (m.id === id) done(m.result ?? null); };
+      const timer = setTimeout(() => { workers.delete(sessionId); done(null); }, 2000);
+      socket.addEventListener('message', onMessage);
+      socket.send(JSON.stringify({ id, method, params, sessionId }));
+    });
+    const setOffline = async (offline) => {
+      const conditions = { offline, latency: 0, downloadThroughput: -1, uploadThroughput: -1 };
+      await send('Network.enable');
+      await send('Network.emulateNetworkConditions', conditions);
+      for (const s of workers) { await sendTo(s, 'Network.enable'); await sendTo(s, 'Network.emulateNetworkConditions', conditions); }
+      await sleep(300);
+    };
+    await send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true });
     await send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_SPEECH });
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
@@ -250,7 +276,7 @@ async function main() {
         const s = document.querySelector('#saved-screen'); if (!s) return null;
         return {
           groups: [...s.querySelectorAll('.history-group-name')].map((g) => g.textContent),
-          rows: [...s.querySelectorAll('.history-row')].map((r) => ({ hw: r.querySelector('.history-hw')?.textContent, text: r.textContent, star: r.querySelector('.history-star')?.getAttribute('aria-pressed') ?? null, label: r.querySelector('.history-star')?.getAttribute('aria-label') ?? null })),
+          rows: [...s.querySelectorAll('.history-row')].map((r) => ({ hw: r.querySelector('.history-hw')?.textContent, text: r.textContent, star: r.querySelector('.history-star')?.getAttribute('aria-pressed') ?? null, label: r.querySelector('.history-star')?.getAttribute('aria-label') ?? null, busy: r.querySelector('.history-star')?.getAttribute('aria-busy') ?? null })),
           summary: s.querySelector('.saved-summary')?.textContent,
           historyTab: document.querySelector('#saved-tab-history')?.getAttribute('aria-checked'),
         };
@@ -274,13 +300,17 @@ async function main() {
       const starBox = await evaluate(`(() => { const r = document.querySelector('.history-star')?.getBoundingClientRect(); return r ? { w: r.width, h: r.height } : null; })()`);
       check(`${sizeName}: stars are 44px buttons labelled "Save {headword}"`, starBox && starBox.w >= 43.5 && starBox.h >= 43.5 && t.rows[1].label === 'Save candid' && t.rows[1].star === 'false', { starBox, row: t?.rows[1] });
 
-      // ── One-tap save ──
-      await evaluate(`[...document.querySelectorAll('.history-row')].find((r) => r.querySelector('.history-hw')?.textContent === 'candid').querySelector('.history-star').click(); true`);
+      // ── One-tap save; a double tap while the word loads still saves it ──
+      const busy = await evaluate(`(async () => { const star = [...document.querySelectorAll('.history-row')].find((r) => r.querySelector('.history-hw')?.textContent === 'candid').querySelector('.history-star');
+        let wasBusy = false; const seen = new MutationObserver(() => { if (star.getAttribute('aria-busy') === 'true') wasBusy = true; });
+        seen.observe(star, { attributes: true, attributeFilter: ['aria-busy'] });
+        star.click(); star.click(); await new Promise((r) => setTimeout(r, 1500)); seen.disconnect(); return String(wasBusy); })()`);
       await waitFor(`JSON.parse(localStorage.getItem('panna_saved_words') || '[]').some((w) => w.normalized === 'candid')`, 40);
       await sleep(200);
       t = await tabHist();
       const savedCandid = await evaluate(`JSON.parse(localStorage.getItem('panna_saved_words') || '[]').find((w) => w.normalized === 'candid') ?? null`);
       const badge = await evaluate(`document.querySelector('${reviewBtn} .ui-badge')?.textContent ?? null`);
+      check(`${sizeName}: a double tap leaves the word saved, and the star shows it is busy`, busy === 'true' && Boolean(savedCandid) && t?.rows[1].star === 'true' && t.rows[1].busy === 'false', { savedCandid: Boolean(savedCandid), busy, row: t?.rows[1] });
       check(`${sizeName}: the star saves into Review`, Boolean(savedCandid?.definition_en) && t?.rows[1].star === 'true' && t.rows[1].label === 'Remove candid from saved' && badge === '1', { savedCandid, row: t?.rows[1], badge });
       await click('#history-filter-unsaved');
       await sleep(200);
@@ -344,6 +374,30 @@ async function main() {
       await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
       await sleep(500);
       check(`${sizeName}: Saved opened from the nav starts on Words`, await evaluate(`document.querySelector('#saved-screen [role="radio"][aria-checked="true"]')?.textContent.startsWith('Words')`));
+
+      // ── Offline: a word whose page isn't saved can be neither saved nor opened ──
+      await reset();
+      await evaluate(`(() => { const now = Date.now(); const w = (x, at) => ({ ...x, first_at: at, last_at: at, count: 1, lookups: [at], source: 'search', page: null });
+        localStorage.setItem('panna_history', JSON.stringify([w(${JSON.stringify(FAR_WORDS[0])}, now - 60000), w(${JSON.stringify(FAR_WORDS[1])}, now - 120000)])); return true; })()`);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
+      await sleep(500);
+      await click('#saved-tab-history');
+      await waitFor(`document.querySelectorAll('.history-row').length === 2`, 20);
+      const order = JSON.stringify(await history());
+      await setOffline(true);
+      await evaluate(`document.querySelector('.history-row .history-star').click(); true`);
+      await waitFor(`Boolean(document.querySelector('.saved-toast'))`, 50);
+      const saveToast = await evaluate(`document.querySelector('.saved-toast')?.innerText ?? null`);
+      const savedOffline = await evaluate(`localStorage.getItem('panna_saved_words')`);
+      check(`${sizeName}: offline, the star saves nothing and says why`, saveToast?.includes(`Connect to the internet to save ${FAR_WORDS[0].headword}`) && !saveToast.includes('Undo')
+        && !String(savedOffline).includes(FAR_WORDS[0].normalized) && await evaluate(`document.querySelector('.history-row .history-star').getAttribute('aria-pressed')`) === 'false', { saveToast, savedOffline });
+      await evaluate(`document.querySelectorAll('.history-row')[1].querySelector('.history-open').click(); true`);
+      await waitFor(`document.querySelector('.saved-toast')?.innerText.includes('Connect to the internet to open')`, 50);
+      const openToast = await evaluate(`document.querySelector('.saved-toast')?.innerText ?? null`);
+      check(`${sizeName}: offline, opening a row says why and leaves the order`, openToast?.includes(`Connect to the internet to open ${FAR_WORDS[1].headword}`)
+        && JSON.stringify(await history()) === order && !(await evaluate(`Boolean(document.querySelector('#word-sheet-title'))`)), { openToast, first: (await history())?.[0]?.normalized });
+      await setOffline(false);
 
       if (size.mobile) {
         await send('Emulation.setDeviceMetricsOverride', { width: 360, height: 780, deviceScaleFactor: 1, mobile: true });
