@@ -32,6 +32,7 @@
     "test:offline-ui": "node scripts/test-offline-browser.mjs",
     "test:reach-ui": "node scripts/test-reach-browser.mjs",
     "test:history-ui": "node scripts/test-history-browser.mjs",
+    "test:goto-ui": "node scripts/test-goto-browser.mjs",
     "test:report-ui": "node scripts/test-report-browser.mjs",
     "test:a11y": "node scripts/test-a11y-browser.mjs",
     "test:progress-ui": "node scripts/test-progress-browser.mjs",

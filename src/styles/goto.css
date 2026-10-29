@@ -1,0 +1,59 @@
+/* "Go to" panel (src/components/book/GoToSheet.tsx) and the page-number buttons that open it. */
+.goto-sheet .ui-sheet-title { font-family: var(--font-fell-sc); letter-spacing: 0.04em; margin-bottom: var(--space-2); }
+
+.goto-field { display: flex; gap: var(--space-2); align-items: stretch; margin: 0 0 var(--space-2); }
+.goto-input {
+  flex: 1; min-width: 0; min-height: 52px; padding: 0 var(--space-3); border-radius: var(--radius-md);
+  border: 1px solid var(--sepia); background: rgba(255, 255, 255, 0.5); color: var(--ink);
+  font: 22px var(--font-fell); font-variant-numeric: tabular-nums;
+}
+.goto-input[aria-invalid='true'] { border-color: var(--crimson); }
+.goto-go {
+  flex: none; min-width: 64px; min-height: 52px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-md);
+  background: var(--crimson); color: var(--on-binding); font: 16px var(--font-fell-sc); cursor: pointer;
+}
+.goto-go:hover { background: var(--binding); }
+.goto-error { margin: 0 0 var(--space-2); font: italic 14px var(--font-fell); color: var(--crimson); }
+.goto-label { margin: 0 0 6px; font: 13px var(--font-fell); color: var(--ink-soft); }
+
+.goto-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: var(--space-2) 0 var(--space-4); }
+.goto-letter {
+  min-height: var(--tap); border: 1px solid var(--rule); border-radius: 8px; background: rgba(255, 255, 255, 0.25);
+  color: var(--ink); font: 17px var(--font-fell); cursor: pointer; padding: 0;
+}
+.goto-letter:hover { background: rgba(255, 255, 255, 0.5); }
+.goto-letter[aria-current='true'] { background: var(--brass); border-color: var(--brass); color: var(--desk); font-weight: bold; }
+.goto-letter:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#goto-marks h3 { font-weight: normal; }
+.goto-marks { display: flex; flex-wrap: wrap; gap: 6px; }
+.goto-mark {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 var(--space-3);
+  border: 1px solid var(--rule); border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.3);
+  color: var(--ink); font: 14px var(--font-fell); cursor: pointer;
+}
+.goto-mark:hover { background: rgba(255, 255, 255, 0.5); }
+
+.goto-input:focus-visible, .goto-go:focus-visible, .goto-letter:focus-visible, .goto-mark:focus-visible,
+.page-number-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* Phone footer: "p. 16 ▾" between the arrows. */
+.page-number-btn--phone {
+  min-height: var(--tap); padding: 0 14px; border: 1px solid var(--sepia); border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.35); color: var(--ink); font: 14px var(--font-fell-sc); letter-spacing: 0.04em;
+  cursor: pointer; white-space: nowrap;
+}
+.page-number-btn--phone::before { content: 'p. '; }
+.page-number-btn--phone::after { content: ' ▾'; }
+/* Desktop: "Pages 16–17 of 3,127 ▾", centred under the spread, on the desk. The top margin clears the cover (14px below
+   the spread at full size); ScaledSpread leaves room for it (BELOW). */
+.page-number-btn--desk {
+  display: block; margin: 22px auto 0; min-height: 36px; padding: 0 var(--space-4); border-radius: var(--radius-pill);
+  border: 1px solid var(--brass-line); background: rgba(0, 0, 0, 0.2); color: var(--brass-soft);
+  font: 14px var(--font-fell-sc); letter-spacing: 0.04em; cursor: pointer; white-space: nowrap;
+}
+.page-number-btn--desk:hover { background: rgba(201, 162, 74, 0.14); }
+
+@media (max-width: 1023px) {
+  .goto-mark { min-height: var(--tap); }
+}

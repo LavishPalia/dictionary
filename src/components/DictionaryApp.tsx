@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { BookSpread } from '@/components/book/BookSpread';
 import { ScaledSpread } from '@/components/book/ScaledSpread';
 import { MobilePage } from '@/components/book/MobilePage';
+import { GoToSheet } from '@/components/book/GoToSheet';
+import { markedPages } from '@/lib/letters';
 import { LookupBar, type LookupFill } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
 import { SavedScreen, type SavedPageKind, type SavedTab, type SavedWord } from '@/components/saved/SavedScreen';
@@ -136,6 +138,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   }, []);
   const [showCreditsModal, setShowCreditsModal] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState<boolean>(false);
+  // The Go to panel, opened from the page number.
+  const [goToOpen, setGoToOpen] = useState<boolean>(false);
   const backupRef = useRef<BackupHandle>(null);
   const [lastBackupAt, setLastBackupAt] = useState<number | null>(null);
   useEffect(() => {
@@ -568,6 +572,28 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setHighlightedWord('');
     turnToPage(destPage);
   };
+
+  // A jump asked for from the Go to panel while a turn or a page load is under way (turnToPage would ignore it):
+  // kept here and made once the book is idle again, so it is neither lost nor turned twice.
+  const queuedPageRef = useRef<number | null>(null);
+  const goToPageFromPanel = (page: number) => {
+    setHighlightedWord('');
+    if (isFlipping || loadingTargetRef.current) { queuedPageRef.current = page; return; }
+    queuedPageRef.current = null;
+    turnToPage(page);
+  };
+  // turnToPage changes with currentPage and isFlipping, so this runs when a flip completes (handleFlipComplete or
+  // the watchdog) and when a load ends with an instant turn.
+  useEffect(() => {
+    const page = queuedPageRef.current;
+    if (page === null || isFlipping || loadingTargetRef.current) return;
+    queuedPageRef.current = null;
+    turnToPage(page);
+  }, [turnToPage, isFlipping]);
+  const goToMarks = useMemo(
+    () => markedPages({ ribbons: bookmarkedPages, dogEars: dogEaredPages, notes: marginNotes }),
+    [bookmarkedPages, dogEaredPages, marginNotes],
+  );
 
   // Entry click handler -> opens Word Detail Drawer & syncs URL
   const handleEntryClick = (headword: string) => {
@@ -1293,6 +1319,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           canPrev={canPrevMobile}
           canNext={canNextMobile}
           animate={!reducedMotion && speedMode !== 'instant'}
+          onOpenGoTo={() => setGoToOpen(true)}
         />
       ) : (
         /* Desktop Two-Page Spread with 3D Engine & Hybrid Overlay */
@@ -1330,6 +1357,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onNextPage={handleNextSpread}
           />
         </ScaledSpread>
+      )}
+      {isBookOpen && !isMobile && (
+        <button type="button" id="page-number-btn" className="page-number-btn page-number-btn--desk" aria-haspopup="dialog"
+          aria-label={`Pages ${leftPageNum.toLocaleString('en-IN')}–${rightPageNum.toLocaleString('en-IN')} of ${meta.total_pages.toLocaleString('en-IN')}. Go to another page`}
+          onClick={() => setGoToOpen(true)}>
+          Pages {leftPageNum.toLocaleString('en-IN')}–{rightPageNum.toLocaleString('en-IN')} of {meta.total_pages.toLocaleString('en-IN')} ▾
+        </button>
       )}
       </div>
 
@@ -1463,6 +1497,17 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
       <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />
 
+      <GoToSheet
+        open={goToOpen}
+        onClose={() => setGoToOpen(false)}
+        currentPage={currentPage}
+        totalPages={meta.total_pages}
+        thumbIndex={meta.thumb_index}
+        marks={goToMarks}
+        onGoToPage={goToPageFromPanel}
+        onGoToLetter={(_letter, page) => goToPageFromPanel(page)}
+      />
+
       <ReadingMenu
         open={showMenu}
         onClose={() => setShowMenu(false)}
@@ -1473,10 +1518,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onSpeedChange={setSpeedMode}
         soundsOn={!isMuted}
         onSoundsChange={(on) => { setIsMuted(!on); soundEngine.setMuted(!on); }}
-        currentPage={currentPage}
-        totalPages={meta.total_pages}
         busy={isFlipping}
-        onGoToPage={(n) => { setHighlightedWord(''); turnToPage(n); }}
         onRandomPage={handleRandomExplore}
         bookOpen={isBookOpen}
         onToggleBook={() => setIsBookOpen(prev => !prev)}

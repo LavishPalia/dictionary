@@ -21,6 +21,8 @@ interface MobilePageProps {
   animate?: boolean;
   /** A page being fetched (slow connection): faint ink lines show over this one until it arrives. */
   loadingPage?: number | null;
+  /** Tapping the page number opens the Go to panel. */
+  onOpenGoTo?: () => void;
 }
 
 // A swipe turns the page past a quarter of the page's width, or as a quick flick.
@@ -42,6 +44,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   canNext = true,
   animate = true,
   loadingPage = null,
+  onOpenGoTo,
 }) => {
   // The page follows the finger sideways; vertical moves are left to the browser (touch-action: pan-y).
   const cardRef = useRef<HTMLDivElement>(null);
@@ -255,9 +258,12 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           ←
         </button>
 
-        <span className="guide-word" style={{ fontSize: '13px' }}>
-          p. {page.page_number}
-        </span>
+        <button type="button" id="page-number-btn" className="page-number-btn page-number-btn--phone"
+          aria-label={`Page ${page.page_number.toLocaleString('en-IN')}. Go to another page`} aria-haspopup="dialog"
+          onClick={onOpenGoTo}>
+          {/* Shows "p. 16 ▾": the "p." and "▾" come from CSS, so the label ("Page 16. …") contains all the text (axe). */}
+          {page.page_number.toLocaleString('en-IN')}
+        </button>
 
         <button
           onClick={onNextPage}

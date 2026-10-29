@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
 import '@/styles/ui.css';
 import '@/styles/shell.css';
+import '@/styles/goto.css';
 import '@/styles/search.css';
 import '@/styles/word.css';
 import '@/styles/saved.css';
