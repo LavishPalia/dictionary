@@ -439,6 +439,46 @@ async function main() {
       check(`${sizeName}: without speech recognition the mic is hidden`, await evaluate(`!document.querySelector('#voice-btn') && !('webkitSpeechRecognition' in window)`));
       await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: none });
     }
+
+    // iPhone: the "Look up from any app" row and study guide button show only on an iPhone with a Shortcut link.
+    {
+      const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+      const LINK = 'https://www.icloud.com/shortcuts/test';
+      const phone = { width: 390, height: 844, mobile: true };
+      const hydrated = async (url) => {
+        await send('Emulation.setDeviceMetricsOverride', { width: phone.width, height: phone.height, deviceScaleFactor: 1, mobile: true });
+        await send('Page.navigate', { url: `${BASE}${url}` });
+        await waitFor(`(() => { const b = document.querySelector('#menu-btn'); return Boolean(b && Object.keys(b).some((k) => k.startsWith('__reactFiber$'))); })()`, 80);
+        await sleep(400);
+      };
+      const menuRow = async () => {
+        await hydrated('/');
+        await evaluate(`localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
+        await hydrated('/');
+        await click('#menu-btn');
+        await waitFor(`Boolean(document.querySelector('#backup-btn'))`);
+        return evaluate(`(() => { const a = document.querySelector('#ios-shortcut-row'); return a ? { href: a.getAttribute('href'), tag: a.tagName, text: a.innerText, after: Boolean(document.querySelector('#backup-btn')) } : null; })()`);
+      };
+      const guideButton = async () => {
+        await hydrated('/learn');
+        await waitFor(`Boolean(document.querySelector('#learn-last'))`);
+        return evaluate(`[...document.querySelectorAll('#learn-last button')].filter((b) => b.textContent.trim() === 'Look up from any app').length`);
+      };
+
+      check('default browser: no iPhone Shortcut row in the menu', (await menuRow()) === null);
+      await send('Emulation.setUserAgentOverride', { userAgent: IPHONE });
+      check('iPhone without a Shortcut link: no row in the menu', (await menuRow()) === null);
+      check('iPhone without a Shortcut link: no button in the study guide', (await guideButton()) === 0);
+      const { identifier: link } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__pannaIosShortcutUrl = ${JSON.stringify(LINK)};` });
+      const row = await menuRow();
+      check('iPhone with a Shortcut link: the row is a link to it', row?.tag === 'A' && row.href === LINK && row.text.includes('Look up from any app') && row.text.includes('Add a Shortcut to look up words from WhatsApp, Safari or Siri.'), row);
+      check('iPhone with a Shortcut link: the study guide has the button', (await guideButton()) === 1);
+      check('iPhone with a Shortcut link: the Hindi tip is marked lang="hi"', await evaluate(`[...document.querySelectorAll('#learn-last [lang="hi"]')].some((e) => e.textContent.includes('शॉर्टकट से किसी भी ऐप में शब्द देखें।'))`));
+      await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: link });
+      await send('Emulation.setUserAgentOverride', { userAgent: '' });
+      await send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__pannaIosShortcutUrl = ${JSON.stringify(LINK)};` });
+      check('not an iPhone, even with a link: no row', (await menuRow()) === null);
+    }
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

@@ -35,6 +35,8 @@ interface ReadingMenuProps {
   /** Install as an app: a browser prompt to show, or instructions for iOS. */
   onInstall: (() => void) | null;
   installHint: 'ios' | null;
+  /** The iPhone Shortcut's link; empty means no row. */
+  iosShortcut: string;
   /** e.g. "Last backup 3 days ago". */
   backupLabel: string;
 }
@@ -151,6 +153,15 @@ export function ReadingMenu(props: ReadingMenuProps) {
           </span>
         </div>
       ) : null}
+      {props.iosShortcut && (
+        <a className="menu-row menu-link" id="ios-shortcut-row" href={props.iosShortcut}>
+          <span>
+            <span className="menu-title">Look up from any app</span>
+            <span className="menu-sub menu-sub--block">Add a Shortcut to look up words from WhatsApp, Safari or Siri.</span>
+          </span>
+          <ChevronIcon />
+        </a>
+      )}
       <button type="button" className="menu-row menu-link" id="backup-btn" onClick={thenClose(props.onBackup)}>
         <span>
           <span className="menu-title">Back up my words</span>

@@ -33,6 +33,7 @@ import { REPORTS_ENABLED, flushQueue } from '@/lib/report';
 import { LearnScreen } from '@/components/learn/LearnScreen';
 import { nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
+import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
@@ -807,6 +808,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setMenuFocus(null);
   }, [showMenu, menuFocus]);
   const openMenuAt = (id: string) => { setMenuFocus(id); setShowMenu(true); };
+  // The iPhone Shortcut's link, found after mount (it depends on the browser); '' hides its rows.
+  const [iosShortcut, setIosShortcut] = useState('');
+  useEffect(() => { setIosShortcut(iosShortcutLink(navigator.userAgent)); }, []);
   const handleLearnAction = (action: LearnAction) => {
     switch (action) {
       case 'review': goTo('review'); break;
@@ -823,6 +827,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // iOS Safari has no install prompt: its row is a hint (Share → Add to Home Screen), focused the same way.
       case 'install': openMenuAt(offline.install ? 'install-btn' : 'install-hint'); break;
       case 'tours': tours.openSheet(); break;
+      case 'ios-shortcut': if (iosShortcut) window.location.href = iosShortcut; break;
     }
   };
   // Back returns to the screen the guide was opened from, even after a tour started there passed through the other
@@ -1259,7 +1264,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         <LearnScreen
           step={savedLoaded ? nextStep({ saved: bookmarkedWords, dueCount, lastBackupAt, now: Date.now() }) : null}
           // A tip whose ⋯ menu row this browser does not show keeps its text, without a button.
-          canDo={(a) => (a === 'install' ? Boolean(offline.install) || offline.installHint === 'ios' : a === 'offline-save' ? offline.available : true)}
+          canDo={(a) => (a === 'install' ? Boolean(offline.install) || offline.installHint === 'ios' : a === 'offline-save' ? offline.available : a === 'ios-shortcut' ? Boolean(iosShortcut) : true)}
           dueMinutes={Math.max(1, Math.round((dueCount * SECONDS_PER_CARD) / 60))}
           onAction={handleLearnAction}
           onBack={() => goTo(learnBack)}
@@ -1333,6 +1338,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         offline={{ available: offline.available, status: offline.status, saving: offline.saving, onSave: offline.save }}
         onInstall={offline.install}
         installHint={offline.installHint}
+        iosShortcut={iosShortcut}
         backupLabel={lastBackupLabel(lastBackupAt)}
       />
 

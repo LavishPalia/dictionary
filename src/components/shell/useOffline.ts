@@ -1,5 +1,6 @@
 'use client';
 
+import { IOS_DEVICE } from '@/lib/ios-shortcut';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatBytes, pageUrl, registerServiceWorker, saveBook, savedBook, type SavedBook } from '@/lib/offline';
 
@@ -33,7 +34,7 @@ export function useOffline(meta: { total_pages: number; data_version: string }, 
     const onInstalled = () => setInstallEvent(null);
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
-    if (!standalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) setInstallHint('ios');
+    if (!standalone && IOS_DEVICE.test(navigator.userAgent)) setInstallHint('ios');
     return () => {
       live = false;
       window.removeEventListener('online', update);
