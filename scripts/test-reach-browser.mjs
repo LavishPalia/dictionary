@@ -183,6 +183,8 @@ async function main() {
       const value = await evaluate(`document.querySelector('#lookup-input').value`);
       let list = await results();
       check(`${sizeName}: a heard sentence fills the search box`, value === 'so many words here', value);
+      const wantFocus = size.mobile ? 'voice-btn' : 'lookup-input';
+      await waitFor(`document.activeElement?.id === '${wantFocus}'`, 20);
       const focused = await evaluate('document.activeElement?.id');
       check(`${sizeName}: after hearing, focus is ${size.mobile ? 'on the mic (no keyboard)' : 'in the search box'}`, focused === (size.mobile ? 'voice-btn' : 'lookup-input'), focused);
       check(`${sizeName}: it shows at most 3 options`, list && list.length <= 3, list);
@@ -248,6 +250,7 @@ async function main() {
       await tapMic();
       await waitFor(`document.querySelector('#lookup-input').value === 'zzxqvw'`, 40);
       await sleep(300);
+      await waitFor(`document.activeElement?.id === '${size.mobile ? 'voice-btn' : 'lookup-input'}'`, 20);
       const missed = await evaluate(`({ value: document.querySelector('#lookup-input').value, sheet: Boolean(document.querySelector('#word-sheet')), focus: document.activeElement?.id })`);
       check(`${sizeName}: a heard word not in the book fills the search box, no card`, missed.value === 'zzxqvw' && !missed.sheet, missed);
       check(`${sizeName}: then focus is ${size.mobile ? 'on the mic (no keyboard)' : 'in the search box'}`, missed.focus === (size.mobile ? 'voice-btn' : 'lookup-input'), missed);
@@ -467,7 +470,6 @@ async function main() {
       const guideTip = () => evaluate(`(() => { const t = document.querySelector('#learn-last').innerText; return t.includes('Look up words from any app with a Shortcut.') || t.includes('शॉर्टकट से किसी भी ऐप में शब्द देखें।'); })()`);
 
       check('default browser: no iPhone Shortcut row in the menu', (await menuRow()) === null);
-      await guideButton();
       check('default browser: the study guide has neither the Shortcut tip nor its button', !(await guideTip()) && (await guideButton()) === 0);
       await send('Emulation.setUserAgentOverride', { userAgent: IPHONE });
       check('iPhone without a Shortcut link: no row in the menu', (await menuRow()) === null);

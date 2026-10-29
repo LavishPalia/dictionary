@@ -27,6 +27,26 @@ function check(label, ok, detail) {
 }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const FAKE_SPEECH = `
+  window.__pannaRecognition = class FakeRecognition {
+    constructor() { this.lang = ''; this.maxAlternatives = 1; this.interimResults = true; this.continuous = true; this.onresult = null; this.onerror = null; this.onend = null; this.stopped = false; }
+    start() {
+      window.__fakeSpeechLang = this.lang;
+      window.__fakeSpeechStarts = (window.__fakeSpeechStarts || 0) + 1;
+      window.__fakeSpeechSettings = { maxAlternatives: this.maxAlternatives, interimResults: this.interimResults, continuous: this.continuous };
+      const speech = window.__fakeSpeech || {};
+      if (speech.hold) return;
+      setTimeout(() => {
+        if (this.stopped) return;
+        if (speech.error) this.onerror?.({ error: speech.error });
+        else if (speech.transcripts) this.onresult?.({ resultIndex: 0, results: [speech.transcripts.map((t) => ({ transcript: t, confidence: 0 }))] });
+        this.onend?.();
+      }, 50);
+    }
+    abort() { this.stopped = true; window.__fakeSpeechAborts = (window.__fakeSpeechAborts || 0) + 1; }
+    stop() { this.abort(); }
+  };`;
+
 async function main() {
   const edge = spawn(EDGE_PATH, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${USER_DATA}`,
     '--disable-gpu', '--window-size=1440,900', 'about:blank'], { stdio: 'ignore' });
@@ -91,6 +111,7 @@ async function main() {
     const openEntry = (word) => evaluate(`[...document.querySelectorAll('.entry-text')].find((e) => e.textContent.startsWith(${JSON.stringify(word)}) && e.style.cursor === 'pointer').click(); true`);
 
     // Each view: how to reach it. Run in order per size.
+    const speak = (speech) => evaluate(`window.__fakeSpeech = ${JSON.stringify(speech)}; true`);
     const VIEWS = [
       { name: 'today (first visit)', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await seed(null); await open('/', size); await sleep(1200); } },
       // A returning reader: the guide has been opened, so Today shows its small link on the desk.
@@ -113,6 +134,23 @@ async function main() {
       { name: 'guided tours list', go: async () => { await click('#guided-tours-btn'); await sleep(700); } },
       { name: 'tour step', go: async () => { await click('#tour-start-start'); await sleep(1500); } },
       { name: 'credits', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await click('#menu-btn'); await sleep(400); await click('#open-credits-btn'); await sleep(800); } },
+      // Reach Panna fast: the listening overlay, a heard word's card with its Heard strip, and the sentence sheet.
+      { name: 'voice overlay', go: async (size) => {
+        await send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_SPEECH });
+        await seed(quiet); await open(`/page/${CALM_PAGE}`, size); await speak({ hold: true });
+        if (!(await click('#voice-btn'))) throw new Error('No #voice-btn');
+        await sleep(700);
+        if (!(await visible('[role="dialog"][aria-label="Voice search"]'))) throw new Error('Voice overlay did not open'); } },
+      { name: 'word card with a Heard strip', go: async (size) => {
+        await seed(quiet); await open(`/page/${CALM_PAGE}`, size); await speak({ transcripts: ['ceremonies', 'serenities'] });
+        if (!(await click('#voice-btn'))) throw new Error('No #voice-btn');
+        await sleep(1500);
+        if (!(await visible('#word-heard'))) throw new Error('No #word-heard'); } },
+      { name: 'sentence sheet', go: async (size) => {
+        await seed(quiet); await open('/?share_text=The%20government%27s%20plan%20deepened%20and%20obfuscated%20the%20facts.', size);
+        for (let i = 0; i < 40 && !(await visible('#sentence-sheet button.sentence-word')); i++) await sleep(100);
+        await sleep(400);
+        if (!(await visible('#sentence-sheet button.sentence-word'))) throw new Error('No sentence sheet'); } },
       { name: 'offline notice', go: async (size) => {
         await open(`/page/${CALM_PAGE}`, size);
         await send('Network.enable'); await send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
@@ -133,6 +171,14 @@ async function main() {
         results.push({ size: sizeName, view: view.name, violations: out ?? [] });
         check(`${sizeName}: ${view.name} has no WCAG 2.1 A/AA or best-practice violations`, Array.isArray(out) && out.length === 0,
           out?.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })));
+        if (size.mobile) {
+          const targets = { 'voice overlay': '[role="dialog"][aria-label="Voice search"] button, [role="dialog"][aria-label="Voice search"] [role="radio"]',
+            'word card with a Heard strip': '#word-heard button', 'sentence sheet': '#sentence-sheet button.sentence-word, #sentence-sheet button' }[view.name];
+          if (targets) {
+            const small = await evaluate(`[...document.querySelectorAll(${JSON.stringify(targets)})].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map((b) => b.id || b.textContent.slice(0, 20))`);
+            check(`phone: ${view.name} controls are at least 44 px tall`, Array.isArray(small) && small.length === 0, small);
+          }
+        }
         if (view.name === 'today (guide opened)') {
           // axe leaves text over the desk's gradient "incomplete", so the link is also measured against every colour
           // stop of the first background behind it.

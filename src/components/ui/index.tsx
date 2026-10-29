@@ -123,7 +123,8 @@ export function Sheet({ open, onClose, title, hideTitle, labelledBy, ariaLabel, 
     document.body.style.overflow = 'hidden';
     // Focus the sheet itself: screen readers announce its name, and no button shows a focus ring
     // before the reader has pressed a key. Tab then reaches the first control.
-    panel.current?.focus();
+    const node = panel.current;
+    node?.focus();
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') { event.stopPropagation(); onCloseRef.current(); return; }
       if (event.key !== 'Tab' || !panel.current) return;
@@ -137,6 +138,9 @@ export function Sheet({ open, onClose, title, hideTitle, labelledBy, ariaLabel, 
     return () => {
       document.removeEventListener('keydown', onKey, true);
       document.body.style.overflow = overflow;
+      // Focus already sent elsewhere (say, to the search box a voice result filled) stays where it is.
+      const now = document.activeElement;
+      if (now && now !== document.body && !node?.contains(now)) return;
       const target = returnFocusRef.current?.() ?? opener;
       if (target && target !== document.body) target.focus();
     };
