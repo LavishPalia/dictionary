@@ -6,7 +6,8 @@ import type { ReviewStatus } from '@/lib/review';
 import { ProgressBar } from '@/components/progress/Progress';
 import { STATUS_LABEL, type Progress } from '@/lib/progress';
 import { Button, IconButton, Segmented } from '@/components/ui';
-import { BookIcon, CloseIcon } from '@/components/ui/icons';
+import { BookIcon, CloseIcon, StarIcon } from '@/components/ui/icons';
+import { sourceLabel, type HistoryWord } from '@/lib/history';
 
 /** A saved word; saved_at is missing for words saved before it was recorded. */
 export type SavedWord = DictionaryEntry & { saved_at?: number };
@@ -38,9 +39,24 @@ interface SavedScreenProps {
   onHowItWorks: () => void;
   /** Opens the study guide. */
   onOpenGuide: () => void;
+  /** Every word looked up, newest first. */
+  history: HistoryWord[];
+  isSaved: (normalized: string) => boolean;
+  /** Opens the word card (not a lookup; the row moves to the top). */
+  onOpenHistoryWord: (word: HistoryWord) => Promise<boolean>;
+  /** Saves or unsaves the word, as the card's Save button does. */
+  onToggleSaveHistory: (word: HistoryWord) => Promise<boolean>;
+  onRemoveHistory: (normalized: string) => void;
+  /** Puts words back (Undo), merged into the current history. */
+  onRestoreHistory: (list: HistoryWord[]) => void;
+  onClearHistory: () => void;
+  /** The tab Saved opens on; a new `tabRequest` switches to it while Saved is already open. */
+  initialTab?: SavedTab;
+  tabRequest?: number;
 }
 
-type Tab = 'words' | 'pages' | 'notes';
+export type SavedTab = 'words' | 'pages' | 'notes' | 'history';
+type Tab = SavedTab;
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -54,6 +70,19 @@ function whenGroup(savedAt: number | undefined, now: Date): string {
   return 'Earlier';
 }
 const GROUP_ORDER = ['Today', 'Yesterday', 'This week', 'Earlier'];
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// "4:52 pm" for a lookup today, "26 Oct" for an older one.
+function lookupTime(at: number, now: Date): string {
+  const d = new Date(at);
+  if (whenGroup(at, now) === 'Today') {
+    const h = d.getHours();
+    return `${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+  }
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+const HISTORY_EMPTY = 'Words you look up appear here, so you can come back to them, and save the ones worth learning.';
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -73,10 +102,25 @@ function PageWords({ page, through = page, loadPage }: { page: number; through?:
 
 export function SavedScreen(props: SavedScreenProps) {
   const { words, ribbonPages, dogEaredPages, notes } = props;
-  const [tab, setTab] = useState<Tab>('words');
+  const [tab, setTab] = useState<Tab>(props.initialTab ?? 'words');
+  // Asked for a tab while already open (e.g. "History ›" in the search box over Saved).
+  const lastRequest = useRef(props.tabRequest);
+  useEffect(() => {
+    if (props.tabRequest === lastRequest.current) return;
+    lastRequest.current = props.tabRequest;
+    setTab(props.initialTab ?? 'words');
+  }, [props.tabRequest, props.initialTab]);
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'unsaved'>('all');
+  const [editing, setEditing] = useState(false);
+  // Leave Edit mode on another tab, or when there is nothing left to edit.
+  useEffect(() => { setEditing(false); }, [tab]);
+  useEffect(() => { if (props.history.length === 0) setEditing(false); }, [props.history.length]);
+  // Stars waiting for their word to load: further taps do nothing until it has (the ref sees taps in the same tick).
+  const pendingRef = useRef(new Set<string>());
+  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   // Words by review status: all, or only new / learning / mastered.
   const [filter, setFilter] = useState<'all' | ReviewStatus>('all');
-  const [toast, setToast] = useState<{ text: string; undo: () => void } | null>(null);
+  const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -84,10 +128,26 @@ export function SavedScreen(props: SavedScreenProps) {
   useEffect(() => { headingRef.current?.focus(); }, []);
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
-  const removed = (text: string, undo: () => void) => {
+  // The undo message; without `undo` it is a plain notice.
+  const removed = (text: string, undo?: () => void) => {
     clearTimeout(toastTimer.current);
     setToast({ text, undo });
     toastTimer.current = setTimeout(() => setToast(null), 6000);
+  };
+
+  const toggleStar = async (w: HistoryWord) => {
+    if (pendingRef.current.has(w.normalized)) return;
+    pendingRef.current.add(w.normalized);
+    setPending(new Set(pendingRef.current));
+    try {
+      if (!(await props.onToggleSaveHistory(w))) removed(`Connect to the internet to save ${w.headword}`);
+    } finally {
+      pendingRef.current.delete(w.normalized);
+      setPending(new Set(pendingRef.current));
+    }
+  };
+  const openRow = async (w: HistoryWord) => {
+    if (!(await props.onOpenHistoryWord(w))) removed(`Connect to the internet to open ${w.headword}`);
   };
 
   const pages = [
@@ -107,12 +167,25 @@ export function SavedScreen(props: SavedScreenProps) {
 
   const total = words.length + pages.length + notes.length;
 
+  const { history, isSaved } = props;
+  const unsavedCount = history.filter((w) => !isSaved(w.normalized)).length;
+  const historyGroups = GROUP_ORDER
+    .map((name) => ({
+      name,
+      items: history
+        .filter((w) => whenGroup(w.last_at, now) === name && (historyFilter === 'all' || !isSaved(w.normalized)))
+        .sort((a, b) => b.last_at - a.last_at),
+    }))
+    .filter((g) => g.items.length > 0);
+  // The count is hidden on narrow phones (saved.css) so the four tabs fit.
+  const tabLabel = (name: string, n: number) => <>{name}<span className="saved-tab-count"> · {n}</span></>;
+
   return (
     <section className="saved" id="saved-screen" aria-labelledby="saved-title">
       <div className="saved-head">
         <div>
           <h1 id="saved-title" className="saved-title" tabIndex={-1} ref={headingRef}>Saved</h1>
-          <p className="saved-summary">{total ? `${plural(words.length, 'word')} · ${plural(pages.length, 'page')} · ${plural(notes.length, 'note')}` : 'Nothing saved yet'}</p>
+          <p className="saved-summary">{tab === 'history' ? `${plural(words.length, 'word')} · ${history.length} looked up` : total ? `${plural(words.length, 'word')} · ${plural(pages.length, 'page')} · ${plural(notes.length, 'note')}` : 'Nothing saved yet'}</p>
           <button type="button" className="lookup-link tour-howlink tour-howlink--desk" id="saved-how-btn" onClick={props.onHowItWorks}>How saving works ›</button>
         </div>
         <Button variant="desk" className="app-desktop-only" id="close-saved-btn" onClick={props.onBackToBook}>
@@ -126,9 +199,10 @@ export function SavedScreen(props: SavedScreenProps) {
           value={tab}
           onChange={setTab}
           options={[
-            { value: 'words', label: `Words · ${words.length}` },
-            { value: 'pages', label: `Pages · ${pages.length}` },
-            { value: 'notes', label: `Notes · ${notes.length}` },
+            { value: 'words', label: tabLabel('Words', words.length), id: 'saved-tab-words' },
+            { value: 'pages', label: tabLabel('Pages', pages.length), id: 'saved-tab-pages' },
+            { value: 'notes', label: tabLabel('Notes', notes.length), id: 'saved-tab-notes' },
+            { value: 'history', label: tabLabel('History', history.length), id: 'saved-tab-history' },
           ]}
         />
       </div>
@@ -246,11 +320,84 @@ export function SavedScreen(props: SavedScreenProps) {
         )
       )}
 
+      {tab === 'history' && (
+        history.length === 0 ? (
+          <p className="saved-empty" id="history-empty">{HISTORY_EMPTY}</p>
+        ) : (
+          <>
+            <div className="history-bar">
+              <div className="saved-filter history-filter">
+                <Segmented<'all' | 'unsaved'>
+                  label="Show looked-up words"
+                  value={historyFilter}
+                  onChange={setHistoryFilter}
+                  options={[
+                    { value: 'all', label: `All · ${history.length}`, id: 'history-filter-all' },
+                    { value: 'unsaved', label: `Not saved · ${unsavedCount}`, id: 'history-filter-unsaved' },
+                  ]}
+                />
+              </div>
+              <Button variant="desk" size="small" id="history-edit-btn" aria-pressed={editing} onClick={() => setEditing((e) => !e)}>
+                {editing ? 'Done' : 'Edit'}
+              </Button>
+            </div>
+            {historyGroups.length === 0 ? (
+              <p className="saved-filter-empty" id="history-filter-empty">Every word here is saved.</p>
+            ) : historyGroups.map((g) => (
+              <div key={g.name} role="group" aria-label={g.name} className="history-group">
+                <div className="history-group-name">{g.name}</div>
+                <div className="ui-list saved-list">
+                  {g.items.map((w) => {
+                    const saved = isSaved(w.normalized);
+                    const label = sourceLabel(w);
+                    const time = lookupTime(w.last_at, now);
+                    return (
+                      <div key={w.normalized} className="ui-list-item saved-item history-row">
+                        <button type="button" className="saved-open history-open" onClick={() => openRow(w)}>
+                          <span className="history-line">
+                            <span className="saved-hw history-hw">{w.headword}</span>
+                            {w.count >= 3 && <span className="history-count">{w.count}×<span className="ui-visually-hidden"> looked up</span></span>}
+                          </span>
+                          <span className="history-line">
+                            {w.meaning_hi && <span className="saved-hi" lang="hi">{w.meaning_hi}</span>}
+                            <span className="history-via">{w.meaning_hi ? ' · ' : ''}{label ? `${label}, ${time}` : time}</span>
+                          </span>
+                        </button>
+                        {editing ? (
+                          <IconButton surface="paper" className="history-remove" aria-label={`Remove ${w.headword} from history`}
+                            onClick={() => { props.onRemoveHistory(w.normalized); removed(`Removed “${w.headword}” from history`, () => props.onRestoreHistory([w])); }}>
+                            <CloseIcon />
+                          </IconButton>
+                        ) : (
+                          <button type="button" className="history-star" aria-pressed={saved} aria-busy={pending.has(w.normalized)}
+                            aria-label={`Save ${w.headword}`}
+                            onClick={() => toggleStar(w)}>
+                            <StarIcon />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {editing && (
+              <Button variant="desk" full id="history-clear-btn" className="history-clear"
+                onClick={() => { const all = history; props.onClearHistory(); setEditing(false); removed('Cleared history', () => props.onRestoreHistory(all)); }}>
+                Clear history
+              </Button>
+            )}
+          </>
+        )
+      )}
+
       <div className="saved-toast-slot" role="status" aria-live="polite">
         {toast && (
           <div className="saved-toast">
             <span>{toast.text}</span>
-            <button type="button" className="saved-undo" onClick={() => { toast.undo(); clearTimeout(toastTimer.current); setToast(null); }}>Undo</button>
+            {toast.undo && (
+              <button type="button" className="saved-undo" onClick={() => { toast.undo?.(); clearTimeout(toastTimer.current); setToast(null); }}>Undo</button>
+            )}
           </div>
         )}
       </div>

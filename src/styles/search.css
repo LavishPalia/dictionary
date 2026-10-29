@@ -25,6 +25,8 @@
   font: 12px var(--font-fell-sc); cursor: pointer;
 }
 .lookup-link:hover { text-decoration: underline; }
+/* The search box's "History ›": a 44px target that fills the heading row (its padding cancelled). */
+#lookup-history-link { display: inline-flex; align-items: center; min-height: 44px; margin: -7px -14px -5px 0; padding: 0 14px; }
 
 .lookup-option {
   display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 14px;

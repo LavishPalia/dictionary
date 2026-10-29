@@ -48,7 +48,7 @@ export function Badge({ count, label }: { count: number; label: string }) {
 // A radio group drawn as joined pills. Arrow keys move between options, as for native radios.
 export function Segmented<T extends string>({ label, options, value, onChange }: {
   label: string;
-  options: Array<{ value: T; label: ReactNode }>;
+  options: Array<{ value: T; label: ReactNode; id?: string }>;
   value: T;
   onChange: (value: T) => void;
 }) {
@@ -68,6 +68,7 @@ export function Segmented<T extends string>({ label, options, value, onChange }:
         return (
           <button
             key={option.value}
+            id={option.id}
             ref={(el) => { refs.current[index] = el; }}
             type="button"
             role="radio"

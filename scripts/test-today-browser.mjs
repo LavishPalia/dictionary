@@ -191,12 +191,14 @@ async function main() {
       const spreadLeft = browsed % 2 === 0 ? browsed : browsed - 1;
       check(`${sizeName}: the last page read is remembered`, sizeName === 'phone' ? stored === browsed : stored === spreadLeft || stored === spreadLeft + 1, { stored, browsed });
 
-      // A first visit: nothing saved, nothing read.
-      await seed({});
+      // A first visit: nothing saved, nothing read, and no lookups today (one two days ago).
+      const old = Date.now() - 2 * DAY;
+      await seed({ raw: { panna_history: [{ normalized: "calm", headword: "Calm", meaning_hi: "शांत", first_at: old, last_at: old, count: 1, lookups: [old], source: "search", page: null }] } });
       await open('/', size);
       const first = await evaluate(`document.querySelector('#today-screen')?.innerText ?? ''`);
       check(`${sizeName}: a first visit explains Review and starts reading at page 1`, first.includes('Nothing to review yet') && first.includes('Start reading') && first.includes('Page 1'), first);
       check(`${sizeName}: no streak is shown without one`, !first.includes('in a row'));
+      check(`${sizeName}: no Today line without lookups today`, !(await evaluate(`Boolean(document.querySelector('#today-lookups'))`)));
     }
     await evaluate(`localStorage.clear(); true`);
   } finally {

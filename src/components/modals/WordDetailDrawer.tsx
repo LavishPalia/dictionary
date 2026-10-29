@@ -28,6 +28,10 @@ interface WordDetailDrawerProps {
   onToggleBookmark: (entry: DictionaryEntry) => void;
   /** For saved words: when the word next comes up in Review. */
   reviewNote?: string | null;
+  /** This open was the reader's 3rd lookup of an unsaved word: say so above Save (hidden once saved). */
+  nudge?: { times: number; span: 'week' | 'month' } | null;
+  /** When the word was first looked up, if on an earlier day: "First looked up 26 Oct" under Save. */
+  firstLookedUp?: number | null;
   /** The book build being read, sent with a problem report. */
   dataVersion: string;
   /** Opened by voice: what was heard, and up to 2 other book words it could have been. */
@@ -60,6 +64,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   isBookmarked,
   onToggleBookmark,
   reviewNote,
+  nudge,
+  firstLookedUp,
   dataVersion,
   heard,
   onPickHeard,
@@ -197,6 +203,11 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
       )}
 
       <hr className="ui-divider" />
+      {nudge && !isBookmarked && (
+        <p className="word-nudge" id="word-nudge">
+          You’ve looked this up <b>{nudge.times} times</b> this {nudge.span}. Save it, and Review will help it stick.
+        </p>
+      )}
       <div className="word-actions">
         <Button
           id="save-word-btn"
@@ -214,6 +225,11 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
       </div>
 
       {reviewNote && <p className="word-review-note" id="word-review-note">{reviewNote}</p>}
+      {firstLookedUp != null && (
+        <p className="word-first-looked" id="word-first-looked">
+          First looked up {new Date(firstLookedUp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+        </p>
+      )}
 
       <div className="word-foot">
         <span className="word-provenance">

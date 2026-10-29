@@ -46,6 +46,38 @@
 }
 .saved-undo:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
+/* History tab: rows on paper cards under small-caps day headers. */
+.saved-tabs .ui-seg button { white-space: nowrap; }
+.history-bar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+.history-bar .saved-filter { flex: 1; min-width: 0; margin-bottom: 0; }
+#history-edit-btn { min-height: var(--tap); flex: none; }
+.history-group-name { margin: var(--space-3) 2px 6px; font: 13px var(--font-fell-sc); letter-spacing: 0.04em; color: var(--brass-muted); }
+.history-group .saved-list { margin-bottom: 0; }
+.history-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 4px; min-width: 0; }
+.history-count {
+  font: 12px var(--font-fell); color: var(--crimson); background: rgba(122, 43, 34, 0.12);
+  border-radius: var(--radius-pill); padding: 1px 7px; margin-left: 2px;
+}
+.history-via { font: 13.5px var(--font-fell); color: var(--ink-soft); white-space: pre-wrap; }
+.history-star {
+  flex: none; display: inline-grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0;
+  border-radius: 50%; border: 1px solid var(--rule); background: rgba(255, 255, 255, 0.3); color: var(--sepia); cursor: pointer;
+}
+.history-star .ui-icon { width: 19px; height: 19px; }
+.history-star:hover { background: rgba(201, 162, 74, 0.2); }
+.history-star[aria-pressed='true'] { background: var(--brass); border-color: var(--brass); color: var(--color-desk-edge); }
+.history-star[aria-pressed='true'] .ui-icon { fill: currentColor; }
+.history-star:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.history-star[aria-busy='true'] { opacity: 0.6; cursor: progress; }
+.history-clear { margin-top: var(--space-4); }
+.saved-item .ui-iconbtn.history-remove { width: var(--tap); height: var(--tap); }
+
+/* Narrow phones: the tabs drop their counts so all four fit. */
+@media (max-width: 479px) {
+  .saved-tab-count { display: none; }
+  .saved-tabs .ui-seg button { padding: 0 6px; }
+}
+
 @media (max-width: 1023px) {
   .saved-title { font-size: 28px; }
   .saved-tabs .ui-seg { display: flex; }

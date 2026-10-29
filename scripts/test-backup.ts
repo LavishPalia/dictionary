@@ -7,6 +7,9 @@ function check(label: string, ok: boolean, detail?: unknown) {
   else { failures++; console.error(`✗ ${label}${detail !== undefined ? ` — ${JSON.stringify(detail)}` : ''}`); }
 }
 
+const hw = (normalized: string, last_at: number, count: number, lookups: number[] = [last_at]) => ({
+  normalized, headword: normalized[0].toUpperCase() + normalized.slice(1), meaning_hi: '', first_at: last_at, last_at, count, lookups, source: 'search', page: null,
+});
 const word = (normalized: string, saved_at?: number) => ({ normalized, headword: normalized[0].toUpperCase() + normalized.slice(1), meaning_hi: '', saved_at });
 const phone: BackupData = {
   panna_saved_words: [word('camel', 100), word('abandon', 300)],
@@ -16,6 +19,7 @@ const phone: BackupData = {
   panna_mark_anchors: { data_version: 'v1', ribbons: { 16: 'calm' }, dogEars: { 23: 'classic' } },
   panna_settings: { evening: true, speed: 'instant', sounds: false },
   panna_recent_searches: [{ headword: 'Camel', page: 16 }],
+  panna_history: [hw('camel', 1_000, 2, [900, 1_000]), hw('abandon', 800, 1)],
 };
 const laptop: BackupData = {
   panna_saved_words: [word('camel', 50), word('charity', 400)],
@@ -25,6 +29,7 @@ const laptop: BackupData = {
   panna_mark_anchors: { data_version: 'v1', ribbons: { 40: 'heal' }, dogEars: { 23: 'classic' } },
   panna_settings: { evening: false, speed: 'realistic', sounds: true },
   panna_recent_searches: [{ headword: 'camel', page: 16 }, { headword: 'Heal', page: 40 }],
+  panna_history: [hw('camel', 2_000, 5, [1_500, 2_000]), hw('heal', 1_800, 1)],
 };
 
 const backup = createBackup(phone, 'v1', new Date(2026, 9, 22));
@@ -66,7 +71,35 @@ check('merge keeps this browser’s settings', JSON.stringify(merged.panna_setti
     guideOf(restoreData({ panna_tours: { seen: {}, tips: {}, guideOpened: true } }, { ...backup, data: { panna_tours: { seen: {}, tips: {} } } }, 'merge', book)) === true);
   check('a backup with damaged tour progress is refused', !parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, panna_tours: [] } })).ok);
 }
-check('merge combines recent searches without duplicates', (merged.panna_recent_searches as Array<{ headword: string }>).map((r) => r.headword).join() === 'camel,Heal', merged.panna_recent_searches);
+{
+  type HistoryLike = { normalized: string; count: number; lookups: number[] };
+  const hist = merged.panna_history as Array<{ normalized: string; count: number; last_at: number; lookups: number[] }>;
+  check('history survives a backup round trip', parsed.ok && JSON.stringify(parsed.backup.data.panna_history) === JSON.stringify(phone.panna_history), parsed);
+  check('a damaged history item rejects the backup', !parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, panna_history: [{ x: 1 }] } })).ok);
+  const camel = hist.find((h) => h.normalized === 'camel');
+  check('merge combines history', hist.map((h) => h.normalized).join() === 'camel,heal,abandon' && camel?.count === 5 && camel.last_at === 2_000
+    && camel.lookups.join() === '900,1000,1500,2000', hist);
+  check('merge no longer returns recent searches', !('panna_recent_searches' in merged));
+  const oldFile = { ...backup, data: { panna_recent_searches: [{ headword: 'Camel', page: 16 }, { headword: 'Heal', page: 40 }] } };
+  const folded = restoreData({}, oldFile, 'merge', book).panna_history as Array<{ normalized: string }>;
+  check('merge folds an old backup’s recent searches into history', folded.map((h) => h.normalized).join() === 'camel,heal', folded);
+  const foldedBoth = restoreData({ panna_recent_searches: [{ headword: 'Zebra' }] }, oldFile, 'merge', book).panna_history as Array<{ normalized: string }>;
+  check('merge folds this browser’s recent searches when it has no history', foldedBoth.map((h) => h.normalized).sort().join() === 'camel,heal,zebra', foldedBoth);
+  const stamped = { ...oldFile, created_at: '2026-10-01T00:00:00.000Z' };
+  const once = restoreData({}, stamped, 'merge', book).panna_history as HistoryLike[];
+  const twice = restoreData({ panna_history: once }, stamped, 'merge', book).panna_history as HistoryLike[];
+  check('merging the same old backup twice leaves identical history', JSON.stringify(once) === JSON.stringify(twice)
+    && twice.every((h) => h.count === 1 && h.lookups.length === 1), { once, twice });
+  const undated = { ...oldFile, created_at: 'junk' };
+  const u1 = restoreData({}, undated, 'merge', book).panna_history as HistoryLike[];
+  const u2 = restoreData({ panna_history: u1 }, undated, 'merge', book).panna_history as HistoryLike[];
+  check('an old backup with no usable date also merges idempotently', JSON.stringify(u1) === JSON.stringify(u2) && u2.length === 2, { u1, u2 });
+  check('a new backup does not write the old recents key', !('panna_recent_searches' in createBackup({ panna_recent_searches: [{ headword: 'x' }], panna_bookmarks: [] }, 'v1').data));
+  check('replace takes the backup’s history', JSON.stringify(replaced.panna_history) === JSON.stringify(phone.panna_history));
+  const repFold = restoreData(laptop, oldFile, 'replace', book);
+  check('replace folds the backup’s recents when it has no history', (repFold.panna_history as unknown[]).length === 2 && !('panna_recent_searches' in repFold), repFold);
+  check('replace empties history when the backup has neither', (restoreData(laptop, { ...backup, data: {} }, 'replace', book).panna_history as unknown[]).length === 0);
+}
 
 // A backup made under an older build of the book: its marks move to where their words are now.
 const old = createBackup(phone, 'v0');

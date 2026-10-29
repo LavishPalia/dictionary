@@ -128,6 +128,15 @@ async function main() {
       { name: 'search hindi', go: async () => { await type('छोड़'); } },
       { name: 'learn', go: async (size) => { await seed(quiet, saveWords); await open('/learn', size); await sleep(800); } },
       { name: 'saved', go: async (size) => { await seed(quiet, saveWords); await open(`/page/${CALM_PAGE}`, size); await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn'); await sleep(900); } },
+      // Saved → History, with a saved and an unsaved word, then in Edit mode.
+      { name: 'saved history', go: async (size) => {
+        await evaluate(`(() => { const now = Date.now(); const w = (normalized, headword, meaning_hi, at, count, source) => ({ normalized, headword, meaning_hi, first_at: at, last_at: at, count, lookups: [at], source, page: null });
+          localStorage.setItem('panna_history', JSON.stringify([w('camel', 'Camel', 'ऊँट', now - 60000, 3, 'share'), w('candid', 'candid', 'स्पष्टवादी', now - 3 * 86400000, 1, 'voice')])); return true; })()`);
+        await open(`/page/${CALM_PAGE}`, size); await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn'); await sleep(700);
+        await click('#saved-tab-history'); await sleep(500);
+        if (!(await evaluate(`document.querySelectorAll('.history-row').length === 2`))) throw new Error('History tab shows no rows'); } },
+      { name: 'saved history edit', go: async () => { await click('#history-edit-btn'); await sleep(400);
+        if (!(await evaluate(`Boolean(document.querySelector('#history-clear-btn'))`))) throw new Error('Edit shows no Clear history'); } },
       { name: 'review question', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await click(size.mobile ? '#nav-review-btn' : '#open-review-btn'); await sleep(1500); } },
       { name: 'review answered', go: async () => { await click('.review-option'); await sleep(600); } },
       { name: 'menu', go: async (size) => { await open(`/page/${CALM_PAGE}`, size); await click('#menu-btn'); await sleep(600); } },

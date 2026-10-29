@@ -6,7 +6,7 @@ import { ScaledSpread } from '@/components/book/ScaledSpread';
 import { MobilePage } from '@/components/book/MobilePage';
 import { LookupBar, type LookupFill } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
-import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
+import { SavedScreen, type SavedPageKind, type SavedTab, type SavedWord } from '@/components/saved/SavedScreen';
 import { ReviewScreen } from '@/components/review/ReviewScreen';
 import { TodayScreen } from '@/components/today/TodayScreen';
 import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, loadReviewDays, newRecord, nextDue, saveRecords, saveReviewDays, SECONDS_PER_CARD, statusOf, streak, withReviewDay, type ReviewRecords } from '@/lib/review';
@@ -37,6 +37,7 @@ import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
+import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, clearHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -423,6 +424,65 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     }
   }, []);
 
+  // Lookup history: every word whose meaning the reader was shown, recorded where each route acts. Opening a word from
+  // Saved or History, a tour, Back, or the card's back link are not lookups.
+  const [history, setHistory] = useState<HistoryWord[]>([]);
+  useEffect(() => { setHistory(loadHistory()); }, []);
+  const searchRecents = useMemo(() => recentWords(history), [history]);
+  // The most recent card open, and whether it was a lookup that counts (read by the repeat-lookup nudge).
+  const lastLookupRef = useRef<{ normalized: string; counted: boolean } | null>(null);
+  const recordShown = useCallback((word: LookupWord, source: LookupSource) => {
+    // Read the stored list, not state: another tab (or a restored backup) may have changed it.
+    const next = saveHistory(recordLookup(loadHistory(), word, source, Date.now()));
+    lastLookupRef.current = { normalized: word.normalized, counted: true };
+    setHistory(next);
+  }, []);
+  const recordEntry = useCallback((entry: DictionaryEntry, source: LookupSource, page?: number | null) => {
+    recordShown({ normalized: entry.normalized, headword: entry.headword, meaning_hi: entry.meaning_hi, page: page ?? entry.page_number ?? null }, source);
+  }, [recordShown]);
+  // A card opened without counting as a lookup.
+  const notALookup = (entry: DictionaryEntry) => { lastLookupRef.current = { normalized: entry.normalized, counted: false }; };
+  // A /word/ link: the server-provided entry, once on mount.
+  useEffect(() => {
+    if (initialEntry) recordEntry(initialEntry, 'other');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The repeat-lookup nudge, decided once each time the card shows a word: only when that showing was a lookup that
+  // counted (the 3rd in 30 days of an unsaved word, never nudged before). It is marked nudged as it shows. Placed after
+  // the /word/ link's recording above, so a link's own lookup is seen.
+  const [nudge, setNudge] = useState<{ for: string; times: number; span: 'week' | 'month' } | null>(null);
+  const nudgeDecidedRef = useRef<DictionaryEntry | null>(null);
+  useEffect(() => {
+    if (!savedLoaded) return; // whether the word is saved isn't known yet
+    const entry = showWordDrawer ? activeWordEntry : null;
+    if (entry === nudgeDecidedRef.current) return;
+    nudgeDecidedRef.current = entry;
+    const last = lastLookupRef.current;
+    if (!entry || !last?.counted || last.normalized !== entry.normalized) { setNudge(null); return; }
+    const list = loadHistory();
+    const saved = bookmarkedWords.some((w) => w.normalized === entry.normalized);
+    const due = shouldNudge(list.find((w) => w.normalized === entry.normalized), saved, Date.now());
+    setNudge(due ? { for: entry.normalized, ...due } : null);
+    if (due) setHistory(saveHistory(markNudged(list, entry.normalized)));
+  // Decided when the word shown changes, not when saved words do (saving hides it in the card instead).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showWordDrawer, activeWordEntry, savedLoaded]);
+  // "First looked up 26 Oct": only for a word with history from an earlier day.
+  const firstLookedUp = useMemo(() => {
+    if (!activeWordEntry) return null;
+    const first = history.find((w) => w.normalized === activeWordEntry.normalized)?.first_at;
+    const d = new Date();
+    return first !== undefined && first < new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() ? first : null;
+  }, [history, activeWordEntry]);
+  // Today's line: words with a lookup since midnight, and how many of them are not saved.
+  const lookedUpToday = useMemo(() => {
+    const d = new Date();
+    const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const today = history.filter((w) => w.lookups.some((t) => t >= midnight));
+    return { total: today.length, unsaved: today.filter((w) => !bookmarkedWords.some((b) => b.normalized === w.normalized)).length };
+  }, [history, bookmarkedWords]);
+
   const handleFlipComplete = useCallback(() => {
     setCurrentPage(targetPage);
     setIsFlipping(false);
@@ -466,6 +526,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         const w = (() => { try { return decodeURIComponent(rawWord); } catch { return rawWord; } })().trim();
         const found = await fetchWord(w);
         if (found) {
+          notALookup(found.entry);
           setActiveWordEntry(found.entry);
           setShowWordDrawer(true);
           setHighlightedWord(found.entry.headword);
@@ -487,16 +548,18 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     if (section !== 'book') showBookForNavigation();
   };
 
-  // Search selection handler
-  const handleSelectWord = (headword: string, destPage: number) => {
+  // Search selection handler: a result picked in the search box.
+  const handleSelectWord = (headword: string, destPage: number, meaning_hi?: string) => {
+    recordShown({ normalized: headword.toLowerCase().trim(), headword, meaning_hi, page: destPage }, 'search');
     showBookForSearch();
     turnToPage(destPage, headword);
   };
 
-  // Saved words keep the page number they had when saved, which changes when the book is rebuilt: look them up again.
+  // A search-box recent word. Its page may be from an older build of the book: look it up again.
   const handleSelectSavedWord = async (headword: string, savedPage: number) => {
     showBookForSearch();
     const found = await fetchWord(headword);
+    if (found) recordEntry(found.entry, 'search', found.pageNumber);
     turnToPage(found ? found.pageNumber : savedPage, found ? found.entry.headword : headword);
   };
 
@@ -513,6 +576,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const visible = [leftPage, rightPage, singleMobilePage].flatMap(p => (p ? [...p.column1, ...p.column2] : []));
     const found = visible.find(e => e.normalized === norm);
     if (found) {
+      const page = [leftPage, rightPage, singleMobilePage].find(p => p && [...p.column1, ...p.column2].includes(found));
+      recordEntry(found, 'book', page?.page_number ?? found.page_number ?? null);
       const open = () => { setActiveWordEntry(found); setShowWordDrawer(true); };
       // The tapped headword glides into the sheet's title (View Transitions). Elsewhere the sheet just opens.
       const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
@@ -746,7 +811,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     goTo,
     setMenu: setShowMenu,
     openWord: (entry) => {
-      if (entry) { setActiveWordEntry(entry); setShowWordDrawer(true); } else setShowWordDrawer(false);
+      if (entry) { notALookup(entry); setActiveWordEntry(entry); setShowWordDrawer(true); } else setShowWordDrawer(false);
     },
     findVisibleEntry: (headword) => {
       const norm = headword.toLowerCase().trim();
@@ -890,6 +955,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const from = activeWordEntry;
     const found = await fetchWord(word.headword);
     if (!found) return;
+    recordEntry(found.entry, 'other', found.pageNumber);
     if (from) {
       const back = wordTrail.at === from.normalized ? wordTrail.back : [];
       setWordTrail({ back: [...back, from].slice(-50), at: found.entry.normalized });
@@ -901,6 +967,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const prev = trailBack[trailBack.length - 1];
     if (!prev) return;
     setWordTrail({ back: trailBack.slice(0, -1), at: prev.normalized });
+    notALookup(prev);
     showInSheet(prev);
   };
   useEffect(() => { if (!showWordDrawer) setWordTrail({ back: [], at: '' }); }, [showWordDrawer]);
@@ -931,6 +998,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     if (!current()) return false;
     if (!found) { setLookupFill({ text: word }); return false; }
     const at = found.entry.normalized;
+    recordEntry(found.entry, 'voice', found.pageNumber);
     setHeard({ text: word, alternates: [], at });
     setActiveWordEntry(found.entry);
     setShowWordDrawer(true);
@@ -960,15 +1028,49 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const handlePickHeard = async (headword: string) => {
     const found = await fetchWord(headword);
     if (!found) return;
+    recordEntry(found.entry, 'voice', found.pageNumber);
     setHeard((h) => (h ? { ...h, at: found.entry.normalized } : h));
     showInSheet(found.entry);
   };
   const heardShown = heard && activeWordEntry && heard.at === activeWordEntry.normalized ? heard : null;
 
-  const handleOpenSavedWord = async (word: SavedWord) => {
-    const found = await fetchWord(word.headword); // the stored copy may be from an older build of the book
-    setActiveWordEntry(found ? found.entry : word);
+  // Not a lookup: browsing Saved (or History) must not inflate counts.
+  const openWordCard = async (headword: string, fallback: DictionaryEntry | null) => {
+    const found = await fetchWord(headword); // the stored copy may be from an older build of the book
+    const entry = found ? found.entry : fallback;
+    if (!entry) return;
+    notALookup(entry);
+    setActiveWordEntry(entry);
     setShowWordDrawer(true);
+  };
+  const handleOpenSavedWord = (word: SavedWord) => openWordCard(word.headword, word);
+  // A row in History: not a lookup, but once its card opens the row moves to the top. Resolves false when the word
+  // could not be loaded (offline, and its page isn't saved): the list is left as it was.
+  const openFromHistory = async (word: HistoryWord) => {
+    const found = await fetchWord(word.headword);
+    if (!found) return false;
+    setHistory(saveHistory(touchWord(loadHistory(), word.normalized, Date.now())));
+    notALookup(found.entry);
+    setActiveWordEntry(found.entry);
+    setShowWordDrawer(true);
+    return true;
+  };
+  // The ☆ on a History row: the same save as the card's button. A saved word is always a full entry (Review asks
+  // for its definition), so this resolves false, saving nothing, when the entry can't be loaded.
+  const toggleSaveHistory = async (word: HistoryWord) => {
+    const saved = bookmarkedWords.find((w) => w.normalized === word.normalized);
+    if (saved) { handleToggleWordBookmark(saved); return true; }
+    const found = await fetchWord(word.headword);
+    if (!found || found.entry.normalized !== word.normalized) return false;
+    handleToggleWordBookmark(found.entry);
+    return true;
+  };
+  // Which tab Saved opens on; the request number lets "History ›" switch tabs while Saved is already open.
+  const [savedTab, setSavedTab] = useState<{ tab: SavedTab; n: number }>({ tab: 'words', n: 0 });
+  useEffect(() => { if (section !== 'saved') setSavedTab((t) => (t.tab === 'words' ? t : { tab: 'words', n: t.n })); }, [section]);
+  const openSaved = (tab: SavedTab) => {
+    setSavedTab((t) => ({ tab, n: t.n + 1 }));
+    goTo('saved');
   };
 
   // Opened from the share sheet or an icon shortcut (src/app/manifest.ts): act on it once, and give the address back.
@@ -989,7 +1091,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           const current = startLookup();
           fetchWord(only.key!).then((found) => {
             if (!current()) return;
-            if (found) { setActiveWordEntry(found.entry); setShowWordDrawer(true); }
+            if (found) { recordEntry(found.entry, 'share', found.pageNumber); setActiveWordEntry(found.entry); setShowWordDrawer(true); }
             else setLookupFill({ text: only.text, show: 'closest' }); // not a book word: its closest matches, as for voice
           });
         } else if (words.length > 1) {
@@ -1113,6 +1215,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           <LookupBar
             onSelectWord={handleSelectWord}
             onSelectRecent={handleSelectSavedWord}
+            recent={searchRecents}
+            onOpenHistory={() => openSaved('history')}
             onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) { showBookForSearch(); handleSelectLetter(letter, page); } }}
             totalEntries={meta.total_entries}
             online={offline.online}
@@ -1252,6 +1356,15 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onReview={() => goTo('review')}
           onHowItWorks={() => tours.startTour('review')}
           onOpenGuide={() => goTo('learn')}
+          history={history}
+          isSaved={(key) => bookmarkedWords.some((w) => w.normalized === key)}
+          onOpenHistoryWord={openFromHistory}
+          onToggleSaveHistory={toggleSaveHistory}
+          onRemoveHistory={(key) => setHistory(saveHistory(removeWord(loadHistory(), key)))}
+          onRestoreHistory={(list) => setHistory(saveHistory(mergeHistory(loadHistory(), list)))}
+          onClearHistory={() => setHistory(clearHistory())}
+          initialTab={savedTab.tab}
+          tabRequest={savedTab.n}
         />
       )}
 
@@ -1269,13 +1382,15 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           isSaved={(key) => bookmarkedWords.some(w => w.normalized === key)}
           onStartReview={() => goTo('review')}
           onContinueReading={(page) => { showBookForNavigation(); setHighlightedWord(''); turnToPage(page); }}
-          onOpenWord={(entry) => { setActiveWordEntry(entry); setShowWordDrawer(true); }}
+          onOpenWord={(entry) => { recordEntry(entry, 'other'); setActiveWordEntry(entry); setShowWordDrawer(true); }}
           onToggleSave={handleToggleWordBookmark}
           showWelcome={tours.showWelcome}
           onTakeTour={() => tours.startTour('start')}
           onDismissWelcome={tours.dismissWelcome}
           guideOpened={tours.loaded ? tours.guideOpened : null}
           onOpenGuide={() => goTo('learn')}
+          lookedUpToday={lookedUpToday}
+          onOpenHistory={() => openSaved('history')}
         />
       )}
 
@@ -1317,11 +1432,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onSelectWord={(word, destPage) => {
           if (section !== 'book') showBookForNavigation();
           if (destPage) turnToPage(destPage, word);
-          else handleSelectWord(word, currentPage);
+          else turnToPage(currentPage, word);
         }}
         isBookmarked={activeWordEntry ? bookmarkedWords.some(w => w.normalized === activeWordEntry.normalized) : false}
         onToggleBookmark={handleToggleWordBookmark}
         reviewNote={reviewNoteFor(activeWordEntry)}
+        nudge={nudge && activeWordEntry?.normalized === nudge.for ? { times: nudge.times, span: nudge.span } : null}
+        firstLookedUp={firstLookedUp}
         dataVersion={meta.data_version}
         heard={heardShown}
         onPickHeard={handlePickHeard}
@@ -1333,8 +1450,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onClose={() => setShareText(null)}
         isSaved={(entry) => bookmarkedWords.some(w => w.normalized === entry.normalized)}
         onToggleSave={handleToggleWordBookmark}
+        onShowWord={(entry) => recordEntry(entry, 'share')}
         onOpenCard={(entry) => {
           // One sheet at a time: this one closes, then the word sheet opens as it does from Saved.
+          recordEntry(entry, 'share');
           setShareText(null);
           setActiveWordEntry(entry);
           setShowWordDrawer(true);

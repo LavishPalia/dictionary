@@ -33,6 +33,10 @@ interface TodayScreenProps {
   /** Whether the study guide has been opened (a card until then, a quiet link after); null until known. */
   guideOpened: boolean | null;
   onOpenGuide: () => void;
+  /** Words looked up since midnight, and how many of those are not saved; the line shows only after a lookup today. */
+  lookedUpToday: { total: number; unsaved: number };
+  /** Opens Saved on the History tab. */
+  onOpenHistory: () => void;
 }
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
@@ -113,6 +117,13 @@ export function TodayScreen(props: TodayScreenProps) {
           <Button id="today-continue-btn" onClick={() => props.onContinueReading(page)}>Open book ›</Button>
         </div>
       </Card>
+
+      {props.lookedUpToday.total > 0 && (
+        // On the desk, like the study guide's link.
+        <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-lookups" id="today-lookups" onClick={props.onOpenHistory}>
+          {`${props.lookedUpToday.total} word${props.lookedUpToday.total === 1 ? '' : 's'} looked up today${props.lookedUpToday.unsaved > 0 ? ` · ${props.lookedUpToday.unsaved} not saved` : ''} ›`}
+        </button>
+      )}
 
       {props.progress.total > 0 && (
         <Card className="today-card" id="today-progress" aria-labelledby="today-progress-title">

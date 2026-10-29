@@ -29,6 +29,12 @@
 
 .word-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-top: 14px; }
 .word-review-note { margin: 8px 0 0; font: 14px var(--font-fell); color: var(--green); }
+/* The repeat-lookup nudge above Save: a soft brass panel. Plain text, not a live region. */
+.word-nudge { margin: 0; padding: 9px 12px; border: 1px solid rgba(201, 162, 74, 0.6); border-radius: var(--radius-md);
+  background: rgba(201, 162, 74, 0.22); font: 15px/1.45 var(--font-fell); color: var(--ink); }
+.word-nudge + .word-actions { margin-top: 10px; }
+/* "First looked up 26 Oct": small and muted, centred under Save. */
+.word-first-looked { margin: 8px 0 0; text-align: center; font: 13px var(--font-fell); color: var(--ink-soft); }
 .word-provenance { font: italic 13px var(--font-fell); color: var(--ink-soft); }
 .word-goto { margin: 0; padding: 10px 0; font-size: 14px; }
 /* "‹ know": back to the word whose chip opened this one. */
