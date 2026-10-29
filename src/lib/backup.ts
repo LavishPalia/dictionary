@@ -3,15 +3,16 @@
 // run without a browser; the menu does the downloading and the writing to localStorage.
 import type { MarginNote } from './types';
 import { isReviewRecord, type ReviewRecords } from './review';
+import { isHistoryWord, foldRecent, mergeHistory, type HistoryWord } from './history';
 import { relocateMarks, type MarkAnchors } from './marks';
 
 export const BACKUP_FORMAT = 1;
 export const LAST_BACKUP_KEY = 'panna_last_backup';
 
-/** Everything that goes into a backup, by localStorage key. */
+/** Everything that goes into a backup, by localStorage key. panna_recent_searches is only read, so old files still parse; history replaced it. */
 export const BACKUP_KEYS = [
   'panna_saved_words', 'panna_review', 'panna_bookmarks', 'panna_dog_ears', 'panna_marginalia',
-  'panna_mark_anchors', 'panna_settings', 'panna_recent_searches', 'panna_tours',
+  'panna_mark_anchors', 'panna_settings', 'panna_recent_searches', 'panna_tours', 'panna_history',
 ] as const;
 export type BackupKey = typeof BACKUP_KEYS[number];
 export type BackupData = Partial<Record<BackupKey, unknown>>;
@@ -84,6 +85,7 @@ export function parseBackup(text: string): { ok: true; backup: Backup; summary: 
     ['panna_settings', isObject],
     ['panna_recent_searches', isArray],
     ['panna_tours', isObject],
+    ['panna_history', (v) => isArray(v) && v.every(isHistoryWord)],
   ];
   for (const [key, valid] of checks) {
     if (d[key] !== undefined && !valid(d[key])) return { ok: false, error: 'This backup is damaged and can’t be restored.' };
@@ -152,7 +154,10 @@ export function restoreData(
     Object.assign(b, { panna_bookmarks: moved.ribbons, panna_dog_ears: moved.dogEars, panna_marginalia: moved.notes, panna_mark_anchors: moved.anchors });
   }
   if (mode === 'replace') {
-    return Object.fromEntries(BACKUP_KEYS.map((k) => [k, b[k] ?? (k === 'panna_review' || k === 'panna_settings' || k === 'panna_tours' ? {} : [])])) as BackupData;
+    const out = Object.fromEntries(BACKUP_KEYS.filter((k) => k !== 'panna_recent_searches' && k !== 'panna_history')
+      .map((k) => [k, b[k] ?? (k === 'panna_review' || k === 'panna_settings' || k === 'panna_tours' ? {} : [])])) as BackupData;
+    out.panna_history = b.panna_history ?? foldRecent(b.panna_recent_searches, Date.now());
+    return out;
   }
 
   const words = new Map<string, SavedWordLike>();
@@ -170,8 +175,7 @@ export function restoreData(
   for (const n of [...((current.panna_marginalia as MarginNote[]) ?? []), ...((b.panna_marginalia as MarginNote[]) ?? [])]) if (!notes.has(n.id)) notes.set(n.id, n);
   const curAnchors = current.panna_mark_anchors as MarkAnchors | undefined;
   const bAnchors = b.panna_mark_anchors as MarkAnchors | undefined;
-  const recent = [...((current.panna_recent_searches as Array<{ headword: string }>) ?? []), ...((b.panna_recent_searches as Array<{ headword: string }>) ?? [])]
-    .filter((r, i, all) => all.findIndex((x) => x.headword.toLowerCase() === r.headword.toLowerCase()) === i).slice(0, 8);
+  const historyOf = (d: BackupData) => (d.panna_history as HistoryWord[] | undefined) ?? foldRecent(d.panna_recent_searches, Date.now());
   return {
     panna_saved_words: [...words.values()],
     panna_review: review,
@@ -184,7 +188,7 @@ export function restoreData(
       dogEars: { ...(bAnchors?.dogEars ?? {}), ...(curAnchors?.dogEars ?? {}) },
     },
     panna_settings: current.panna_settings ?? b.panna_settings ?? {},
-    panna_recent_searches: recent,
+    panna_history: mergeHistory(historyOf(current), historyOf(b)),
     panna_tours: mergeTours(current.panna_tours, b.panna_tours),
   };
 }
