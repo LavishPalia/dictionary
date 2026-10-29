@@ -6,7 +6,7 @@ import { ScaledSpread } from '@/components/book/ScaledSpread';
 import { MobilePage } from '@/components/book/MobilePage';
 import { LookupBar, type LookupFill } from '@/components/search/LookupBar';
 import { WordDetailDrawer } from '@/components/modals/WordDetailDrawer';
-import { SavedScreen, type SavedPageKind, type SavedWord } from '@/components/saved/SavedScreen';
+import { SavedScreen, type SavedPageKind, type SavedTab, type SavedWord } from '@/components/saved/SavedScreen';
 import { ReviewScreen } from '@/components/review/ReviewScreen';
 import { TodayScreen } from '@/components/today/TodayScreen';
 import { answer, comesBackLabel, daysUntil, dueWords, loadRecords, loadReviewDays, newRecord, nextDue, saveRecords, saveReviewDays, SECONDS_PER_CARD, statusOf, streak, withReviewDay, type ReviewRecords } from '@/lib/review';
@@ -37,7 +37,7 @@ import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
-import { loadHistory, recentWords, recordLookup, saveHistory, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
+import { loadHistory, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -1014,6 +1014,22 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setHistory(saveHistory(touchWord(loadHistory(), word.normalized, Date.now())));
     return openWordCard(word.headword, null);
   };
+  // The ☆ on a History row: the same save as the card's button, with the full entry when it can be fetched.
+  const toggleSaveHistory = async (word: HistoryWord) => {
+    const saved = bookmarkedWords.find((w) => w.normalized === word.normalized);
+    if (saved) { handleToggleWordBookmark(saved); return; }
+    const found = await fetchWord(word.headword);
+    handleToggleWordBookmark(found?.entry.normalized === word.normalized
+      ? found.entry
+      : { normalized: word.normalized, headword: word.headword, meaning_hi: word.meaning_hi } as DictionaryEntry);
+  };
+  // Which tab Saved opens on; the request number lets "History ›" switch tabs while Saved is already open.
+  const [savedTab, setSavedTab] = useState<{ tab: SavedTab; n: number }>({ tab: 'words', n: 0 });
+  useEffect(() => { if (section !== 'saved') setSavedTab((t) => (t.tab === 'words' ? t : { tab: 'words', n: t.n })); }, [section]);
+  const openSaved = (tab: SavedTab) => {
+    setSavedTab((t) => ({ tab, n: t.n + 1 }));
+    goTo('saved');
+  };
 
   // Opened from the share sheet or an icon shortcut (src/app/manifest.ts): act on it once, and give the address back.
   useEffect(() => {
@@ -1158,7 +1174,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onSelectWord={handleSelectWord}
             onSelectRecent={handleSelectSavedWord}
             recent={searchRecents}
-            onOpenHistory={() => goTo('saved')}
+            onOpenHistory={() => openSaved('history')}
             onBrowseLetter={(letter) => { const page = meta.thumb_index[letter]; if (page) { showBookForSearch(); handleSelectLetter(letter, page); } }}
             totalEntries={meta.total_entries}
             online={offline.online}
@@ -1298,6 +1314,15 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onReview={() => goTo('review')}
           onHowItWorks={() => tours.startTour('review')}
           onOpenGuide={() => goTo('learn')}
+          history={history}
+          isSaved={(key) => bookmarkedWords.some((w) => w.normalized === key)}
+          onOpenHistoryWord={openFromHistory}
+          onToggleSaveHistory={toggleSaveHistory}
+          onRemoveHistory={(key) => setHistory(saveHistory(removeWord(loadHistory(), key)))}
+          onRestoreHistory={(list) => setHistory(saveHistory(mergeHistory(loadHistory(), list)))}
+          onClearHistory={() => setHistory(saveHistory([]))}
+          initialTab={savedTab.tab}
+          tabRequest={savedTab.n}
         />
       )}
 

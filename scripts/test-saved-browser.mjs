@@ -108,7 +108,7 @@ async function main() {
       await openSaved(sizeName);
       let s = await saved();
       check(`${sizeName}: Saved opens as a screen and the book is hidden`, Boolean(s) && !(await visible('.entry-text')));
-      check(`${sizeName}: tabs show counts`, s?.tabs.join('|') === 'Words · 3|Pages · 2|Notes · 1', s?.tabs);
+      check(`${sizeName}: tabs show counts`, s?.tabs.join('|') === 'Words · 3|Pages · 2|Notes · 1|History · 0', s?.tabs);
       check(`${sizeName}: words are grouped by when they were saved`, s?.groups.join('|') === 'Today|Yesterday|Earlier' && s.rows.join('|') === 'Camel|Ceremony|About', s);
       check(`${sizeName}: each word shows its Hindi meaning`, s?.text.includes('ऊँट') && s.text.includes('समारोह'));
       check(`${sizeName}: nothing overflows sideways`, await evaluate(`document.documentElement.scrollWidth <= innerWidth`));

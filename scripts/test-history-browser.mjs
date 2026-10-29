@@ -98,6 +98,8 @@ async function main() {
     const reset = (tours = quiet) => evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))}); true`);
     await send('Page.enable');
     await send('Runtime.enable');
+    // Headless Edge can lose window focus, and then focus events never fire (the search box's panel opens on focus).
+    await send('Emulation.setFocusEmulationEnabled', { enabled: true });
     await send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_SPEECH });
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
@@ -226,6 +228,130 @@ async function main() {
       const old = await evaluate(`localStorage.getItem('panna_recent_searches')`);
       check(`${sizeName}: lookups after the migration go to history`, h?.[0]?.normalized === 'heal' && h.some((x) => x.normalized === 'camel' && x.source === 'search'), h?.slice(0, 2));
       check(`${sizeName}: the old recents key is no longer written`, (old === null || old === SEEDED) && !String(old).toLowerCase().includes('camel'), old);
+
+      // ── The History tab in Saved ──
+      await reset();
+      // Seeded in the page so "today" and "yesterday" use the browser's own clock and time zone.
+      await evaluate(`(() => {
+        const now = Date.now(); const d = new Date(); const today = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const word = (normalized, headword, meaning_hi, at, count, source, page = null) =>
+          ({ normalized, headword, meaning_hi, first_at: at - 86400000 * 2, last_at: at, count, lookups: [at], source, page });
+        localStorage.setItem('panna_history', JSON.stringify([
+          word('camel', 'Camel', 'ऊँट', now - 60000, 3, 'share'),
+          word('candid', 'candid', 'स्पष्टवादी', now - 120000, 1, 'voice'),
+          word('ceremony', 'Ceremony', 'समारोह', today - 3600000, 1, 'search'),
+          word('about', 'About', 'के बारे में', today - 10 * 86400000, 2, 'book', 3),
+        ]));
+        return true;
+      })()`);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      const reviewBtn = size.mobile ? '#nav-review-btn' : '#open-review-btn';
+      const tabHist = () => evaluate(`(() => {
+        const s = document.querySelector('#saved-screen'); if (!s) return null;
+        return {
+          groups: [...s.querySelectorAll('.history-group-name')].map((g) => g.textContent),
+          rows: [...s.querySelectorAll('.history-row')].map((r) => ({ hw: r.querySelector('.history-hw')?.textContent, text: r.textContent, star: r.querySelector('.history-star')?.getAttribute('aria-pressed') ?? null, label: r.querySelector('.history-star')?.getAttribute('aria-label') ?? null })),
+          summary: s.querySelector('.saved-summary')?.textContent,
+          historyTab: document.querySelector('#saved-tab-history')?.getAttribute('aria-checked'),
+        };
+      })()`);
+      // "History ›" in the search box opens Saved on the History tab.
+      const openRecents = () => evaluate(`(() => { const input = document.querySelector('#lookup-input'); if (!input) return false; const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ''); input.dispatchEvent(new Event('input', { bubbles: true })); input.blur(); input.focus(); return true; })()`);
+      // Focus can land before the page is ready for it: try a few times.
+      let linkShown = false;
+      for (let i = 0; i < 5 && !linkShown; i++) { await openRecents(); linkShown = await waitFor(`Boolean(document.querySelector('#lookup-history-link'))`, 10); }
+      check(`${sizeName}: the search box shows "History ›"`, linkShown);
+      await click('#lookup-history-link');
+      await waitFor(`Boolean(document.querySelector('#saved-screen .history-row'))`, 30);
+      let t = await tabHist();
+      check(`${sizeName}: "History ›" opens Saved on the History tab`, t?.historyTab === 'true', t);
+      check(`${sizeName}: History tab lists lookups newest first, grouped by day`, t?.groups.join('|') === 'Today|Yesterday|Earlier' && t.rows.map((r) => r.hw).join('|') === 'Camel|candid|Ceremony|About', t);
+      check(`${sizeName}: the summary counts lookups`, /\b4 looked up\b/.test(t?.summary ?? ''), t?.summary);
+      const camelRow = t?.rows[0];
+      check(`${sizeName}: rows show Hindi, source and time`, camelRow?.text.includes('ऊँट') && camelRow.text.includes('shared') && /\d{1,2}:\d{2} (am|pm)/.test(camelRow.text)
+        && t.rows[3].text.includes('on page 3'), t?.rows);
+      check(`${sizeName}: 3× badge`, camelRow?.text.includes('3×') && !t.rows[1].text.includes('×') && !t.rows[3].text.includes('×'), t?.rows);
+      const starBox = await evaluate(`(() => { const r = document.querySelector('.history-star')?.getBoundingClientRect(); return r ? { w: r.width, h: r.height } : null; })()`);
+      check(`${sizeName}: stars are 44px buttons labelled "Save {headword}"`, starBox && starBox.w >= 43.5 && starBox.h >= 43.5 && t.rows[1].label === 'Save candid' && t.rows[1].star === 'false', { starBox, row: t?.rows[1] });
+
+      // ── One-tap save ──
+      await evaluate(`[...document.querySelectorAll('.history-row')].find((r) => r.querySelector('.history-hw')?.textContent === 'candid').querySelector('.history-star').click(); true`);
+      await waitFor(`JSON.parse(localStorage.getItem('panna_saved_words') || '[]').some((w) => w.normalized === 'candid')`, 40);
+      await sleep(200);
+      t = await tabHist();
+      const savedCandid = await evaluate(`JSON.parse(localStorage.getItem('panna_saved_words') || '[]').find((w) => w.normalized === 'candid') ?? null`);
+      const badge = await evaluate(`document.querySelector('${reviewBtn} .ui-badge')?.textContent ?? null`);
+      check(`${sizeName}: the star saves into Review`, Boolean(savedCandid?.definition_en) && t?.rows[1].star === 'true' && t.rows[1].label === 'Remove candid from saved' && badge === '1', { savedCandid, row: t?.rows[1], badge });
+      await click('#history-filter-unsaved');
+      await sleep(200);
+      t = await tabHist();
+      const chips = await evaluate(`[...document.querySelectorAll('#saved-screen .history-filter [role="radio"]')].map((b) => b.textContent)`);
+      check(`${sizeName}: Not saved filter`, t?.rows.map((r) => r.hw).join('|') === 'Camel|Ceremony|About' && chips?.join('|') === 'All · 4|Not saved · 3', { rows: t?.rows.map((r) => r.hw), chips });
+      await evaluate(`[...document.querySelectorAll('#saved-screen .history-filter [role="radio"]')].find((b) => b.textContent.startsWith('All')).click(); true`);
+      await sleep(200);
+
+      // ── Opening a row: not a lookup, but it moves to the top ──
+      const ceremonyBefore = await find('ceremony');
+      await evaluate(`[...document.querySelectorAll('.history-row')].find((r) => r.querySelector('.history-hw')?.textContent === 'Ceremony').querySelector('.history-open').click(); true`);
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`, 40);
+      h = await history();
+      check(`${sizeName}: opening a row moves it to the top without counting`, (await title()) === 'Ceremony' && h?.[0]?.normalized === 'ceremony' && h[0].count === ceremonyBefore.count
+        && JSON.stringify(h[0].lookups) === JSON.stringify(ceremonyBefore.lookups) && h[0].last_at > ceremonyBefore.last_at, { first: h?.[0], ceremonyBefore });
+      await closeCard();
+      t = await tabHist();
+      check(`${sizeName}: the opened row is listed first`, t?.rows[0]?.hw === 'Ceremony' && t.groups[0] === 'Today', t);
+
+      // ── Edit, Clear and Undo ──
+      await click('#history-edit-btn');
+      await sleep(200);
+      await evaluate(`[...document.querySelectorAll('.history-row')].find((r) => r.querySelector('.history-hw')?.textContent === 'About').querySelector('.history-remove').click(); true`);
+      await sleep(300);
+      const afterRemove = (await history())?.map((x) => x.normalized);
+      const toastText = await evaluate(`document.querySelector('.saved-toast')?.innerText ?? null`);
+      t = await tabHist();
+      const removedOk = !afterRemove?.includes('about') && !t?.rows.some((r) => r.hw === 'About') && toastText?.includes('Undo');
+      await click('.saved-undo');
+      await sleep(300);
+      check(`${sizeName}: Edit removes one, with Undo`, removedOk && (await history())?.map((x) => x.normalized).join('|') === 'ceremony|camel|candid|about', { afterRemove, toastText, after: (await history())?.map((x) => x.normalized) });
+      const beforeClear = (await history())?.map((x) => x.normalized).join('|');
+      await click('#history-clear-btn');
+      await sleep(300);
+      const cleared = await history();
+      const emptyShown = await evaluate(`Boolean(document.querySelector('#history-empty'))`);
+      await click('.saved-undo');
+      await sleep(300);
+      check(`${sizeName}: Clear history, with Undo`, Array.isArray(cleared) && cleared.length === 0 && emptyShown && (await history())?.map((x) => x.normalized).join('|') === beforeClear
+        && (await tabHist())?.rows.length === 4, { cleared, emptyShown, after: (await history())?.map((x) => x.normalized), beforeClear });
+      for (let i = 0; i < 5; i++) { await openRecents(); if (await waitFor(`Boolean(document.querySelector('#lookup-panel .lookup-recent-word'))`, 10)) break; }
+      const recentBeforeClear = await evaluate(`document.querySelectorAll('#lookup-panel .lookup-recent-word').length`);
+      await evaluate(`document.activeElement?.blur(); true`);
+      await sleep(300);
+      await click('#history-edit-btn'); // clearing left Edit mode
+      await sleep(200);
+      await click('#history-clear-btn');
+      await sleep(300);
+      const inputThere = await openRecents();
+      await sleep(500);
+      const recentAfterClear = await evaluate(`document.querySelectorAll('#lookup-panel .lookup-recent-word').length`);
+      check(`${sizeName}: Clear also empties search box recents`, inputThere && recentBeforeClear > 0 && recentAfterClear === 0 && (await history())?.length === 0, { recentBeforeClear, recentAfterClear });
+      await evaluate(`document.activeElement?.blur(); true`);
+      check(`${sizeName}: empty state copy`, await evaluate(`document.querySelector('#history-empty')?.textContent`) === 'Words you look up appear here, so you can come back to them, and save the ones worth learning.',
+        await evaluate(`document.querySelector('#history-empty')?.textContent ?? null`));
+
+      // Saved opened any other way starts on Words.
+      await click(size.mobile ? '#nav-book-btn' : '#close-saved-btn');
+      await sleep(500);
+      await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
+      await sleep(500);
+      check(`${sizeName}: Saved opened from the nav starts on Words`, await evaluate(`document.querySelector('#saved-screen [role="radio"][aria-checked="true"]')?.textContent.startsWith('Words')`));
+
+      if (size.mobile) {
+        await send('Emulation.setDeviceMetricsOverride', { width: 360, height: 780, deviceScaleFactor: 1, mobile: true });
+        await sleep(400);
+        const fit = await evaluate(`(() => { const seg = document.querySelector('#saved-screen .saved-tabs .ui-seg'); const btns = [...seg.querySelectorAll('button')];
+          return { seg: [seg.scrollWidth, seg.clientWidth], over: btns.filter((b) => b.scrollWidth > b.clientWidth).map((b) => b.textContent), page: document.documentElement.scrollWidth <= innerWidth }; })()`);
+        check('phone: the four tabs fit at 360 px', fit.seg[0] <= fit.seg[1] && fit.over.length === 0 && fit.page, fit);
+      }
     }
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
