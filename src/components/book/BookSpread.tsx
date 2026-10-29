@@ -24,6 +24,7 @@ import { SilkRibbon } from './SilkRibbon';
 import { DogEar } from './DogEar';
 import { Marginalia } from './Marginalia';
 import { soundEngine } from '@/lib/audio';
+import { InkLines } from './InkLines';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Types
@@ -56,6 +57,8 @@ interface BookSpreadProps {
   onSelectLetter: (letter: string, pageNum: number) => void;
   onPrevPage: () => void;
   onNextPage: () => void;
+  /** A spread being fetched (slow connection): faint ink lines show over both pages until it arrives. */
+  loadingPage?: number | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,6 +69,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
   rightPage,
   targetLeftPage = null,
   targetRightPage = null,
+  loadingPage = null,
   highlightedWord,
   activeLetter,
   thumbMap,
@@ -165,6 +169,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         perspectiveOrigin: '50% 42%',
       }}
     >
+      {loadingPage !== null && <InkLines page={loadingPage} pages={2} columns={2} />}
       {/* ================================================================
           BASE LAYER — the resting book spread (always visible underneath)
           ================================================================ */}
