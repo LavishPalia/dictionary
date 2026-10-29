@@ -1,6 +1,8 @@
 // Panna's service worker: the app keeps working without a connection.
 //
 //   App files (/_next/static, fonts, icons)   cache first: their names change whenever their content does
+//   The manifest                              network first: its name never changes, and Chrome rebuilds the
+//                                             installed app (share target, shortcuts) from what it is given
 //   Book pages (/api/page/N?v=<version>)      cache first: a rebuilt book has a new version, so new URLs
 //   Other API calls                           network first, falling back to the last copy
 //   Search, word, sentence look-ups, offline  answered from the book pages in the cache (all of them once
@@ -101,6 +103,7 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') { event.respondWith(page(request)); return; }
   const name = cacheFor(url);
+  if (url.pathname === '/manifest.webmanifest') { event.respondWith(manifest(request)); return; }
   if (name === STATIC || name === BOOK) { event.respondWith(cacheFirst(name, request)); return; }
   if (name === DATA) { event.respondWith(networkFirst(request, url)); return; }
 });
@@ -111,6 +114,18 @@ async function cacheFirst(name, request) {
   const res = await fetch(request);
   if (res.ok) await put(name, request, res.clone());
   return res;
+}
+
+async function manifest(request) {
+  try {
+    const res = await fetch(request);
+    if (res.ok) await put(STATIC, request, res.clone());
+    return res;
+  } catch (error) {
+    const hit = await caches.match(request, { cacheName: STATIC });
+    if (hit) return hit;
+    throw error;
+  }
 }
 
 async function networkFirst(request, url) {
