@@ -21,4 +21,6 @@
 .today-learn-btn:hover .today-mid { color: var(--crimson); }
 .today-learn-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; border-radius: var(--radius-md); }
 .today-learn-link { align-self: center; margin: 0; }
+/* "2 words looked up today · 1 not saved ›": opens Saved → History. */
+.today-lookups { align-self: flex-start; display: inline-flex; align-items: center; min-height: var(--tap); margin: -6px 2px; text-align: left; font: 15px var(--font-fell); }
 .today-actions { display: flex; gap: var(--space-2); margin-top: 12px; }

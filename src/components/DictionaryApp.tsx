@@ -37,7 +37,7 @@ import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
-import { loadHistory, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
+import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -447,6 +447,41 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     if (initialEntry) recordEntry(initialEntry, 'other');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The repeat-lookup nudge, decided once each time the card shows a word: only when that showing was a lookup that
+  // counted (the 3rd in 30 days of an unsaved word, never nudged before). It is marked nudged as it shows. Placed after
+  // the /word/ link's recording above, so a link's own lookup is seen.
+  const [nudge, setNudge] = useState<{ for: string; times: number; span: 'week' | 'month' } | null>(null);
+  const nudgeDecidedRef = useRef<DictionaryEntry | null>(null);
+  useEffect(() => {
+    if (!savedLoaded) return; // whether the word is saved isn't known yet
+    const entry = showWordDrawer ? activeWordEntry : null;
+    if (entry === nudgeDecidedRef.current) return;
+    nudgeDecidedRef.current = entry;
+    const last = lastLookupRef.current;
+    if (!entry || !last?.counted || last.normalized !== entry.normalized) { setNudge(null); return; }
+    const list = loadHistory();
+    const saved = bookmarkedWords.some((w) => w.normalized === entry.normalized);
+    const due = shouldNudge(list.find((w) => w.normalized === entry.normalized), saved, Date.now());
+    setNudge(due ? { for: entry.normalized, ...due } : null);
+    if (due) setHistory(saveHistory(markNudged(list, entry.normalized)));
+  // Decided when the word shown changes, not when saved words do (saving hides it in the card instead).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showWordDrawer, activeWordEntry, savedLoaded]);
+  // "First looked up 26 Oct": only for a word with history from an earlier day.
+  const firstLookedUp = useMemo(() => {
+    if (!activeWordEntry) return null;
+    const first = history.find((w) => w.normalized === activeWordEntry.normalized)?.first_at;
+    const d = new Date();
+    return first !== undefined && first < new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() ? first : null;
+  }, [history, activeWordEntry]);
+  // Today's line: words with a lookup since midnight, and how many of them are not saved.
+  const lookedUpToday = useMemo(() => {
+    const d = new Date();
+    const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const today = history.filter((w) => w.lookups.some((t) => t >= midnight));
+    return { total: today.length, unsaved: today.filter((w) => !bookmarkedWords.some((b) => b.normalized === w.normalized)).length };
+  }, [history, bookmarkedWords]);
 
   const handleFlipComplete = useCallback(() => {
     setCurrentPage(targetPage);
@@ -1354,6 +1389,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onDismissWelcome={tours.dismissWelcome}
           guideOpened={tours.loaded ? tours.guideOpened : null}
           onOpenGuide={() => goTo('learn')}
+          lookedUpToday={lookedUpToday}
+          onOpenHistory={() => openSaved('history')}
         />
       )}
 
@@ -1400,6 +1437,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         isBookmarked={activeWordEntry ? bookmarkedWords.some(w => w.normalized === activeWordEntry.normalized) : false}
         onToggleBookmark={handleToggleWordBookmark}
         reviewNote={reviewNoteFor(activeWordEntry)}
+        nudge={nudge && activeWordEntry?.normalized === nudge.for ? { times: nudge.times, span: nudge.span } : null}
+        firstLookedUp={firstLookedUp}
         dataVersion={meta.data_version}
         heard={heardShown}
         onPickHeard={handlePickHeard}

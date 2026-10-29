@@ -375,6 +375,106 @@ async function main() {
       await sleep(500);
       check(`${sizeName}: Saved opened from the nav starts on Words`, await evaluate(`document.querySelector('#saved-screen [role="radio"][aria-checked="true"]')?.textContent.startsWith('Words')`));
 
+      // ── The nudge: the 3rd lookup in a week (or a month) of an unsaved word, once ──
+      const NUDGE = (span) => `You've looked this up 3 times this ${span}. Save it, and Review will help it stick.`;
+      const nudgeText = () => evaluate(`document.querySelector('#word-nudge')?.textContent ?? null`);
+      const firstLooked = () => evaluate(`document.querySelector('#word-first-looked')?.textContent ?? null`);
+      const speak = async (word) => {
+        await evaluate(`window.__fakeSpeech = ${JSON.stringify({ transcripts: [word] })}; true`);
+        await click('#voice-btn');
+        return waitFor(`document.querySelector('#word-sheet-title')?.textContent?.toLowerCase() === ${JSON.stringify(word)}`, 40);
+      };
+      // Seeded in the page, so "days ago" uses the browser's clock.
+      const seedWord = (normalized, headword, meaning_hi, days, firstDays = days[0]) => evaluate(`(() => {
+        const now = Date.now(); const lookups = ${JSON.stringify(days)}.map((d) => now - d * 86400000);
+        const list = JSON.parse(localStorage.getItem('panna_history') || '[]').filter((w) => w.normalized !== ${JSON.stringify(normalized)});
+        list.unshift({ normalized: ${JSON.stringify(normalized)}, headword: ${JSON.stringify(headword)}, meaning_hi: ${JSON.stringify(meaning_hi)},
+          first_at: now - ${firstDays} * 86400000, last_at: Math.max(...lookups), count: lookups.length, lookups, source: 'search', page: null });
+        localStorage.setItem('panna_history', JSON.stringify(list)); return true; })()`);
+      await reset();
+      await seedWord('camel', 'Camel', 'ऊँट', [2, 1], 3);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await type('camel');
+      await evaluate(`[...document.querySelectorAll('#lookup-panel [role="option"]')].find((o) => o.querySelector('.lookup-hw')?.textContent === 'Camel').click(); true`);
+      await sleep(1500);
+      await evaluate(`document.activeElement?.blur(); [...document.querySelectorAll('.entry-text')].find((p) => p.textContent.startsWith('Camel') && p.style.cursor === 'pointer' && p.getBoundingClientRect().width > 0)?.click(); true`);
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Camel'`, 40);
+      const shown = await nudgeText();
+      const nudgeAbove = await evaluate(`(() => { const n = document.querySelector('#word-nudge'), s = document.querySelector('#save-word-btn'); return Boolean(n && s && n.getBoundingClientRect().bottom <= s.getBoundingClientRect().top); })()`);
+      check(`${sizeName}: the 3rd lookup in a week shows the nudge above Save`, shown === NUDGE('week') && nudgeAbove, { shown, nudgeAbove });
+      check(`${sizeName}: the nudge is marked as shown at once`, (await find('camel'))?.nudged === true, await find('camel'));
+      const expectFirst = await evaluate(`'First looked up ' + new Date(Date.now() - 3 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })`);
+      const firstShown = await firstLooked();
+      const firstBelow = await evaluate(`(() => { const f = document.querySelector('#word-first-looked'), s = document.querySelector('#save-word-btn'); return Boolean(f && s && f.getBoundingClientRect().top >= s.getBoundingClientRect().bottom); })()`);
+      check(`${sizeName}: first looked up line under Save`, firstShown === expectFirst && firstBelow, { firstShown, expectFirst, firstBelow });
+      await closeCard();
+      await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
+      await sleep(500);
+      await click('#saved-tab-history');
+      await waitFor(`Boolean(document.querySelector('.history-row'))`, 20);
+      await evaluate(`[...document.querySelectorAll('.history-row')].find((r) => r.querySelector('.history-hw')?.textContent === 'Camel').querySelector('.history-open').click(); true`);
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Camel'`, 40);
+      check(`${sizeName}: the nudge shows once (not again from History)`, (await nudgeText()) === null && (await find('camel'))?.nudged === true, { nudge: await nudgeText(), w: await find('camel') });
+      await closeCard();
+
+      // Opened from History, a word due a nudge gets none: the open didn't count. (Saved words never get one.)
+      await seedWord('ceremony', 'Ceremony', 'समारोह', [3, 2, 1]);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await click(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
+      await sleep(500);
+      await click('#saved-tab-history');
+      await waitFor(`Boolean(document.querySelector('.history-row'))`, 20);
+      await evaluate(`[...document.querySelectorAll('.history-row')].find((r) => r.querySelector('.history-hw')?.textContent === 'Ceremony').querySelector('.history-open').click(); true`);
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'Ceremony'`, 40);
+      check(`${sizeName}: no nudge when opened from History or Saved`, (await title()) === 'Ceremony' && (await nudgeText()) === null && !(await find('ceremony'))?.nudged, { nudge: await nudgeText(), w: await find('ceremony') });
+      await closeCard();
+      await click(size.mobile ? '#nav-book-btn' : '#close-saved-btn');
+      await sleep(500);
+
+      // Month wording, and saving hides the nudge.
+      await seedWord('candid', 'candid', 'स्पष्टवादी', [10, 1]);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await speak('candid');
+      await sleep(300);
+      const monthShown = await nudgeText();
+      check(`${sizeName}: month wording`, monthShown === NUDGE('month'), monthShown);
+      await click('#save-word-btn');
+      await sleep(300);
+      check(`${sizeName}: saving hides the nudge`, monthShown !== null && (await nudgeText()) === null && await evaluate(`document.querySelector('#save-word-btn').getAttribute('aria-pressed') === 'true'`), await nudgeText());
+      await closeCard();
+
+      // A saved word is never nudged.
+      await seedWord('candid', 'candid', 'स्पष्टवादी', [3, 2]);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await speak('candid');
+      await sleep(300);
+      const savedNudge = await nudgeText();
+      check(`${sizeName}: no nudge for a saved word`, savedNudge === null && (await find('candid'))?.lookups.length === 3 && !(await find('candid'))?.nudged, { savedNudge, w: await find('candid') });
+      await closeCard();
+
+      // ── Today: how many words were looked up today ──
+      await reset();
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await speak('candid');
+      await sleep(300);
+      check(`${sizeName}: a word first looked up today shows no first-looked-up line`, (await title()) === 'candid' && (await firstLooked()) === null, await firstLooked());
+      await click('#save-word-btn');
+      await sleep(300);
+      await closeCard();
+      await speak('calm');
+      await sleep(300);
+      await closeCard();
+      await click(size.mobile ? '#nav-today-btn' : '#open-today-btn');
+      await waitFor(`Boolean(document.querySelector('#today-lookups'))`, 30);
+      const todayLine = await evaluate(`document.querySelector('#today-lookups')?.textContent ?? null`);
+      const todayBox = await evaluate(`(() => { const r = document.querySelector('#today-lookups')?.getBoundingClientRect(); return r ? r.height : 0; })()`);
+      check(`${sizeName}: Today line`, todayLine === '2 words looked up today · 1 not saved ›' && todayBox >= 43.5, { todayLine, todayBox });
+      await click('#today-lookups');
+      await waitFor(`Boolean(document.querySelector('#saved-screen .history-row'))`, 30);
+      check(`${sizeName}: the Today line opens Saved on the History tab`, await evaluate(`document.querySelector('#saved-tab-history')?.getAttribute('aria-checked') === 'true'`));
+      await click(size.mobile ? '#nav-book-btn' : '#close-saved-btn');
+      await sleep(500);
+
       // ── Offline: a word whose page isn't saved can be neither saved nor opened ──
       await reset();
       await evaluate(`(() => { const now = Date.now(); const w = (x, at) => ({ ...x, first_at: at, last_at: at, count: 1, lookups: [at], source: 'search', page: null });
