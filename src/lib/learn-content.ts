@@ -7,7 +7,7 @@ export type LearnAction = 'review' | 'book' | 'continue' | 'tour-word' | 'tour-r
 
 export interface LearnText { en: string; hi: string }
 
-type LearnItem = LearnText & { action?: LearnAction; actionLabel?: string };
+type LearnItem = LearnText & { action?: LearnAction; actionLabel?: string; hideUnlessAvailable?: boolean };
 
 // Button labels, from the Design's action table.
 const OPEN_REVIEW = { action: 'review', actionLabel: 'Open Review' } as const;
@@ -78,7 +78,7 @@ export const LEARN_SECTIONS: Array<{ id: 'method' | 'day' | 'tips' | 'mistakes' 
       { en: 'Install Panna, so it opens like any other app.', hi: 'पन्ना इंस्टॉल करें, ताकि यह बाकी ऐप की तरह खुले।', ...INSTALL },
       { en: 'Save the book for offline, to study without internet.', hi: 'किताब ऑफ़लाइन सहेजें, ताकि बिना इंटरनेट भी पढ़ सकें।', ...OFFLINE },
       { en: 'Back up your words once a month.', hi: 'महीने में एक बार अपने शब्दों का बैकअप लें।', ...BACKUP },
-      { en: 'Look up words from any app with a Shortcut.', hi: 'शॉर्टकट से किसी भी ऐप में शब्द देखें।', ...IOS_SHORTCUT },
+      { en: 'Look up words from any app with a Shortcut.', hi: 'शॉर्टकट से किसी भी ऐप में शब्द देखें।', ...IOS_SHORTCUT, hideUnlessAvailable: true },
     ],
   },
 ];

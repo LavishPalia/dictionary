@@ -59,7 +59,7 @@ export function LearnScreen(props: LearnScreenProps) {
             <p className="learn-hi learn-h2-hi" lang="hi">{section.title.hi}</p>
             {/* role="list": list-style:none drops list semantics in Safari/VoiceOver. */}
             <List className="learn-list" role="list">
-              {section.items.map((item) => (
+              {section.items.filter((item) => !item.hideUnlessAvailable || can(item.action)).map((item) => (
                 <li key={item.en} className="learn-item">
                   <p className="learn-en">{item.en}</p>
                   <p className="learn-hi" lang="hi">{item.hi}</p>

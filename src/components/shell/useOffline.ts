@@ -1,7 +1,7 @@
 'use client';
 
-import { IOS_DEVICE } from '@/lib/ios-shortcut';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { IOS_DEVICE } from '@/lib/ios-shortcut';
 import { formatBytes, pageUrl, registerServiceWorker, saveBook, savedBook, type SavedBook } from '@/lib/offline';
 
 interface InstallPromptEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }

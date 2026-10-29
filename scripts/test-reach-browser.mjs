@@ -464,20 +464,27 @@ async function main() {
         await waitFor(`Boolean(document.querySelector('#learn-last'))`);
         return evaluate(`[...document.querySelectorAll('#learn-last button')].filter((b) => b.textContent.trim() === 'Look up from any app').length`);
       };
+      const guideTip = () => evaluate(`(() => { const t = document.querySelector('#learn-last').innerText; return t.includes('Look up words from any app with a Shortcut.') || t.includes('शॉर्टकट से किसी भी ऐप में शब्द देखें।'); })()`);
 
       check('default browser: no iPhone Shortcut row in the menu', (await menuRow()) === null);
+      await guideButton();
+      check('default browser: the study guide has neither the Shortcut tip nor its button', !(await guideTip()) && (await guideButton()) === 0);
       await send('Emulation.setUserAgentOverride', { userAgent: IPHONE });
       check('iPhone without a Shortcut link: no row in the menu', (await menuRow()) === null);
-      check('iPhone without a Shortcut link: no button in the study guide', (await guideButton()) === 0);
+      check('iPhone without a Shortcut link: no button and no tip in the study guide', (await guideButton()) === 0 && !(await guideTip()));
       const { identifier: link } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__pannaIosShortcutUrl = ${JSON.stringify(LINK)};` });
       const row = await menuRow();
       check('iPhone with a Shortcut link: the row is a link to it', row?.tag === 'A' && row.href === LINK && row.text.includes('Look up from any app') && row.text.includes('Add a Shortcut to look up words from WhatsApp, Safari or Siri.'), row);
-      check('iPhone with a Shortcut link: the study guide has the button', (await guideButton()) === 1);
+      check('iPhone with a Shortcut link: the study guide has the button and the tip', (await guideButton()) === 1 && (await guideTip()));
       check('iPhone with a Shortcut link: the Hindi tip is marked lang="hi"', await evaluate(`[...document.querySelectorAll('#learn-last [lang="hi"]')].some((e) => e.textContent.includes('शॉर्टकट से किसी भी ऐप में शब्द देखें।'))`));
       await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: link });
       await send('Emulation.setUserAgentOverride', { userAgent: '' });
       await send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__pannaIosShortcutUrl = ${JSON.stringify(LINK)};` });
       check('not an iPhone, even with a link: no row', (await menuRow()) === null);
+      check('not an iPhone, even with a link: no tip or button in the study guide', (await guideButton()) === 0 && !(await guideTip()));
+      await send('Emulation.setUserAgentOverride', { userAgent: IPHONE });
+      await send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__pannaIosShortcutUrl = 'javascript:alert(1)';` });
+      check('iPhone with a javascript: link: no row (https only)', (await menuRow()) === null);
     }
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }

@@ -11,5 +11,6 @@ export const IOS_DEVICE = /iPhone|iPad|iPod/;
 export function iosShortcutLink(userAgent: string): string {
   if (!IOS_DEVICE.test(userAgent)) return '';
   const override = typeof window !== 'undefined' ? (window as Window & { __pannaIosShortcutUrl?: string }).__pannaIosShortcutUrl : undefined;
-  return override ?? IOS_SHORTCUT_URL;
+  const link = override ?? IOS_SHORTCUT_URL;
+  return link.startsWith('https://') ? link : '';
 }
