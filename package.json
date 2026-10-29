@@ -41,6 +41,7 @@
     "test:learn": "tsx scripts/test-learn.ts",
     "test:marks": "tsx scripts/test-marks.ts",
     "test:backup": "tsx scripts/test-backup.ts",
+    "test:letters": "tsx scripts/test-letters.ts",
     "test:history": "tsx scripts/test-history.ts",
     "test:quiz": "tsx scripts/test-quiz.ts",
     "test:related": "tsx scripts/test-related.ts",
