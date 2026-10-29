@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DictionaryEntry } from '@/lib/types';
 import { describePos } from '@/lib/pos';
 import { flyToSaved } from '@/lib/motion';
@@ -21,6 +21,8 @@ interface SentenceSheetProps {
   onOpenCard: (entry: DictionaryEntry) => void;
   /** No book words at all: close this sheet and put the word in the search box. */
   onSearch: (word: string) => void;
+  /** A word's meaning is now showing (the pre-selected word, then each word tapped): only that word, never the text. */
+  onShowWord?: (entry: DictionaryEntry) => void;
 }
 
 // What /api/sentence answered: an analysis, a shared text that turned out to be no text, or no answer at all.
@@ -29,7 +31,7 @@ type Loaded = { kind: 'analysis'; analysis: SentenceAnalysis } | { kind: 'none' 
 // Share to Panna, for a shared sentence: the sentence on a paper card with every book word tappable, and the
 // meaning of the chosen word underneath (the rarest is chosen first). All entries come in the one response, so
 // tapping another word needs no fetch.
-export function SentenceSheet({ open, text, onClose, isSaved, onToggleSave, onOpenCard, onSearch }: SentenceSheetProps) {
+export function SentenceSheet({ open, text, onClose, isSaved, onToggleSave, onOpenCard, onSearch, onShowWord }: SentenceSheetProps) {
   const [loaded, setLoaded] = useState<{ text: string; result: Loaded } | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [justSaved, setJustSaved] = useState(false);
@@ -62,6 +64,9 @@ export function SentenceSheet({ open, text, onClose, isSaved, onToggleSave, onOp
   const chosenHeadword = headwordAt(chosen);
   const entry = analysis && chosenHeadword ? analysis.entries[chosenHeadword] ?? null : null;
   useEffect(() => setJustSaved(false), [entry?.normalized]);
+  const onShowWordRef = useRef(onShowWord);
+  onShowWordRef.current = onShowWord;
+  useEffect(() => { if (entry) onShowWordRef.current?.(entry); }, [entry]);
   const anyBookWord = Boolean(analysis?.tokens.some((t) => t.headword && analysis.entries[t.headword]));
   const shared = text ? cleanShared({ text }) : null;
   const shownText = shared?.kind === 'text' ? shared.text : '';

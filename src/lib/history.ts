@@ -156,3 +156,17 @@ export function sourceLabel(word: HistoryWord): string {
     default: return '';
   }
 }
+
+/** A search-box recent: a history word seen from the search box. Its page may be from an older build of the book, so
+ *  callers look the headword up again rather than trusting it. */
+export interface RecentWord {
+  headword: string;
+  page: number;
+}
+
+export const RECENT_MAX = 8;
+
+/** The search box's recent words: the newest history words, whatever their source. */
+export function recentWords(list: HistoryWord[]): RecentWord[] {
+  return list.slice(0, RECENT_MAX).map((w) => ({ headword: w.headword, page: w.page ?? 1 }));
+}

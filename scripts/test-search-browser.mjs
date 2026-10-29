@@ -91,7 +91,7 @@ async function main() {
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
-      await evaluate(`localStorage.removeItem('panna_recent_searches'); true`);
+      await evaluate(`localStorage.removeItem('panna_recent_searches'); localStorage.setItem('panna_history', '[]'); true`);
 
       await type('छोड़');
       let p = await panel();
@@ -129,7 +129,7 @@ async function main() {
       await key('Enter', 'Enter', '\r');
       await sleep(2000);
       check(`${sizeName}: Enter opens the chosen word`, await evaluate(`location.pathname === '/word/' + encodeURIComponent(${JSON.stringify(activeText)})`), await evaluate('location.pathname'));
-      check(`${sizeName}: the word is remembered as a recent search`, await evaluate(`JSON.parse(localStorage.getItem('panna_recent_searches') || '[]')[0]?.headword === ${JSON.stringify(activeText)}`));
+      check(`${sizeName}: the word is remembered in lookup history`, await evaluate(`JSON.parse(localStorage.getItem('panna_history') || '[]')[0]?.headword === ${JSON.stringify(activeText)}`));
 
       await evaluate(`document.querySelector('.lookup-clear').click(); true`);
       await sleep(300);

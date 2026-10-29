@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { SearchMatch, SearchResult } from '@/lib/book-data';
 import { splitMatch } from '@/lib/highlight';
-import { clearRecent, loadRecent, rememberRecent, type RecentWord } from '@/lib/recent';
+import type { RecentWord } from '@/lib/history';
 import { NoEntryCard } from './NoEntryCard';
 import { VoiceSearch } from './VoiceSearch';
 import { SearchIcon } from '@/components/ui/icons';
@@ -14,9 +14,13 @@ import { Chip } from '@/components/ui';
 export interface LookupFill { text: string; show?: 'list' | 'closest' }
 
 interface LookupBarProps {
-  onSelectWord: (headword: string, pageNumber: number) => void;
+  onSelectWord: (headword: string, pageNumber: number, meaning_hi?: string) => void;
   /** Recent words are looked up again: their stored page may be from an older build of the book. */
   onSelectRecent: (headword: string, savedPage: number) => void;
+  /** The newest words from lookup history (at most 8), shown while the box is empty. */
+  recent: RecentWord[];
+  /** "History ›": opens the full lookup history. */
+  onOpenHistory: () => void;
   onBrowseLetter: (letter: string) => void;
   totalEntries: number;
   online: boolean;
@@ -58,7 +62,7 @@ function snippet(text: string, query: string): string {
 }
 
 export const LookupBar: React.FC<LookupBarProps> = ({
-  onSelectWord, onSelectRecent, onBrowseLetter, totalEntries, online, onVoiceWord, voiceReady, onVoiceReadyDone, fill, onQueryChange,
+  onSelectWord, onSelectRecent, recent, onOpenHistory, onBrowseLetter, totalEntries, online, onVoiceWord, voiceReady, onVoiceReadyDone, fill, onQueryChange,
 }) => {
   const [query, setOwnQuery] = useState('');
   const onQueryChangeRef = useRef(onQueryChange);
@@ -75,7 +79,6 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   const [offline, setOffline] = useState<null | 'saved' | 'partial' | 'unreachable'>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [recent, setRecent] = useState<RecentWord[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
@@ -83,8 +86,6 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   // The headword we just inserted ourselves, so our own setQuery() cannot
   // re-open the dropdown. Cleared by any user edit or by the next search.
   const justSelectedRef = useRef<string | null>(null);
-
-  useEffect(() => { setRecent(loadRecent()); }, []);
 
   // The word last heard by voice, until the parent either opens its card or puts it in the box (a fill of the same
   // text is voice; any other fill is not).
@@ -212,15 +213,13 @@ export const LookupBar: React.FC<LookupBarProps> = ({
     justSelectedRef.current = item.headword;
     setQuery(item.headword);
     setIsOpen(false);
-    setRecent(rememberRecent({ headword: item.headword, page: item.page_number }));
-    onSelectWord(item.headword, item.page_number);
+    onSelectWord(item.headword, item.page_number, item.meaning_hi);
   };
 
   const handleSelectRecent = (item: RecentWord) => {
     justSelectedRef.current = item.headword;
     setQuery(item.headword);
     setIsOpen(false);
-    setRecent(rememberRecent(item));
     onSelectRecent(item.headword, item.page);
   };
 
@@ -337,7 +336,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({
           setQuery(e.target.value);
           setIsOpen(true);
         }}
-        onFocus={() => { setRecent(loadRecent()); setIsOpen(true); setSelectedIndex(0); }}
+        onFocus={() => { setIsOpen(true); setSelectedIndex(0); }}
         onKeyDown={handleKeyDown}
         placeholder="Search English or हिंदी…"
       />
@@ -355,8 +354,8 @@ export const LookupBar: React.FC<LookupBarProps> = ({
             <>
               <div className="lookup-group lookup-group--row">
                 <span id={`${listboxId}-recent`}>Recent</span>
-                <button type="button" className="lookup-link" onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => { setRecent(clearRecent()); inputRef.current?.focus(); }}>Clear</button>
+                <button type="button" className="lookup-link" id="lookup-history-link" onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setIsOpen(false); onOpenHistory(); }}>History <span aria-hidden="true">›</span></button>
               </div>
               <div id={listboxId} role="listbox" aria-labelledby={`${listboxId}-recent`}>
                 {recent.map((r, i) => (
