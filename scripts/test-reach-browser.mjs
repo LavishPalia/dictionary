@@ -1,5 +1,5 @@
 // Reach Panna fast: voice search in the search box (mic, listening overlay, English/Hindi, errors, offline), a heard
-// word opening its card with a Heard strip, and launches (share target, icon shortcuts), at
+// word opening its card with a Heard strip, launches (share target, icon shortcuts) and the sentence sheet, at
 // desktop and phone sizes. Speech is faked: window.__pannaRecognition is a test stand-in for SpeechRecognition.
 // Usage: node scripts/test-reach-browser.mjs   (needs a production build running on localhost:3000)
 import { spawn, spawnSync } from 'child_process';
@@ -279,6 +279,97 @@ async function main() {
       await key('a', 'KeyA', 'a');
       await sleep(200);
       check(`${sizeName}: the note goes at the next keystroke`, await evaluate(`!document.querySelector('#share-note')`));
+
+      // The sentence sheet: a shared sentence on a paper card, its rarest book word chosen, with the meaning below.
+      const SENTENCE = "The government's plan deepened and obfuscated the facts.";
+      const SHEET = '#sentence-sheet';
+      const sentence = () => evaluate(`(() => { const s = document.querySelector('${SHEET}'); if (!s) return null; const card = s.querySelector('.sentence-card');
+        const title = s.querySelector('#sentence-entry-title'); const hi = s.querySelector('.sentence-entry .word-hi'); const save = s.querySelector('#sentence-save-btn');
+        return { title: s.querySelector('.ui-sheet-title')?.textContent, card: card?.innerText, whiteSpace: card && getComputedStyle(card).whiteSpace,
+          words: [...s.querySelectorAll('button.sentence-word')].map((b) => ({ text: b.textContent, pressed: b.getAttribute('aria-pressed'), cls: b.className, h: b.getBoundingClientRect().height })),
+          heading: title?.textContent, headingTag: title?.tagName, hi: hi?.textContent, hiLang: hi?.getAttribute('lang'),
+          def: s.querySelector('.sentence-entry .word-def')?.textContent, save: save?.textContent, savePressed: save?.getAttribute('aria-pressed'), text: s.innerText }; })()`);
+      const openSentence = async (text, selector = 'button.sentence-word') => {
+        await open(`/?share_text=${encodeURIComponent(text)}`, size);
+        await waitFor(`Boolean(document.querySelector('${SHEET} ${selector}'))`, 40);
+        await sleep(200);
+        return sentence();
+      };
+      let sv = await openSentence(SENTENCE);
+      check(`${sizeName}: a shared sentence opens the sheet "Words in this sentence"`, sv?.title === 'Words in this sentence', sv);
+      check(`${sizeName}: the card holds the sentence as shared`, sv?.card?.replace(/\s+/g, ' ').trim() === SENTENCE, sv?.card);
+      check(`${sizeName}: the card keeps line breaks (white-space: pre-line)`, sv?.whiteSpace === 'pre-line', sv?.whiteSpace);
+      const pressed = sv?.words.filter((w) => w.pressed === 'true') ?? [];
+      check(`${sizeName}: the rarest word, obfuscated, is pressed and its entry shown`, pressed.length === 1 && pressed[0].text === 'obfuscated' && pressed[0].cls.includes('sentence-word--on') && sv.heading === 'obfuscate', { pressed, heading: sv?.heading });
+      check(`${sizeName}: the entry has a heading, its Hindi (lang="hi") and its definition`, /^H[2-4]$/.test(sv?.headingTag ?? '') && Boolean(sv.hi) && sv.hiLang === 'hi' && Boolean(sv.def), sv);
+      const thes = sv?.words.filter((w) => w.text.toLowerCase() === 'the') ?? [];
+      check(`${sizeName}: obfuscated has the dotted underline and "the" doesn't`, pressed[0]?.cls.includes('sentence-word--uncommon') && thes.length === 2 && thes.every((w) => !w.cls.includes('sentence-word--uncommon')), sv?.words);
+      check(`${sizeName}: government's is a button; the full stop and spaces are not`, sv?.words.some((w) => w.text === "government's") && sv.words.every((w) => /^[A-Za-z']+$/.test(w.text)), sv?.words.map((w) => w.text));
+      check(`${sizeName}: Save shows "Save word"`, sv?.save === 'Save word' && sv.savePressed === 'false', sv?.save);
+      check(`${sizeName}: the launch address becomes / for a sentence too`, await evaluate(`location.search === ''`));
+      if (size.mobile) check(`${sizeName}: every word in the sentence is a 44px target`, sv?.words.every((w) => w.h >= 44), sv?.words.map((w) => [w.text, w.h]));
+      await evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })()`);
+      const sentenceAxe = await evaluate(`axe.run(document.querySelector('${SHEET}'), { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } }).then((r) => r.violations.map((v) => v.id + ': ' + v.nodes.map((n) => n.target).join(' ')))`);
+      check(`${sizeName}: axe finds nothing wrong in the sentence sheet`, Array.isArray(sentenceAxe) && sentenceAxe.length === 0, sentenceAxe);
+      check(`${sizeName}: every Hindi text in the sentence sheet is marked lang="hi"`, await evaluate(`(() => { const d = document.querySelector('${SHEET}'); const w = document.createTreeWalker(d, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { if (/[\\u0900-\\u097F]/.test(n.textContent) && !n.parentElement.closest('[lang="hi"]')) return false; } return true; })()`));
+      await sleep(300);
+      const shot = await send('Page.captureScreenshot', { format: 'png' });
+      fs.writeFileSync(path.join(process.cwd(), 'scratch', `sentence-${sizeName}.png`), Buffer.from(shot.data, 'base64'));
+      // Tapping another word shows it at once, without asking the server again.
+      await evaluate(`window.__fetches = 0; window.__plainFetch = window.fetch; window.fetch = (...a) => { window.__fetches++; return window.__plainFetch(...a); }; true`);
+      await evaluate(`[...document.querySelectorAll('${SHEET} button.sentence-word')].find((b) => b.textContent === "government's").click(); true`);
+      await waitFor(`document.querySelector('#sentence-entry-title')?.textContent === 'government'`, 20);
+      sv = await sentence();
+      check(`${sizeName}: tapping government's shows government, and only it is pressed`, sv?.heading === 'government' && JSON.stringify(sv.words.filter((w) => w.pressed === 'true').map((w) => w.text)) === `["government's"]`, sv);
+      check(`${sizeName}: switching words fetches nothing`, (await evaluate('window.__fetches')) === 0, await evaluate('window.__fetches'));
+      await evaluate(`window.fetch = window.__plainFetch; true`);
+      // Save word works as in the word card, and the word is in Saved afterwards.
+      await click('#sentence-save-btn');
+      await sleep(200);
+      sv = await sentence();
+      check(`${sizeName}: Save word toggles to Saved`, sv?.save === 'Saved' && sv.savePressed === 'true', sv?.save);
+      await click('#close-sentence-sheet');
+      await sleep(300);
+      check(`${sizeName}: the close button closes the sentence sheet`, !(await sentence()));
+      await evaluate(`document.querySelector(${JSON.stringify(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn')}).click(); true`);
+      await waitFor(`Boolean(document.querySelector('#saved-screen'))`, 30);
+      const savedRows = await evaluate(`[...document.querySelectorAll('#saved-screen .saved-hw')].map((e) => e.textContent)`);
+      check(`${sizeName}: the saved word is in the Saved list`, savedRows?.includes('government'), savedRows);
+      // "Open the full card": this sheet closes and the word sheet opens on the word.
+      await openSentence(SENTENCE);
+      await click('#sentence-open-card');
+      await waitFor(`document.querySelector('#word-sheet-title')?.textContent === 'obfuscate'`, 30);
+      check(`${sizeName}: "Open the full card" closes the sentence sheet and opens the word sheet`, await evaluate(`!document.querySelector('${SHEET}') && document.querySelector('#word-sheet-title')?.textContent === 'obfuscate'`),
+        await evaluate(`({ sheet: Boolean(document.querySelector('${SHEET}')), title: document.querySelector('#word-sheet-title')?.textContent })`));
+      await click('#close-word-drawer');
+      await sleep(300);
+      // Names and words not in the book are plain text.
+      sv = await openSentence('Ram met Zxqv', '.sentence-card');
+      check(`${sizeName}: Zxqv is plain text, not a button`, Boolean(sv) && !sv.words.some((w) => w.text === 'Zxqv') && sv.card.includes('Zxqv'), sv);
+      // Line breaks (WhatsApp) survive on the card.
+      sv = await openSentence('calm plan\ndeepened facts');
+      check(`${sizeName}: a line break in the shared text shows as a new line`, sv?.card?.trim() === 'calm plan\ndeepened facts', sv?.card);
+      // Long text: cut to 40 words, ending with an ellipsis.
+      sv = await openSentence(Array(45).fill('calm').join(' '));
+      check(`${sizeName}: a long text shows its first 40 words and ends with …`, sv?.words.length === 40 && sv.card.trim().endsWith('…'), sv && { n: sv.words.length, end: sv.card.slice(-12) });
+      // No book words at all: the plain sentence, a note, and a Search button for the first word.
+      sv = await openSentence('Zxqv Qwrtz', '#sentence-search-btn');
+      check(`${sizeName}: with no book words it says so, and the sentence is plain`, sv?.words.length === 0 && sv.card.trim() === 'Zxqv Qwrtz' && sv.text.includes('None of these words are in Panna yet.'), sv);
+      await click('#sentence-search-btn');
+      await waitFor(`document.querySelector('#lookup-input').value === 'Zxqv'`, 30);
+      check(`${sizeName}: its Search button closes the sheet and puts the first word in the search box`, await evaluate(`!document.querySelector('${SHEET}') && document.querySelector('#lookup-input').value === 'Zxqv'`), await evaluate(`document.querySelector('#lookup-input').value`));
+      await evaluate(`document.querySelector('.lookup-clear')?.click(); document.activeElement.blur(); true`);
+      await key('Escape');
+      // A reduced (offline) analysis says so in one line under the card.
+      const { identifier: reduced } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => { const real = window.fetch; window.fetch = (input, init) => String(input).includes('/api/sentence') ? real(input, init).then((r) => r.json()).then((a) => new Response(JSON.stringify({ ...a, offline: true }), { headers: { 'content-type': 'application/json' } })) : real(input, init); })();` });
+      sv = await openSentence(SENTENCE);
+      check(`${sizeName}: an offline analysis notes "Connect for the full sentence view"`, sv?.text.includes('Connect for the full sentence view'), sv?.text);
+      await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: reduced });
+      sv = await openSentence(SENTENCE);
+      check(`${sizeName}: online, there is no offline note`, Boolean(sv) && !sv.text.includes('Connect for the full sentence view'), sv?.text);
+      await key('Escape');
+      await sleep(200);
+      check(`${sizeName}: Escape closes the sentence sheet`, !(await sentence()));
       await open(`/page/${CALM_PAGE}`, size);
 
       // Errors.

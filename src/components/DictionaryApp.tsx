@@ -35,6 +35,7 @@ import { nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
 import { readLaunch } from '@/lib/launch';
 import { cleanShared, tokenize } from '@/lib/sentence';
+import { SentenceSheet } from '@/components/share/SentenceSheet';
 
 // Pages kept in memory. The prefetch window (current spread ± 1 spread = 6 pages) is refreshed on every page
 // change, so the pages on screen are never the least recently used.
@@ -715,8 +716,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     document.addEventListener('keydown', hide, true);
     return () => document.removeEventListener('keydown', hide, true);
   }, [shareNote]);
-  // Shared text of more than one word, for the sentence view (Task 6).
-  const [, setShareText] = useState<string | null>(null);
+  // Shared text of more than one word: the sentence sheet shows it until closed.
+  const [shareText, setShareText] = useState<string | null>(null);
   // Problem reports written offline are sent once the connection is back (and on the next visit).
   useEffect(() => { if (REPORTS_ENABLED && offline.online) flushQueue(); }, [offline.online]);
   const tours = useTours({
@@ -957,7 +958,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             else setLookupFill(only.text);
           });
         } else if (words.length > 1) {
-          setShareText(shared.text); // Task 6: the sentence view
+          setShareText((launch.text ?? '').slice(0, 2000)); // as shared: /api/sentence cleans it and says if it was cut
         } else {
           setLookupFill(shared.text); // no English word (Hindi, say): search for it
         }
@@ -1287,6 +1288,21 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         dataVersion={meta.data_version}
         heard={heardShown}
         onPickHeard={handlePickHeard}
+      />
+
+      <SentenceSheet
+        open={shareText !== null}
+        text={shareText}
+        onClose={() => setShareText(null)}
+        isSaved={(entry) => bookmarkedWords.some(w => w.normalized === entry.normalized)}
+        onToggleSave={handleToggleWordBookmark}
+        onOpenCard={(entry) => {
+          // One sheet at a time: this one closes, then the word sheet opens as it does from Saved.
+          setShareText(null);
+          setActiveWordEntry(entry);
+          setShowWordDrawer(true);
+        }}
+        onSearch={(word) => { setShareText(null); setLookupFill(word); }}
       />
 
       <CreditsModal isOpen={showCreditsModal} onClose={() => setShowCreditsModal(false)} />

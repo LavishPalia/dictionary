@@ -37,7 +37,7 @@ interface WordDetailDrawerProps {
 }
 
 /** The sentence with the headword in <b>; a blank that does not fit the sentence is ignored. */
-function exampleParts(example: NonNullable<DictionaryEntry['example']>): React.ReactNode {
+export function exampleParts(example: NonNullable<DictionaryEntry['example']>): React.ReactNode {
   const { en } = example;
   const blank = exampleBlank(example);
   if (!blank) return en;
