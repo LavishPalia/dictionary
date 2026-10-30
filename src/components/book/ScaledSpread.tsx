@@ -10,7 +10,8 @@ const REACH_LEFT = 52;
 const REACH_RIGHT = 106;
 const REACH_Y = 14;
 // Room under the spread for the page-number button ("Pages 16–17 of 3,127 ▾", which opens Go to): a gap and its height.
-export const BELOW = 44;
+// Keep in step with .page-number-btn--desk in goto.css: 22px margin + 36px height − the cover's 14px overhang.
+const BELOW = 44;
 const FOOTPRINT_W = REACH_LEFT + SPREAD_W + REACH_RIGHT;
 const GUTTER = 16;
 // Below this the type would be too small to read; the page scrolls instead.

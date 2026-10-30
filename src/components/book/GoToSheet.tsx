@@ -27,6 +27,8 @@ interface GoToSheetProps {
 export function GoToSheet({ open, onClose, currentPage, totalPages, thumbIndex, marks, onGoToPage, onGoToLetter }: GoToSheetProps) {
   const [text, setText] = useState('');
   const [error, setError] = useState(false);
+  // Bumped on each bad submit, so a repeat is announced again.
+  const [errorKey, setErrorKey] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Each opening starts fresh: the current page, selected, so typing replaces it.
@@ -45,7 +47,7 @@ export function GoToSheet({ open, onClose, currentPage, totalPages, thumbIndex, 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const page = parsePageInput(text, totalPages);
-    if (page === null) { setError(true); inputRef.current?.focus(); return; }
+    if (page === null) { setError(true); setErrorKey((k) => k + 1); inputRef.current?.focus(); return; }
     onClose();
     onGoToPage(page);
   };
@@ -69,7 +71,7 @@ export function GoToSheet({ open, onClose, currentPage, totalPages, thumbIndex, 
         />
         <button type="submit" id="goto-go-btn" className="goto-go">Go</button>
       </form>
-      {error && <p id="goto-error" className="goto-error" role="alert">Pick a page from 1 to {fmt(totalPages)}</p>}
+      {error && <p key={errorKey} id="goto-error" className="goto-error" role="alert">Pick a page from 1 to {fmt(totalPages)}</p>}
       <p id="goto-hint" className="goto-label">of {fmt(totalPages)} pages · or pick a letter</p>
       <div className="goto-grid" role="group" aria-label="Letters">
         {LETTERS.map((letter) => {
@@ -89,7 +91,7 @@ export function GoToSheet({ open, onClose, currentPage, totalPages, thumbIndex, 
           <h3 id="goto-marks-title" className="goto-label">Your marked pages</h3>
           <div className="goto-marks">
             {marks.map(({ page, kind }) => (
-              <button key={page} type="button" className="goto-mark" aria-label={`${MARK_LOOK[kind].name}, page ${fmt(page)}`}
+              <button key={`${kind}-${page}`} type="button" className="goto-mark" aria-label={`${MARK_LOOK[kind].name}, page ${fmt(page)}`}
                 onClick={() => { onClose(); onGoToPage(page); }}>
                 <span aria-hidden="true">{MARK_LOOK[kind].icon}</span> p. {fmt(page)}
               </button>
