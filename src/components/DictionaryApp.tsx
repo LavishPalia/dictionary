@@ -516,7 +516,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   }, [isFlipping, targetPage, flipDuration]);
 
   // Desk lighting over time. A pick from the menu applies at once. Auto re-checks the clock every minute and when the
-  // app is shown again; a change it makes fades in over 2 s (html.light-fading, motion.css), but never mid-turn (it
+  // app is shown again; a change it makes fades in over 2 s (html.light-fading, globals.css), but never mid-turn (it
   // waits for the page to land: isFlipping on desktop, a page load on either) and never under reduced motion.
   const [clockTick, setClockTick] = useState(0);
   const manualPickRef = useRef(false);
@@ -552,7 +552,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     }
     applyLight(want);
   }, [settingsLoaded, lighting, clockTick, isFlipping, loadingPage, reducedMotion]);
-  useEffect(() => () => { if (fadeTimerRef.current !== null) window.clearTimeout(fadeTimerRef.current); }, []);
+  useEffect(() => () => {
+    if (fadeTimerRef.current !== null) window.clearTimeout(fadeTimerRef.current);
+    document.documentElement.classList.remove('light-fading');
+  }, []);
 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
@@ -1278,7 +1281,6 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         position: 'relative',
         boxSizing: 'border-box',
         background: 'radial-gradient(ellipse at 50% var(--desk-glow-y), var(--desk-center) 0%, var(--desk-edge) var(--desk-reach))',
-        transition: 'background 0.5s ease',
       }}
     >
       <AppHeader

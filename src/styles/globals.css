@@ -86,6 +86,22 @@ html[data-light="evening"] {
   --desk-reach: 85%;
 }
 
+/* The Auto fade (DictionaryApp adds html.light-fading for 2.1 s when the clock changes the mode).
+   The theme tokens themselves animate, on <html>: every colour or gradient built from them, on any element,
+   follows as they inherit. For that, each token must be registered (unregistered custom properties cannot
+   interpolate), with its Day value as the initial value.
+   RULE for every later task: any token added to the html[data-light="evening"] block above must be registered
+   here with @property AND added to the transition list below. This is the one place both lists live. */
+@property --desk-center { syntax: '<color>'; inherits: true; initial-value: #4a3322; }
+@property --desk-edge { syntax: '<color>'; inherits: true; initial-value: #2b1d14; }
+@property --desk-glow-y { syntax: '<percentage>'; inherits: true; initial-value: 40%; }
+@property --desk-reach { syntax: '<percentage>'; inherits: true; initial-value: 75%; }
+@media (prefers-reduced-motion: no-preference) {
+  html.light-fading {
+    transition: --desk-center 2s, --desk-edge 2s, --desk-glow-y 2s, --desk-reach 2s !important;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

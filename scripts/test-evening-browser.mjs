@@ -247,7 +247,19 @@ async function main() {
     await crossClock(60_000);
     await sleep(150);
     const crossing = { light: await light(), fading: await evaluate(`document.documentElement.classList.contains('light-fading')`) };
-    await sleep(2400);
+    // About 1 s in, the desk is part-way between Day and Evening: the theme variables themselves animate.
+    await sleep(850);
+    const rgb = (text) => (text ?? '').match(/\d+/g)?.slice(0, 3).map(Number) ?? [];
+    const mid = await evaluate(`({ center: getComputedStyle(document.documentElement).getPropertyValue('--desk-center').trim(), desk: getComputedStyle(document.querySelector('.app-main')).backgroundImage })`);
+    const between = (v, a, b) => v > Math.min(a, b) && v < Math.max(a, b);
+    const c = rgb(mid?.center);
+    const dayC = [0x4a, 0x33, 0x22], eveC = [0x2a, 0x1a, 0x0e];
+    check('about 1 s into the fade, --desk-center is strictly between Day and Evening',
+      c.length === 3 && c.every((v, i) => between(v, dayC[i], eveC[i])), mid);
+    const deskFirst = rgb(mid?.desk?.slice(mid.desk.indexOf('rgb')));
+    check("about 1 s into the fade, .app-main's gradient starts from an in-between colour",
+      deskFirst.length === 3 && deskFirst.every((v, i) => between(v, dayC[i], eveC[i])), mid);
+    await sleep(1550);
     const log = await evaluate('window.__classLog');
     const on = log.find((e) => e.fading);
     const off = on && log.find((e) => e.t > on.t && !e.fading);
@@ -255,8 +267,9 @@ async function main() {
     crossing.ms = off && on ? Math.round(off.t - on.t) : null;
     check('Auto crosses 19:00 while open: evening, with a fade', crossing.light === 'evening' && crossing.fading, crossing);
     check('the fade ends after about 2.1 s', !crossing.after && crossing.ms >= 1900 && crossing.ms <= 2700, crossing);
-    const fadeCss = await evaluate(`(() => { document.documentElement.classList.add('light-fading'); const t = getComputedStyle(document.querySelector('#lookup-input')).transitionDuration; document.documentElement.classList.remove('light-fading'); return t; })()`);
-    check('the fade class transitions colours over 2 s', /(^|,\s*)2s/.test(fadeCss ?? ''), fadeCss);
+    const fadeCss = await evaluate(`(() => { const html = document.documentElement; html.classList.add('light-fading'); const s = getComputedStyle(html); const t = { property: s.transitionProperty, duration: s.transitionDuration }; html.classList.remove('light-fading'); return t; })()`);
+    check('the fade class transitions the theme variables over 2 s on <html>',
+      ['--desk-center', '--desk-edge', '--desk-glow-y', '--desk-reach'].every((v) => fadeCss?.property.split(/,\s*/).includes(v)) && /^2s(, 2s)*$/.test(fadeCss?.duration ?? ''), fadeCss);
     // And back: crossing 06:00 returns Auto to day.
     await crossClock(11 * 3600_000); // 06:00:00
     await sleep(2400);

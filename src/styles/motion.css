@@ -40,11 +40,7 @@
 ::view-transition-old(word-headword),
 ::view-transition-new(word-headword) { height: 100%; object-fit: contain; }
 
-/* Auto switching Day/Evening while the app is open: colours fade over 2 s. DictionaryApp adds the class for 2.1 s,
-   never while a page is turning, and never under reduced motion (nor does this rule apply there). */
-@media (prefers-reduced-motion: no-preference) {
-  html.light-fading *, html.light-fading *::before, html.light-fading *::after { transition: background-color 2s, color 2s, border-color 2s, fill 2s, box-shadow 2s !important; }
-}
+/* The Day/Evening fade (html.light-fading) lives in globals.css, next to the theme tokens it animates. */
 
 @media (prefers-reduced-motion: reduce) {
   .pencil-underlined { animation: none; }
