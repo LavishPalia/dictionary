@@ -146,11 +146,18 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           padding: '24px',
           display: 'flex',
           alignItems: 'center',
+          flexDirection: 'column',
           justifyContent: 'center',
+          gap: '16px',
           fontStyle: 'italic',
         }}
       >
         Page not available
+        {/* A way out that isn't search: offline, a letter's first page may never have been opened here. */}
+        <button type="button" id="page-number-btn" className="page-number-btn page-number-btn--missing"
+          aria-haspopup="dialog" onClick={onOpenGoTo}>
+          Go to another page
+        </button>
       </div>
     );
   }

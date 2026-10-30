@@ -38,22 +38,23 @@ export function railLetter(
 
 export type MarkedPage = { page: number; kind: 'ribbon' | 'dog-ear' | 'note' };
 
-/** Pages with marks, newest first, one chip per page (note > ribbon > dog-ear), at most max. */
+/** Pages with marks, one chip per page (note > ribbon > dog-ear): the max nearest the current page, in page order.
+ *  (Ribbons and folded corners carry no time, so "newest" can't be known.) */
 export function markedPages(
-  input: { ribbons: number[]; dogEars: number[]; notes: { page_number: number; created_at: number }[] },
+  input: { ribbons: number[]; dogEars: number[]; notes: { page_number: number }[] },
+  current: number,
   max = 8,
 ): MarkedPage[] {
-  const seen = new Set<number>();
-  const out: MarkedPage[] = [];
-  const add = (page: number, kind: MarkedPage['kind']) => {
-    if (seen.has(page)) return;
-    seen.add(page);
-    out.push({ page, kind });
-  };
-  [...input.notes].sort((a, b) => b.created_at - a.created_at).forEach(n => add(n.page_number, 'note'));
-  [...input.ribbons].reverse().forEach(p => add(p, 'ribbon'));
-  [...input.dogEars].reverse().forEach(p => add(p, 'dog-ear'));
-  return out.slice(0, max);
+  const byPage = new Map<number, MarkedPage['kind']>();
+  const add = (page: number, kind: MarkedPage['kind']) => { if (!byPage.has(page)) byPage.set(page, kind); };
+  input.notes.forEach(n => add(n.page_number, 'note'));
+  input.ribbons.forEach(p => add(p, 'ribbon'));
+  input.dogEars.forEach(p => add(p, 'dog-ear'));
+  return [...byPage]
+    .map(([page, kind]) => ({ page, kind }))
+    .sort((a, b) => Math.abs(a.page - current) - Math.abs(b.page - current) || a.page - b.page)
+    .slice(0, max)
+    .sort((a, b) => a.page - b.page);
 }
 
 /** A whole page number 1..total from typed text, or null. */

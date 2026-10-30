@@ -311,6 +311,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Compute active left and right page for current spread
   const leftPageNum = spreadLeftOf(currentPage);
   const rightPageNum = leftPageNum + 1;
+  // "Pages 16–17", or "Page 1" where the spread's other side is before the first page or after the last.
+  const spreadPages = [leftPageNum, rightPageNum].filter(p => p >= 1 && p <= meta.total_pages);
+  const spreadLabel = spreadPages.length === 2
+    ? `Pages ${spreadPages[0].toLocaleString('en-IN')}–${spreadPages[1].toLocaleString('en-IN')}`
+    : `Page ${(spreadPages[0] ?? currentPage).toLocaleString('en-IN')}`;
 
   // Prefetch the neighbouring spreads (currentPage ± 2 pages) so the next flip is already in memory.
   useEffect(() => {
@@ -591,8 +596,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     turnToPage(page);
   }, [turnToPage, isFlipping]);
   const goToMarks = useMemo(
-    () => markedPages({ ribbons: bookmarkedPages, dogEars: dogEaredPages, notes: marginNotes }),
-    [bookmarkedPages, dogEaredPages, marginNotes],
+    () => markedPages({ ribbons: bookmarkedPages, dogEars: dogEaredPages, notes: marginNotes }, currentPage),
+    [bookmarkedPages, dogEaredPages, marginNotes, currentPage],
   );
 
   // Entry click handler -> opens Word Detail Drawer & syncs URL
@@ -1363,9 +1368,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       )}
       {isBookOpen && !isMobile && (
         <button type="button" id="page-number-btn" className="page-number-btn page-number-btn--desk" aria-haspopup="dialog"
-          aria-label={`Pages ${leftPageNum.toLocaleString('en-IN')}–${rightPageNum.toLocaleString('en-IN')} of ${meta.total_pages.toLocaleString('en-IN')}. Go to another page`}
+          aria-label={`${spreadLabel} of ${meta.total_pages.toLocaleString('en-IN')}. Go to another page`}
           onClick={() => setGoToOpen(true)}>
-          Pages {leftPageNum.toLocaleString('en-IN')}–{rightPageNum.toLocaleString('en-IN')} of {meta.total_pages.toLocaleString('en-IN')} ▾
+          {spreadLabel} of {meta.total_pages.toLocaleString('en-IN')} ▾
         </button>
       )}
       </div>

@@ -45,12 +45,16 @@ check('no letter after Z: falls back', railLetter('Z', 'Y', 1, { A: 1, Y: 50 }).
 const marks = markedPages({
   ribbons: [10, 20],
   dogEars: [30],
-  notes: [{ page_number: 40, created_at: 5 }, { page_number: 10, created_at: 9 }],
-});
-check('notes first, newest first', marks[0]?.page === 10 && marks[0].kind === 'note' && marks[1]?.page === 40 && marks[1].kind === 'note', marks);
-check('page 10 appears once', marks.filter(m => m.page === 10).length === 1, marks);
-check('then ribbon 20 and dog-ear 30', marks[2]?.page === 20 && marks[2].kind === 'ribbon' && marks[3]?.page === 30 && marks[3].kind === 'dog-ear', marks);
-check('capped at max', markedPages({ ribbons: Array.from({ length: 20 }, (_, i) => i + 1), dogEars: [], notes: [] }).length === 8);
+  notes: [{ page_number: 40 }, { page_number: 10 }],
+}, 25);
+check('one chip per page, in page order', marks.map(m => m.page).join() === '10,20,30,40', marks);
+check('page 10 is a note (note > ribbon)', marks[0]?.kind === 'note', marks);
+check('ribbon 20, dog-ear 30', marks[1]?.kind === 'ribbon' && marks[2]?.kind === 'dog-ear', marks);
+// Stored out of page order: the order doesn't matter.
+check('stored order ignored', markedPages({ ribbons: [90, 5, 50], dogEars: [], notes: [] }, 1).map(m => m.page).join() === '5,50,90');
+const many = markedPages({ ribbons: Array.from({ length: 20 }, (_, i) => (i + 1) * 10), dogEars: [], notes: [] }, 100);
+check('capped at max', many.length === 8, many);
+check('the 8 nearest the current page', many.map(m => m.page).join() === '60,70,80,90,100,110,120,130', many);
 
 check("'007' is 7", parsePageInput('007', 3127) === 7);
 check("'3127' is 3127", parsePageInput('3127', 3127) === 3127);

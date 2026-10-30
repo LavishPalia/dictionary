@@ -91,6 +91,13 @@ async function main() {
       const labelOk = btn && btn.tag === 'BUTTON' && btn.text === wantText
         && (phone ? btn.label === `Page ${fmt(START)}. Go to another page` : btn.label.startsWith(`Pages ${fmt(START)}–${fmt(START + 1)} of ${fmt(total)}`));
       check(`${sizeName}: the page number is a button that opens Go to (label)`, labelOk, { btn, wantText });
+      if (!phone) {
+        // Page 1's spread has no left page: one page, not "Pages 0–1".
+        check('desktop (page 1): app hydrates', await open('/page/1', size));
+        const first = await evaluate(`document.querySelector('#page-number-btn')?.textContent.trim()`);
+        check('desktop: on page 1 the button says "Page 1"', first === `Page 1 of ${fmt(total)} ▾`, first);
+        check('desktop: back at the start', await open(`/page/${START}`, size));
+      }
       if (phone) check('phone: the page-number button is at least 44 px tall', btn && btn.h >= 44, btn);
       // (The phone's "p." and "▾" are drawn by CSS so that the label contains the button's text; the a11y suite checks it.)
       await openGoTo();
@@ -172,8 +179,8 @@ async function main() {
       check(`${sizeName}: reloads with marks`, await open(`/page/${START}`, size));
       await openGoTo();
       const marks = await evaluate(`(() => { const m = document.querySelector('#goto-marks'); return m && { text: m.innerText, chips: [...m.querySelectorAll('.goto-mark')].map((c) => ({ tag: c.tagName, label: c.getAttribute('aria-label'), h: c.getBoundingClientRect().height })) }; })()`);
-      check(`${sizeName}: #goto-marks shows three chips, newest note first`, marks?.chips.length === 3 && marks.text.includes('Your marked pages')
-        && marks.chips.map((c) => c.label).join('|') === 'Note, page 50|Ribbon, page 12|Folded corner, page 30' && marks.chips.every((c) => c.tag === 'BUTTON'), marks);
+      check(`${sizeName}: #goto-marks shows three chips, in page order`, marks?.chips.length === 3 && marks.text.includes('Your marked pages')
+        && marks.chips.map((c) => c.label).join('|') === 'Ribbon, page 12|Folded corner, page 30|Note, page 50' && marks.chips.every((c) => c.tag === 'BUTTON'), marks);
       if (phone) check('phone: mark chips are at least 44 px tall', marks?.chips.every((c) => c.h >= 44), marks?.chips);
       await evaluate(`[...document.querySelectorAll('#goto-marks .goto-mark')].find((c) => c.getAttribute('aria-label') === 'Folded corner, page 30').click(); true`);
       check(`${sizeName}: clicking a marked page jumps`, (await waitFor('/page/30')) === '/page/30' && !(await sheetOpen()), await where());
@@ -338,6 +345,20 @@ async function main() {
       await evaluate(`document.querySelector('#mobile-ribbon').click(); true`);
       await sleep(300);
     }
+
+    // A page that can't be loaded (offline and never opened here) still has a way out: Go to.
+    check('phone rail (missing page): app hydrates', await open(`/page/${START}`, phone));
+    r = await rail();
+    await evaluate(`(() => { const f = window.fetch; window.fetch = (u, ...a) => String(u).includes('/api/page/')
+      ? Promise.resolve(new Response('{}', { status: 503 })) : f(u, ...a); return true; })()`);
+    await tap('Q');
+    await waitFor(`/page/${thumb.Q}`, 5000);
+    await sleep(800);
+    const missing = await evaluate(`(() => { const b = document.querySelector('#page-number-btn'); return b && { text: b.textContent.trim(), h: b.getBoundingClientRect().height }; })()`);
+    check('a missing page offers "Go to another page"', missing?.text === 'Go to another page' && missing.h >= 44, missing);
+    await evaluate(`document.querySelector('#page-number-btn')?.click(); true`);
+    await sleep(500);
+    check('…which opens Go to', await evaluate(`Boolean(document.querySelector('#goto-sheet'))`));
 
     // A second finger on the rail is ignored: lifting it neither jumps nor ends the first finger's drag. (Run last: after
     // a two-finger sequence, headless Edge stopped delivering further CDP touches to the page.)
