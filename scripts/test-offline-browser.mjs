@@ -143,7 +143,7 @@ async function main() {
       await open(`/page/${CALM_PAGE}`, size);
 
       if (sizeName === 'desktop') {
-        // Installable: a manifest with the right icons, an iOS icon and a theme colour.
+        // Installable: a manifest with the right icons, an iOS icon and a theme colour (the Day or Evening one: Auto follows the clock).
         const m = await evaluate(`fetch('/manifest.webmanifest').then((r) => r.json())`);
         check('the manifest names the app and opens it full screen at Today', m.short_name === 'Panna' && m.start_url === '/' && m.display === 'standalone', m);
         const icons = await evaluate(`Promise.all(${JSON.stringify(m.icons)}.map((i) => new Promise((ok) => { const img = new Image(); img.onload = () => ok(i.sizes === img.naturalWidth + 'x' + img.naturalHeight); img.onerror = () => ok(false); img.src = i.src; })))`);
@@ -156,7 +156,7 @@ async function main() {
           return { src: i.src, status: res.status, type: res.headers.get('content-type'), size: i.sizes };
         }));
         check('each shortcut icon loads as a 96×96 PNG', shortcutIcons.length === 2 && shortcutIcons.every((i) => i.status === 200 && i.type === 'image/png' && i.size === '96x96'), shortcutIcons);
-        check('iOS gets a home-screen icon and the browser a theme colour', await evaluate(`Boolean(document.querySelector('link[rel="apple-touch-icon"]')) && document.querySelector('meta[name="theme-color"]')?.content === '#2b1d14' && Boolean(document.querySelector('link[rel="icon"]'))`));
+        check('iOS gets a home-screen icon and the browser a theme colour', await evaluate(`Boolean(document.querySelector('link[rel="apple-touch-icon"]')) && document.querySelector('meta[name="theme-color"]')?.content === (document.documentElement.dataset.light === 'evening' ? '#120a06' : '#2b1d14') && Boolean(document.querySelector('link[rel="icon"]'))`));
       }
 
       check(`${sizeName}: the service worker takes charge`, await controlled(size), await evaluate(`(async () => {
