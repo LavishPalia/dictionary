@@ -26,6 +26,16 @@ export function nearestAvailable(letter: string, thumbIndex: Record<string, numb
   return null;
 }
 
+/** The rail's letter for a thumb on raw (letterAtOffset), skipping letters with no pages. The skip goes the way the
+ *  thumb last moved (raw vs the previous raw, else prevDir), so a thumb resting on a missing letter stays on one side;
+ *  if nothing lies that way it goes back the other way. */
+export function railLetter(
+  raw: string, prevRaw: string | null, prevDir: 1 | -1, thumbIndex: Record<string, number>,
+): { letter: string | null; dir: 1 | -1 } {
+  const dir: 1 | -1 = prevRaw && raw !== prevRaw ? (LETTERS.indexOf(raw) < LETTERS.indexOf(prevRaw) ? -1 : 1) : prevDir;
+  return { letter: nearestAvailable(raw, thumbIndex, dir) ?? nearestAvailable(raw, thumbIndex, dir === 1 ? -1 : 1), dir };
+}
+
 export type MarkedPage = { page: number; kind: 'ribbon' | 'dog-ear' | 'note' };
 
 /** Pages with marks, newest first, one chip per page (note > ribbon > dog-ear), at most max. */

@@ -1321,7 +1321,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           animate={!reducedMotion && speedMode !== 'instant'}
           onOpenGoTo={() => setGoToOpen(true)}
           thumbIndex={meta.thumb_index}
-          onSelectLetter={handleSelectLetter}
+          // Through the Go to queue, as the panel's letters: a jump made while a page loads is made after it.
+          onSelectLetter={(_letter, page) => goToPageFromPanel(page)}
         />
       ) : (
         /* Desktop Two-Page Spread with 3D Engine & Hybrid Overlay */

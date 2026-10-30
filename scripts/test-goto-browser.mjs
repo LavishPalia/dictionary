@@ -195,7 +195,7 @@ async function main() {
 
     // ── The phone A–Z rail ──
     await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
-    const touch = (type, x, y) => send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' || type === 'touchCancel' ? [] : [{ x, y }] });
+    const touch = (type, x, y) => send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' || type === 'touchCancel' ? [] : [{ x, y, id: 0 }] });
     const rail = () => evaluate(`(() => { const r = document.querySelector('#letter-rail'); if (!r) return null; const b = r.getBoundingClientRect();
       const letters = [...r.querySelectorAll('.letter-rail-letter')];
       return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, hidden: r.getAttribute('aria-hidden'), touchAction: getComputedStyle(r).touchAction,
@@ -225,7 +225,13 @@ async function main() {
     check('the rail spans the page body, between guide words and footer', r && head && r.top >= head.gBottom - 1 && r.bottom <= head.fTop + 1 && r.bottom - r.top > 300, { r, head });
     check('no bubble at rest', (await bubble()) === null);
 
-    // Drag: press near the top, slide down to M, keep the finger down.
+    // Drag: press near the top, slide down to M, keep the finger down. At a shorter height the page scrolls, and it is
+    // scrolled part-way, so a scroll either way during the drag would show.
+    check('phone rail (640 tall): app hydrates', await open(`/page/${START}`, { width: 390, height: 640, mobile: true }));
+    const scrollable = await evaluate(`(() => { scrollTo(0, 40); return { max: document.documentElement.scrollHeight - innerHeight, y: scrollY }; })()`);
+    check('the page can scroll at this size (so the no-scroll check means something)', scrollable.max > 40 && scrollable.y === 40, scrollable);
+    await sleep(100);
+    r = await rail();
     await stubVibrate();
     const x = (r.left + r.right) / 2;
     const scroll0 = await evaluate('scrollY');
@@ -271,6 +277,33 @@ async function main() {
     check('a tap jumps', (await waitFor(`/page/${thumb.C}`)) === `/page/${thumb.C}`, await where());
     await sleep(300);
 
+    // A jump made while a page is still loading is kept and made after it (the Go to queue); the last one wins.
+    // Page fetches are held back 1.5 s in the page, so each jump's load is slow.
+    const slowPages = () => evaluate(`(() => { const f = window.fetch; window.fetch = (u, ...a) => String(u).includes('/api/page/')
+      ? new Promise((res) => setTimeout(res, 1500)).then(() => f(u, ...a)) : f(u, ...a); return true; })()`);
+    const tap = async (l) => { await touch('touchStart', x, letterY(r, l)); await sleep(30); await touch('touchEnd'); };
+    check('phone rail (slow pages): app hydrates', await open(`/page/${START}`, phone));
+    r = await rail();
+    await slowPages();
+    await tap('F');
+    await sleep(300);
+    const loading = await where();
+    await tap('M');
+    const queued = await waitFor(`/page/${thumb.M}`, 8000);
+    await sleep(2000);
+    check('a rail jump during a load is made after it', loading === `/page/${START}` && queued === `/page/${thumb.M}` && (await where()) === `/page/${thumb.M}`, { loading, queued, end: await where() });
+    check('phone rail (slow pages, twice): app hydrates', await open(`/page/${START}`, phone));
+    r = await rail();
+    await slowPages();
+    await tap('G');
+    await sleep(300);
+    await tap('N');
+    await sleep(100);
+    await tap('P');
+    const last = await waitFor(`/page/${thumb.P}`, 8000);
+    await sleep(2000);
+    check('a second rail jump during the load wins', last === `/page/${thumb.P}` && (await where()) === `/page/${thumb.P}`, { last, end: await where() });
+
     // Reduce motion: the bubble neither animates in nor glides.
     await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     check('reduce motion: app hydrates', await open(`/page/${START}`, phone));
@@ -283,6 +316,24 @@ async function main() {
     check('reduce motion: the bubble has no transition', bub && bub.transition.split(',').every((d) => parseFloat(d) < 0.001) && bub.animation === 'none', bub);
     await touch('touchCancel');
     await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+
+    // A second finger on the rail is ignored: lifting it neither jumps nor ends the first finger's drag. (Run last: after
+    // a two-finger sequence, headless Edge stopped delivering further CDP touches to the page.)
+    check('phone rail (two fingers): app hydrates', await open(`/page/${START}`, phone));
+    r = await rail();
+    await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 2 });
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: letterY(r, 'E'), id: 0 }] });
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: letterY(r, 'E'), id: 0 }, { x, y: letterY(r, 'S'), id: 1 }] });
+    await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: letterY(r, 'E'), id: 0 }, { x, y: letterY(r, 'T'), id: 1 }] });
+    await sleep(100);
+    const b2 = await bubble();
+    // (CDP: a touchMove listing only the first finger lifts the second; touchEnd would lift both.)
+    await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: letterY(r, 'E'), id: 0 }] });
+    await sleep(600);
+    const afterSecond = { path: await where(), bub: await bubble() };
+    await touch('touchEnd');
+    const firstEnd = await waitFor(`/page/${thumb.E}`);
+    check("a second finger is ignored; the first finger's release jumps", b2?.text.startsWith('E') && afterSecond.path === `/page/${START}` && afterSecond.bub?.text.startsWith('E') && firstEnd === `/page/${thumb.E}`, { b2, afterSecond, firstEnd });
 
     // Desktop: no rail.
     await send('Emulation.setTouchEmulationEnabled', { enabled: false });

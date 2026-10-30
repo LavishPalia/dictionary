@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { LETTERS, letterAtOffset, letterForPage, nearestAvailable } from '@/lib/letters';
+import { LETTERS, letterAtOffset, letterForPage, railLetter } from '@/lib/letters';
 
 interface LetterRailProps {
   thumbIndex: Record<string, number>;
@@ -16,9 +16,11 @@ const SLACK = 24;
  *  panel's letter grid is the accessible way to jump by letter. */
 export const LetterRail: React.FC<LetterRailProps> = ({ thumbIndex, currentPage, onSelectLetter }) => {
   const railRef = useRef<HTMLDivElement>(null);
-  // The letter under the thumb, and where the thumb is (rail-relative y); null when not dragging.
-  const [drag, setDrag] = useState<{ letter: string; y: number; inside: boolean } | null>(null);
-  const dragRef = useRef<typeof drag>(null);
+  // The letter under the thumb, and where the thumb is (rail-relative y); null when not dragging. The ref also keeps
+  // the finger (pointerId; other fingers are ignored) and the raw letter and direction railLetter skips by.
+  type Drag = { letter: string; y: number; inside: boolean; pointerId: number; raw: string; dir: 1 | -1 };
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const dragRef = useRef<Drag | null>(null);
   const update = (next: typeof drag) => { dragRef.current = next; setDrag(next); };
   const current = letterForPage(currentPage, thumbIndex);
 
@@ -27,33 +29,34 @@ export const LetterRail: React.FC<LetterRailProps> = ({ thumbIndex, currentPage,
     const inside = e.clientX >= box.left - SLACK && e.clientX <= box.right + SLACK
       && e.clientY >= box.top - SLACK && e.clientY <= box.bottom + SLACK;
     const raw = letterAtOffset(e.clientY, box.top, box.height);
-    // A letter with no pages is skipped: to the next one the thumb is moving towards, else back the other way.
-    const was = dragRef.current?.letter;
-    const dir: 1 | -1 = was && LETTERS.indexOf(raw) < LETTERS.indexOf(was) ? -1 : 1;
-    const letter = nearestAvailable(raw, thumbIndex, dir) ?? nearestAvailable(raw, thumbIndex, dir === 1 ? -1 : 1);
+    const was = dragRef.current;
+    const { letter, dir } = railLetter(raw, was?.raw ?? null, was?.dir ?? 1, thumbIndex);
     const y = Math.min(box.height, Math.max(0, e.clientY - box.top));
-    return letter ? { letter, y, inside } : null;
+    return letter ? { letter, y, inside, pointerId: e.pointerId, raw, dir } : null;
   };
+  // Only the finger that started the drag counts.
+  const mine = (e: React.PointerEvent) => dragRef.current !== null && e.pointerId === dragRef.current.pointerId;
 
   const handleDown = (e: React.PointerEvent) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || dragRef.current) return;
     e.preventDefault();
     railRef.current?.setPointerCapture(e.pointerId);
     update(read(e));
   };
   const handleMove = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
+    if (!mine(e)) return;
     const next = read(e);
-    if (next && next.inside && next.letter !== dragRef.current.letter) navigator.vibrate?.(8);
+    // Chrome ignores vibrate (with a console warning) until the page has had a tap: a first-ever drag is silent.
+    if (next && next.inside && next.letter !== dragRef.current!.letter) navigator.vibrate?.(8);
     update(next);
   };
   const handleUp = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
+    if (!mine(e)) return;
     const end = read(e);
     update(null);
     if (end?.inside) onSelectLetter(end.letter, thumbIndex[end.letter]);
   };
-  const cancel = () => { if (dragRef.current) update(null); };
+  const cancel = (e: React.PointerEvent) => { if (mine(e)) update(null); };
 
   return (
     <div

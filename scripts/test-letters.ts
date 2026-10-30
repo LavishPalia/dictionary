@@ -1,5 +1,5 @@
 // Checks letter and page helpers (src/lib/letters.ts). Usage: npx tsx scripts/test-letters.ts
-import { LETTERS, letterForPage, letterAtOffset, nearestAvailable, markedPages, parsePageInput } from '../src/lib/letters';
+import { LETTERS, letterForPage, letterAtOffset, nearestAvailable, railLetter, markedPages, parsePageInput } from '../src/lib/letters';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -28,6 +28,19 @@ check('D goes forward to M', nearestAvailable('D', idx) === 'M');
 check('D goes back to C', nearestAvailable('D', idx, -1) === 'C');
 check('B stays B', nearestAvailable('B', idx) === 'B');
 check('nothing forward of Z+1 is null', nearestAvailable('Z', { A: 1 }) === null);
+
+// The rail skipping a missing letter (no X): moving down onto X goes on to Y, moving up onto it goes back to W, and a
+// thumb resting on X (raw X again and again) stays put rather than swapping between W and Y.
+const noX = Object.fromEntries(LETTERS.filter(l => l !== 'X').map((l, i) => [l, i * 100 + 1]));
+const down = railLetter('X', 'W', 1, noX);
+check('down onto missing X gives Y', down.letter === 'Y' && down.dir === 1, down);
+const rest = railLetter('X', 'X', down.dir, noX);
+check('resting on X stays Y', rest.letter === 'Y' && rest.dir === 1, rest);
+const up = railLetter('X', 'Y', 1, noX);
+check('up onto missing X gives W', up.letter === 'W' && up.dir === -1, up);
+check('resting there stays W', railLetter('X', 'X', up.dir, noX).letter === 'W');
+check('first touch on X (no previous) gives Y', railLetter('X', null, 1, noX).letter === 'Y');
+check('no letter after Z: falls back', railLetter('Z', 'Y', 1, { A: 1, Y: 50 }).letter === 'Y');
 
 const marks = markedPages({
   ribbons: [10, 20],
