@@ -6,8 +6,9 @@ import type { ReviewStatus } from '@/lib/review';
 import { ProgressBar } from '@/components/progress/Progress';
 import { STATUS_LABEL, type Progress } from '@/lib/progress';
 import { Button, IconButton, Segmented } from '@/components/ui';
-import { BookIcon, CloseIcon, StarIcon } from '@/components/ui/icons';
+import { BookIcon, CloseIcon, SearchIcon, StarIcon } from '@/components/ui/icons';
 import { sourceLabel, type HistoryWord } from '@/lib/history';
+import { searchSaved, SAVED_SEARCH_FROM, type SavedMark } from '@/lib/saved-search';
 
 /** A saved word; saved_at is missing for words saved before it was recorded. */
 export type SavedWord = DictionaryEntry & { saved_at?: number };
@@ -50,6 +51,8 @@ interface SavedScreenProps {
   /** Puts words back (Undo), merged into the current history. */
   onRestoreHistory: (list: HistoryWord[]) => void;
   onClearHistory: () => void;
+  /** "Look it up in the book ›": puts the text in the main search box. */
+  onLookUp: (text: string) => void;
   /** The tab Saved opens on; a new `tabRequest` switches to it while Saved is already open. */
   initialTab?: SavedTab;
   tabRequest?: number;
@@ -86,6 +89,13 @@ const HISTORY_EMPTY = 'Words you look up appear here, so you can come back to th
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
+// The text with the matched part marked, when the mark is in this field.
+function Marked({ text, mark, field }: { text: string; mark?: SavedMark; field: SavedMark['field'] }) {
+  if (!mark || mark.field !== field) return <>{text}</>;
+  const end = mark.start + mark.length;
+  return <>{text.slice(0, mark.start)}<mark className="saved-mark">{text.slice(mark.start, end)}</mark>{text.slice(end)}</>;
+}
+
 // "Calm – Candle" for a page (or "Calm – Centre" for a two-page spread), once the pages have loaded.
 function PageWords({ page, through = page, loadPage }: { page: number; through?: number; loadPage: SavedScreenProps['loadPage'] }) {
   const [label, setLabel] = useState<string | null>(null);
@@ -113,13 +123,15 @@ export function SavedScreen(props: SavedScreenProps) {
   const [historyFilter, setHistoryFilter] = useState<'all' | 'unsaved'>('all');
   const [editing, setEditing] = useState(false);
   // Leave Edit mode on another tab, or when there is nothing left to edit.
-  useEffect(() => { setEditing(false); }, [tab]);
+  useEffect(() => { setEditing(false); setQuery(''); }, [tab]);
   useEffect(() => { if (props.history.length === 0) setEditing(false); }, [props.history.length]);
   // Stars waiting for their word to load: further taps do nothing until it has (the ref sees taps in the same tick).
   const pendingRef = useRef(new Set<string>());
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   // Words by review status: all, or only new / learning / mastered.
   const [filter, setFilter] = useState<'all' | ReviewStatus>('all');
+  // Find a saved word (the Words tab, once there are enough to need it).
+  const [query, setQuery] = useState('');
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -165,6 +177,30 @@ export function SavedScreen(props: SavedScreenProps) {
     }))
     .filter((g) => g.items.length > 0);
 
+  const searching = query.trim() !== '';
+  const inFilter = words.filter((w) => filter === 'all' || props.statusFor(w.normalized) === filter);
+  const hits = searching ? searchSaved(inFilter, query) : [];
+  const hitsInAll = searching && hits.length === 0 && filter !== 'all' ? searchSaved(words, query).length : 0;
+  const filterName = filter === 'all' ? '' : `${STATUS_LABEL[filter].toLowerCase()} `;
+  const removeWord = (w: SavedWord) => { props.onRemoveWord(w); removed(`Removed “${w.headword}”`, () => props.onRestoreWord(w)); };
+  const wordRow = (w: SavedWord, mark?: SavedMark) => {
+    const status = props.statusFor(w.normalized);
+    return (
+      <div key={w.normalized} className="ui-list-item saved-item">
+        <button type="button" className="saved-open" onClick={() => props.onOpenWord(w)}>
+          <span className="saved-hw"><Marked text={w.headword} mark={mark} field="headword" /></span>
+          <span className="saved-hi" lang="hi"><Marked text={w.meaning_hi} mark={mark} field="hindi" /></span>
+        </button>
+        {status !== 'new' && (
+          <span className={`ui-tag review-status ui-tag--${status}`}>{status === 'mastered' ? 'Mastered' : 'Learning'}</span>
+        )}
+        <IconButton surface="paper" aria-label={`Remove ${w.headword} from saved words`} onClick={() => removeWord(w)}>
+          <CloseIcon />
+        </IconButton>
+      </div>
+    );
+  };
+
   const total = words.length + pages.length + notes.length;
 
   const { history, isSaved } = props;
@@ -207,7 +243,7 @@ export function SavedScreen(props: SavedScreenProps) {
         />
       </div>
 
-      {tab === 'words' && props.dueCount > 0 && (
+      {tab === 'words' && props.dueCount > 0 && !searching && (
         <Button variant="primary" full id="saved-review-btn" className="saved-review" onClick={props.onReview}>
           Review {props.dueCount} word{props.dueCount === 1 ? '' : 's'} now ›
         </Button>
@@ -215,7 +251,22 @@ export function SavedScreen(props: SavedScreenProps) {
 
       {tab === 'words' && words.length > 0 && (
         <>
-          <ProgressBar progress={props.progress} surface="desk" id="saved-progress" />
+          {!searching && <ProgressBar progress={props.progress} surface="desk" id="saved-progress" />}
+          {(words.length >= SAVED_SEARCH_FROM || searching) && (
+            <div className="saved-search" role="search">
+              <SearchIcon />
+              <input type="search" id="saved-search" className="saved-search-input" placeholder="Find a saved word"
+                aria-label="Find a saved word" autoComplete="off" autoCapitalize="none" spellCheck={false} enterKeyHint="search"
+                value={query} onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape' && query) { e.preventDefault(); setQuery(''); } }} />
+              {query && (
+                <button type="button" className="saved-search-clear" id="saved-search-clear" aria-label="Clear the search"
+                  onClick={() => { setQuery(''); document.getElementById('saved-search')?.focus(); }}>
+                  <CloseIcon />
+                </button>
+              )}
+            </div>
+          )}
           <div className="saved-filter">
             <Segmented<'all' | ReviewStatus>
               label="Show words"
@@ -230,7 +281,31 @@ export function SavedScreen(props: SavedScreenProps) {
         </>
       )}
 
-      {tab === 'words' && (
+      {tab === 'words' && searching && (
+        <>
+          <p className="saved-search-count" id="saved-search-count" role="status">
+            {hits.length ? `${hits.length} of ${plural(inFilter.length, `${filterName}word`)}` : ''}
+          </p>
+          {hits.length ? (
+            <div className="ui-list saved-list" id="saved-search-results">{hits.map((h) => wordRow(h.word, h.mark))}</div>
+          ) : (
+            <div className="saved-filter-empty" id="saved-search-empty" role="status">
+              <p>No {filterName}saved word matches “{query.trim()}”.</p>
+              {hitsInAll > 0 ? (
+                <button type="button" className="lookup-link tour-howlink tour-howlink--desk" id="saved-search-all" onClick={() => setFilter('all')}>
+                  Show all saved words · {plural(hitsInAll, 'match', 'matches')} ›
+                </button>
+              ) : (
+                <button type="button" className="lookup-link tour-howlink tour-howlink--desk" id="saved-search-lookup" onClick={() => props.onLookUp(query.trim())}>
+                  Look it up in the book ›
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'words' && !searching && (
         groups.length === 0 ? (
           words.length > 0 ? (
             <p className="saved-filter-empty" id="saved-filter-empty">
@@ -251,23 +326,7 @@ export function SavedScreen(props: SavedScreenProps) {
             {groups.map((g) => (
               <div key={g.name} role="group" aria-label={g.name}>
                 <div className="ui-list-group">{g.name}</div>
-                {g.items.map((w) => (
-                  <div key={w.normalized} className="ui-list-item saved-item">
-                    <button type="button" className="saved-open" onClick={() => props.onOpenWord(w)}>
-                      <span className="saved-hw">{w.headword}</span>
-                      <span className="saved-hi" lang="hi">{w.meaning_hi}</span>
-                    </button>
-                    {props.statusFor(w.normalized) !== 'new' && (
-                      <span className={`ui-tag review-status ui-tag--${props.statusFor(w.normalized)}`}>
-                        {props.statusFor(w.normalized) === 'mastered' ? 'Mastered' : 'Learning'}
-                      </span>
-                    )}
-                    <IconButton surface="paper" aria-label={`Remove ${w.headword} from saved words`}
-                      onClick={() => { props.onRemoveWord(w); removed(`Removed “${w.headword}”`, () => props.onRestoreWord(w)); }}>
-                      <CloseIcon />
-                    </IconButton>
-                  </div>
-                ))}
+                {g.items.map((w) => wordRow(w))}
               </div>
             ))}
           </div>

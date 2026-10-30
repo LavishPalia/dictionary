@@ -33,6 +33,32 @@
 }
 .saved-empty b { color: var(--brass-soft); font-weight: normal; font-family: var(--font-fell-sc); }
 
+/* Find a saved word: a paper field on the desk, between the progress bar and the status filter. */
+.saved-search {
+  position: relative; display: flex; align-items: center; margin: 12px 0 0; height: var(--tap); padding: 0 4px 0 14px; gap: 8px;
+  border: 1px solid var(--sepia); border-radius: var(--radius-pill); color: var(--ink-soft);
+  background: linear-gradient(180deg, var(--parch-hi), var(--parch)); box-shadow: inset 0 1px 3px rgba(80, 50, 20, 0.18);
+}
+.saved-search:focus-within { outline: 2px solid var(--brass); outline-offset: 2px; }
+.saved-search > .ui-icon { flex: none; width: 18px; height: 18px; }
+.saved-search-input {
+  flex: 1; min-width: 0; height: 100%; border: 0; padding: 0; background: transparent; color: var(--ink);
+  font: 16px var(--font-fell); outline: none; -webkit-appearance: none; appearance: none;
+}
+.saved-search-input::placeholder { color: var(--ink-soft); opacity: 0.85; }
+.saved-search-input::-webkit-search-cancel-button { display: none; }
+.saved-search-clear {
+  flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--ink-soft); cursor: pointer;
+}
+.saved-search-clear .ui-icon { width: 16px; height: 16px; }
+.saved-search-clear:hover { background: rgba(138, 116, 82, 0.15); color: var(--crimson); }
+.saved-search-clear:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: -2px; }
+.saved-search-count { margin: 0 2px 6px; min-height: 1em; font: 13.5px var(--font-fell); color: var(--brass-muted); }
+.saved-search-count:empty { display: none; }
+.saved-mark { background: rgba(201, 162, 74, 0.45); color: inherit; border-radius: 2px; padding: 0 1px; }
+#saved-search-empty p { margin: 0 0 6px; }
+
 /* Undo message: above the bottom bar on phones, bottom-centre on desktop. */
 .saved-toast-slot { position: fixed; left: 0; right: 0; bottom: 24px; z-index: 70; display: flex; justify-content: center; pointer-events: none; }
 .saved-toast {
