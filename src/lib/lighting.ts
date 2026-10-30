@@ -26,6 +26,15 @@ export function readLighting(settings: unknown): Lighting {
   return evening === true ? 'evening' : 'auto';
 }
 
+/**
+ * What the app writes to panna_settings: `lighting`, and next to it the legacy `evening` key (true only for Evening).
+ * An old cached app (from before Auto) reads and rewrites only `evening`, so this keeps a pinned Evening across a
+ * deploy; readLighting still prefers `lighting`.
+ */
+export function storedSettings<T extends Record<string, unknown>>(lighting: Lighting, rest: T): { lighting: Lighting; evening: boolean } & T {
+  return { lighting, evening: lighting === 'evening', ...rest };
+}
+
 export function isEveningAt(date: Date): boolean {
   const hour = date.getHours();
   return hour >= EVENING_FROM || hour < EVENING_UNTIL;

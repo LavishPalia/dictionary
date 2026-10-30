@@ -122,6 +122,8 @@
      would fail contrast, so Evening gives it a dark value). */
   --card: #f3e8c9;
   --brass-on-paper: #c9a24a;
+  --green-desk: #3d5a2a; /* the "mastered" share and dot of the progress bar on the desk (Saved) */
+  --switch-knob: #f4e6c5; /* a switch's knob */
 }
 
 /* Evening ("a book under a lamp"): html[data-light] is set before first paint (src/lib/lighting.ts). */
@@ -192,6 +194,8 @@ html[data-light="evening"] {
   --cover-cta: #e6d6b0;
   --card: #c9b58d;
   --brass-on-paper: #533c0c;
+  --green-desk: #6f8f52;
+  --switch-knob: #c4b38c;
 }
 
 /* The Auto fade (DictionaryApp adds html.light-fading for 2.1 s when the clock changes the mode).
@@ -262,6 +266,8 @@ html[data-light="evening"] {
 @property --desk-label { syntax: '<color>'; inherits: true; initial-value: #cdb98f; }
 @property --nav-ink { syntax: '<color>'; inherits: true; initial-value: #b9a57c; }
 @property --cover-cta { syntax: '<color>'; inherits: true; initial-value: #f1e4c4; }
+@property --green-desk { syntax: '<color>'; inherits: true; initial-value: #3d5a2a; }
+@property --switch-knob { syntax: '<color>'; inherits: true; initial-value: #f4e6c5; }
 @media (prefers-reduced-motion: no-preference) {
   html.light-fading {
     transition:
@@ -280,7 +286,7 @@ html[data-light="evening"] {
       --green 2s, --brass-soft 2s, --brass-muted 2s, --wash 2s,
       --parch-band 2s, --tip-top 2s, --tip-bottom 2s, --tip-arrow 2s,
       --switch-off 2s, --progress-new 2s, --badge-ink 2s, --desk-label 2s,
-      --nav-ink 2s, --cover-cta 2s !important;
+      --nav-ink 2s, --cover-cta 2s, --green-desk 2s, --switch-knob 2s !important;
   }
 }
 
@@ -292,7 +298,7 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: radial-gradient(ellipse at 50% 40%, var(--color-desk-center) 0%, var(--color-desk-edge) 75%);
+  background: radial-gradient(ellipse at 50% var(--desk-glow-y), var(--desk-center) 0%, var(--desk-edge) var(--desk-reach));
   color: var(--color-ink-primary);
   font-family: var(--font-fell);
   -webkit-font-smoothing: antialiased;
@@ -338,6 +344,16 @@ html, body {
    ring, so it is dropped while the ribbon has keyboard focus. */
 .thumb-tab:focus-visible { outline: 2px solid var(--brass) !important; outline-offset: 1px; position: relative; z-index: 1; }
 .book-control:focus-visible { outline: 3px solid var(--brass-on-paper); outline-offset: 2px; clip-path: none !important; opacity: 1 !important; }
+
+/* The paper's inset shading (BookSpread, PageFlipLeaf, MobilePage), the spread's turn arrows (BookSpread) and a margin
+   note under the pointer (Marginalia). Classes, not inline styles, so color-mix-fallback.css can cover them. */
+.page-inset { box-shadow: inset 0 0 70px color-mix(in srgb, var(--page-shade) 28%, transparent); }
+.page-inset--back { box-shadow: inset 0 0 60px color-mix(in srgb, var(--page-shade) 22%, transparent); }
+.page-inset--phone { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 0 60px color-mix(in srgb, var(--page-shade) 30%, transparent); }
+.spread-arrow { background: color-mix(in srgb, var(--parch) 92%, transparent); }
+.spread-arrow:disabled { background: color-mix(in srgb, var(--parch) 45%, transparent); }
+.spread-arrow:not(:disabled):hover { background: var(--parch); }
+.margin-note:hover { background: color-mix(in srgb, var(--parch) 60%, transparent); }
 
 .entry-pronunciation {
   font-family: var(--font-deva);

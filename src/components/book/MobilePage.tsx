@@ -173,6 +173,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
     <div
       ref={cardRef}
       id="mobile-page"
+      className="page-inset--phone"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -187,7 +188,6 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 0 60px color-mix(in srgb, var(--page-shade) 30%, transparent)',
         borderRadius: '4px',
         overflow: 'hidden',
         // Read by .letter-rail in goto.css.

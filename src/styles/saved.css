@@ -67,7 +67,7 @@
 .history-star:hover { background: rgba(201, 162, 74, 0.2); }
 .history-star[aria-pressed='true'] { background: var(--brass); border-color: var(--brass); color: var(--color-desk-edge); }
 .history-star[aria-pressed='true'] .ui-icon { fill: currentColor; }
-.history-star:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.history-star:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; } /* only ever on paper */
 .history-star[aria-busy='true'] { opacity: 0.6; cursor: progress; }
 .history-clear { margin-top: var(--space-4); }
 .saved-item .ui-iconbtn.history-remove { width: var(--tap); height: var(--tap); }

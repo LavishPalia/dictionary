@@ -1,6 +1,6 @@
 // Checks the lighting logic (src/lib/lighting.ts): settings migration, the clock rule, and that the inline
 // pre-paint script agrees with resolveLight. Usage: npx tsx scripts/test-lighting.ts
-import { readLighting, isEveningAt, resolveLight, PRE_PAINT_SCRIPT, THEME_COLOR, EVENING_FROM, EVENING_UNTIL } from '../src/lib/lighting';
+import { readLighting, isEveningAt, resolveLight, storedSettings, PRE_PAINT_SCRIPT, THEME_COLOR, EVENING_FROM, EVENING_UNTIL, type Lighting } from '../src/lib/lighting';
 
 let checks = 0;
 let failures = 0;
@@ -22,6 +22,18 @@ check('{} reads as auto', readLighting({}) === 'auto');
 check('null reads as auto', readLighting(null) === 'auto');
 check("'junk' reads as auto", readLighting('junk') === 'auto');
 check("{lighting:'bogus', evening:true} reads as evening", readLighting({ lighting: 'bogus', evening: true }) === 'evening');
+
+// ── storedSettings (what the app writes to panna_settings) ──
+// Next to `lighting` it also writes the legacy `evening` key, so an old cached app (which reads and rewrites only
+// `evening`) keeps a pinned Evening; readLighting still prefers `lighting`.
+for (const lighting of ['auto', 'day', 'evening'] as Lighting[]) {
+  const saved = storedSettings(lighting, { speed: 'brisk', sounds: false });
+  check(`storedSettings('${lighting}') writes lighting, evening:${lighting === 'evening'}, speed and sounds`,
+    JSON.stringify(saved) === JSON.stringify({ lighting, evening: lighting === 'evening', speed: 'brisk', sounds: false }), saved);
+  check(`storedSettings('${lighting}') reads back as ${lighting}`, readLighting(JSON.parse(JSON.stringify(saved))) === lighting);
+}
+// An old app read {lighting:'evening', evening:true} as evening:true and rewrote only its own keys.
+check('an old app rewriting a pinned Evening keeps Evening', readLighting({ evening: true, speed: 'realistic', sounds: true }) === 'evening');
 
 // ── isEveningAt ──
 check('constants: evening from 19 until 6', EVENING_FROM === 19 && EVENING_UNTIL === 6);
@@ -78,6 +90,9 @@ const cases: { label: string; stored: string | null | 'THROW'; hour: number; set
   { label: "{lighting:'bogus', evening:true} at 10:00", stored: JSON.stringify({ lighting: 'bogus', evening: true }), hour: 10, settings: { lighting: 'bogus', evening: true } },
   { label: "{lighting:'auto', evening:true} at 10:00", stored: JSON.stringify({ lighting: 'auto', evening: true }), hour: 10, settings: { lighting: 'auto', evening: true } },
   { label: 'JSON 5 at 20:00', stored: '5', hour: 20, settings: 5 },
+  { label: "{lighting:'day', evening:false} at 20:00", stored: JSON.stringify({ lighting: 'day', evening: false }), hour: 20, settings: { lighting: 'day', evening: false } },
+  { label: "{lighting:'auto', evening:false} at 20:00", stored: JSON.stringify({ lighting: 'auto', evening: false }), hour: 20, settings: { lighting: 'auto', evening: false } },
+  { label: "{lighting:'evening', evening:true} at 10:00", stored: JSON.stringify({ lighting: 'evening', evening: true }), hour: 10, settings: { lighting: 'evening', evening: true } },
 ];
 check('PRE_PAINT_SCRIPT is a string', typeof PRE_PAINT_SCRIPT === 'string' && PRE_PAINT_SCRIPT.length > 0);
 check('PRE_PAINT_SCRIPT has no import/require', typeof PRE_PAINT_SCRIPT === 'string' && !/\bimport\b|\brequire\s*\(/.test(PRE_PAINT_SCRIPT));

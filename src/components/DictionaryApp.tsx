@@ -24,7 +24,7 @@ import { BookMeta, BookPage, DictionaryEntry, MarginNote, RelatedWord } from '@/
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
 import { useReducedMotion, visibleElement } from '@/lib/motion';
-import { applyLight, readLighting, resolveLight, type Lighting } from '@/lib/lighting';
+import { applyLight, readLighting, resolveLight, storedSettings, type Lighting } from '@/lib/lighting';
 import type { PageTurnSpeed } from '@/components/shell/ReadingMenu';
 import { TourLayer } from '@/components/tour/TourLayer';
 import { ToursSheet } from '@/components/tour/ToursSheet';
@@ -96,7 +96,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // look as if it chose the defaults (a restored backup's settings would otherwise lose to them).
       const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted;
       if (untouched && localStorage.getItem('panna_settings') === null) return;
-      localStorage.setItem('panna_settings', JSON.stringify({ lighting, speed: speedMode, sounds: !isMuted }));
+      localStorage.setItem('panna_settings', JSON.stringify(storedSettings(lighting, { speed: speedMode, sounds: !isMuted })));
     } catch {}
   }, [settingsLoaded, lighting, speedMode, isMuted]);
 

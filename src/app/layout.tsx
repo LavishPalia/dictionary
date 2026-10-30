@@ -12,6 +12,7 @@ import '@/styles/tour.css';
 import '@/styles/learn.css';
 import '@/styles/progress.css';
 import '@/styles/motion.css';
+import '@/styles/color-mix-fallback.css'; // last, so its rules win where color-mix() is unsupported
 import { Caveat, IM_Fell_English, IM_Fell_English_SC, Tiro_Devanagari_Hindi } from 'next/font/google';
 import { PRE_PAINT_SCRIPT } from '@/lib/lighting';
 

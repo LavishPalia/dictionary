@@ -39,6 +39,9 @@ const fakeClock = (h, m = 0, s = 0) => `(() => {
   globalThis.Date = FakeDate;
   window.__advance = (ms) => { offset += ms; };
 })();`;
+// A speech recogniser that never answers (window.__pannaRecognition, read by src/lib/voice.ts): the voice sheet
+// opens and stays on "listening".
+const FAKE_SPEECH = `window.__pannaRecognition = class { constructor() { this.lang = ''; } start() {} abort() {} stop() {} };`;
 // Records the mode and the theme-color meta as they stand when the document has been parsed, and every change to
 // <html>'s class (for the fade), with times.
 const PROBE = `(() => {
@@ -128,7 +131,7 @@ async function main() {
     const register = async (time) => {
       for (const identifier of registered) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier });
       registered = [];
-      for (const source of [fakeClock(...time), PROBE]) registered.push((await send('Page.addScriptToEvaluateOnNewDocument', { source })).identifier);
+      for (const source of [fakeClock(...time), PROBE, FAKE_SPEECH]) registered.push((await send('Page.addScriptToEvaluateOnNewDocument', { source })).identifier);
     };
     const navigate = async (url = '/page/16') => {
       consoleLines.length = 0;
@@ -195,7 +198,7 @@ async function main() {
     picked.fadeLater = await sawFade();
     check('picking Evening at 10:00 applies at once, with no fade',
       picked.light === 'evening' && !picked.fade && !picked.fadeLater, picked);
-    check("picking Evening saves lighting:'evening' (and no evening key)", picked.stored?.lighting === 'evening' && !('evening' in (picked.stored ?? {})), picked.stored);
+    check("picking Evening saves lighting:'evening' and the legacy evening:true (for an old cached app)", picked.stored?.lighting === 'evening' && picked.stored?.evening === true, picked.stored);
     check('picking Evening moves the theme-color too', (await evaluate(`document.querySelector('meta[name="theme-color"]')?.content`)) === THEME.evening);
     const desk = await evaluate(`getComputedStyle(document.querySelector('.app-main')).backgroundImage`);
     check('in Evening the desk is the lamp-lit gradient (#2a1a0e → #120a06)', /rgb\(42, 26, 14\) 0%, rgb\(18, 10, 6\) 85%/.test(desk ?? '') && /50% 35%/.test(desk ?? ''), desk);
@@ -207,15 +210,15 @@ async function main() {
     await pick('Auto');
     await sleep(60);
     const backToAuto = { light: await light(), stored: await stored() };
-    check('picking Auto at 10:00 returns to day', backToAuto.light === 'day' && backToAuto.stored?.lighting === 'auto', backToAuto);
+    check('picking Auto at 10:00 returns to day (saved with evening:false)', backToAuto.light === 'day' && backToAuto.stored?.lighting === 'auto' && backToAuto.stored?.evening === false, backToAuto);
 
     // Old settings migrate.
     await load(JSON.stringify({ evening: true, speed: 'brisk', sounds: true }), 10);
     await openMenu();
     const migrated = { radios: await lightingRadios(), stored: await stored() };
     check('old {evening:true} migrates: the menu shows Evening', migrated.radios?.find((r) => r.checked)?.label === 'Evening', migrated.radios);
-    check('old {evening:true} migrates: the next save writes lighting with no evening key',
-      JSON.stringify(migrated.stored) === JSON.stringify({ lighting: 'evening', speed: 'brisk', sounds: true }), migrated.stored);
+    check('old {evening:true} migrates: the next save writes lighting, and keeps evening:true for an old app',
+      JSON.stringify(migrated.stored) === JSON.stringify({ lighting: 'evening', evening: true, speed: 'brisk', sounds: true }), migrated.stored);
 
     // An old backup with {evening:true}, through the real restore UI.
     const backupFile = path.join(FILES, 'old-backup.json');
@@ -263,8 +266,12 @@ async function main() {
           const box = el.getBoundingClientRect();
           const s = getComputedStyle(el);
           if (!box.width || !box.height || s.visibility === 'hidden' || s.display === 'none') continue;
-          for (const c of [...parseAll(s.backgroundColor), ...parseAll(s.backgroundImage)]) {
-            if (c.a >= 0.9 && lum(c) > limit) hits.push({ el: name(el), lum: +lum(c).toFixed(3), c: [c.r, c.g, c.b].map(Math.round) });
+          for (const pseudo of [null, '::before', '::after']) {
+            const p = pseudo ? getComputedStyle(el, pseudo) : s;
+            if (pseudo && (p.content === 'none' || p.content === 'normal' || p.display === 'none' || p.visibility === 'hidden')) continue;
+            for (const c of [...parseAll(p.backgroundColor), ...parseAll(p.backgroundImage)]) {
+              if (c.a >= 0.9 && lum(c) > limit) hits.push({ el: name(el) + (pseudo ?? ''), lum: +lum(c).toFixed(3), c: [c.r, c.g, c.b].map(Math.round) });
+            }
           }
         }
         return hits;
@@ -282,6 +289,49 @@ async function main() {
       // over the first opaque one; each gradient stop tried, the worst counted), falls short of AA: 4.5:1, or 3:1 for
       // large text (24px, or 18.66px bold). Opacity on the way up fades the text too. Disabled controls are exempt.
       const over = (top, bottom) => ({ r: top.r * top.a + bottom.r * (1 - top.a), g: top.g * top.a + bottom.g * (1 - top.a), b: top.b * top.a + bottom.b * (1 - top.a), a: 1 });
+      // The colours behind something drawn at start: its background and its ancestors', translucent layers composed
+      // over the first opaque one, each gradient stop tried.
+      const backdrop = (start) => {
+        const layers = [];
+        for (let n = start; n; n = n.parentElement) {
+          const cs = getComputedStyle(n);
+          const stops = parseAll(cs.backgroundImage);
+          const solid = parseAll(cs.backgroundColor).filter((c) => c.a > 0);
+          if (stops.length) layers.push(stops); else if (solid.length) layers.push(solid);
+          const last = layers[layers.length - 1];
+          if (last && last.every((c) => c.a >= 0.99)) break;
+        }
+        if (!layers.length) return [];
+        let bases = layers[layers.length - 1].map((c) => ({ ...c, a: 1 }));
+        for (let i = layers.length - 2; i >= 0; i--) bases = bases.flatMap((b) => layers[i].map((c) => over(c, b)));
+        return bases;
+      };
+      // Focuses focusSel and measures the focus ring drawn on ringSel (default: the same element) against what it
+      // lies on: the parent's background for a ring outside the box (offset ≥ 0), the element's own for one inside.
+      // Non-text contrast (WCAG 1.4.11) needs 3:1.
+      const ring = (focusSel, ringSel) => {
+        const el = document.querySelector(focusSel);
+        if (!el) return { focus: focusSel, missing: true, ok: false };
+        el.focus({ preventScroll: true });
+        const r = ringSel ? el.closest(ringSel) : el;
+        const s = getComputedStyle(r);
+        const width = parseFloat(s.outlineWidth) || 0, offset = parseFloat(s.outlineOffset) || 0;
+        const color = parseAll(s.outlineColor)[0];
+        const shown = s.outlineStyle !== 'none' && width > 0 && Boolean(color);
+        const behind = backdrop(offset >= 0 ? r.parentElement : r);
+        const worst = shown && behind.length ? Math.min(...behind.map((b) => ratio(color, b))) : 0;
+        const out = { focus: focusSel, shown, focusVisible: el.matches(':focus-visible'), offset, color: color && [color.r, color.g, color.b].map(Math.round),
+          behind: behind.slice(0, 3).map((b) => [b.r, b.g, b.b].map(Math.round)), ratio: +worst.toFixed(2), ok: shown && worst >= 3 };
+        el.blur();
+        return out;
+      };
+      // The "mastered" share of each progress bar, and its legend dot, against what it sits on (3:1).
+      const greens = () => [...document.querySelectorAll('.progress-seg--mastered')].filter((el) => el.getBoundingClientRect().width > 0).map((el) => {
+        const c = parseAll(getComputedStyle(el).backgroundColor)[0];
+        const worst = Math.min(...backdrop(el.parentElement).map((b) => ratio(c, b)));
+        return { on: el.closest('.progress--desk') ? 'desk' : 'paper', mark: el.classList.contains('progress-dot') ? 'dot' : 'bar',
+          c: [c.r, c.g, c.b].map(Math.round), ratio: +worst.toFixed(2), ok: worst >= 3 };
+      });
       const lowText = () => {
         const out = [];
         for (const el of document.body.querySelectorAll('*')) {
@@ -320,6 +370,11 @@ async function main() {
       };
     `;
     const inPage = (body) => evaluate(`(() => { ${COLOR_JS} ${body} })()`);
+    // A key press (Shift), so the next scripted focus() is keyboard focus and :focus-visible applies.
+    const keyboardMode = async () => {
+      await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Shift', code: 'ShiftLeft', windowsVirtualKeyCode: 16 });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Shift', code: 'ShiftLeft', windowsVirtualKeyCode: 16 });
+    };
     const AXE = fs.readFileSync(path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
     const axeContrast = (selector) => evaluate(`(async () => {
       if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); }
@@ -423,6 +478,76 @@ async function main() {
     })()`);
     check('every Evening token is registered with @property and fades (binding rule)',
       binding?.count > 4 && binding.unregistered.length === 0 && binding.unlisted.length === 0, binding);
+
+    // No colour is mixed in an inline style (an @supports fallback cannot reach those), even under the pointer.
+    const hoverOver = async (selector) => {
+      const at = await evaluate(`(() => { const r = document.querySelector(${JSON.stringify(selector)})?.getBoundingClientRect(); return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null; })()`);
+      if (at) await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at.x, y: at.y });
+      await sleep(300);
+      return evaluate(`[...document.querySelectorAll('[style*="color-mix"]')].map((el) => el.id || el.tagName)`);
+    };
+    const inlineMix = { still: await hoverOver('#book-spread-container'), arrow: await hoverOver('button[aria-label="Next spread"]'),
+      note: await hoverOver('[id^="margin-note-"]:not(#margin-note-editor):not(#margin-note-textarea)') };
+    check('desktop: no inline style mixes a colour (at rest, over the arrow, over a margin note)',
+      [inlineMix.still, inlineMix.arrow, inlineMix.note].every((list) => Array.isArray(list) && list.length === 0), inlineMix);
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 5 });
+
+    // The html/body canvas (iOS overscroll, the not-found and error pages) is the lamp-lit desk too.
+    const canvasOf = () => evaluate(`[document.documentElement, document.body].map((n) => getComputedStyle(n).backgroundImage)`);
+    const LAMP_DESK = /^radial-gradient\(at 50% 35%, rgb\(42, 26, 14\) 0(px|%), rgb\(18, 10, 6\) 85%\)$/;
+    const DAY_DESK = /^radial-gradient\(at 50% 40%, rgb\(74, 51, 34\) 0(px|%), rgb\(43, 29, 20\) 75%\)$/;
+    const eveningCanvas = await canvasOf();
+    await send('Page.navigate', { url: `${BASE}/no-such-page` });
+    await sleep(2000);
+    const notFoundCanvas = { light: await light(), html: (await canvasOf())?.[0] };
+    check('Evening: the html and body canvas is the lamp-lit desk (the app, and a not-found page)',
+      eveningCanvas?.every((b) => LAMP_DESK.test(b)) && notFoundCanvas.light === 'evening' && LAMP_DESK.test(notFoundCanvas.html ?? ''), { eveningCanvas, notFoundCanvas });
+    await load(JSON.stringify({ lighting: 'day' }), 20, '/page/400');
+    const dayCanvas = await canvasOf();
+    check('Day: the html and body canvas is unchanged (#4a3322 → #2b1d14 at 75%)', dayCanvas?.every((b) => DAY_DESK.test(b)), dayCanvas);
+
+    // color-mix() fallback: every color-mix() declaration has a twin inside @supports not (color-mix …) with the same
+    // selector and property, and in Day the twin computes to the same colour.
+    const fallback = await inPage(String.raw`
+      const rules = [];
+      const walk = (list, inNot) => { for (const r of list) {
+        const not = inNot || (r.constructor.name === 'CSSSupportsRule' && /^not\b/.test(r.conditionText.trim()) && /color-mix/.test(r.conditionText));
+        if (r.cssRules && r.constructor.name !== 'CSSStyleRule') walk(r.cssRules, not); else if (r.style) rules.push({ r, not }); } };
+      for (const sheet of document.styleSheets) { try { walk(sheet.cssRules, false); } catch {} }
+      const twins = new Map(); const uses = []; const outside = new Map();
+      const declarations = (style) => style.cssText.split(/;\s*/).filter(Boolean).map((d) => { const i = d.indexOf(':'); return [d.slice(0, i).trim(), d.slice(i + 1).trim()]; });
+      // The minifier merges rules with the same declarations, so a selector list counts as each of its selectors.
+      const selectors = (text) => { const out = []; let depth = 0, cur = '';
+        for (const ch of text) { if (ch === '(') depth++; if (ch === ')') depth--; if (ch === ',' && !depth) { out.push(cur.trim()); cur = ''; } else cur += ch; }
+        out.push(cur.trim()); return out; };
+      for (const { r, not } of rules) for (const sel of selectors(r.selectorText ?? '')) for (const [p, v] of declarations(r.style)) {
+        if (p.startsWith('--')) continue;
+        if (not) twins.set(sel + '|' + p, v);
+        else { outside.set(sel + '|' + p, v); if (/color-mix/.test(v)) uses.push({ sel, p, v }); }
+      }
+      // The other rules in the block restate a later rule (to keep the cascade); each must match it exactly.
+      const useKeys = new Set(uses.map((u) => u.sel + '|' + u.p));
+      const restated = [...twins].filter(([k]) => !useKeys.has(k)).filter(([k, v]) => outside.get(k) !== v).map(([k, v]) => ({ rule: k, here: v, original: outside.get(k) ?? 'none' }));
+      const probe = document.createElement('div'); document.body.appendChild(probe);
+      const computed = (p, v) => { probe.style.cssText = ''; probe.style.setProperty(p, v); const cs = getComputedStyle(probe);
+        return p === 'background' ? cs.backgroundColor + ' ' + cs.backgroundImage : cs.getPropertyValue(p); };
+      const strip = (t) => t.replace(/rgba?\([^)]*\)|color\([^)]*\)/g, '#');
+      const same = (a, b) => { const x = parseAll(a), y = parseAll(b);
+        return x.length === y.length && x.every((c, i) => ['r', 'g', 'b'].every((k) => Math.abs(c[k] - y[i][k]) <= 1) && Math.abs(c.a - y[i].a) <= 0.01)
+          && strip(a) === strip(b); };
+      const missing = [], differ = [];
+      for (const u of uses) {
+        const twin = twins.get(u.sel + '|' + u.p);
+        if (twin === undefined) { missing.push(u.sel + ' ' + u.p); continue; }
+        if (/color-mix|var\(/.test(twin)) { differ.push({ sel: u.sel, p: u.p, twin }); continue; }
+        const a = computed(u.p, u.v), b = computed(u.p, twin);
+        if (!same(a, b)) differ.push({ sel: u.sel, p: u.p, mixed: a, twin: b });
+      }
+      probe.remove();
+      return { uses: uses.length, missing, differ, restated };`);
+    check('every color-mix() has an @supports-not twin with the Day value (buttons, chips, review options, inputs, the book)',
+      fallback?.uses > 15 && fallback.missing.length === 0 && fallback.differ.length === 0, fallback);
+    check('the fallback block restates the later rules it would otherwise beat, unchanged', fallback?.restated.length === 0, fallback?.restated);
     await setSize(PHONE);
 
     // ════════ Every other screen (Task 4) ════════
@@ -444,7 +569,8 @@ async function main() {
     const seedSaved = () => evaluate(`(async () => {
       const list = []; for (const h of ['camel', 'ceremony', 'abandon', 'calm']) list.push({ ...(await (await fetch('/api/word/' + h)).json()).entry, saved_at: Date.now() });
       localStorage.setItem('panna_saved_words', JSON.stringify(list));
-      localStorage.setItem('panna_review', JSON.stringify(Object.fromEntries(list.map((e) => [e.normalized, { box: 1, due_at: 0, right: 1, wrong: 0 }]))));
+      // One word mastered (box 4), so the progress bars show their green share.
+      localStorage.setItem('panna_review', JSON.stringify(Object.fromEntries(list.map((e) => [e.normalized, { box: e.normalized === 'calm' ? 4 : 1, due_at: 0, right: 1, wrong: 0 }]))));
       localStorage.setItem('panna_bookmarks', JSON.stringify([16]));
       const now = Date.now(); const w = (normalized, headword, meaning_hi, at, count, source) => ({ normalized, headword, meaning_hi, first_at: at, last_at: at, count, lookups: [at], source, page: null });
       localStorage.setItem('panna_history', JSON.stringify([w('camel', 'Camel', 'ऊँट', now - 60000, 3, 'share'), w('candid', 'candid', 'स्पष्टवादी', now - 3 * 86400000, 1, 'voice')]));
@@ -459,9 +585,18 @@ async function main() {
         await sleep(350);
         views.push({ name, shown, ...(shown ? await inPage(`return { hits: bright(['body'], 0.5), low: lowText() };`) : {}) });
       };
+      // Focus rings, measured against what they are drawn over; the green "mastered" marks against their card or desk.
+      const rings = [];
+      const ringAt = async (label, focusSel, ringSel) => {
+        await waitFor(focusSel, 20);
+        await keyboardMode();
+        rings.push({ label, ...(await inPage(`return ring(${JSON.stringify(focusSel)}, ${JSON.stringify(ringSel ?? null)});`)) });
+      };
+      const greenMarks = [];
       const fresh = () => go('/page/16', '.entry-text');
       await fresh();
       await probe('the book with the search bar', '#lookup-input');
+      await ringAt('the search field (drawn over the desk)', '#lookup-input', '.app-lookup');
       if (SHOTS && size === PHONE) await shot('evening-page.png');
       await typeLookup('cam'); await sleep(1200);
       await probe('search results', '.lookup-panel');
@@ -469,6 +604,7 @@ async function main() {
       await probe('search, no entry', '.noentry');
       await fresh(); await tap('.entry-open');
       await probe('the word card', '#save-word-btn');
+      await ringAt('Save on the word card', '#save-word-btn');
       if (SHOTS && size === PHONE) await shot('evening-word.png');
       await tap('#report-btn');
       await probe('report a problem', '.report');
@@ -476,6 +612,8 @@ async function main() {
       await probe('Go to', '#goto-sheet');
       await fresh(); await tap('#menu-btn');
       await probe('the ⋯ menu', '#reading-menu');
+      await ringAt('the lighting control in the ⋯ menu', '#lighting-auto');
+      await ringAt('a switch in the ⋯ menu', '#reading-menu .ui-switch');
       await tap('#guided-tours-btn');
       await probe('guided tours list', '#tour-start-start');
       await tap('#tour-start-start');
@@ -484,11 +622,14 @@ async function main() {
       await probe('Credits', '[aria-label="Close credits"]');
       await fresh(); await tap(size.mobile ? '#nav-today-btn' : '#open-today-btn');
       await probe('Today', '.today');
+      greenMarks.push(...((await inPage('return greens();')) ?? []).map((m) => ({ screen: 'Today', ...m })));
       if (SHOTS && size === PHONE) await shot('evening-today.png');
       await tap(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
       for (const tab of ['words', 'pages', 'notes', 'history']) {
         await tap(`#saved-tab-${tab}`);
         await probe(`Saved: ${tab}`, '#saved-screen');
+        if (tab === 'words') greenMarks.push(...((await inPage('return greens();')) ?? []).map((m) => ({ screen: 'Saved', ...m })));
+        if (tab === 'history') await ringAt('a history star', '.history-star');
         if (SHOTS && size === PHONE && tab === 'words') await shot('evening-saved.png');
       }
       await tap('#saved-tab-words');
@@ -505,10 +646,27 @@ async function main() {
       await probe('the sentence sheet', '#sentence-sheet button.sentence-word');
       await tap('#sentence-sheet button.sentence-word');
       await probe('the sentence sheet with a word chosen', '.sentence-entry');
+      await fresh(); await tap('#voice-btn');
+      await probe('the voice sheet', '[role="dialog"][aria-label="Voice search"] .voice-cancel');
+      await ringAt('Cancel in the voice sheet', '[role="dialog"][aria-label="Voice search"] .voice-cancel');
+      await ringAt('the voice language control', '[role="dialog"][aria-label="Voice search"] .ui-seg button');
+      for (const r of rings) check(`evening ${sizeName}: the focus ring on ${r.label} reaches 3:1 against what it is drawn over`, r.ok, r);
+      check(`evening ${sizeName}: the green "mastered" bar share and dot reach 3:1 on the desk (Saved) and on paper (Today)`,
+        greenMarks.some((m) => m.on === 'desk' && m.mark === 'bar') && greenMarks.some((m) => m.on === 'desk' && m.mark === 'dot')
+        && greenMarks.some((m) => m.on === 'paper') && greenMarks.every((m) => m.ok), greenMarks);
       for (const v of views) {
         check(`evening ${sizeName}: nothing bright on ${v.name}`, v.shown && v.hits?.length === 0, v.shown ? v.hits?.slice(0, 6) : 'not shown');
         check(`evening ${sizeName}: every text on ${v.name} reaches AA`, v.shown && v.low?.length === 0, v.shown ? v.low?.slice(0, 8) : 'not shown');
       }
+    }
+    // Day: the search field's ring is the same brass as before, and visible on the Day desk too.
+    for (const [sizeName, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
+      await setSize(size);
+      await load(JSON.stringify({ lighting: 'day' }), 20);
+      await keyboardMode();
+      const dayRing = await inPage(`return ring('#lookup-input', '.app-lookup');`);
+      check(`day ${sizeName}: the search field's focus ring is #c9a24a and reaches 3:1 on the desk`,
+        dayRing?.ok && JSON.stringify(dayRing.color) === JSON.stringify([201, 162, 74]), dayRing);
     }
     await setSize(PHONE);
 

@@ -58,6 +58,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
           <div
             key={note.id}
             id={`margin-note-${note.id}`}
+            className="margin-note"
             title={`Handwritten margin note: "${note.text}"`}
             style={{
               position: 'absolute',
@@ -79,12 +80,6 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               display: 'flex',
               flexDirection: 'column',
               alignItems: isLeftPage ? 'flex-start' : 'flex-end',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'color-mix(in srgb, var(--parch) 60%, transparent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
             }}
           >
             <span style={{ wordBreak: 'break-word', textAlign: isLeftPage ? 'left' : 'right' }}>

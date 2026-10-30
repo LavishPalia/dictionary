@@ -48,13 +48,13 @@ export const PageFace: React.FC<PageFaceProps> = ({
 
   return (
     <div
+      className="page-inset"
       style={{
         position: 'absolute',
         inset: 0,
         boxSizing: 'border-box',
         padding: '26px 38px',
         background: bg,
-        boxShadow: 'inset 0 0 70px color-mix(in srgb, var(--page-shade) 28%, transparent)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -116,11 +116,11 @@ const GhostPage: React.FC<{ isLeftPage: boolean }> = ({ isLeftPage }) => {
     : 'linear-gradient(to left, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)';
   return (
     <div
+      className="page-inset--back"
       style={{
         position: 'absolute',
         inset: 0,
         background: bg,
-        boxShadow: 'inset 0 0 60px color-mix(in srgb, var(--page-shade) 22%, transparent)',
         display: 'flex',
         flexDirection: 'column',
         gap: 7,

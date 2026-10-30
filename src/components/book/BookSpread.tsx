@@ -253,6 +253,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         >
           {/* LEFT PAGE (interactive, selectable text) */}
           <div
+            className="page-inset"
             style={{
               position: 'absolute',
               top: 0, left: 0,
@@ -260,7 +261,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
               boxSizing: 'border-box',
               padding: '26px 38px',
               background: 'linear-gradient(to right, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)',
-              boxShadow: 'inset 0 0 70px color-mix(in srgb, var(--page-shade) 28%, transparent)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -301,6 +301,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
 
           {/* RIGHT PAGE (interactive, selectable text) */}
           <div
+            className="page-inset"
             style={{
               position: 'absolute',
               top: 0, right: 0,
@@ -308,7 +309,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
               boxSizing: 'border-box',
               padding: '26px 38px',
               background: 'linear-gradient(to left, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)',
-              boxShadow: 'inset 0 0 70px color-mix(in srgb, var(--page-shade) 28%, transparent)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -500,6 +500,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         disabled={isFlipping || !canPrev}
         title={canPrev ? "Turn to previous spread (Left Arrow)" : "At beginning of book"}
         aria-label="Previous spread"
+        className="spread-arrow"
         style={{
           position: 'absolute',
           left: '-52px',
@@ -507,7 +508,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           transform: 'translateY(-50%)',
           width: '40px',
           height: '64px',
-          background: canPrev && !isFlipping ? 'color-mix(in srgb, var(--parch) 92%, transparent)' : 'color-mix(in srgb, var(--parch) 45%, transparent)',
           border: '1px solid var(--sepia)',
           borderRadius: '5px 0 0 5px',
           color: 'var(--ink)',
@@ -521,12 +521,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           zIndex: 28,
           opacity: canPrev && !isFlipping ? 1 : 0.35,
         }}
-        onMouseEnter={(e) => {
-          if (!isFlipping && canPrev) e.currentTarget.style.background = 'var(--parch)';
-        }}
-        onMouseLeave={(e) => {
-          if (!isFlipping && canPrev) e.currentTarget.style.background = 'color-mix(in srgb, var(--parch) 92%, transparent)';
-        }}
       >
         ‹
       </button>
@@ -536,6 +530,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         disabled={isFlipping || !canNext}
         title={canNext ? "Turn to next spread (Right Arrow)" : "At end of book"}
         aria-label="Next spread"
+        className="spread-arrow"
         style={{
           position: 'absolute',
           right: '-106px',
@@ -543,7 +538,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           transform: 'translateY(-50%)',
           width: '40px',
           height: '64px',
-          background: canNext && !isFlipping ? 'color-mix(in srgb, var(--parch) 92%, transparent)' : 'color-mix(in srgb, var(--parch) 45%, transparent)',
           border: '1px solid var(--sepia)',
           borderRadius: '0 5px 5px 0',
           color: 'var(--ink)',
@@ -556,12 +550,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           transition: 'all 0.2s',
           zIndex: 28,
           opacity: canNext && !isFlipping ? 1 : 0.35,
-        }}
-        onMouseEnter={(e) => {
-          if (!isFlipping && canNext) e.currentTarget.style.background = 'var(--parch)';
-        }}
-        onMouseLeave={(e) => {
-          if (!isFlipping && canNext) e.currentTarget.style.background = 'color-mix(in srgb, var(--parch) 92%, transparent)';
         }}
       >
         ›

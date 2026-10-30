@@ -19,7 +19,7 @@
   background: linear-gradient(180deg, var(--parch-hi), var(--parch)); color: var(--ink-soft);
   box-shadow: inset 0 1px 3px rgba(80, 50, 20, 0.18), 0 2px 8px rgba(0, 0, 0, 0.35);
 }
-.app-lookup:focus-within { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+.app-lookup:focus-within { outline: 2px solid var(--brass); outline-offset: 2px; } /* drawn over the desk, not the field */
 .app-lookup input {
   flex: 1; min-width: 0; height: 44px; border: 0; outline: 0; background: transparent;
   font: 18px var(--font-fell); color: var(--ink);
