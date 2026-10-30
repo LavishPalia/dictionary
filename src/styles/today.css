@@ -19,7 +19,7 @@
 .today-def { margin: 0; font: 15.5px/1.45 var(--font-fell); color: var(--ink); }
 .today-learn-btn { display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: var(--tap); padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; }
 .today-learn-btn:hover .today-mid { color: var(--crimson); }
-.today-learn-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; border-radius: var(--radius-md); }
+.today-learn-btn:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 4px; border-radius: var(--radius-md); }
 .today-learn-link { align-self: center; margin: 0; }
 /* "2 words looked up today · 1 not saved ›": opens Saved → History. */
 .today-lookups { align-self: flex-start; display: inline-flex; align-items: center; min-height: var(--tap); margin: -6px 2px; text-align: left; font: 15px var(--font-fell); }

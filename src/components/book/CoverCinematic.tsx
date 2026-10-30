@@ -218,7 +218,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
               borderRadius: '20px',
               fontFamily: 'var(--font-fell-sc)',
               fontSize: '13px',
-              color: 'var(--color-tab-active-text)',
+              color: 'var(--cover-cta)',
               letterSpacing: '0.16em',
               boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
               transition: 'all 0.2s ease',

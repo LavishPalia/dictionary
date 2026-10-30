@@ -17,7 +17,7 @@
 .tour-tip {
   position: fixed; box-sizing: border-box; pointer-events: auto;
   padding: 14px 16px 12px; border-radius: var(--radius-lg); border: 1px solid var(--brass);
-  background: linear-gradient(180deg, #f6ecd0, #eadcb5); color: var(--ink);
+  background: linear-gradient(180deg, var(--tip-top), var(--tip-bottom)); color: var(--ink);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   transition: top 0.25s ease, left 0.25s ease, bottom 0.25s ease;
 }
@@ -28,11 +28,11 @@
 .tour-tip--small.tour-tip--phone { max-width: 480px; }
 
 .tour-arrow {
-  position: absolute; width: 12px; height: 12px; margin-left: -6px; background: #f3e7c6; transform: rotate(45deg);
+  position: absolute; width: 12px; height: 12px; margin-left: -6px; background: var(--tip-arrow); transform: rotate(45deg);
   border: 1px solid var(--brass);
 }
 .tour-arrow--top { top: -7px; border-right: 0; border-bottom: 0; }
-.tour-arrow--bottom { bottom: -7px; border-left: 0; border-top: 0; background: #eadcb5; }
+.tour-arrow--bottom { bottom: -7px; border-left: 0; border-top: 0; background: var(--tip-bottom); }
 
 .tour-close {
   position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 36px; height: 36px;
@@ -48,7 +48,7 @@
 .tour-btns { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: 12px; }
 .tour-btn {
   min-height: 40px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--sepia);
-  background: rgba(255, 255, 255, 0.35); color: var(--ink); font: 14px var(--font-fell-sc); cursor: pointer;
+  background: color-mix(in srgb, var(--wash) 35%, transparent); color: var(--ink); font: 14px var(--font-fell-sc); cursor: pointer;
 }
 .tour-btn--primary { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
 .tour-btn--primary:hover { background: var(--crimson); border-color: var(--crimson); }
@@ -56,7 +56,7 @@
   min-height: 40px; margin-right: auto; padding: 0 4px; border: 0; background: none; color: var(--crimson); font: 14px var(--font-fell-sc); cursor: pointer;
 }
 .tour-link:hover { text-decoration: underline; }
-.tour-btn:focus-visible, .tour-link:focus-visible, .tour-close:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.tour-btn:focus-visible, .tour-link:focus-visible, .tour-close:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
 
 .tour--still .tour-spot, .tour--still .tour-tip { transition: none; }
 .tour--still .tour-ring { animation: none; }
@@ -67,7 +67,7 @@
 .tours-list { list-style: none; margin: 0; padding: 0; }
 .tours-item { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: 12px 0; border: 0; border-bottom: 1px solid var(--rule-faint);
   background: none; text-align: left; cursor: pointer; color: var(--ink); }
-.tours-item:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.tours-item:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
 .tours-item-text { flex: 1; }
 .tours-item-title { display: block; font: 17px var(--font-fell); }
 .tours-item-sub { display: block; margin-top: 1px; font: 14px/1.4 var(--font-fell); color: var(--ink-soft); }

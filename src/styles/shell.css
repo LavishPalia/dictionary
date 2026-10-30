@@ -6,7 +6,7 @@
 }
 .app-wordmark { display: flex; align-items: baseline; gap: 10px; flex: none; }
 .app-wordmark-hi { font: 34px/1 var(--font-deva); color: var(--brass); }
-.app-wordmark-en { font: 15px var(--font-fell-sc); color: #cdb98f; white-space: nowrap; }
+.app-wordmark-en { font: 15px var(--font-fell-sc); color: var(--desk-label); white-space: nowrap; }
 .app-search { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .app-count { font: 13px var(--font-fell); color: var(--brass-muted); }
 .app-count::before { content: '· '; }
@@ -19,13 +19,13 @@
   background: linear-gradient(180deg, var(--parch-hi), var(--parch)); color: var(--ink-soft);
   box-shadow: inset 0 1px 3px rgba(80, 50, 20, 0.18), 0 2px 8px rgba(0, 0, 0, 0.35);
 }
-.app-lookup:focus-within { outline: 2px solid var(--brass); outline-offset: 2px; }
+.app-lookup:focus-within { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
 .app-lookup input {
   flex: 1; min-width: 0; height: 44px; border: 0; outline: 0; background: transparent;
   font: 18px var(--font-fell); color: var(--ink);
 }
 .app-lookup input::placeholder { color: var(--ink-soft); opacity: 0.85; }
-.app-lookup-key { font: 13px var(--font-fell-sc); color: var(--sepia); white-space: nowrap; }
+.app-lookup-key { font: 13px var(--font-fell-sc); color: var(--page-muted); white-space: nowrap; }
 .app-lookup-key kbd { font: inherit; padding: 0 5px; border: 1px solid var(--rule); border-radius: var(--radius-sm); }
 
 /* Phone bottom bar */
@@ -43,7 +43,7 @@
   }
   .app-bottomnav button {
     flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    border: 0; background: transparent; color: var(--rule); font: 12px var(--font-fell-sc); cursor: pointer;
+    border: 0; background: transparent; color: var(--nav-ink); font: 12px var(--font-fell-sc); cursor: pointer;
   }
   .app-bottomnav button[aria-current='page'] { color: var(--brass); }
   .app-bottomnav button[aria-current='page']::before {
@@ -70,7 +70,7 @@
   color: var(--ink-soft); cursor: pointer; flex-wrap: nowrap;
 }
 .menu-link:hover .menu-title { color: var(--crimson); }
-.menu-link:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
+.menu-link:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: -2px; }
 .menu-link:disabled { opacity: 0.5; cursor: not-allowed; }
 .menu-sub--block { display: block; }
 .restore-from { margin: 0 0 4px; }

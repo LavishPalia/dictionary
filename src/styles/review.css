@@ -25,12 +25,12 @@
 .review-options { display: grid; gap: 8px; }
 .review-option {
   display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 14px; text-align: left;
-  border: 1px solid var(--rule); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.3); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--radius-md); background: color-mix(in srgb, var(--wash) 30%, transparent); color: var(--ink);
   font: 18px/1.3 var(--font-fell); cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 .review-option[lang='hi'] { font-family: var(--font-deva); }
-.review-option:not(:disabled):hover { background: rgba(255, 255, 255, 0.55); border-color: var(--sepia); }
-.review-option:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.review-option:not(:disabled):hover { background: color-mix(in srgb, var(--wash) 55%, transparent); border-color: var(--sepia); }
+.review-option:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
 .review-option:disabled { cursor: default; }
 .review-key { flex: none; width: 18px; font: 14px var(--font-fell-sc); color: var(--ink-soft); text-align: center; }
 .review-option--right { border-color: var(--green); background: rgba(61, 90, 42, 0.14); animation: review-pop 0.3s ease-out; }

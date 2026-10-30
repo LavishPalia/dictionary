@@ -8,7 +8,7 @@
 .progress-seg { display: block; min-width: 6px; }
 .progress-seg--mastered { background: var(--green); }
 .progress-seg--learning { background: var(--brass); }
-.progress-seg--new { background: #c9b78f; }
+.progress-seg--new { background: var(--progress-new); }
 .progress--desk .progress-bar { background: rgba(232, 211, 160, 0.12); }
 .progress--desk .progress-seg--new { background: rgba(232, 211, 160, 0.45); }
 

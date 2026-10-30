@@ -278,6 +278,46 @@ async function main() {
         return { label, ratio: +r.toFixed(2), ok: r >= 4.5 };
       });
       const token = (n) => parseAll(getComputedStyle(document.documentElement).getPropertyValue(n))[0];
+      // Every visible piece of text whose colour, over the backgrounds of its own ancestors (translucent washes laid
+      // over the first opaque one; each gradient stop tried, the worst counted), falls short of AA: 4.5:1, or 3:1 for
+      // large text (24px, or 18.66px bold). Opacity on the way up fades the text too. Disabled controls are exempt.
+      const over = (top, bottom) => ({ r: top.r * top.a + bottom.r * (1 - top.a), g: top.g * top.a + bottom.g * (1 - top.a), b: top.b * top.a + bottom.b * (1 - top.a), a: 1 });
+      const lowText = () => {
+        const out = [];
+        for (const el of document.body.querySelectorAll('*')) {
+          if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+          if (el.closest('script, style, noscript, [disabled], [aria-disabled="true"], .ui-visually-hidden')) continue;
+          // Drawn over a ::before dot the walk cannot see (the A–Z rail's current letter, 5.1:1 on its brass dot).
+          if (el.matches('.letter-rail-letter[data-current="true"]')) continue;
+          const box = el.getBoundingClientRect();
+          const s = getComputedStyle(el);
+          if (!box.width || !box.height || s.visibility === 'hidden') continue;
+          let alpha = 1; const layers = [];
+          for (let n = el; n; n = n.parentElement) {
+            const cs = getComputedStyle(n);
+            alpha *= Number(cs.opacity);
+            if (cs.display === 'none') { alpha = 0; break; }
+            // The pencil underline is a 2px gradient strip under the word, not the word's background.
+            const stops = n.classList.contains('pencil-underlined') ? [] : parseAll(cs.backgroundImage);
+            const solid = parseAll(cs.backgroundColor).filter((c) => c.a > 0);
+            if (stops.length) layers.push(stops);
+            else if (solid.length) layers.push(solid);
+            const last = layers[layers.length - 1];
+            if (last && last.every((c) => c.a >= 0.99)) break;
+          }
+          if (alpha < 0.05 || !layers.length) continue;
+          // Compose: start from each colour of the deepest layer, lay the translucent ones above it in order.
+          let bases = layers[layers.length - 1].map((c) => ({ ...c, a: 1 }));
+          for (let i = layers.length - 2; i >= 0; i--) bases = bases.flatMap((b) => layers[i].map((c) => over(c, b)));
+          const fg0 = parseAll(s.color)[0];
+          if (!fg0) continue;
+          const size = parseFloat(s.fontSize); const bold = Number(s.fontWeight) >= 700;
+          const need = size >= 24 || (bold && size >= 18.66) ? 3 : 4.5;
+          const worst = Math.min(...bases.map((b) => ratio(over({ ...fg0, a: fg0.a * alpha }, b), b)));
+          if (worst < need) out.push({ el: name(el).slice(0, 40), text: el.textContent.trim().slice(0, 24), ratio: +worst.toFixed(2), need });
+        }
+        return out;
+      };
     `;
     const inPage = (body) => evaluate(`(() => { ${COLOR_JS} ${body} })()`);
     const AXE = fs.readFileSync(path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
@@ -383,6 +423,93 @@ async function main() {
     })()`);
     check('every Evening token is registered with @property and fades (binding rule)',
       binding?.count > 4 && binding.unregistered.length === 0 && binding.unlisted.length === 0, binding);
+    await setSize(PHONE);
+
+    // ════════ Every other screen (Task 4) ════════
+    // Each screen, sheet, toast and bubble in Evening: no visible opaque background (colour or gradient stop) brighter
+    // than luminance 0.5 anywhere on the page.
+    const visibleNow = (selector) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; })()`);
+    const waitFor = async (selector, tries = 40) => { for (let i = 0; i < tries; i++) { if (await visibleNow(selector)) return true; await sleep(100); } return false; };
+    const tap = async (selector) => { await waitFor(selector); return evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return false; el.click(); return true; })()`); };
+    const go = async (url, ready) => {
+      await send('Page.navigate', { url: `${BASE}${url}` });
+      for (let i = 0; i < 60; i++) {
+        await sleep(250);
+        try { if (await evaluate(`(() => { const el = document.querySelector('#lookup-input'); return Boolean(el && document.querySelector(${JSON.stringify(ready)}) && Object.keys(el).some((k) => k.startsWith('__reactFiber$'))); })()`)) break; } catch {}
+      }
+      await sleep(500);
+    };
+    const typeLookup = (text) => evaluate(`(() => { const input = document.querySelector('#lookup-input'); input.focus(); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ${JSON.stringify(text)}); input.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
+    const SENTENCE = '/?share_text=The%20government%27s%20plan%20deepened%20and%20obfuscated%20the%20facts.';
+    const seedSaved = () => evaluate(`(async () => {
+      const list = []; for (const h of ['camel', 'ceremony', 'abandon', 'calm']) list.push({ ...(await (await fetch('/api/word/' + h)).json()).entry, saved_at: Date.now() });
+      localStorage.setItem('panna_saved_words', JSON.stringify(list));
+      localStorage.setItem('panna_review', JSON.stringify(Object.fromEntries(list.map((e) => [e.normalized, { box: 1, due_at: 0, right: 1, wrong: 0 }]))));
+      localStorage.setItem('panna_bookmarks', JSON.stringify([16]));
+      const now = Date.now(); const w = (normalized, headword, meaning_hi, at, count, source) => ({ normalized, headword, meaning_hi, first_at: at, last_at: at, count, lookups: [at], source, page: null });
+      localStorage.setItem('panna_history', JSON.stringify([w('camel', 'Camel', 'ऊँट', now - 60000, 3, 'share'), w('candid', 'candid', 'स्पष्टवादी', now - 3 * 86400000, 1, 'voice')]));
+      return true; })()`);
+    for (const [sizeName, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
+      await setSize(size);
+      await load(JSON.stringify({ lighting: 'evening' }), 10);
+      await seedSaved();
+      const views = [];
+      const probe = async (name, marker) => {
+        const shown = await waitFor(marker, 30);
+        await sleep(350);
+        views.push({ name, shown, ...(shown ? await inPage(`return { hits: bright(['body'], 0.5), low: lowText() };`) : {}) });
+      };
+      const fresh = () => go('/page/16', '.entry-text');
+      await fresh();
+      await probe('the book with the search bar', '#lookup-input');
+      if (SHOTS && size === PHONE) await shot('evening-page.png');
+      await typeLookup('cam'); await sleep(1200);
+      await probe('search results', '.lookup-panel');
+      await typeLookup('ceremonis'); await sleep(1200);
+      await probe('search, no entry', '.noentry');
+      await fresh(); await tap('.entry-open');
+      await probe('the word card', '#save-word-btn');
+      if (SHOTS && size === PHONE) await shot('evening-word.png');
+      await tap('#report-btn');
+      await probe('report a problem', '.report');
+      await fresh(); await tap('#page-number-btn');
+      await probe('Go to', '#goto-sheet');
+      await fresh(); await tap('#menu-btn');
+      await probe('the ⋯ menu', '#reading-menu');
+      await tap('#guided-tours-btn');
+      await probe('guided tours list', '#tour-start-start');
+      await tap('#tour-start-start');
+      await probe('a tour bubble', '#tour-tip');
+      await fresh(); await tap('#menu-btn'); await tap('#open-credits-btn');
+      await probe('Credits', '[aria-label="Close credits"]');
+      await fresh(); await tap(size.mobile ? '#nav-today-btn' : '#open-today-btn');
+      await probe('Today', '.today');
+      if (SHOTS && size === PHONE) await shot('evening-today.png');
+      await tap(size.mobile ? '#nav-saved-btn' : '#open-bookmarks-btn');
+      for (const tab of ['words', 'pages', 'notes', 'history']) {
+        await tap(`#saved-tab-${tab}`);
+        await probe(`Saved: ${tab}`, '#saved-screen');
+        if (SHOTS && size === PHONE && tab === 'words') await shot('evening-saved.png');
+      }
+      await tap('#saved-tab-words');
+      await sleep(300);
+      await evaluate(`(() => { const b = [...document.querySelectorAll('.saved-item .ui-iconbtn')].pop(); b?.click(); return Boolean(b); })()`);
+      await probe('a toast (word removed, Undo)', '.saved-toast');
+      await fresh(); await tap(size.mobile ? '#nav-review-btn' : '#open-review-btn');
+      await probe('Review', '.review-option');
+      await tap('.review-option');
+      await probe('Review, answered', '.review-feedback');
+      await go('/learn', '#learn-title');
+      await probe('Learn', '#learn-title');
+      await go(SENTENCE, '#lookup-input');
+      await probe('the sentence sheet', '#sentence-sheet button.sentence-word');
+      await tap('#sentence-sheet button.sentence-word');
+      await probe('the sentence sheet with a word chosen', '.sentence-entry');
+      for (const v of views) {
+        check(`evening ${sizeName}: nothing bright on ${v.name}`, v.shown && v.hits?.length === 0, v.shown ? v.hits?.slice(0, 6) : 'not shown');
+        check(`evening ${sizeName}: every text on ${v.name} reaches AA`, v.shown && v.low?.length === 0, v.shown ? v.low?.slice(0, 8) : 'not shown');
+      }
+    }
     await setSize(PHONE);
 
     // ════════ Auto over time ════════
