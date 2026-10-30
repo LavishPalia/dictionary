@@ -1320,6 +1320,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           canNext={canNextMobile}
           animate={!reducedMotion && speedMode !== 'instant'}
           onOpenGoTo={() => setGoToOpen(true)}
+          thumbIndex={meta.thumb_index}
+          onSelectLetter={handleSelectLetter}
         />
       ) : (
         /* Desktop Two-Page Spread with 3D Engine & Hybrid Overlay */

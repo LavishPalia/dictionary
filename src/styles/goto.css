@@ -57,3 +57,37 @@
 @media (max-width: 1023px) {
   .goto-mark { min-height: var(--tap); }
 }
+
+/* Phone A–Z rail (src/components/book/LetterRail.tsx): a binding-coloured strip at the page's right edge, spanning the
+   page body. MobilePage pads the body so the rail covers no text. */
+.letter-rail {
+  position: absolute; top: 0; bottom: 0; right: -22px; width: 24px; z-index: 20;
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--binding); border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: var(--on-binding); font: 10px/1 var(--font-fell-sc);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;
+}
+/* Each letter takes an equal share of the height, so the letter drawn under the thumb is the one letterAtOffset picks. */
+.letter-rail-letter { flex: 1; display: grid; place-items: center; width: 100%; position: relative; }
+.letter-rail-letter[data-current='true']::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px;
+  border-radius: 50%; background: var(--brass); z-index: -1;
+}
+/* z-index 0 makes a stacking context, so the dot (-1) sits behind the letter. */
+.letter-rail-letter[data-current='true'] { color: var(--desk); font-weight: bold; z-index: 0; }
+.letter-rail-letter[data-missing='true'] { opacity: 0.35; }
+
+/* The bubble left of the rail: the letter under the thumb and its first page. Its top is the thumb's y (set inline). */
+.letter-bubble {
+  position: absolute; top: -38px; right: calc(100% + 10px); width: 96px; height: 76px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 16px 16px 4px 16px; background: var(--crimson); color: var(--on-binding);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45); pointer-events: none;
+  transition: transform 60ms linear; animation: letter-bubble-in 120ms ease-out;
+}
+.letter-bubble-letter { font: 38px/1 var(--font-fell); }
+.letter-bubble-page { margin-top: 4px; font: 12px var(--font-fell-sc); letter-spacing: 0.04em; opacity: 0.9; white-space: nowrap; }
+@keyframes letter-bubble-in { from { opacity: 0; scale: 0.85; } }
+@media (prefers-reduced-motion: reduce) {
+  .letter-bubble { transition: none; animation: none; }
+}

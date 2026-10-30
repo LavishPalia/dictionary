@@ -6,6 +6,7 @@ import { GuideWords } from './GuideWords';
 import { PageColumn } from './PageColumn';
 import { PronunciationFooter } from './PronunciationFooter';
 import { InkLines } from './InkLines';
+import { LetterRail } from './LetterRail';
 
 interface MobilePageProps {
   page: BookPage | null;
@@ -23,6 +24,9 @@ interface MobilePageProps {
   loadingPage?: number | null;
   /** Tapping the page number opens the Go to panel. */
   onOpenGoTo?: () => void;
+  /** The A–Z rail at the page's right edge: each letter's first page, and the jump it makes. */
+  thumbIndex?: Record<string, number>;
+  onSelectLetter?: (letter: string, page: number) => void;
 }
 
 // A swipe turns the page past a quarter of the page's width, or as a quick flick.
@@ -45,6 +49,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   animate = true,
   loadingPage = null,
   onOpenGoTo,
+  thumbIndex,
+  onSelectLetter,
 }) => {
   // The page follows the finger sideways; vertical moves are left to the browser (touch-action: pan-y).
   const cardRef = useRef<HTMLDivElement>(null);
@@ -151,6 +157,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
   // Combine both columns for mobile flow
   const allEntries = [...page.column1, ...page.column2];
+  const rail = Boolean(thumbIndex && onSelectLetter);
 
   return (
     <div
@@ -216,15 +223,20 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           guideRight={page.guide_right}
         />
 
-        <div style={{ minHeight: '440px' }}>
-          <PageColumn
-            entries={allEntries}
-            highlightedWord={highlightedWord}
-            onSelectWord={onSelectWord}
-          />
-        </div>
+        {/* The page body. With the rail, 8px more right padding: the rail (24px, 2px from the page edge) then sits
+            6px clear of the text. */}
+        <div style={{ position: 'relative', paddingRight: rail ? '8px' : undefined }}>
+          <div style={{ minHeight: '440px' }}>
+            <PageColumn
+              entries={allEntries}
+              highlightedWord={highlightedWord}
+              onSelectWord={onSelectWord}
+            />
+          </div>
 
-        <PronunciationFooter hints={page.footer_hints} />
+          <PronunciationFooter hints={page.footer_hints} />
+          {thumbIndex && onSelectLetter && <LetterRail thumbIndex={thumbIndex} currentPage={page.page_number} onSelectLetter={onSelectLetter} />}
+        </div>
       </div>
 
       {/* Bottom navigation bar */}

@@ -192,6 +192,102 @@ async function main() {
         check('desktop: submit during a page turn ends on the target', (end.path === '/page/60' && !end.open && end.title === 'Pages 60–61') || (end.open && end.path !== '/page/60'), { landed, end });
       }
     }
+
+    // ── The phone A–Z rail ──
+    await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+    const touch = (type, x, y) => send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' || type === 'touchCancel' ? [] : [{ x, y }] });
+    const rail = () => evaluate(`(() => { const r = document.querySelector('#letter-rail'); if (!r) return null; const b = r.getBoundingClientRect();
+      const letters = [...r.querySelectorAll('.letter-rail-letter')];
+      return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, hidden: r.getAttribute('aria-hidden'), touchAction: getComputedStyle(r).touchAction,
+        letters: letters.map((l) => l.textContent.trim()), current: letters.filter((l) => l.dataset.current === 'true').map((l) => l.textContent.trim()) }; })()`);
+    const letterY = (r, l) => r.top + ((l.charCodeAt(0) - 65 + 0.5) * (r.bottom - r.top)) / 26;
+    const bubble = () => evaluate(`(() => { const b = document.querySelector('#letter-bubble'); if (!b) return null; const r = b.getBoundingClientRect(); const cs = getComputedStyle(b);
+      return { text: b.textContent.replace(/\\s+/g, ' ').trim(), cy: r.top + r.height / 2, right: r.right, transition: cs.transitionDuration, animation: cs.animationName }; })()`);
+    const covered = () => evaluate(`(() => { const r = document.querySelector('#letter-rail').getBoundingClientRect();
+      return [...document.querySelectorAll('#mobile-page .entry-text')].map((e) => e.getBoundingClientRect()).filter((b) => b.right > r.left && b.left < r.right && b.bottom > r.top && b.top < r.bottom).length; })()`);
+    const overflow = () => evaluate(`(() => { const p = document.querySelector('#mobile-page'); return { scroll: p.scrollWidth, client: p.clientWidth, doc: document.documentElement.scrollWidth, vw: innerWidth }; })()`);
+    const stubVibrate = () => evaluate(`window.__vib = 0; Object.defineProperty(navigator, 'vibrate', { configurable: true, value: () => { window.__vib++; return true; } }); true`);
+    const phone = { width: 390, height: 844, mobile: true };
+
+    for (const width of [360, 430]) {
+      check(`${width} px: app hydrates`, await open(`/page/${START}`, { width, height: 800, mobile: true }));
+      const o = await overflow();
+      check(`at ${width} px nothing overflows`, o.scroll <= o.client && o.doc <= o.vw, o);
+      check(`at ${width} px the rail doesn't cover text`, (await rail()) && (await covered()) === 0, await covered().catch(() => null));
+    }
+
+    check('phone rail: app hydrates', await open(`/page/${START}`, phone));
+    let r = await rail();
+    check('the rail shows 26 letters, current marked', r && r.letters.join('') === 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' && r.current.length === 1 && r.current[0] === letterFor(START), r);
+    check('the rail is aria-hidden, 22–26 px wide, touch-action none', r && r.hidden === 'true' && r.width >= 22 && r.width <= 26 && r.touchAction === 'none', r);
+    check('the rail doesn\'t cover text', (await covered()) === 0, await covered());
+    const head = await evaluate(`(() => { const g = document.querySelector('#mobile-page .guide-word')?.parentElement.getBoundingClientRect(); const f = document.querySelector('#page-number-btn')?.parentElement.getBoundingClientRect(); return g && f && { gBottom: g.bottom, fTop: f.top }; })()`);
+    check('the rail spans the page body, between guide words and footer', r && head && r.top >= head.gBottom - 1 && r.bottom <= head.fTop + 1 && r.bottom - r.top > 300, { r, head });
+    check('no bubble at rest', (await bubble()) === null);
+
+    // Drag: press near the top, slide down to M, keep the finger down.
+    await stubVibrate();
+    const x = (r.left + r.right) / 2;
+    const scroll0 = await evaluate('scrollY');
+    await touch('touchStart', x, letterY(r, 'A'));
+    for (const l of 'BCDEFGHIJKLM') { await touch('touchMove', x, letterY(r, l)); await sleep(16); }
+    await sleep(100);
+    let bub = await bubble();
+    const mY = letterY(r, 'M');
+    check('dragging shows a bubble that follows', bub && bub.text.includes('M') && bub.text.includes(`p. ${fmt(thumb.M)}`) && Math.abs(bub.cy - mY) <= 30 && bub.right <= r.left + 1, { bub, mY });
+    check('the bubble moves smoothly (has a transition) without reduce motion', bub && bub.transition.split(',').some((d) => parseFloat(d) > 0), bub);
+    check('haptics on letter change', (await evaluate('window.__vib')) >= 3, await evaluate('window.__vib'));
+    const mid = await evaluate(`(() => { const t = getComputedStyle(document.querySelector('#mobile-page')).transform; return { scrollY, offset: t === 'none' ? 0 : new DOMMatrix(t).m41 }; })()`);
+    check('dragging the rail does not scroll or turn the page', mid.scrollY === scroll0 && mid.offset === 0 && (await where()) === `/page/${START}`, { mid, scroll0, path: await where() });
+    await touch('touchEnd');
+    check('release jumps', (await waitFor(`/page/${thumb.M}`)) === `/page/${thumb.M}`, await where());
+    await sleep(200);
+    check('the bubble disappears on release', (await bubble()) === null);
+    r = await rail();
+    check('the marked letter follows the page', r?.current.join('') === 'M', r?.current);
+
+    // Off the rail: slide out to x = 50 and let go.
+    check('phone rail: back at the start', await open(`/page/${START}`, phone));
+    r = await rail();
+    await touch('touchStart', x, letterY(r, 'D'));
+    for (let i = 1; i <= 8; i++) { await touch('touchMove', x - ((x - 50) * i) / 8, letterY(r, 'F')); await sleep(16); }
+    const offPage = await evaluate(`(() => { const t = getComputedStyle(document.querySelector('#mobile-page')).transform; return t === 'none' ? 0 : new DOMMatrix(t).m41; })()`);
+    check('a sideways drag from the rail does not move the page', offPage === 0, offPage);
+    await touch('touchEnd');
+    await sleep(800);
+    check('release off the rail cancels', (await where()) === `/page/${START}` && (await bubble()) === null, { path: await where(), bub: await bubble() });
+
+    // An interrupted touch (a call, a system gesture).
+    await touch('touchStart', x, letterY(r, 'B'));
+    for (const l of 'CDEFGHIJKLM') { await touch('touchMove', x, letterY(r, l)); await sleep(16); }
+    await touch('touchCancel');
+    await sleep(800);
+    check('pointercancel cancels', (await where()) === `/page/${START}` && (await bubble()) === null, { path: await where(), bub: await bubble() });
+
+    // A tap jumps.
+    await touch('touchStart', x, letterY(r, 'C'));
+    await sleep(50);
+    await touch('touchEnd');
+    check('a tap jumps', (await waitFor(`/page/${thumb.C}`)) === `/page/${thumb.C}`, await where());
+    await sleep(300);
+
+    // Reduce motion: the bubble neither animates in nor glides.
+    await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    check('reduce motion: app hydrates', await open(`/page/${START}`, phone));
+    r = await rail();
+    await touch('touchStart', x, letterY(r, 'G'));
+    await touch('touchMove', x, letterY(r, 'H'));
+    await sleep(100);
+    bub = await bubble();
+    // (motion.css's global reduce rule leaves 0.01ms transitions: effectively none.)
+    check('reduce motion: the bubble has no transition', bub && bub.transition.split(',').every((d) => parseFloat(d) < 0.001) && bub.animation === 'none', bub);
+    await touch('touchCancel');
+    await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+
+    // Desktop: no rail.
+    await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+    check('desktop (rail): app hydrates', await open(`/page/${START}`, { width: 1440, height: 900, mobile: false }));
+    check('no rail on desktop', await evaluate(`!document.querySelector('#letter-rail')`));
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
