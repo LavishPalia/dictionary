@@ -115,5 +115,20 @@ export function spellingDistance(query: string, hindi: string, keepH = false): n
   return best;
 }
 
+/**
+ * Whether the query spells the whole Hindi word, not just its start: pyaar is प्यार but only begins प्यारा. The loose
+ * key must agree, and so must the ending: a word ending in a consonant (its silent final a dropped) or in a vowel.
+ */
+export function spellsWhole(query: string, hindi: string): boolean {
+  const key = hinglishKey(query);
+  const q = hinglishFold(query);
+  // A final consonant's inherent a is silent in Hindi (प्यार is pyaar, not pyaara).
+  const silentA = /[क-ह]़?$/.test(hindi.normalize('NFD'));
+  return romanize(hindi).some((r) => {
+    const h = hinglishFold(silentA ? r.replace(/a$/, '') : r);
+    return hinglishKey(h) === key && h.endsWith('a') === q.endsWith('a');
+  });
+}
+
 /** Little words inside Hindi meanings that are not worth matching on their own. */
 export const HINDI_STOPWORDS = new Set(['के', 'की', 'का', 'को', 'में', 'से', 'पर', 'है', 'और', 'या', 'एक', 'कि', 'ना', 'न']);
