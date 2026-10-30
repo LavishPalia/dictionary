@@ -186,7 +186,7 @@ async function main() {
       JSON.stringify(radios?.map((r) => [r.id, r.label])) === JSON.stringify([['lighting-auto', 'Auto'], ['lighting-day', 'Day'], ['lighting-evening', 'Evening']])
       && radios.find((r) => r.checked)?.label === 'Auto', radios);
     const sub = await evaluate(`[...document.querySelectorAll('#reading-menu .menu-row')].find((r) => r.querySelector('[aria-label="Desk lighting"]'))?.querySelector('.menu-sub')?.textContent`);
-    check('the sub-line says when Auto dims the page', sub === 'Auto dims the page from 7 pm to 6 am', sub);
+    check('the sub-line says when Auto dims the page', sub === 'Auto: dim 7 pm–6 am', sub);
     check('an untouched Auto saves nothing', (await stored()) === null, await stored());
 
     // Picking Evening at 10:00: at once, no fade, saved, and kept across a reload.

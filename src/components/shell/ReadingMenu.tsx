@@ -1,7 +1,7 @@
 'use client';
 
 import { Segmented, Sheet, Switch } from '@/components/ui';
-import { ChevronIcon, CompassIcon } from '@/components/ui/icons';
+import { BookIcon, ChevronIcon, CompassIcon, DiceIcon } from '@/components/ui/icons';
 import type { Lighting } from '@/lib/lighting';
 
 export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk' | 'instant';
@@ -64,7 +64,7 @@ export function ReadingMenu(props: ReadingMenuProps) {
       <div className="menu-row">
         <div>
           <div className="menu-title">Desk lighting</div>
-          <div className="menu-sub">Auto dims the page from 7 pm to 6 am</div>
+          <div className="menu-sub">Auto: dim 7 pm–6 am</div>
         </div>
         <Segmented label="Desk lighting" value={props.lighting} onChange={props.onLightingChange}
           options={[{ value: 'auto', label: 'Auto', id: 'lighting-auto' }, { value: 'day', label: 'Day', id: 'lighting-day' }, { value: 'evening', label: 'Evening', id: 'lighting-evening' }]} />
@@ -86,12 +86,15 @@ export function ReadingMenu(props: ReadingMenuProps) {
         </div>
         <Switch id="sounds-switch" checked={props.soundsOn} onChange={props.onSoundsChange} label="Page sounds" />
       </label>
-      <button type="button" className="menu-row menu-link" id="explore-btn" disabled={busy} onClick={thenClose(props.onRandomPage)}>
-        <span className="menu-title">Open a random page</span><ChevronIcon />
-      </button>
-      <button type="button" className="menu-row menu-link" id="cover-toggle-btn" onClick={thenClose(props.onToggleBook)}>
-        <span className="menu-title">{props.bookOpen ? 'Close the book' : 'Open the book'}</span><ChevronIcon />
-      </button>
+      {/* The two book actions share a row. */}
+      <div className="menu-row menu-pair">
+        <button type="button" className="menu-tile" id="explore-btn" disabled={busy} onClick={thenClose(props.onRandomPage)}>
+          <DiceIcon /><span className="menu-title">Random page</span>
+        </button>
+        <button type="button" className="menu-tile" id="cover-toggle-btn" onClick={thenClose(props.onToggleBook)}>
+          <BookIcon /><span className="menu-title">{props.bookOpen ? 'Close the book' : 'Open the book'}</span>
+        </button>
+      </div>
       {props.offline.available && (
         // Stays open while saving, so the progress can be watched.
         <button type="button" className="menu-row menu-link" id="offline-save-btn" onClick={props.offline.onSave}
@@ -129,18 +132,20 @@ export function ReadingMenu(props: ReadingMenuProps) {
           <ChevronIcon />
         </a>
       )}
-      <button type="button" className="menu-row menu-link" id="backup-btn" onClick={thenClose(props.onBackup)}>
-        <span>
-          <span className="menu-title">Back up my words</span>
-          <span className="menu-sub menu-sub--block" id="backup-label">{props.backupLabel}</span>
-        </span>
-        <ChevronIcon />
-      </button>
-      <button type="button" className="menu-row menu-link" id="restore-btn" onClick={thenClose(props.onRestore)}>
-        <span className="menu-title">Restore from a backup</span><ChevronIcon />
-      </button>
-      <button type="button" className="menu-row menu-link" id="open-credits-btn" onClick={thenClose(props.onOpenCredits)}>
-        <span className="menu-title">Sources &amp; credits</span><ChevronIcon />
+      {/* Back up, with Restore beside it. */}
+      <div className="menu-row menu-backup">
+        <button type="button" className="menu-link" id="backup-btn" onClick={thenClose(props.onBackup)}>
+          <span>
+            <span className="menu-title">Back up my words</span>
+            <span className="menu-sub menu-sub--block" id="backup-label">{props.backupLabel}</span>
+          </span>
+        </button>
+        <button type="button" className="menu-pill" id="restore-btn" aria-label="Restore from a backup" onClick={thenClose(props.onRestore)}>
+          Restore
+        </button>
+      </div>
+      <button type="button" className="menu-foot" id="open-credits-btn" onClick={thenClose(props.onOpenCredits)}>
+        Sources &amp; credits ›
       </button>
     </Sheet>
   );
