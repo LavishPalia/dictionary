@@ -76,14 +76,96 @@
   --desk-edge: var(--color-desk-edge);
   --desk-glow-y: 40%;
   --desk-reach: 75%;
+
+  /* The book (pages, cover, ribbon, folds, tabs). Each Day value is the colour the components used to hard-code. */
+  --page-gutter: #d8c494;          /* the page's gradient end, at the spine */
+  --page-foot: #efe3c0;            /* the phone page's footer bar */
+  --page-shade: #78501e;           /* the paper's inset shading, used through color-mix at each place's own strength */
+  --page-wash: rgba(255, 255, 255, 0.35); /* the light wash behind the phone's page-number pill */
+  --page-muted: #8a7452;           /* small sepia text on paper: endpapers, "erase", close */
+  --page-caption: #6e5532;         /* the caption under the cover */
+  --page-field: #f5edd4;           /* the margin-note text box */
+  --page-field-line: #c4b18e;
+  --note-erase-opacity: 0.6;       /* a margin note's "✕ erase" at rest */
+  --ribbon-dark: #6b1d16;          /* the silk ribbon's gradient: dark edge, sheen, deep edge */
+  --ribbon-light: #8b2b22;
+  --ribbon-deep: #591610;
+  --ribbon-star: #e0bd68;
+  --fold-flap-1: #dfcca2;          /* a folded corner's turned flap */
+  --fold-flap-2: #cbb17b;
+  --fold-flap-3: #bca167;
+  --fold-hole-1: #a48253;          /* the shadow where the corner was */
+  --fold-hole-2: #7d5b2c;
+  --fold-sheen: rgba(255, 255, 255, 0.4);
+  --cover-1: #6b201a;              /* the cover cloth's gradient */
+  --cover-2: #541914;
+  --cover-3: #3d110d;
+  --cover-title: #f3e5c8;
+  --cover-subtitle: #eedcb2;
+  --color-tab-hover: #ba9866;      /* a thumb-index tab under the pointer */
+  --pencil-blue: #1e4887;          /* margin-note pencils */
+  --pencil-graphite: #383838;
+  --pencil-crimson: #781d16;
+  /* For Task 4 and later: cards and sheets, and brass used as text or a ring on paper or cards (brass on lamp paper
+     would fail contrast, so Evening gives it a dark value). */
+  --card: #f3e8c9;
+  --brass-on-paper: #c9a24a;
 }
 
 /* Evening ("a book under a lamp"): html[data-light] is set before first paint (src/lib/lighting.ts). */
 html[data-light="evening"] {
+  /* The desk */
   --desk-center: #2a1a0e;
   --desk-edge: #120a06;
   --desk-glow-y: 35%;
   --desk-reach: 85%;
+  /* Paper and ink */
+  --parch: #c8b48b;
+  --parch-2: #c2ad84;
+  --parch-3: #b9a47b;
+  --parch-hi: #cdb991;
+  --ink: #1e150d;
+  --ink-soft: #3f3020;
+  --crimson: #5e1a13;
+  --binding: #431611;
+  --on-binding: #e6d6b0;
+  --sepia: #6c5638;
+  --rule: #8f7a55;
+  --brass: #b08b3c;
+  --color-ink-secondary: #3f3020;
+  --color-tab-bg: #9a7f55;
+  --color-tab-border: #574228;
+  --color-tab-active-text: #e6d6b0;
+  --color-tab-hover: #a68b5f;
+  /* The book */
+  --page-gutter: #b09768;
+  --page-foot: #b9a47b;
+  --page-shade: #3c230a;
+  --page-wash: rgba(255, 255, 255, 0.12);
+  --page-muted: #4d3c26;
+  --page-caption: #45351f;
+  --page-field: #cbb88f;
+  --page-field-line: #8f7a55;
+  --note-erase-opacity: 1;
+  --ribbon-dark: #521510;
+  --ribbon-light: #6b1f18;
+  --ribbon-deep: #43100b;
+  --ribbon-star: #c4a254;
+  --fold-flap-1: #b8a37a;
+  --fold-flap-2: #a68e5e;
+  --fold-flap-3: #98804f;
+  --fold-hole-1: #7e6440;
+  --fold-hole-2: #5c4220;
+  --fold-sheen: rgba(255, 255, 255, 0.18);
+  --cover-1: #4f1813;
+  --cover-2: #3e130f;
+  --cover-3: #2d0d0a;
+  --cover-title: #e3d2aa;
+  --cover-subtitle: #d8c69d;
+  --pencil-blue: #163a6e;
+  /* For other screens (Task 4) */
+  --card: #c9b58d;
+  --brass-on-paper: #533c0c;
 }
 
 /* The Auto fade (DictionaryApp adds html.light-fading for 2.1 s when the clock changes the mode).
@@ -96,9 +178,65 @@ html[data-light="evening"] {
 @property --desk-edge { syntax: '<color>'; inherits: true; initial-value: #2b1d14; }
 @property --desk-glow-y { syntax: '<percentage>'; inherits: true; initial-value: 40%; }
 @property --desk-reach { syntax: '<percentage>'; inherits: true; initial-value: 75%; }
+@property --parch { syntax: '<color>'; inherits: true; initial-value: #efe3c0; }
+@property --parch-2 { syntax: '<color>'; inherits: true; initial-value: #ecdfba; }
+@property --parch-3 { syntax: '<color>'; inherits: true; initial-value: #e2d2aa; }
+@property --parch-hi { syntax: '<color>'; inherits: true; initial-value: #f3e8c9; }
+@property --ink { syntax: '<color>'; inherits: true; initial-value: #2a1e14; }
+@property --ink-soft { syntax: '<color>'; inherits: true; initial-value: #5e4a33; }
+@property --crimson { syntax: '<color>'; inherits: true; initial-value: #7a2b22; }
+@property --binding { syntax: '<color>'; inherits: true; initial-value: #5b1f19; }
+@property --on-binding { syntax: '<color>'; inherits: true; initial-value: #f4e6c5; }
+@property --sepia { syntax: '<color>'; inherits: true; initial-value: #8a7452; }
+@property --rule { syntax: '<color>'; inherits: true; initial-value: #b9a57c; }
+@property --brass { syntax: '<color>'; inherits: true; initial-value: #c9a24a; }
+@property --color-ink-secondary { syntax: '<color>'; inherits: true; initial-value: #4a3a2c; }
+@property --color-tab-bg { syntax: '<color>'; inherits: true; initial-value: #a8885a; }
+@property --color-tab-border { syntax: '<color>'; inherits: true; initial-value: #6e5532; }
+@property --color-tab-active-text { syntax: '<color>'; inherits: true; initial-value: #f1e4c4; }
+@property --color-tab-hover { syntax: '<color>'; inherits: true; initial-value: #ba9866; }
+@property --page-gutter { syntax: '<color>'; inherits: true; initial-value: #d8c494; }
+@property --page-foot { syntax: '<color>'; inherits: true; initial-value: #efe3c0; }
+@property --page-shade { syntax: '<color>'; inherits: true; initial-value: #78501e; }
+@property --page-wash { syntax: '<color>'; inherits: true; initial-value: rgba(255, 255, 255, 0.35); }
+@property --page-muted { syntax: '<color>'; inherits: true; initial-value: #8a7452; }
+@property --page-caption { syntax: '<color>'; inherits: true; initial-value: #6e5532; }
+@property --page-field { syntax: '<color>'; inherits: true; initial-value: #f5edd4; }
+@property --page-field-line { syntax: '<color>'; inherits: true; initial-value: #c4b18e; }
+@property --note-erase-opacity { syntax: '<number>'; inherits: true; initial-value: 0.6; }
+@property --ribbon-dark { syntax: '<color>'; inherits: true; initial-value: #6b1d16; }
+@property --ribbon-light { syntax: '<color>'; inherits: true; initial-value: #8b2b22; }
+@property --ribbon-deep { syntax: '<color>'; inherits: true; initial-value: #591610; }
+@property --ribbon-star { syntax: '<color>'; inherits: true; initial-value: #e0bd68; }
+@property --fold-flap-1 { syntax: '<color>'; inherits: true; initial-value: #dfcca2; }
+@property --fold-flap-2 { syntax: '<color>'; inherits: true; initial-value: #cbb17b; }
+@property --fold-flap-3 { syntax: '<color>'; inherits: true; initial-value: #bca167; }
+@property --fold-hole-1 { syntax: '<color>'; inherits: true; initial-value: #a48253; }
+@property --fold-hole-2 { syntax: '<color>'; inherits: true; initial-value: #7d5b2c; }
+@property --fold-sheen { syntax: '<color>'; inherits: true; initial-value: rgba(255, 255, 255, 0.4); }
+@property --cover-1 { syntax: '<color>'; inherits: true; initial-value: #6b201a; }
+@property --cover-2 { syntax: '<color>'; inherits: true; initial-value: #541914; }
+@property --cover-3 { syntax: '<color>'; inherits: true; initial-value: #3d110d; }
+@property --cover-title { syntax: '<color>'; inherits: true; initial-value: #f3e5c8; }
+@property --cover-subtitle { syntax: '<color>'; inherits: true; initial-value: #eedcb2; }
+@property --pencil-blue { syntax: '<color>'; inherits: true; initial-value: #1e4887; }
+@property --card { syntax: '<color>'; inherits: true; initial-value: #f3e8c9; }
+@property --brass-on-paper { syntax: '<color>'; inherits: true; initial-value: #c9a24a; }
 @media (prefers-reduced-motion: no-preference) {
   html.light-fading {
-    transition: --desk-center 2s, --desk-edge 2s, --desk-glow-y 2s, --desk-reach 2s !important;
+    transition:
+      --desk-center 2s, --desk-edge 2s, --desk-glow-y 2s, --desk-reach 2s,
+      --parch 2s, --parch-2 2s, --parch-3 2s, --parch-hi 2s,
+      --ink 2s, --ink-soft 2s, --crimson 2s, --binding 2s,
+      --on-binding 2s, --sepia 2s, --rule 2s, --brass 2s,
+      --color-ink-secondary 2s, --color-tab-bg 2s, --color-tab-border 2s, --color-tab-active-text 2s,
+      --color-tab-hover 2s, --page-gutter 2s, --page-foot 2s, --page-shade 2s,
+      --page-wash 2s, --page-muted 2s, --page-caption 2s, --page-field 2s,
+      --page-field-line 2s, --note-erase-opacity 2s, --ribbon-dark 2s, --ribbon-light 2s,
+      --ribbon-deep 2s, --ribbon-star 2s, --fold-flap-1 2s, --fold-flap-2 2s,
+      --fold-flap-3 2s, --fold-hole-1 2s, --fold-hole-2 2s, --fold-sheen 2s,
+      --cover-1 2s, --cover-2 2s, --cover-3 2s, --cover-title 2s,
+      --cover-subtitle 2s, --pencil-blue 2s, --card 2s, --brass-on-paper 2s !important;
   }
 }
 
@@ -150,12 +288,12 @@ html, body {
   display: inline; margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit;
   text-align: inherit; cursor: inherit;
 }
-.entry-open:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 2px; }
+.entry-open:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; border-radius: 2px; }
 
 /* Ribbon, folded corners and the margin-note area are buttons. The ribbon's swallowtail clip would hide a focus
    ring, so it is dropped while the ribbon has keyboard focus. */
 .thumb-tab:focus-visible { outline: 2px solid var(--brass) !important; outline-offset: 1px; position: relative; z-index: 1; }
-.book-control:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; clip-path: none !important; opacity: 1 !important; }
+.book-control:focus-visible { outline: 3px solid var(--brass-on-paper); outline-offset: 2px; clip-path: none !important; opacity: 1 !important; }
 
 .entry-pronunciation {
   font-family: var(--font-deva);

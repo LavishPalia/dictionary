@@ -7,13 +7,14 @@ interface PronunciationFooterProps {
 export const PronunciationFooter: React.FC<PronunciationFooterProps> = ({ hints }) => {
   return (
     <div
+      className="pronunciation-footer"
       style={{
-        borderTop: '1px solid #8a7452',
+        borderTop: '1px solid var(--sepia)',
         paddingTop: '8px',
         textAlign: 'center',
         fontFamily: 'var(--font-deva)',
         fontSize: '13px',
-        color: '#4a3a2c',
+        color: 'var(--color-ink-secondary)',
         letterSpacing: '0.02em',
         userSelect: 'none',
         whiteSpace: 'nowrap',

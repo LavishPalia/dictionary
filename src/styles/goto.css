@@ -40,7 +40,7 @@
 /* Phone footer: "p. 16 ▾" between the arrows. */
 .page-number-btn--phone {
   min-height: var(--tap); padding: 0 14px; border: 1px solid var(--sepia); border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.35); color: var(--ink); font: 14px var(--font-fell-sc); letter-spacing: 0.04em;
+  background: var(--page-wash); color: var(--ink); font: 14px var(--font-fell-sc); letter-spacing: 0.04em;
   cursor: pointer; white-space: nowrap;
 }
 .page-number-btn--phone::before { content: 'p. '; }
@@ -48,7 +48,7 @@
 /* Phone, when the page couldn't be loaded: the same pill, worded as what it does. */
 .page-number-btn--missing {
   min-height: var(--tap); padding: 0 18px; border: 1px solid var(--sepia); border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.35); color: var(--ink); font: 15px var(--font-fell); font-style: normal; cursor: pointer;
+  background: var(--page-wash); color: var(--ink); font: 15px var(--font-fell); font-style: normal; cursor: pointer;
 }
 /* Desktop: "Pages 16–17 of 3,127 ▾", centred under the spread, on the desk. The top margin clears the cover (14px below
    the spread at full size); ScaledSpread leaves room for it (BELOW). */

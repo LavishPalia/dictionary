@@ -1328,8 +1328,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           <div
             className="guide-word"
             style={{
-              background: '#efe3c0',
-              border: '1px solid #8a7452',
+              background: 'var(--parch)',
+              border: '1px solid var(--sepia)',
               borderRadius: '20px',
               padding: '4px 22px',
               height: '36px',

@@ -51,19 +51,19 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
           left: 0,
           width: '560px',
           height: '640px',
-          background: 'linear-gradient(to right, #d8c494 0%, #efe3c0 15%, #ecdfba 100%)',
+          background: 'linear-gradient(to right, var(--page-gutter) 0%, var(--parch) 15%, var(--parch-2) 100%)',
           borderRadius: '0 4px 4px 0',
           boxShadow: '15px 25px 50px rgba(0,0,0,0.65)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '1px solid #8a7452',
+          border: '1px solid var(--sepia)',
           boxSizing: 'border-box',
           padding: '40px',
         }}
       >
-        <div style={{ textAlign: 'center', color: '#6e5532', fontStyle: 'italic', fontFamily: 'var(--font-fell)' }}>
-          <h3 style={{ fontSize: '26px', margin: '0 0 10px', color: '#2a1e14', fontStyle: 'normal' }}>
+        <div style={{ textAlign: 'center', color: 'var(--page-caption)', fontStyle: 'italic', fontFamily: 'var(--font-fell)' }}>
+          <h3 style={{ fontSize: '26px', margin: '0 0 10px', color: 'var(--ink)', fontStyle: 'normal' }}>
             पन्ना · Panna
           </h3>
           <p style={{ margin: 0, fontSize: '15px' }}>
@@ -99,8 +99,8 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             position: 'absolute',
             inset: 0,
             backfaceVisibility: 'hidden',
-            background: 'linear-gradient(135deg, #6b201a 0%, #541914 55%, #3d110d 100%)',
-            border: '2px solid #3d110d',
+            background: 'linear-gradient(135deg, var(--cover-1) 0%, var(--cover-2) 55%, var(--cover-3) 100%)',
+            border: '2px solid var(--cover-3)',
             borderRadius: '0 6px 6px 0',
             boxSizing: 'border-box',
             padding: '44px 38px',
@@ -130,7 +130,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             style={{
               position: 'absolute',
               inset: '16px',
-              border: '2px solid #c9a24a',
+              border: '2px solid var(--brass)',
               borderRadius: '3px',
               pointerEvents: 'none',
               boxShadow: 'inset 0 0 12px rgba(201, 162, 74, 0.3)',
@@ -140,14 +140,14 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
               style={{
                 position: 'absolute',
                 inset: '5px',
-                border: '1px double #c9a24a',
+                border: '1px double var(--brass)',
                 opacity: 0.75,
               }}
             />
           </div>
 
           {/* Top Vintage Ornament */}
-          <div style={{ marginTop: '16px', color: '#c9a24a', fontSize: '18px', letterSpacing: '0.2em' }}>
+          <div style={{ marginTop: '16px', color: 'var(--brass)', fontSize: '18px', letterSpacing: '0.2em' }}>
             ✦ · ✤ · ✦
           </div>
 
@@ -158,7 +158,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
                 margin: '0 0 6px',
                 fontFamily: 'var(--font-deva)',
                 fontSize: '54px',
-                color: '#f3e5c8',
+                color: 'var(--cover-title)',
                 fontWeight: 600,
                 textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 20px rgba(201, 162, 74, 0.3)',
                 letterSpacing: '0.02em',
@@ -172,7 +172,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
                 margin: '0 0 16px',
                 fontFamily: 'var(--font-fell-sc)',
                 fontSize: '32px',
-                color: '#c9a24a',
+                color: 'var(--brass)',
                 letterSpacing: '0.18em',
                 textShadow: '0 1px 3px rgba(0,0,0,0.8)',
               }}
@@ -180,14 +180,14 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
               PANNA
             </h2>
 
-            <div style={{ width: '140px', height: '2px', background: '#c9a24a', margin: '0 auto 18px', opacity: 0.85 }} />
+            <div style={{ width: '140px', height: '2px', background: 'var(--brass)', margin: '0 auto 18px', opacity: 0.85 }} />
 
             <p
               style={{
                 margin: '0 0 8px',
                 fontFamily: 'var(--font-fell)',
                 fontSize: '22px',
-                color: '#eedcb2',
+                color: 'var(--cover-subtitle)',
                 fontStyle: 'italic',
                 textShadow: '0 1px 2px rgba(0,0,0,0.8)',
               }}
@@ -200,7 +200,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
                 margin: 0,
                 fontFamily: 'var(--font-fell-sc)',
                 fontSize: '13px',
-                color: '#c9a24a',
+                color: 'var(--brass)',
                 letterSpacing: '0.1em',
               }}
             >
@@ -214,11 +214,11 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             style={{
               padding: '10px 24px',
               background: 'rgba(201, 162, 74, 0.15)',
-              border: '1px solid #c9a24a',
+              border: '1px solid var(--brass)',
               borderRadius: '20px',
               fontFamily: 'var(--font-fell-sc)',
               fontSize: '13px',
-              color: '#f1e4c4',
+              color: 'var(--color-tab-active-text)',
               letterSpacing: '0.16em',
               boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
               transition: 'all 0.2s ease',
@@ -267,7 +267,7 @@ export const CoverCinematic: React.FC<CoverCinematicProps> = ({
             }}
           >
             <span>ANTIQUE ENDPAPERS</span>
-            <span style={{ fontSize: '11px', marginTop: '6px', color: '#c9a24a' }}>
+            <span style={{ fontSize: '11px', marginTop: '6px', color: 'var(--brass)' }}>
               CALCUTTA & ALLAHABAD · 1928
             </span>
           </div>

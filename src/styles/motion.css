@@ -54,14 +54,14 @@
    themselves left to right, again and again, until the page arrives. The veil fades in, so a quick load shows little. */
 .ink-lines {
   position: absolute; inset: 0; z-index: 60; display: flex; pointer-events: none;
-  background: #ecdfba; animation: fadeIn 0.2s ease-out both;
+  background: var(--parch-2); animation: fadeIn 0.2s ease-out both;
 }
 .ink-lines-page { flex: 1; display: flex; gap: 28px; padding: 70px 38px 40px; overflow: hidden; }
 .ink-lines--1 .ink-lines-page { padding: 64px 24px 40px; }
 /* On the spread, each sheet is shaded towards the spine like the book's own pages. */
-.ink-lines--2 .ink-lines-page { box-shadow: inset 0 0 70px rgba(120, 80, 30, 0.28); }
-.ink-lines--2 .ink-lines-page:first-of-type { background: linear-gradient(to right, #efe3c0 0%, #ecdfba 85%, #d8c494 100%); }
-.ink-lines--2 .ink-lines-page:last-of-type { background: linear-gradient(to left, #efe3c0 0%, #ecdfba 85%, #d8c494 100%); }
+.ink-lines--2 .ink-lines-page { box-shadow: inset 0 0 70px color-mix(in srgb, var(--page-shade) 28%, transparent); }
+.ink-lines--2 .ink-lines-page:first-of-type { background: linear-gradient(to right, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%); }
+.ink-lines--2 .ink-lines-page:last-of-type { background: linear-gradient(to left, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%); }
 .ink-lines-col { flex: 1; display: flex; flex-direction: column; gap: 24px; }
 .ink-lines-entry { display: flex; flex-direction: column; gap: 10px; }
 .ink-lines i {

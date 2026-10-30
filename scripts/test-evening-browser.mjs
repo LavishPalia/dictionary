@@ -239,6 +239,152 @@ async function main() {
     check('old backup with {evening:true} restores as Evening', merged && restoredOk && restored.dcl?.light === 'evening' && restored.now === 'evening'
       && restored.radios === 'Evening' && restored.stored?.lighting === 'evening', restored);
 
+    // ════════ The book under a lamp (Task 3) ════════
+    // Colour helpers, in the page: every rgb()/rgba()/color(srgb …) in a computed value, relative luminance, contrast.
+    const COLOR_JS = `
+      const parseAll = (text) => {
+        const out = [];
+        for (const m of (text || '').matchAll(/rgba?\\(([^)]+)\\)|color\\(srgb ([^)]+)\\)/g)) {
+          const p = (m[1] ?? m[2]).split(/[\\s,\\/]+/).filter(Boolean).map(Number);
+          const k = m[1] ? 1 : 255;
+          out.push({ r: p[0] * k, g: p[1] * k, b: p[2] * k, a: p.length > 3 ? p[3] : 1 });
+        }
+        if (!out.length) { const h = (text || '').trim().match(/^#([0-9a-f]{6})$/i); if (h) { const n = parseInt(h[1], 16); out.push({ r: n >> 16, g: (n >> 8) & 255, b: n & 255, a: 1 }); } }
+        return out;
+      };
+      const lum = ({ r, g, b }) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+      const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+      const name = (el) => el.id || (typeof el.className === 'string' && el.className) || el.tagName.toLowerCase();
+      // Every visible element under the selectors whose background (colour or gradient stop) is opaque and brighter
+      // than the limit.
+      const bright = (selectors, limit) => {
+        const hits = [];
+        for (const sel of selectors) for (const root of document.querySelectorAll(sel)) for (const el of [root, ...root.querySelectorAll('*')]) {
+          const box = el.getBoundingClientRect();
+          const s = getComputedStyle(el);
+          if (!box.width || !box.height || s.visibility === 'hidden' || s.display === 'none') continue;
+          for (const c of [...parseAll(s.backgroundColor), ...parseAll(s.backgroundImage)]) {
+            if (c.a >= 0.9 && lum(c) > limit) hits.push({ el: name(el), lum: +lum(c).toFixed(3), c: [c.r, c.g, c.b].map(Math.round) });
+          }
+        }
+        return hits;
+      };
+      const textOn = (pairs, bg) => pairs.map(([label, sel]) => {
+        const el = document.querySelector(sel);
+        if (!el) return { label, missing: true, ok: false };
+        const fg = parseAll(getComputedStyle(el).color)[0];
+        const back = bg ?? parseAll(getComputedStyle(el).backgroundColor)[0];
+        const r = ratio(fg, back);
+        return { label, ratio: +r.toFixed(2), ok: r >= 4.5 };
+      });
+      const token = (n) => parseAll(getComputedStyle(document.documentElement).getPropertyValue(n))[0];
+    `;
+    const inPage = (body) => evaluate(`(() => { ${COLOR_JS} ${body} })()`);
+    const AXE = fs.readFileSync(path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
+    const axeContrast = (selector) => evaluate(`(async () => {
+      if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); }
+      const out = [];
+      for (const el of document.querySelectorAll(${JSON.stringify(selector)})) {
+        const r = await axe.run(el, { runOnly: ['color-contrast'] });
+        for (const v of r.violations) for (const n of v.nodes) out.push({ target: n.target.join(' '), summary: n.failureSummary?.slice(0, 160) });
+      }
+      return out;
+    })()`);
+    const ENTRY_TEXT = [
+      ['headword', '.entry-headword'], ['definition', '.entry-text > span:not([lang])'], ['Hindi', '.entry-hindi'],
+      ['pronunciation', '.entry-pronunciation'], ['part of speech', '.entry-pos'], ['guide word', '.guide-word'],
+      ['pronunciation footer', '.pronunciation-footer'],
+    ];
+    const SHOTS = process.env.EVENING_SHOTS === '1';
+    const shot = async (file) => {
+      const { data } = await send('Page.captureScreenshot', { format: 'png' });
+      fs.writeFileSync(path.join(process.cwd(), 'scratch', file), Buffer.from(data, 'base64'));
+    };
+
+    // Day keeps today's paper.
+    await setSize(PHONE);
+    await load(JSON.stringify({ lighting: 'day' }), 20);
+    const dayPaper = await evaluate(`getComputedStyle(document.querySelector('#mobile-page')).backgroundColor`);
+    check('Day (forced at 20:00): the phone page is still #ecdfba', dayPaper === 'rgb(236, 223, 186)', dayPaper);
+
+    // Phone, Evening forced.
+    await load(JSON.stringify({ lighting: 'evening' }), 10);
+    const phonePaper = await inPage(`const c = parseAll(getComputedStyle(document.querySelector('#mobile-page')).backgroundColor)[0];
+      return { c: [c.r, c.g, c.b], lum: +lum(c).toFixed(3) };`);
+    const lamp = [0xc2, 0xad, 0x84];
+    check('phone page paper is lamp paper (#c2ad84, luminance ≤ 0.45)',
+      phonePaper?.lum <= 0.45 && phonePaper.c.every((v, i) => Math.abs(v - lamp[i]) <= 6), phonePaper);
+    const phoneBright = await inPage(`return bright(['#mobile-page'], 0.5);`);
+    check('no bright book surface in Evening (phone page, footer, ribbon, rail)', phoneBright?.length === 0, phoneBright?.slice(0, 8));
+    const phoneText = await inPage(`return textOn(${JSON.stringify(ENTRY_TEXT)}, parseAll(getComputedStyle(document.querySelector('#mobile-page')).backgroundColor)[0]);`);
+    check('phone: entry text, Hindi and guide words pass 4.5:1 on the lamp paper', phoneText?.every((t) => t.ok), phoneText);
+    const footText = await inPage(`const foot = token('--page-foot'); return foot ? textOn([['page pill', '#page-number-btn'], ['arrow', 'button[aria-label="Next page"]']], foot) : [{ label: '--page-foot missing', ok: false }];`);
+    check('phone: the footer pill and arrows pass 4.5:1 on the footer bar', footText?.every((t) => t.ok), footText);
+    // Ribbon on, and the A–Z rail held down (its bubble showing).
+    await evaluate(`document.querySelector('#mobile-ribbon').click(); true`);
+    await sleep(500);
+    const railBox = await evaluate(`(() => { const r = document.querySelector('#letter-rail').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height * 0.4 }; })()`);
+    await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: railBox.x, y: railBox.y, button: 'left', buttons: 1, clickCount: 1 });
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: railBox.x, y: railBox.y + 12, button: 'left', buttons: 1 });
+    await sleep(300);
+    const bubble = await inPage(`const b = document.querySelector('#letter-bubble'); if (!b) return null;
+      return { bright: bright(['#mobile-page'], 0.5), text: textOn([['bubble letter', '.letter-bubble-letter']], parseAll(getComputedStyle(b).backgroundColor)[0]) };`);
+    check('phone: with the ribbon on and the rail bubble showing, nothing is bright', bubble && bubble.bright.length === 0, bubble);
+    check('phone: the rail bubble letter passes 4.5:1', bubble?.text.every((t) => t.ok), bubble?.text);
+    const phoneAxe = await axeContrast('#mobile-page');
+    check('phone: axe finds no contrast problem on the page in Evening', phoneAxe?.length === 0, phoneAxe);
+    if (SHOTS) await shot('evening-book-phone.png');
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 20, y: railBox.y, button: 'left', buttons: 1 });
+    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 20, y: railBox.y, button: 'left', buttons: 0, clickCount: 1 });
+
+    // Desktop, Evening forced: a folded corner, the ribbon, a margin note.
+    await setSize(DESKTOP);
+    await load(JSON.stringify({ lighting: 'evening' }), 10, '/page/400');
+    await evaluate(`(() => { document.querySelector('[id^="dog-ear-trigger-"]')?.click(); document.querySelector('#silk-ribbon')?.click(); return true; })()`);
+    await sleep(600);
+    await evaluate(`document.querySelector('[id^="add-note-trigger-p"]').click(); true`);
+    await sleep(300);
+    await evaluate(`(() => { const t = document.querySelector('#margin-note-textarea'); if (!t) return false;
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(t, 'cf. p. 94'); t.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
+    await sleep(100);
+    const editor = await inPage(`return { bright: bright(['#margin-note-editor'], 0.5) };`);
+    check('desktop: the margin-note editor is not bright', editor?.bright.length === 0, editor);
+    await evaluate(`document.querySelector('#save-margin-note-btn')?.click(); true`);
+    await sleep(400);
+    const marks = await evaluate(`({ ear: Boolean(document.querySelector('[id^="dog-ear-corner-"]')), note: Boolean(document.querySelector('[id^="margin-note-"]:not(#margin-note-editor):not(#margin-note-textarea)')),
+      ribbon: document.querySelector('#silk-ribbon')?.getAttribute('aria-pressed') })`);
+    check('desktop: a dog-ear, a margin note and the ribbon are on the spread', marks?.ear && marks.note && marks.ribbon === 'true', marks);
+    const deskBright = await inPage(`return bright(['#book-spread-container'], 0.5);`);
+    check('no bright book surface in Evening (spread, thumb tabs, dog-ear, ribbon, arrows)', deskBright?.length === 0, deskBright?.slice(0, 8));
+    const deskText = await inPage(`return textOn(${JSON.stringify(ENTRY_TEXT)}, token('--parch-2'));`);
+    check('desktop: entry text, Hindi and guide words pass 4.5:1 on the lamp paper', deskText?.every((t) => t.ok), deskText);
+    const tabs = await inPage(`return [...document.querySelectorAll('.thumb-tab')].map((t) => { const s = getComputedStyle(t); return { l: t.textContent, r: +ratio(parseAll(s.color)[0], parseAll(s.backgroundColor)[0]).toFixed(2) }; }).filter((t) => t.r < 4.5);`);
+    check('desktop: every thumb-index tab passes 4.5:1', tabs?.length === 0, tabs);
+    const noteText = await inPage(`return [...document.querySelectorAll('[id^="margin-note-"]:not(#margin-note-editor) > span')].map((n) => +ratio(parseAll(getComputedStyle(n).color)[0], token('--parch-2')).toFixed(2));`);
+    check('desktop: margin notes pass 4.5:1 on the lamp paper', noteText?.length > 0 && noteText.every((r) => r >= 4.5), noteText);
+    const deskAxe = await axeContrast('#book-spread-container');
+    check('desktop: axe finds no contrast problem on the spread in Evening', deskAxe?.length === 0, deskAxe);
+    if (SHOTS) await shot('evening-book-desktop.png');
+    // The ink lines (a slow page load) are drawn on the same lamp paper.
+    const ink = await inPage(`const v = document.createElement('div'); v.className = 'ink-lines ink-lines--2';
+      v.innerHTML = '<div class="ink-lines-page"></div><div class="ink-lines-page"></div>';
+      document.querySelector('#book-spread-container').appendChild(v); const out = bright(['.ink-lines'], 0.5); v.remove(); return out;`);
+    check('the ink-lines veil is lamp paper in Evening', ink?.length === 0, ink);
+
+    // The binding rule: every token Evening overrides is registered with @property and in the fade's transition list.
+    const binding = await evaluate(`(() => {
+      const rules = []; const walk = (list) => { for (const r of list) { rules.push(r); if (r.cssRules) walk(r.cssRules); } };
+      for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch {} }
+      const evening = rules.filter((r) => r.selectorText === 'html[data-light="evening"]').flatMap((r) => [...r.style].filter((p) => p.startsWith('--')));
+      const registered = new Set(rules.filter((r) => r.constructor.name === 'CSSPropertyRule').map((r) => r.name));
+      const fading = rules.find((r) => r.selectorText === 'html.light-fading');
+      const listed = new Set((fading?.style.transitionProperty ?? '').split(/,\\s*/));
+      return { count: evening.length, unregistered: evening.filter((p) => !registered.has(p)), unlisted: evening.filter((p) => !listed.has(p)) };
+    })()`);
+    check('every Evening token is registered with @property and fades (binding rule)',
+      binding?.count > 4 && binding.unregistered.length === 0 && binding.unlisted.length === 0, binding);
+    await setSize(PHONE);
+
     // ════════ Auto over time ════════
     // Crossing 19:00 while open: the clock moves on 60 s and the app is shown again.
     await load(undefined, [18, 59, 30]);

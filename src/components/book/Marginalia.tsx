@@ -41,9 +41,9 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
 
   const getColorHex = (c: 'blue' | 'graphite' | 'crimson') => {
     switch (c) {
-      case 'blue': return '#1e4887'; // classic blue pencil
-      case 'graphite': return '#383838'; // pencil lead
-      case 'crimson': return '#781d16'; // vintage red ink
+      case 'blue': return 'var(--pencil-blue)'; // classic blue pencil
+      case 'graphite': return 'var(--pencil-graphite)'; // pencil lead
+      case 'crimson': return 'var(--pencil-crimson)'; // vintage red ink
     }
   };
 
@@ -81,7 +81,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               alignItems: isLeftPage ? 'flex-start' : 'flex-end',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 227, 192, 0.6)';
+              e.currentTarget.style.background = 'color-mix(in srgb, var(--parch) 60%, transparent)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent';
@@ -100,16 +100,16 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#8a7452',
+                color: 'var(--page-muted)',
                 fontSize: '11px',
                 cursor: 'pointer',
                 padding: '0 2px',
                 lineHeight: 1,
-                opacity: 0.6,
+                opacity: 'var(--note-erase-opacity)',
                 marginTop: '1px',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = 'var(--note-erase-opacity)')}
             >
               ✕ erase
             </button>
@@ -157,7 +157,7 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
           style={{
             fontFamily: 'var(--font-fell-sc)',
             fontSize: '14px',
-            color: '#8a7452',
+            color: 'var(--page-muted)',
             userSelect: 'none',
           }}
         >
@@ -177,8 +177,8 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
             right: isLeftPage ? 'auto' : '20px',
             transform: 'translateY(-50%)',
             width: '210px',
-            background: '#efe3c0',
-            border: '1px solid #8a7452',
+            background: 'var(--parch)',
+            border: '1px solid var(--sepia)',
             borderRadius: '4px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
             padding: '12px',
@@ -187,12 +187,12 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ font: '11px var(--font-fell-sc)', color: '#2a1e14', letterSpacing: '0.05em' }}>
+            <span style={{ font: '11px var(--font-fell-sc)', color: 'var(--ink)', letterSpacing: '0.05em' }}>
               ✏️ Margin Note (p. {pageNumber})
             </span>
             <button
               onClick={() => setIsEditorOpen(false)}
-              style={{ background: 'transparent', border: 'none', color: '#8a7452', cursor: 'pointer', fontSize: '13px' }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--page-muted)', cursor: 'pointer', fontSize: '13px' }}
             >
               ✕
             </button>
@@ -208,8 +208,8 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
             style={{
               width: '100%',
               boxSizing: 'border-box',
-              background: '#f5edd4',
-              border: '1px solid #c4b18e',
+              background: 'var(--page-field)',
+              border: '1px solid var(--page-field-line)',
               borderRadius: '3px',
               padding: '6px 8px',
               fontFamily: 'var(--font-hand)',
@@ -241,8 +241,8 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
                   width: '18px',
                   height: '18px',
                   borderRadius: '50%',
-                  background: '#1e4887',
-                  border: selectedColor === 'blue' ? '2px solid #2a1e14' : '1px solid #b9a57c',
+                  background: 'var(--pencil-blue)',
+                  border: selectedColor === 'blue' ? '2px solid var(--ink)' : '1px solid var(--rule)',
                   cursor: 'pointer',
                   padding: 0,
                 }}
@@ -255,8 +255,8 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
                   width: '18px',
                   height: '18px',
                   borderRadius: '50%',
-                  background: '#383838',
-                  border: selectedColor === 'graphite' ? '2px solid #2a1e14' : '1px solid #b9a57c',
+                  background: 'var(--pencil-graphite)',
+                  border: selectedColor === 'graphite' ? '2px solid var(--ink)' : '1px solid var(--rule)',
                   cursor: 'pointer',
                   padding: 0,
                 }}
@@ -269,8 +269,8 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
                   width: '18px',
                   height: '18px',
                   borderRadius: '50%',
-                  background: '#781d16',
-                  border: selectedColor === 'crimson' ? '2px solid #2a1e14' : '1px solid #b9a57c',
+                  background: 'var(--pencil-crimson)',
+                  border: selectedColor === 'crimson' ? '2px solid var(--ink)' : '1px solid var(--rule)',
                   cursor: 'pointer',
                   padding: 0,
                 }}
@@ -281,12 +281,12 @@ export const Marginalia: React.FC<MarginaliaProps> = ({
               onClick={handleSaveNote}
               id="save-margin-note-btn"
               style={{
-                background: '#efe3c0',
-                border: '1px solid #8a7452',
+                background: 'var(--parch)',
+                border: '1px solid var(--sepia)',
                 borderRadius: '3px',
                 padding: '2px 8px',
                 font: '11px var(--font-fell-sc)',
-                color: '#2a1e14',
+                color: 'var(--ink)',
                 cursor: 'pointer',
               }}
             >
