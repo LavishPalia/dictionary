@@ -11,7 +11,7 @@ const SearchIcon = () => (
 );
 
 export function Styleguide() {
-  const [lighting, setLighting] = useState<'day' | 'evening'>('day');
+  const [lighting, setLighting] = useState<'auto' | 'day' | 'evening'>('auto');
   const [sounds, setSounds] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -62,7 +62,7 @@ export function Styleguide() {
         <hr className="ui-divider" />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', alignItems: 'center' }}>
           <Segmented label="Desk lighting" value={lighting} onChange={setLighting}
-            options={[{ value: 'day', label: 'Day' }, { value: 'evening', label: 'Evening' }]} />
+            options={[{ value: 'auto', label: 'Auto' }, { value: 'day', label: 'Day' }, { value: 'evening', label: 'Evening' }]} />
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, font: '16px var(--font-fell)' }}>
             Page sounds <Switch checked={sounds} onChange={setSounds} label="Page sounds" id="sg-sounds" />
           </label>

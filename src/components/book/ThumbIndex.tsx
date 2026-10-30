@@ -61,11 +61,11 @@ export const ThumbIndex: React.FC<ThumbIndexProps> = ({
               height: '22px',
               lineHeight: '22px',
               padding: '0 10px 0 8px',
-              background: isActive ? '#7a2b22' : '#a8885a',
-              color: isActive ? '#f1e4c4' : '#2a1e14',
+              background: isActive ? 'var(--color-tab-active-bg)' : 'var(--color-tab-bg)',
+              color: isActive ? 'var(--color-tab-active-text)' : 'var(--ink)',
               font: `${isActive ? '700' : '400'} 13px var(--font-fell-sc)`,
               borderRadius: '0 6px 6px 0',
-              borderBottom: '1px solid #6e5532',
+              borderBottom: '1px solid var(--color-tab-border)',
               marginLeft: isActive ? '-8px' : '0px',
               cursor: 'pointer',
               textAlign: 'left',
@@ -76,13 +76,13 @@ export const ThumbIndex: React.FC<ThumbIndexProps> = ({
             }}
             onMouseEnter={(e) => {
               if (!isActive) {
-                e.currentTarget.style.background = '#ba9866';
+                e.currentTarget.style.background = 'var(--color-tab-hover)';
                 e.currentTarget.style.marginLeft = '-4px';
               }
             }}
             onMouseLeave={(e) => {
               if (!isActive) {
-                e.currentTarget.style.background = '#a8885a';
+                e.currentTarget.style.background = 'var(--color-tab-bg)';
                 e.currentTarget.style.marginLeft = '0px';
               }
             }}

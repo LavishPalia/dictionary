@@ -15,13 +15,13 @@
   border: 0; background: transparent; padding: 4px 0; text-align: left; color: var(--ink); cursor: pointer;
 }
 .saved-open:hover .saved-hw { color: var(--crimson); }
-.saved-open:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: var(--radius-sm); }
+.saved-open:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; border-radius: var(--radius-sm); }
 .saved-hw { font: bold 17px var(--font-fell); }
 .saved-hi { font: 16px var(--font-deva); color: var(--crimson); overflow-wrap: anywhere; }
 .saved-sub { font: 13.5px var(--font-fell); color: var(--ink-soft); }
 .saved-note { font: 22px/1.15 var(--font-hand); overflow-wrap: anywhere; }
-.saved-note--blue { color: #1e4887; }
-.saved-note--graphite { color: #383838; }
+.saved-note--blue { color: var(--pencil-blue); }
+.saved-note--graphite { color: var(--pencil-graphite); }
 .saved-note--crimson { color: var(--crimson); }
 .saved-item .ui-iconbtn { width: 40px; height: 40px; border-color: transparent; background: transparent; color: var(--ink-soft); }
 .saved-item .ui-iconbtn:hover { background: rgba(138, 116, 82, 0.15); color: var(--crimson); }
@@ -61,13 +61,13 @@
 .history-via { font: 13.5px var(--font-fell); color: var(--ink-soft); white-space: pre-wrap; }
 .history-star {
   flex: none; display: inline-grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0;
-  border-radius: 50%; border: 1px solid var(--rule); background: rgba(255, 255, 255, 0.3); color: var(--sepia); cursor: pointer;
+  border-radius: 50%; border: 1px solid var(--rule); background: color-mix(in srgb, var(--wash) 30%, transparent); color: var(--sepia); cursor: pointer;
 }
 .history-star .ui-icon { width: 19px; height: 19px; }
 .history-star:hover { background: rgba(201, 162, 74, 0.2); }
 .history-star[aria-pressed='true'] { background: var(--brass); border-color: var(--brass); color: var(--color-desk-edge); }
 .history-star[aria-pressed='true'] .ui-icon { fill: currentColor; }
-.history-star:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.history-star:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; } /* only ever on paper */
 .history-star[aria-busy='true'] { opacity: 0.6; cursor: progress; }
 .history-clear { margin-top: var(--space-4); }
 .saved-item .ui-iconbtn.history-remove { width: var(--tap); height: var(--tap); }

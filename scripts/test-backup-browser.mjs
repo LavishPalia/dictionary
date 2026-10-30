@@ -109,7 +109,7 @@ async function main() {
         panna_review: { camel: { box: 2, due_at: Date.now() + 86400000, right: 2, wrong: 0, last_at: Date.now() } },
         panna_dog_ears: [23],
         panna_marginalia: [{ id: 'n1', page_number: 18, text: 'remember this', color: 'blue', created_at: 1, anchor: 'ceremony' }],
-        panna_settings: { evening: true, speed: 'instant', sounds: false },
+        panna_settings: { lighting: 'evening', speed: 'instant', sounds: false },
       });
       await open(`/page/${CAMEL_PAGE}`, size);
       const before = await state();

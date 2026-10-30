@@ -169,23 +169,35 @@ async function main() {
 
     if (!HAS_EXAMPLE) console.log('skipped: no example in this build (word card with an example)');
     const results = [];
+    // The whole screen loop runs twice: Day, then Evening (labelled "evening:"). The lighting is pinned on every new
+    // document, before the app's own head script reads it, so seed()'s localStorage.clear() cannot undo it and the
+    // clock cannot flip it.
+    let lightScript = null;
+    const pinLight = async (light) => {
+      if (lightScript) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: lightScript });
+      lightScript = (await send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('panna_settings', JSON.stringify({ lighting: '${light}' })); } catch {}` })).identifier;
+    };
+    for (const light of ['day', 'evening']) {
+    await pinLight(light);
+    const pass = light === 'evening' ? 'evening: ' : '';
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
-      check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
+      check(`${pass}${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
+      check(`${pass}${sizeName}: the app is in ${light}`, (await evaluate('document.documentElement.dataset.light')) === light);
       for (const view of VIEWS) {
         await view.go(size);
         await evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })()`);
         const out = await evaluate(`axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] }, exclude: [['nextjs-portal']] })
           .then((r) => r.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, tags: v.tags.filter((t) => /^wcag\\d/.test(t)),
             nodes: v.nodes.slice(0, 6).map((n) => ({ target: n.target.join(' '), html: n.html.slice(0, 140), summary: n.failureSummary.slice(0, 300) })), count: v.nodes.length })))`);
-        results.push({ size: sizeName, view: view.name, violations: out ?? [] });
-        check(`${sizeName}: ${view.name} has no WCAG 2.1 A/AA or best-practice violations`, Array.isArray(out) && out.length === 0,
+        results.push({ light, size: sizeName, view: view.name, violations: out ?? [] });
+        check(`${pass}${sizeName}: ${view.name} has no WCAG 2.1 A/AA or best-practice violations`, Array.isArray(out) && out.length === 0,
           out?.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })));
         if (size.mobile) {
           const targets = { 'voice overlay': '[role="dialog"][aria-label="Voice search"] button, [role="dialog"][aria-label="Voice search"] [role="radio"]',
             'word card with a Heard strip': '#word-heard button', 'sentence sheet': '#sentence-sheet button.sentence-word, #sentence-sheet button' }[view.name];
           if (targets) {
             const small = await evaluate(`[...document.querySelectorAll(${JSON.stringify(targets)})].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map((b) => b.id || b.textContent.slice(0, 20))`);
-            check(`phone: ${view.name} controls are at least 44 px tall`, Array.isArray(small) && small.length === 0, small);
+            check(`${pass}phone: ${view.name} controls are at least 44 px tall`, Array.isArray(small) && small.length === 0, small);
           }
         }
         if (view.name === 'today (guide opened)') {
@@ -193,7 +205,7 @@ async function main() {
           // stop of the first background behind it.
           const link = await evaluate(`axe.run(document.querySelector('#today-learn-link'), { runOnly: ['color-contrast'] }).then((r) => ({ violations: r.violations.length,
             unknown: r.incomplete.flatMap((i) => i.nodes.flatMap((n) => n.any.map((a) => a.data?.messageKey))) }))`);
-          check(`${sizeName}: axe finds no contrast problem in Today's guide link`, link?.violations === 0, link);
+          check(`${pass}${sizeName}: axe finds no contrast problem in Today's guide link`, link?.violations === 0, link);
           const worst = await evaluate(`(() => {
             const rgb = (c) => c.match(/[\\d.]+/g).slice(0, 3).map(Number);
             const lum = (c) => { const [r, g, b] = rgb(c).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
@@ -209,12 +221,14 @@ async function main() {
             }
             return 0; })()`);
           console.log(`  Today's guide link, worst contrast on the desk: ${worst?.toFixed(2)}:1`);
-          check(`${sizeName}: Today's guide link has 4.5:1 contrast on every part of the desk behind it`, worst >= 4.5, worst);
-          check(`${sizeName}: Today's guide link ends with ›, like Saved's`, (await evaluate(`document.querySelector('#today-learn-link').textContent`)).trim().endsWith('›'));
+          check(`${pass}${sizeName}: Today's guide link has 4.5:1 contrast on every part of the desk behind it`, worst >= 4.5, worst);
+          check(`${pass}${sizeName}: Today's guide link ends with ›, like Saved's`, (await evaluate(`document.querySelector('#today-learn-link').textContent`)).trim().endsWith('›'));
         }
         if (view.name === 'offline notice') await send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
       }
     }
+    }
+    await pinLight('day');
 
     // ── Keyboard and screen-reader basics, beyond what axe checks ──
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {

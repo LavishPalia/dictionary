@@ -8,9 +8,10 @@
 .progress-seg { display: block; min-width: 6px; }
 .progress-seg--mastered { background: var(--green); }
 .progress-seg--learning { background: var(--brass); }
-.progress-seg--new { background: #c9b78f; }
+.progress-seg--new { background: var(--progress-new); }
 .progress--desk .progress-bar { background: rgba(232, 211, 160, 0.12); }
 .progress--desk .progress-seg--new { background: rgba(232, 211, 160, 0.45); }
+.progress--desk .progress-seg--mastered { background: var(--green-desk); } /* the bar and its legend dot */
 
 .progress-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 0; padding: 0; list-style: none; font: 14px var(--font-fell); color: var(--ink-soft); }
 .progress-legend b { color: var(--ink); font-weight: 700; }

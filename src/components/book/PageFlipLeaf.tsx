@@ -43,18 +43,18 @@ export const PageFace: React.FC<PageFaceProps> = ({
   style,
 }) => {
   const bg = isLeftPage
-    ? 'linear-gradient(to right, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)'
-    : 'linear-gradient(to left,  #efe3c0 0%, #ecdfba 85%, #d8c494 100%)';
+    ? 'linear-gradient(to right, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)'
+    : 'linear-gradient(to left, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)';
 
   return (
     <div
+      className="page-inset"
       style={{
         position: 'absolute',
         inset: 0,
         boxSizing: 'border-box',
         padding: '26px 38px',
         background: bg,
-        boxShadow: 'inset 0 0 70px rgba(120,80,30,.28)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -76,7 +76,7 @@ export const PageFace: React.FC<PageFaceProps> = ({
             <div
               style={{
                 width: '1px',
-                background: '#b9a57c',
+                background: 'var(--rule)',
                 alignSelf: 'stretch',
                 flexShrink: 0,
               }}
@@ -96,7 +96,7 @@ export const PageFace: React.FC<PageFaceProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             fontStyle: 'italic',
-            color: '#8a7452',
+            color: 'var(--page-muted)',
             fontSize: '15px',
           }}
         >
@@ -112,15 +112,15 @@ export const PageFace: React.FC<PageFaceProps> = ({
 // ─────────────────────────────────────────────────────────────────────────────
 const GhostPage: React.FC<{ isLeftPage: boolean }> = ({ isLeftPage }) => {
   const bg = isLeftPage
-    ? 'linear-gradient(to right, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)'
-    : 'linear-gradient(to left,  #efe3c0 0%, #ecdfba 85%, #d8c494 100%)';
+    ? 'linear-gradient(to right, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)'
+    : 'linear-gradient(to left, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)';
   return (
     <div
+      className="page-inset--back"
       style={{
         position: 'absolute',
         inset: 0,
         background: bg,
-        boxShadow: 'inset 0 0 60px rgba(120,80,30,.22)',
         display: 'flex',
         flexDirection: 'column',
         gap: 7,

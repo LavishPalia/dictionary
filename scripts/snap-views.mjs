@@ -63,6 +63,9 @@ async function main() {
       (await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })).result?.value;
     await send('Page.enable');
     await send('Runtime.enable');
+    // Snapshots are always Day, so a run at night does not flip them to Evening: every document starts with the
+    // lighting pinned to Day, before the page's own head script reads it.
+    await send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('panna_settings', JSON.stringify({ lighting: 'day' })); } catch {}` });
 
     for (const [sizeName, size] of Object.entries(SIZES)) {
       await send('Emulation.setDeviceMetricsOverride', { width: size.width, height: size.height, deviceScaleFactor: 1, mobile: size.mobile });

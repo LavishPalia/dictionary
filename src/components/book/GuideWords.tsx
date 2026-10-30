@@ -17,7 +17,7 @@ export const GuideWords: React.FC<GuideWordsProps> = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottom: '1px solid #8a7452',
+        borderBottom: '1px solid var(--sepia)',
         paddingBottom: '6px',
         marginBottom: '16px',
         userSelect: 'none',

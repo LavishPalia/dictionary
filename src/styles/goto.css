@@ -4,7 +4,7 @@
 .goto-field { display: flex; gap: var(--space-2); align-items: stretch; margin: 0 0 var(--space-2); }
 .goto-input {
   flex: 1; min-width: 0; min-height: 52px; padding: 0 var(--space-3); border-radius: var(--radius-md);
-  border: 1px solid var(--sepia); background: rgba(255, 255, 255, 0.5); color: var(--ink);
+  border: 1px solid var(--sepia); background: color-mix(in srgb, var(--wash) 50%, transparent); color: var(--ink);
   font: 22px var(--font-fell); font-variant-numeric: tabular-nums;
 }
 .goto-input[aria-invalid='true'] { border-color: var(--crimson); }
@@ -18,10 +18,10 @@
 
 .goto-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: var(--space-2) 0 var(--space-4); }
 .goto-letter {
-  min-height: var(--tap); border: 1px solid var(--rule); border-radius: 8px; background: rgba(255, 255, 255, 0.25);
+  min-height: var(--tap); border: 1px solid var(--rule); border-radius: 8px; background: color-mix(in srgb, var(--wash) 25%, transparent);
   color: var(--ink); font: 17px var(--font-fell); cursor: pointer; padding: 0;
 }
-.goto-letter:hover { background: rgba(255, 255, 255, 0.5); }
+.goto-letter:hover { background: color-mix(in srgb, var(--wash) 50%, transparent); }
 .goto-letter[aria-current='true'] { background: var(--brass); border-color: var(--brass); color: var(--desk); font-weight: bold; }
 .goto-letter:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -29,18 +29,21 @@
 .goto-marks { display: flex; flex-wrap: wrap; gap: 6px; }
 .goto-mark {
   display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 var(--space-3);
-  border: 1px solid var(--rule); border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--rule); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--wash) 30%, transparent);
   color: var(--ink); font: 14px var(--font-fell); cursor: pointer;
 }
-.goto-mark:hover { background: rgba(255, 255, 255, 0.5); }
+.goto-mark:hover { background: color-mix(in srgb, var(--wash) 50%, transparent); }
 
 .goto-input:focus-visible, .goto-go:focus-visible, .goto-letter:focus-visible, .goto-mark:focus-visible,
 .page-number-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+/* In the sheet and on the phone page (paper): a ring dark enough for lamp paper (the same brass in Day). */
+.goto-input:focus-visible, .goto-go:focus-visible, .goto-letter:focus-visible, .goto-mark:focus-visible,
+.page-number-btn--phone:focus-visible, .page-number-btn--missing:focus-visible { outline-color: var(--brass-on-paper); }
 
 /* Phone footer: "p. 16 ▾" between the arrows. */
 .page-number-btn--phone {
   min-height: var(--tap); padding: 0 14px; border: 1px solid var(--sepia); border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.35); color: var(--ink); font: 14px var(--font-fell-sc); letter-spacing: 0.04em;
+  background: var(--page-wash); color: var(--ink); font: 14px var(--font-fell-sc); letter-spacing: 0.04em;
   cursor: pointer; white-space: nowrap;
 }
 .page-number-btn--phone::before { content: 'p. '; }
@@ -48,7 +51,7 @@
 /* Phone, when the page couldn't be loaded: the same pill, worded as what it does. */
 .page-number-btn--missing {
   min-height: var(--tap); padding: 0 18px; border: 1px solid var(--sepia); border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.35); color: var(--ink); font: 15px var(--font-fell); font-style: normal; cursor: pointer;
+  background: var(--page-wash); color: var(--ink); font: 15px var(--font-fell); font-style: normal; cursor: pointer;
 }
 /* Desktop: "Pages 16–17 of 3,127 ▾", centred under the spread, on the desk. The top margin clears the cover (14px below
    the spread at full size); ScaledSpread leaves room for it (BELOW). */

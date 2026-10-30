@@ -65,7 +65,7 @@ export const DogEar: React.FC<DogEarProps> = ({
             clipPath: isLeftPage
               ? `polygon(0 0, 100% 0, 0 100%)`
               : `polygon(0 0, 100% 0, 100% 100%)`,
-            background: 'linear-gradient(135deg, #a48253 0%, #7d5b2c 100%)',
+            background: 'linear-gradient(135deg, var(--fold-hole-1) 0%, var(--fold-hole-2) 100%)',
             opacity: 0.35,
           }}
         />
@@ -79,8 +79,8 @@ export const DogEar: React.FC<DogEarProps> = ({
               ? `polygon(0 0, 100% 100%, 0 100%)`
               : `polygon(100% 0, 0 100%, 100% 100%)`,
             background: isLeftPage
-              ? 'linear-gradient(135deg, #dfcca2 0%, #cbb17b 60%, #bca167 100%)'
-              : 'linear-gradient(225deg, #dfcca2 0%, #cbb17b 60%, #bca167 100%)',
+              ? 'linear-gradient(135deg, var(--fold-flap-1) 0%, var(--fold-flap-2) 60%, var(--fold-flap-3) 100%)'
+              : 'linear-gradient(225deg, var(--fold-flap-1) 0%, var(--fold-flap-2) 60%, var(--fold-flap-3) 100%)',
             borderBottom: '1px solid rgba(138, 116, 82, 0.7)',
             borderRight: isLeftPage ? '1px solid rgba(138, 116, 82, 0.7)' : 'none',
             borderLeft: !isLeftPage ? '1px solid rgba(138, 116, 82, 0.7)' : 'none',
@@ -92,8 +92,8 @@ export const DogEar: React.FC<DogEarProps> = ({
               position: 'absolute',
               inset: 0,
               background: isLeftPage
-                ? 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%)'
-                : 'linear-gradient(225deg, rgba(255,255,255,0.4) 0%, transparent 40%)',
+                ? 'linear-gradient(135deg, var(--fold-sheen) 0%, transparent 40%)'
+                : 'linear-gradient(225deg, var(--fold-sheen) 0%, transparent 40%)',
             }}
           />
         </div>

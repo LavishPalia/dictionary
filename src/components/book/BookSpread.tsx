@@ -194,7 +194,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           style={{
             position: 'absolute',
             inset: '-14px -22px -14px -14px',
-            background: '#5b1f19',
+            background: 'var(--binding)',
             borderRadius: '6px',
             boxShadow: 'inset 0 0 40px rgba(0,0,0,.5)',
             pointerEvents: 'none',
@@ -253,14 +253,14 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         >
           {/* LEFT PAGE (interactive, selectable text) */}
           <div
+            className="page-inset"
             style={{
               position: 'absolute',
               top: 0, left: 0,
               width: '560px', height: '640px',
               boxSizing: 'border-box',
               padding: '26px 38px',
-              background: 'linear-gradient(to right, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)',
-              boxShadow: 'inset 0 0 70px rgba(120,80,30,.28)',
+              background: 'linear-gradient(to right, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -287,13 +287,13 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
                 />
                 <div style={{ display: 'flex', gap: '28px', flex: 1, minHeight: 0 }}>
                   <PageColumn entries={leftPage.column1} highlightedWord={highlightedWord} onSelectWord={onSelectWord} />
-                  <div style={{ width: '1px', background: '#b9a57c', alignSelf: 'stretch' }} />
+                  <div style={{ width: '1px', background: 'var(--rule)', alignSelf: 'stretch' }} />
                   <PageColumn entries={leftPage.column2} highlightedWord={highlightedWord} onSelectWord={onSelectWord} />
                 </div>
                 <PronunciationFooter hints={leftPage.footer_hints} />
               </>
             ) : (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontStyle: 'italic', color: '#8a7452' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontStyle: 'italic', color: 'var(--page-muted)' }}>
                 [Endpapers]
               </div>
             )}
@@ -301,14 +301,14 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
 
           {/* RIGHT PAGE (interactive, selectable text) */}
           <div
+            className="page-inset"
             style={{
               position: 'absolute',
               top: 0, right: 0,
               width: '560px', height: '640px',
               boxSizing: 'border-box',
               padding: '26px 38px',
-              background: 'linear-gradient(to left, #efe3c0 0%, #ecdfba 85%, #d8c494 100%)',
-              boxShadow: 'inset 0 0 70px rgba(120,80,30,.28)',
+              background: 'linear-gradient(to left, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -335,13 +335,13 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
                 />
                 <div style={{ display: 'flex', gap: '28px', flex: 1, minHeight: 0 }}>
                   <PageColumn entries={rightPage.column1} highlightedWord={highlightedWord} onSelectWord={onSelectWord} />
-                  <div style={{ width: '1px', background: '#b9a57c', alignSelf: 'stretch' }} />
+                  <div style={{ width: '1px', background: 'var(--rule)', alignSelf: 'stretch' }} />
                   <PageColumn entries={rightPage.column2} highlightedWord={highlightedWord} onSelectWord={onSelectWord} />
                 </div>
                 <PronunciationFooter hints={rightPage.footer_hints} />
               </>
             ) : (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontStyle: 'italic', color: '#8a7452' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontStyle: 'italic', color: 'var(--page-muted)' }}>
                 [End of Book]
               </div>
             )}
@@ -500,6 +500,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         disabled={isFlipping || !canPrev}
         title={canPrev ? "Turn to previous spread (Left Arrow)" : "At beginning of book"}
         aria-label="Previous spread"
+        className="spread-arrow"
         style={{
           position: 'absolute',
           left: '-52px',
@@ -507,10 +508,9 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           transform: 'translateY(-50%)',
           width: '40px',
           height: '64px',
-          background: canPrev && !isFlipping ? 'rgba(239, 227, 192, 0.92)' : 'rgba(239, 227, 192, 0.45)',
-          border: '1px solid #8a7452',
+          border: '1px solid var(--sepia)',
           borderRadius: '5px 0 0 5px',
-          color: '#2a1e14',
+          color: 'var(--ink)',
           fontSize: '24px',
           cursor: canPrev && !isFlipping ? 'pointer' : 'not-allowed',
           display: 'flex',
@@ -521,12 +521,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           zIndex: 28,
           opacity: canPrev && !isFlipping ? 1 : 0.35,
         }}
-        onMouseEnter={(e) => {
-          if (!isFlipping && canPrev) e.currentTarget.style.background = '#efe3c0';
-        }}
-        onMouseLeave={(e) => {
-          if (!isFlipping && canPrev) e.currentTarget.style.background = 'rgba(239, 227, 192, 0.92)';
-        }}
       >
         ‹
       </button>
@@ -536,6 +530,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         disabled={isFlipping || !canNext}
         title={canNext ? "Turn to next spread (Right Arrow)" : "At end of book"}
         aria-label="Next spread"
+        className="spread-arrow"
         style={{
           position: 'absolute',
           right: '-106px',
@@ -543,10 +538,9 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           transform: 'translateY(-50%)',
           width: '40px',
           height: '64px',
-          background: canNext && !isFlipping ? 'rgba(239, 227, 192, 0.92)' : 'rgba(239, 227, 192, 0.45)',
-          border: '1px solid #8a7452',
+          border: '1px solid var(--sepia)',
           borderRadius: '0 5px 5px 0',
-          color: '#2a1e14',
+          color: 'var(--ink)',
           fontSize: '24px',
           cursor: canNext && !isFlipping ? 'pointer' : 'not-allowed',
           display: 'flex',
@@ -556,12 +550,6 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
           transition: 'all 0.2s',
           zIndex: 28,
           opacity: canNext && !isFlipping ? 1 : 0.35,
-        }}
-        onMouseEnter={(e) => {
-          if (!isFlipping && canNext) e.currentTarget.style.background = '#efe3c0';
-        }}
-        onMouseLeave={(e) => {
-          if (!isFlipping && canNext) e.currentTarget.style.background = 'rgba(239, 227, 192, 0.92)';
         }}
       >
         ›

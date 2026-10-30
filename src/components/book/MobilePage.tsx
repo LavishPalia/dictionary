@@ -142,7 +142,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           width: '100%',
           maxWidth: '390px',
           minHeight: '620px',
-          background: '#ecdfba',
+          background: 'var(--parch-2)',
           padding: '24px',
           display: 'flex',
           alignItems: 'center',
@@ -173,6 +173,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
     <div
       ref={cardRef}
       id="mobile-page"
+      className="page-inset--phone"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -183,11 +184,10 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         touchAction: 'pan-y',
         transform: offset ? `translateX(${offset}px)` : undefined,
         transition: sliding ? `transform ${SLIDE_MS}ms ease-out` : 'none',
-        background: '#ecdfba',
+        background: 'var(--parch-2)',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(120,80,30,0.3)',
         borderRadius: '4px',
         overflow: 'hidden',
         // Read by .letter-rail in goto.css.
@@ -210,7 +210,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           top: 0,
           width: '24px',
           height: `${ribbonHeight}px`,
-          background: 'linear-gradient(to right, #6b1d16 0%, #8b2b22 45%, #591610 100%)',
+          background: 'linear-gradient(to right, var(--ribbon-dark) 0%, var(--ribbon-light) 45%, var(--ribbon-deep) 100%)',
           clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)',
           zIndex: 30,
           boxShadow: '0 3px 8px rgba(0,0,0,0.4)',
@@ -223,7 +223,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         }}
       >
         {isBookmarked && (
-          <span aria-hidden="true" style={{ color: '#e0bd68', fontSize: '13px', lineHeight: 1 }}>★</span>
+          <span aria-hidden="true" style={{ color: 'var(--ribbon-star)', fontSize: '13px', lineHeight: 1 }}>★</span>
         )}
       </button>
 
@@ -255,8 +255,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           justifyContent: 'space-between',
           padding: '8px 16px',
           height: '56px',
-          borderTop: '1px solid #8a7452',
-          background: '#efe3c0',
+          borderTop: '1px solid var(--sepia)',
+          background: 'var(--page-foot)',
         }}
       >
         <button
@@ -265,11 +265,11 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           style={{
             height: '40px',
             minWidth: '40px',
-            border: '1px solid #8a7452',
+            border: '1px solid var(--sepia)',
             background: 'transparent',
             borderRadius: '4px',
             font: '20px var(--font-fell)',
-            color: '#2a1e14',
+            color: 'var(--ink)',
             cursor: canPrev ? 'pointer' : 'not-allowed',
             opacity: canPrev ? 1 : 0.4,
           }}
@@ -291,11 +291,11 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           style={{
             height: '40px',
             minWidth: '40px',
-            border: '1px solid #8a7452',
+            border: '1px solid var(--sepia)',
             background: 'transparent',
             borderRadius: '4px',
             font: '20px var(--font-fell)',
-            color: '#2a1e14',
+            color: 'var(--ink)',
             cursor: canNext ? 'pointer' : 'not-allowed',
             opacity: canNext ? 1 : 0.4,
           }}

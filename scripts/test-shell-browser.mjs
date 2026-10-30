@@ -92,8 +92,8 @@ async function main() {
     await key('ArrowRight');
     await sleep(800);
     check('desktop: arrow keys inside the menu do not turn the page', await evaluate(`location.pathname === '/page/${CAMEL_PAGE}'`), await evaluate('location.pathname'));
-    check('desktop: arrow keys move the lighting choice to Evening',
-      await evaluate(`[...document.querySelectorAll('[role="radio"][aria-checked="true"]')].some((r) => r.textContent === 'Evening')`));
+    check('desktop: arrow keys move the lighting choice from Auto to Day',
+      await evaluate(`[...document.querySelectorAll('[role="radio"][aria-checked="true"]')].some((r) => r.textContent === 'Day')`));
     await key('Escape');
     await sleep(300);
     check('desktop: Escape closes the menu and returns focus to ⋯',
