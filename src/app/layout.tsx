@@ -13,6 +13,7 @@ import '@/styles/learn.css';
 import '@/styles/progress.css';
 import '@/styles/motion.css';
 import { Caveat, IM_Fell_English, IM_Fell_English_SC, Tiro_Devanagari_Hindi } from 'next/font/google';
+import { PRE_PAINT_SCRIPT } from '@/lib/lighting';
 
 // Self-hosted at build time: no request to Google at runtime, and fallback metrics are adjusted so text
 // does not jump when the real font arrives. Components use the --font-* tokens from globals.css, never
@@ -37,7 +38,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#2b1d14',
+  // No themeColor here: the theme-color meta follows Day/Evening, so PRE_PAINT_SCRIPT creates it and applyLight
+  // (src/lib/lighting.ts) updates it.
 };
 
 export default function RootLayout({
@@ -46,7 +48,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={fontVariables}>
+    // data-light is set by the head script before first paint, so the server HTML cannot match it: hence
+    // suppressHydrationWarning (it covers <html>'s own attributes only).
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PRE_PAINT_SCRIPT }} />
+      </head>
       <body>{children}</body>
     </html>
   );
