@@ -9,15 +9,18 @@ const SPREAD_H = 640;
 const REACH_LEFT = 52;
 const REACH_RIGHT = 106;
 const REACH_Y = 14;
+// Room under the spread for the page-number button ("Pages 16–17 of 3,127 ▾", which opens Go to): a gap and its height.
+// Keep in step with .page-number-btn--desk in goto.css: 22px margin + 36px height − the cover's 14px overhang.
+const BELOW = 44;
 const FOOTPRINT_W = REACH_LEFT + SPREAD_W + REACH_RIGHT;
 const GUTTER = 16;
 // Below this the type would be too small to read; the page scrolls instead.
 const MIN_SCALE = 0.6;
 
-/** Fit a scale to the window: the whole footprint across, and the spread below where it starts. */
+/** Fit a scale to the window: the whole footprint across, and the spread (plus the page-number button) below where it starts. */
 export function spreadScale(width: number, height: number, top: number): number {
   const across = (width - 2 * GUTTER) / FOOTPRINT_W;
-  const down = (height - top - REACH_Y - GUTTER) / SPREAD_H;
+  const down = (height - top - REACH_Y - BELOW - GUTTER) / SPREAD_H;
   return Math.max(MIN_SCALE, Math.min(1, across, down));
 }
 

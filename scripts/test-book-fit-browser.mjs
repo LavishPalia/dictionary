@@ -107,7 +107,10 @@ async function main() {
       check(`${name}: nothing scrolls sideways`, f && f.scrollW <= w, f);
       check(`${name}: the spread, arrows and letter tabs are all on screen`, f && f.l >= 0 && f.r <= w && f.t >= 0 && f.b <= h, f);
       if (w === 1440) check(`${name}: full size when there is room`, f?.scale === 1, f?.scale);
-      else check(`${name}: shrunk to fit, and no further`, f && f.scale < 1 && f.scale >= 0.6 && (f.r - f.l > w - 60 || f.b > h - 40), f);
+      // 44 px under the spread is kept for the page-number button (ScaledSpread's BELOW).
+      else check(`${name}: shrunk to fit, and no further`, f && f.scale < 1 && f.scale >= 0.6 && (f.r - f.l > w - 60 || f.b > h - 40 - 44), f);
+      const pageBtn = await evaluate(`(() => { const r = document.querySelector('#page-number-btn')?.getBoundingClientRect(); return r && { t: Math.round(r.top), b: Math.round(r.bottom) }; })()`);
+      check(`${name}: the page-number button is on screen, below the book`, pageBtn && f && pageBtn.t >= f.b && pageBtn.b <= h, { pageBtn, f });
     }
     // At the smallest size, the scaled book still works with the mouse.
     await open(`/page/${CALM_PAGE}`, { width: 1024, height: 768, mobile: false });

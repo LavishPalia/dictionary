@@ -99,13 +99,14 @@ async function main() {
     check('desktop: Escape closes the menu and returns focus to ⋯',
       await evaluate(`!document.querySelector('#reading-menu') && document.activeElement?.id === 'menu-btn'`));
 
-    await evaluate(`document.querySelector('#menu-btn').click(); true`);
+    // Go to page lives on the page number now (the ⋯ menu no longer has it).
+    await evaluate(`document.querySelector('#page-number-btn').click(); true`);
     await sleep(300);
     await evaluate(`(() => { const input = document.querySelector('#goto-page-input'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, '40'); input.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
     await sleep(100);
-    await evaluate(`document.querySelector('#goto-page-form').requestSubmit(); true`);
+    await evaluate(`document.querySelector('#goto-go-btn').click(); true`);
     await sleep(2500);
-    check('desktop: Go to page in the menu turns to page 40', await evaluate(`location.pathname === '/page/40' && !document.querySelector('#reading-menu')`), await evaluate('location.pathname'));
+    check('desktop: Go to from the page number turns to page 40', await evaluate(`location.pathname === '/page/40' && !document.querySelector('#goto-sheet')`), await evaluate('location.pathname'));
     const title = await evaluate('document.title');
     check('desktop: the tab title follows the page', /^Pages 40–41 \(.+ to .+\) — पन्ना \(Panna\)$/.test(title), title);
     const icon = await evaluate(`(async () => { const href = document.querySelector('link[rel="icon"]')?.getAttribute('href'); const res = href && await fetch(href); const ico = await fetch('/favicon.ico'); return { href, type: res?.headers.get('content-type'), ico: ico.ok && ico.url.includes('/icon.svg') }; })()`);

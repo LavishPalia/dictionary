@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Button, Segmented, Sheet, Switch } from '@/components/ui';
+import { Segmented, Sheet, Switch } from '@/components/ui';
 import { ChevronIcon, CompassIcon } from '@/components/ui/icons';
 
 export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk' | 'instant';
@@ -16,10 +15,7 @@ interface ReadingMenuProps {
   onSpeedChange: (speed: PageTurnSpeed) => void;
   soundsOn: boolean;
   onSoundsChange: (on: boolean) => void;
-  currentPage: number;
-  totalPages: number;
   busy: boolean;
-  onGoToPage: (page: number) => void;
   onRandomPage: () => void;
   bookOpen: boolean;
   onToggleBook: () => void;
@@ -43,20 +39,10 @@ interface ReadingMenuProps {
 
 // Everything that used to crowd the top of the screen: reading preferences and the less frequent actions.
 export function ReadingMenu(props: ReadingMenuProps) {
-  const { open, onClose, currentPage, totalPages, busy } = props;
-  const [goTo, setGoTo] = useState('');
+  const { open, onClose, busy } = props;
 
   // Actions that move the book close the menu first, so the reader sees the page turn.
   const thenClose = (action: () => void) => () => { onClose(); action(); };
-
-  const submitGoTo = (event: React.FormEvent) => {
-    event.preventDefault();
-    const n = parseInt(goTo, 10);
-    setGoTo('');
-    if (!Number.isInteger(n)) return;
-    onClose();
-    props.onGoToPage(n);
-  };
 
   return (
     <Sheet open={open} onClose={onClose} title="Reading settings" id="reading-menu" returnFocusTo={() => document.getElementById('menu-btn')}>
@@ -99,26 +85,6 @@ export function ReadingMenu(props: ReadingMenuProps) {
         </div>
         <Switch id="sounds-switch" checked={props.soundsOn} onChange={props.onSoundsChange} label="Page sounds" />
       </label>
-      <form className="menu-row" id="goto-page-form" onSubmit={submitGoTo}>
-        <label className="menu-title" htmlFor="goto-page-input">Go to page</label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <input
-            id="goto-page-input"
-            className="ui-input"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={totalPages}
-            value={goTo}
-            onChange={(e) => setGoTo(e.target.value)}
-            placeholder={String(currentPage)}
-            aria-describedby="goto-page-total"
-            style={{ width: 88, height: 40, borderRadius: 'var(--radius-md)', textAlign: 'center' }}
-          />
-          <span id="goto-page-total" className="menu-sub">of {totalPages.toLocaleString('en-IN')}</span>
-          <Button size="small" type="submit" disabled={busy}>Go</Button>
-        </div>
-      </form>
       <button type="button" className="menu-row menu-link" id="explore-btn" disabled={busy} onClick={thenClose(props.onRandomPage)}>
         <span className="menu-title">Open a random page</span><ChevronIcon />
       </button>
