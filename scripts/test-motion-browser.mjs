@@ -125,7 +125,7 @@ async function main() {
     const instant = await timeTurn();
     check('desktop: "Instant" page turns land at once (no 3D flip)', instant.ms < 400 && instant.path === `/page/${NEXT_SPREAD}` && instant.guide === NEXT_GUIDE, instant);
     check('desktop: lighting, speed and sounds are saved',
-      await evaluate(`localStorage.getItem('panna_settings')`) === JSON.stringify({ evening: true, speed: 'instant', sounds: true }),
+      await evaluate(`localStorage.getItem('panna_settings')`) === JSON.stringify({ lighting: 'evening', speed: 'instant', sounds: true }),
       await evaluate(`localStorage.getItem('panna_settings')`));
     await open(`/page/${CAMEL_PAGE}`, desktop);
     await evaluate(`document.querySelector('#menu-btn').click(); true`);

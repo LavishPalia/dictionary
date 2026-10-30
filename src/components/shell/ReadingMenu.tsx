@@ -2,14 +2,15 @@
 
 import { Segmented, Sheet, Switch } from '@/components/ui';
 import { ChevronIcon, CompassIcon } from '@/components/ui/icons';
+import type { Lighting } from '@/lib/lighting';
 
 export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk' | 'instant';
 
 interface ReadingMenuProps {
   open: boolean;
   onClose: () => void;
-  evening: boolean;
-  onEveningChange: (evening: boolean) => void;
+  lighting: Lighting;
+  onLightingChange: (lighting: Lighting) => void;
   speed: PageTurnSpeed;
   reducedMotion: boolean;
   onSpeedChange: (speed: PageTurnSpeed) => void;
@@ -63,10 +64,10 @@ export function ReadingMenu(props: ReadingMenuProps) {
       <div className="menu-row">
         <div>
           <div className="menu-title">Desk lighting</div>
-          <div className="menu-sub">Evening is easier on the eyes at night</div>
+          <div className="menu-sub">Auto dims the page from 7 pm to 6 am</div>
         </div>
-        <Segmented label="Desk lighting" value={props.evening ? 'evening' : 'day'} onChange={(v) => props.onEveningChange(v === 'evening')}
-          options={[{ value: 'day', label: 'Day' }, { value: 'evening', label: 'Evening' }]} />
+        <Segmented label="Desk lighting" value={props.lighting} onChange={props.onLightingChange}
+          options={[{ value: 'auto', label: 'Auto', id: 'lighting-auto' }, { value: 'day', label: 'Day', id: 'lighting-day' }, { value: 'evening', label: 'Evening', id: 'lighting-evening' }]} />
       </div>
       <div className="menu-row">
         <div>

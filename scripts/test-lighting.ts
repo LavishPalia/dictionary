@@ -75,6 +75,9 @@ const cases: { label: string; stored: string | null | 'THROW'; hour: number; set
   { label: "{lighting:'day'} at 20:00", stored: JSON.stringify({ lighting: 'day' }), hour: 20, settings: { lighting: 'day' } },
   { label: 'invalid JSON at 20:00', stored: '{', hour: 20, settings: null },
   { label: 'localStorage throws at 20:00', stored: 'THROW', hour: 20, settings: null },
+  { label: "{lighting:'bogus', evening:true} at 10:00", stored: JSON.stringify({ lighting: 'bogus', evening: true }), hour: 10, settings: { lighting: 'bogus', evening: true } },
+  { label: "{lighting:'auto', evening:true} at 10:00", stored: JSON.stringify({ lighting: 'auto', evening: true }), hour: 10, settings: { lighting: 'auto', evening: true } },
+  { label: 'JSON 5 at 20:00', stored: '5', hour: 20, settings: 5 },
 ];
 check('PRE_PAINT_SCRIPT is a string', typeof PRE_PAINT_SCRIPT === 'string' && PRE_PAINT_SCRIPT.length > 0);
 check('PRE_PAINT_SCRIPT has no import/require', typeof PRE_PAINT_SCRIPT === 'string' && !/\bimport\b|\brequire\s*\(/.test(PRE_PAINT_SCRIPT));

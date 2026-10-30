@@ -69,6 +69,21 @@
   --color-tab-border: #6e5532;
   --color-tab-active-bg: var(--crimson);
   --color-tab-active-text: #f1e4c4;
+
+  /* The desk behind the book (DictionaryApp's .app-main): a radial glow from --desk-center at --desk-glow-y out to
+     --desk-edge at --desk-reach. Evening (below) swaps in the lamp-lit desk. */
+  --desk-center: var(--color-desk-center);
+  --desk-edge: var(--color-desk-edge);
+  --desk-glow-y: 40%;
+  --desk-reach: 75%;
+}
+
+/* Evening ("a book under a lamp"): html[data-light] is set before first paint (src/lib/lighting.ts). */
+html[data-light="evening"] {
+  --desk-center: #2a1a0e;
+  --desk-edge: #120a06;
+  --desk-glow-y: 35%;
+  --desk-reach: 85%;
 }
 
 * {

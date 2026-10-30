@@ -24,6 +24,7 @@ import { BookMeta, BookPage, DictionaryEntry, MarginNote, RelatedWord } from '@/
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
 import { useReducedMotion, visibleElement } from '@/lib/motion';
+import { applyLight, readLighting, resolveLight, type Lighting } from '@/lib/lighting';
 import type { PageTurnSpeed } from '@/components/shell/ReadingMenu';
 import { TourLayer } from '@/components/tour/TourLayer';
 import { ToursSheet } from '@/components/tour/ToursSheet';
@@ -68,7 +69,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [isLampLit, setIsLampLit] = useState<boolean>(false);
+  // Desk lighting: the reader's choice. The mode itself lives on <html data-light>, set before first paint by the
+  // head script (src/lib/lighting.ts) and kept up to date by the effect further down.
+  const [lighting, setLighting] = useState<Lighting>('auto');
   const [speedMode, setSpeedMode] = useState<PageTurnSpeed>('realistic');
   const reducedMotion = useReducedMotion();
   // Turn pages without the 3D flip: phones (no flip engine), the "Instant" speed, or a reduce-motion setting.
@@ -80,7 +83,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('panna_settings') || '{}');
-      if (typeof saved.evening === 'boolean') setIsLampLit(saved.evening);
+      setLighting(readLighting(saved)); // old { evening: true } reads as Evening
       if (['slow', 'realistic', 'brisk', 'instant'].includes(saved.speed)) setSpeedMode(saved.speed);
       if (typeof saved.sounds === 'boolean') { setIsMuted(!saved.sounds); soundEngine.setMuted(!saved.sounds); }
     } catch {}
@@ -91,11 +94,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     try {
       // Nothing to remember until the reader changes something: a browser that has never been set up must not
       // look as if it chose the defaults (a restored backup's settings would otherwise lose to them).
-      const untouched = !isLampLit && speedMode === 'realistic' && !isMuted;
+      const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted;
       if (untouched && localStorage.getItem('panna_settings') === null) return;
-      localStorage.setItem('panna_settings', JSON.stringify({ evening: isLampLit, speed: speedMode, sounds: !isMuted }));
+      localStorage.setItem('panna_settings', JSON.stringify({ lighting, speed: speedMode, sounds: !isMuted }));
     } catch {}
-  }, [settingsLoaded, isLampLit, speedMode, isMuted]);
+  }, [settingsLoaded, lighting, speedMode, isMuted]);
 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
   const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
@@ -511,6 +514,45 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     }, Math.max(flipDuration + 900, 2500));
     return () => clearTimeout(timer);
   }, [isFlipping, targetPage, flipDuration]);
+
+  // Desk lighting over time. A pick from the menu applies at once. Auto re-checks the clock every minute and when the
+  // app is shown again; a change it makes fades in over 2 s (html.light-fading, motion.css), but never mid-turn (it
+  // waits for the page to land: isFlipping on desktop, a page load on either) and never under reduced motion.
+  const [clockTick, setClockTick] = useState(0);
+  const manualPickRef = useRef(false);
+  const fadeTimerRef = useRef<number | null>(null);
+  const pickLighting = useCallback((next: Lighting) => {
+    if (next === lighting) return; // re-picking the current option must not leave a stale "manual" flag behind
+    manualPickRef.current = true;
+    setLighting(next);
+  }, [lighting]);
+  useEffect(() => {
+    const tick = () => setClockTick((n) => n + 1);
+    const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+    const timer = window.setInterval(tick, 60_000);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, []);
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    const manual = manualPickRef.current;
+    manualPickRef.current = false;
+    const html = document.documentElement;
+    const endFade = () => {
+      if (fadeTimerRef.current !== null) { window.clearTimeout(fadeTimerRef.current); fadeTimerRef.current = null; }
+      html.classList.remove('light-fading');
+    };
+    const want = resolveLight(lighting, new Date());
+    if (html.getAttribute('data-light') === want) return;
+    if (!manual && (isFlipping || loadingPage !== null)) return; // runs again when the turn lands
+    endFade();
+    if (!manual && !reducedMotion) {
+      html.classList.add('light-fading');
+      fadeTimerRef.current = window.setTimeout(endFade, 2100);
+    }
+    applyLight(want);
+  }, [settingsLoaded, lighting, clockTick, isFlipping, loadingPage, reducedMotion]);
+  useEffect(() => () => { if (fadeTimerRef.current !== null) window.clearTimeout(fadeTimerRef.current); }, []);
 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
@@ -1235,9 +1277,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         padding: '24px 16px 40px',
         position: 'relative',
         boxSizing: 'border-box',
-        background: isLampLit
-          ? 'radial-gradient(ellipse at 50% 35%, #2a1a0e 0%, #120a06 85%)'
-          : 'radial-gradient(ellipse at 50% 40%, var(--color-desk-center) 0%, var(--color-desk-edge) 75%)',
+        background: 'radial-gradient(ellipse at 50% var(--desk-glow-y), var(--desk-center) 0%, var(--desk-edge) var(--desk-reach))',
         transition: 'background 0.5s ease',
       }}
     >
@@ -1519,8 +1559,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       <ReadingMenu
         open={showMenu}
         onClose={() => setShowMenu(false)}
-        evening={isLampLit}
-        onEveningChange={setIsLampLit}
+        lighting={lighting}
+        onLightingChange={pickLighting}
         speed={speedMode}
         reducedMotion={reducedMotion}
         onSpeedChange={setSpeedMode}

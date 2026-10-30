@@ -142,8 +142,8 @@ export const TOURS: Tour[] = [
         en: 'Settings and more live here.',
         hi: 'सेटिंग्स और बाकी विकल्प यहाँ हैं।' },
       { target: both(menuRow('Desk lighting')), scene: { menu: true }, title: 'Evening light',
-        en: 'A warmer, dimmer desk for reading at night.',
-        hi: 'रात में पढ़ने के लिए हल्की, गर्म रोशनी।' },
+        en: 'Dims the page at night by itself (7 pm–6 am), or pick Day or Evening.',
+        hi: 'रात में (शाम 7 से सुबह 6) पन्ना अपने आप हल्का हो जाता है, या दिन/शाम खुद चुनें।' },
       // Offline saving exists only where the service worker runs (production builds, supporting browsers).
       { target: both('#offline-save-btn'), scene: { menu: true }, title: 'Read without a connection',
         when: () => typeof navigator !== 'undefined' && Boolean(navigator.serviceWorker?.controller),
