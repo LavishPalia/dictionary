@@ -58,10 +58,12 @@
   .goto-mark { min-height: var(--tap); }
 }
 
-/* Phone A–Z rail (src/components/book/LetterRail.tsx): a binding-coloured strip at the page's right edge, spanning the
-   page body. MobilePage pads the body so the rail covers no text. */
+/* Phone A–Z rail (src/components/book/LetterRail.tsx): a binding-coloured strip at the page's right edge, in the
+   ribbon's column. It runs from just under the ribbon's tip (--rail-top, set by MobilePage) to the page body's foot:
+   68px = the 56px footer bar + the body's 12px bottom padding. MobilePage pads the text 32px clear of it. */
 .letter-rail {
-  position: absolute; top: 0; bottom: 0; right: -22px; width: 24px; z-index: 20;
+  position: absolute; top: var(--rail-top, 66px); bottom: 68px; right: 2px; width: 24px; z-index: 20;
+  transition: top 0.3s ease; /* with the ribbon's height */
   display: flex; flex-direction: column; align-items: center;
   background: var(--binding); border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   color: var(--on-binding); font: 10px/1 var(--font-fell-sc);

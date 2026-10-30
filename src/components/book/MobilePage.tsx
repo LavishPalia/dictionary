@@ -157,7 +157,10 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
   // Combine both columns for mobile flow
   const allEntries = [...page.column1, ...page.column2];
-  const rail = Boolean(thumbIndex && onSelectLetter);
+  // The page's right edge is one column, 2px in and 24px wide: the ribbon hangs at its top and the A–Z rail runs
+  // below it (from just under the ribbon's tip, so the rail moves down when the ribbon lengthens). The guide words
+  // and entries keep 32px clear of it on the right, so the ribbon never covers the right guide word.
+  const ribbonHeight = isBookmarked ? 90 : 60;
 
   return (
     <div
@@ -180,7 +183,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         boxShadow: '0 20px 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(120,80,30,0.3)',
         borderRadius: '4px',
         overflow: 'hidden',
-      }}
+        // Read by .letter-rail in goto.css.
+        '--rail-top': `${ribbonHeight + 6}px`,
+      } as React.CSSProperties}
     >
       {/* Hanging silk bookmark ribbon */}
       <button
@@ -194,10 +199,10 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         style={{
           border: 0, margin: 0,
           position: 'absolute',
-          right: '28px',
+          right: '2px',
           top: 0,
           width: '24px',
-          height: isBookmarked ? '90px' : '60px',
+          height: `${ribbonHeight}px`,
           background: 'linear-gradient(to right, #6b1d16 0%, #8b2b22 45%, #591610 100%)',
           clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)',
           zIndex: 30,
@@ -216,28 +221,24 @@ export const MobilePage: React.FC<MobilePageProps> = ({
       </button>
 
       {/* Page content */}
-      <div style={{ flex: 1, padding: '18px 24px 12px' }}>
+      <div style={{ flex: 1, padding: '18px 32px 12px 24px' }}>
         <GuideWords
           guideLeft={page.guide_left}
           pageNumber={page.page_number}
           guideRight={page.guide_right}
         />
 
-        {/* The page body. With the rail, 8px more right padding: the rail (24px, 2px from the page edge) then sits
-            6px clear of the text. */}
-        <div style={{ position: 'relative', paddingRight: rail ? '8px' : undefined }}>
-          <div style={{ minHeight: '440px' }}>
-            <PageColumn
-              entries={allEntries}
-              highlightedWord={highlightedWord}
-              onSelectWord={onSelectWord}
-            />
-          </div>
-
-          <PronunciationFooter hints={page.footer_hints} />
-          {thumbIndex && onSelectLetter && <LetterRail thumbIndex={thumbIndex} currentPage={page.page_number} onSelectLetter={onSelectLetter} />}
+        <div style={{ minHeight: '440px' }}>
+          <PageColumn
+            entries={allEntries}
+            highlightedWord={highlightedWord}
+            onSelectWord={onSelectWord}
+          />
         </div>
+
+        <PronunciationFooter hints={page.footer_hints} />
       </div>
+      {thumbIndex && onSelectLetter && <LetterRail thumbIndex={thumbIndex} currentPage={page.page_number} onSelectLetter={onSelectLetter} />}
 
       {/* Bottom navigation bar */}
       <div

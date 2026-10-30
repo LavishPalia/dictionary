@@ -317,6 +317,28 @@ async function main() {
     await touch('touchCancel');
     await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
 
+    // ── R4: the phone ribbon, unmarked (60 px) and marked (90 px), covers neither the right guide word nor the rail ──
+    const ribbonBoxes = () => evaluate(`(() => { const box = (el) => { const b = el?.getBoundingClientRect(); return b && { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+      const p = document.querySelector('#mobile-page');
+      return { ribbon: box(p.querySelector('#mobile-ribbon')), pressed: p.querySelector('#mobile-ribbon')?.getAttribute('aria-pressed'), guide: box(p.querySelector('.guide-right')),
+        rail: box(p.querySelector('#letter-rail')), textRight: Math.max(...[...p.querySelectorAll('.entry-text')].map((e) => e.getBoundingClientRect().right)) }; })()`);
+    const meets = (a, b) => a && b && a.r > b.l && a.l < b.r && a.b > b.t && a.t < b.b;
+    for (const [w, h] of [[360, 780], [390, 844], [430, 932]]) {
+      check(`R4 ${w}×${h}: app hydrates`, await open(`/page/${START}`, { width: w, height: h, mobile: true }));
+      for (const marked of [false, true]) {
+        if (marked) { await evaluate(`document.querySelector('#mobile-ribbon').click(); true`); await sleep(500); }
+        const k = await ribbonBoxes();
+        const tall = k.ribbon && Math.round(k.ribbon.b - k.ribbon.t);
+        const label = `R4 ${w}×${h} ${marked ? 'marked' : 'unmarked'} (${tall} px)`;
+        check(`${label}: the ribbon never covers the right guide word`, k.guide && k.pressed === String(marked) && tall === (marked ? 90 : 60) && !meets(k.ribbon, k.guide), k);
+        check(`${label}: nor the rail`, !meets(k.ribbon, k.rail), k);
+      }
+      const k = await ribbonBoxes();
+      check(`R4 ${w}×${h}: the right guide word lines up with the text column`, Math.abs(k.guide.r - k.textRight) <= 2, k);
+      await evaluate(`document.querySelector('#mobile-ribbon').click(); true`);
+      await sleep(300);
+    }
+
     // A second finger on the rail is ignored: lifting it neither jumps nor ends the first finger's drag. (Run last: after
     // a two-finger sequence, headless Edge stopped delivering further CDP touches to the page.)
     check('phone rail (two fingers): app hydrates', await open(`/page/${START}`, phone));

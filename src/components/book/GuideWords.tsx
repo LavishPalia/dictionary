@@ -29,7 +29,7 @@ export const GuideWords: React.FC<GuideWordsProps> = ({
       <span className="guide-word" style={{ fontWeight: 600 }}>
         {pageNumber}
       </span>
-      <span className="guide-word" style={{ minWidth: '80px', textAlign: 'right' }}>
+      <span className="guide-word guide-right" style={{ minWidth: '80px', textAlign: 'right' }}>
         {guideRight}
       </span>
     </div>
