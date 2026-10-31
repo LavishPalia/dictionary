@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { SearchMatch, SearchResult } from '@/lib/book-data';
 import { splitMatch } from '@/lib/highlight';
 import type { RecentWord } from '@/lib/history';
@@ -81,7 +81,9 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listboxId = useId();
+  // A fixed id, like lookup-input: useId() could differ between the server and client render, leaving
+  // the server-rendered aria-controls pointing at nothing (a 1-in-10 test:search failure).
+  const listboxId = 'lookup-list';
   const optionId = (i: number) => `${listboxId}-opt-${i}`;
   // The headword we just inserted ourselves, so our own setQuery() cannot
   // re-open the dropdown. Cleared by any user edit or by the next search.
