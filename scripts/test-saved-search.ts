@@ -38,5 +38,22 @@ check('Hinglish marks the whole Hindi word', darling.field === 'hindi' && words[
 const priy = searchSaved(words, 'प्रिय').find((h) => h.word.headword === 'darling')!.mark;
 check('Hindi mark', priy.field === 'hindi' && words[4].meaning_hi.substr(priy.start, priy.length) === 'प्रिय', priy);
 
+// Nukta letters, stored precomposed (U+095B) or as letter + ़, match typed with or without the nukta.
+const nukta = [
+  { headword: 'surely', meaning_hi: 'ज़रूर' },
+  { headword: 'more', meaning_hi: 'ज़्यादा' },
+  { headword: 'adore', meaning_hi: 'प्यार करना' },
+  { headword: 'centre', meaning_hi: 'केन्द्र' },
+];
+const nk = (q: string) => searchSaved(nukta, q).map((h) => h.word.headword).join();
+check('Hindi with or without nukta', nk('ज़रूर') === 'surely' && nk('जरूर') === 'surely' && nk('ज्यादा') === 'more' && nk('ज़्यादा') === 'more',
+  [nk('ज़रूर'), nk('जरूर'), nk('ज्यादा'), nk('ज़्यादा')]);
+const zarur = searchSaved(nukta, 'जरूर')[0].mark;
+check('nukta match highlights the whole printed word', nukta[0].meaning_hi.substr(zarur.start, zarur.length) === 'ज़रूर', zarur);
+check('half nasal folds like ं', nk('केंद्र') === 'centre', nk('केंद्र'));
+check('Hinglish phrase', nk('pyaar karna') === 'adore' && nk('pyar kar') === 'adore', [nk('pyaar karna'), nk('pyar kar')]);
+const phrase = searchSaved(nukta, 'pyaar karna')[0].mark;
+check('phrase marks both Hindi words', nukta[2].meaning_hi.substr(phrase.start, phrase.length) === 'प्यार करना', phrase);
+
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }
 console.log('\nAll saved-search checks passed');

@@ -74,5 +74,7 @@ check('pyaara → darling first (प्यारा)', firstHing('pyaara') === '
 check('chhod still → leave first (छोड़ना, not छोड़ देना)', firstHing('chhod') === 'leave', hing('chhod').map((r) => r.normalized));
 check('maaph finds forgive (माफ़ करना)', hing('maaph').some((r) => r.normalized === 'forgive'), hing('maaph').map((r) => r.normalized));
 check('nouns lead their verbs: dard → pain', firstHing('dard') === 'pain', hing('dard').map((r) => r.normalized));
+check('a light verb needs the word spelled whole: neend → slumber, not condemn',
+  !hing('neend').slice(0, 3).some((r) => r.normalized === 'condemn') && hing('neend').slice(0, 3).some((r) => r.normalized === 'slumber'), hing('neend').map((r) => r.normalized));
 if (failures) { console.error(`\n${failures} Hinglish check(s) failed.`); process.exit(1); }
 console.log('Hinglish checks passed.');

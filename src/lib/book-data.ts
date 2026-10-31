@@ -248,10 +248,10 @@ function searchHinglish(q: string): Array<EntryRow & { matched_hi: string }> {
       WHERE ? >= 3 AND h.key > ? AND h.key < ? LIMIT 2000)
   `).all(key, `${key}n`, key.length, key, `${key}\u{10FFFF}`) as Array<HindiSearchRow & { hkey: string; matched_hi: string; whole: number }>;
   // A verb is often typed as its stem (chhod for छोड़ना), so stem + ना counts as an exact match. A word followed only by
-  // a light verb (प्यार करना) counts as a whole meaning.
+  // a light verb (प्यार करना) counts as a whole meaning, when the query spells that word whole (neend is not निंदा करना).
   const senses = (r: HindiSearchRow) => r.meaning_hi.split(/[,;]/).map((m) => m.replace(/\([^)]*\)/g, '').trim());
   const whole = (r: HindiSearchRow & { matched_hi: string; whole: number }) =>
-    r.whole || senses(r).some((m) => LIGHT_VERBS.some((v) => m === `${r.matched_hi} ${v}`));
+    r.whole || (spellsWhole(q, r.matched_hi) && senses(r).some((m) => LIGHT_VERBS.some((v) => m === `${r.matched_hi} ${v}`)));
   const tier = (r: HindiSearchRow & { hkey: string; matched_hi: string; whole: number }) =>
     (r.hkey === key || r.hkey === `${key}n` ? 0 : 2) + (whole(r) ? 0 : 1);
   // Then common words first, and among them the one the query spells whole (pyaar: प्यार before प्यारा).

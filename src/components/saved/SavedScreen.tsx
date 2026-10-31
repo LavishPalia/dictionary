@@ -281,18 +281,25 @@ export function SavedScreen(props: SavedScreenProps) {
         </>
       )}
 
+      {/* One status line, always in the page while Words shows, so screen readers announce each change of the search:
+          the count, or (read out only; the box below shows it) that nothing matches. */}
+      {tab === 'words' && words.length > 0 && (
+        <p className={searching && hits.length ? 'saved-search-count' : 'ui-visually-hidden'} id="saved-search-count" role="status">
+          {!searching ? '' : hits.length
+            ? `${hits.length} of ${plural(inFilter.length, `${filterName}word`)}`
+            : `No ${filterName}saved word matches “${query.trim()}”.`}
+        </p>
+      )}
+
       {tab === 'words' && searching && (
         <>
-          <p className="saved-search-count" id="saved-search-count" role="status">
-            {hits.length ? `${hits.length} of ${plural(inFilter.length, `${filterName}word`)}` : ''}
-          </p>
           {hits.length ? (
             <div className="ui-list saved-list" id="saved-search-results">{hits.map((h) => wordRow(h.word, h.mark))}</div>
           ) : (
-            <div className="saved-filter-empty" id="saved-search-empty" role="status">
+            <div className="saved-filter-empty" id="saved-search-empty">
               <p>No {filterName}saved word matches “{query.trim()}”.</p>
               {hitsInAll > 0 ? (
-                <button type="button" className="lookup-link tour-howlink tour-howlink--desk" id="saved-search-all" onClick={() => setFilter('all')}>
+                <button type="button" className="lookup-link tour-howlink tour-howlink--desk" id="saved-search-all" onClick={() => { setFilter('all'); document.getElementById('saved-search')?.focus(); }}>
                   Show all saved words · {plural(hitsInAll, 'match', 'matches')} ›
                 </button>
               ) : (

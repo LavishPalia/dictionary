@@ -143,11 +143,14 @@ async function main() {
       check(`${tag}: search works inside the status filter`, r.rows.join() === 'glove' && r.count === '1 of 1 learning word', r);
       await type('water');
       r = await results();
+      check(`${tag}: one status line stays in the page and reads out the no-match`,
+        r.count === 'No learning saved word matches “water”.' && await evaluate(`document.querySelector('#saved-search-count')?.getAttribute('role') === 'status' && !document.querySelector('#saved-search-empty')?.hasAttribute('role')`), r.count);
       check(`${tag}: no match in the filter offers all saved words`, r.empty?.includes('No learning saved word matches “water”') && r.empty.includes('Show all saved words · 1 match'), r.empty);
       await evaluate(`document.querySelector('#saved-search-all').click(); true`);
       await sleep(200);
       r = await results();
       check(`${tag}: "Show all" switches the filter to All, keeping the search`, r.rows.join() === 'water', r);
+      check(`${tag}: after "Show all", focus is back in the search field`, await evaluate(`document.activeElement?.id === 'saved-search'`));
 
       await evaluate(`document.querySelector('#saved-search').focus(); true`);
       await key('Escape');
