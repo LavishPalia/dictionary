@@ -73,6 +73,33 @@
 .menu-link:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: -2px; }
 .menu-link:disabled { opacity: 0.5; cursor: not-allowed; }
 .menu-sub--block { display: block; }
+.menu-link .ui-icon, .menu-tile .ui-icon { flex: none; }
+/* Random page and Close the book: two tiles in one row. */
+.menu-pair { flex-wrap: nowrap; gap: var(--space-2); }
+.menu-tile {
+  flex: 1; min-width: 0; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 10px;
+  border: 1px solid var(--rule); border-radius: var(--radius-md); background: color-mix(in srgb, var(--wash) 25%, transparent);
+  color: var(--ink-soft); cursor: pointer;
+}
+.menu-tile .menu-title { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-tile .ui-icon { width: 18px; height: 18px; }
+.menu-tile:hover .menu-title { color: var(--crimson); }
+.menu-tile:focus-visible, .menu-pill:focus-visible, .menu-foot:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+.menu-tile:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Back up my words, with Restore beside it. */
+.menu-backup { flex-wrap: nowrap; padding: 0; }
+.menu-backup .menu-link { flex: 1; min-width: 0; align-self: stretch; padding: var(--space-2) 0; border: 0; }
+.menu-pill {
+  flex: none; min-height: 44px; padding: 0 16px; border: 1px solid var(--sepia); border-radius: var(--radius-pill);
+  background: transparent; color: var(--ink); font: 14px var(--font-fell-sc); cursor: pointer;
+}
+.menu-pill:hover { color: var(--crimson); border-color: var(--crimson); }
+/* Sources & credits: a small link at the foot of the menu. */
+.menu-foot {
+  display: block; min-height: 44px; margin: var(--space-1) auto 0; padding: 0 16px; border: 0; background: transparent;
+  color: var(--crimson); font: 14px var(--font-fell-sc); cursor: pointer;
+}
+.menu-foot:hover { text-decoration: underline; }
 .restore-from { margin: 0 0 4px; }
 .restore-summary { margin: 0 0 var(--space-4); }
 .restore-actions { display: grid; gap: var(--space-2); }

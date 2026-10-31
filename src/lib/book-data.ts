@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 import { BookMeta, BookPage, DictionaryEntry } from './types';
 import { damerauLevenshtein } from './search-distance';
 import { normalizeHindi } from './hindi';
-import { hinglishKey, spellingDistance } from './hinglish';
+import { hinglishKey, spellingDistance, spellsWhole } from './hinglish';
 import { tokenize, pickWord, capitalisedShare, UNCOMMON_RANK, type SentenceAnalysis, type SentenceToken } from './sentence';
 
 const DB_FILE = path.join(process.cwd(), 'data', 'dictionary.db');
@@ -224,6 +224,10 @@ function prefixUpperBound(prefix: string): string {
 }
 
 const MAX_HINGLISH = 4;
+// A noun with one of these after it is still the whole meaning: प्यार करना (love) is प्यार, as a verb.
+const LIGHT_VERBS = ['करना', 'होना'];
+// Words commoner than this rank before rarer ones that spell the query more exactly.
+const COMMON_RANK = 5000;
 
 /**
  * Hindi typed in English letters ("chhod" → छोड़ना). Best first: the query spells a whole Hindi meaning, then a word
@@ -243,17 +247,25 @@ function searchHinglish(q: string): Array<EntryRow & { matched_hi: string }> {
     SELECT * FROM (SELECT h.key AS hkey, h.hi AS matched_hi, h.whole, e.* FROM hinglish h JOIN entries e ON e.id = h.entry_id
       WHERE ? >= 3 AND h.key > ? AND h.key < ? LIMIT 2000)
   `).all(key, `${key}n`, key.length, key, `${key}\u{10FFFF}`) as Array<HindiSearchRow & { hkey: string; matched_hi: string; whole: number }>;
-  // A verb is often typed as its stem (chhod for छोड़ना), so stem + ना counts as an exact match.
-  const tier = (r: { hkey: string; whole: number }) => (r.hkey === key || r.hkey === `${key}n` ? 0 : 2) + (r.whole ? 0 : 1);
+  // A verb is often typed as its stem (chhod for छोड़ना), so stem + ना counts as an exact match. A word followed only by
+  // a light verb (प्यार करना) counts as a whole meaning, when the query spells that word whole (neend is not निंदा करना).
+  const senses = (r: HindiSearchRow) => r.meaning_hi.split(/[,;]/).map((m) => m.replace(/\([^)]*\)/g, '').trim());
+  const whole = (r: HindiSearchRow & { matched_hi: string; whole: number }) =>
+    r.whole || (spellsWhole(q, r.matched_hi) && senses(r).some((m) => LIGHT_VERBS.some((v) => m === `${r.matched_hi} ${v}`)));
+  const tier = (r: HindiSearchRow & { hkey: string; matched_hi: string; whole: number }) =>
+    (r.hkey === key || r.hkey === `${key}n` ? 0 : 2) + (whole(r) ? 0 : 1);
+  // Then common words first, and among them the one the query spells whole (pyaar: प्यार before प्यारा).
+  const common = (r: HindiSearchRow) => ((r.freq_rank ?? Infinity) <= COMMON_RANK ? 0 : 1);
   // A verb found through its stem ranks just behind a word spelled exactly (chor: चोर before छोड़ना).
   const length = (r: { hkey: string }) => (r.hkey === `${key}n` ? key.length + 0.5 : r.hkey.length);
   const scored = rows
     // A two-letter key (oont → ut) is too loose to match one word inside a phrase (उठा हुआ); only a whole meaning.
     .filter((r) => key.length >= 3 || (tier(r) === 0))
-    .map((r) => ({ ...r, distance: spellingDistance(q, r.matched_hi), exact: spellingDistance(q, r.matched_hi, true) ?? 99 }))
+    .map((r) => ({ ...r, distance: spellingDistance(q, r.matched_hi), exact: spellingDistance(q, r.matched_hi, true) ?? 99, full: spellsWhole(q, r.matched_hi) ? 0 : 1 }))
     .filter((r): r is typeof r & { distance: number } => r.distance !== null && (key.length >= 3 || r.distance === 0));
   const best = new Map<string, (typeof scored)[number]>();
   for (const r of scored.sort((a, b) => tier(a) - tier(b) || a.distance - b.distance || a.exact - b.exact || length(a) - length(b)
+    || common(a) - common(b) || a.full - b.full || b.whole - a.whole
     || (a.freq_rank ?? Infinity) - (b.freq_rank ?? Infinity) || (a.normalized < b.normalized ? -1 : 1))) {
     if (!best.has(r.normalized)) best.set(r.normalized, r);
   }

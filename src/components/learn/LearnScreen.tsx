@@ -60,7 +60,7 @@ export function LearnScreen(props: LearnScreenProps) {
             {/* role="list": list-style:none drops list semantics in Safari/VoiceOver. */}
             <List className="learn-list" role="list">
               {section.items.filter((item) => !item.hideUnlessAvailable || can(item.action)).map((item) => (
-                <li key={item.en} className="learn-item">
+                <li key={item.en} className={item.desktopOnly ? 'learn-item app-desktop-only' : 'learn-item'}>
                   <p className="learn-en">{item.en}</p>
                   <p className="learn-hi" lang="hi">{item.hi}</p>
                   {can(item.action) && (

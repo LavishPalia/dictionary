@@ -24,6 +24,7 @@
   .review-option:not(:disabled):hover { background: rgba(255, 255, 255, 0.55); }
   /* Saved, search, tours, the word card (saved.css, search.css, tour.css, word.css) */
   .history-star { background: rgba(255, 255, 255, 0.3); }
+  .menu-tile { background: rgba(255, 255, 255, 0.25); }
   .noentry-suggestions .lookup-option { background: rgba(255, 255, 255, 0.3); }
   .tour-btn { background: rgba(255, 255, 255, 0.35); }
   .report-note { background: rgba(255, 255, 255, 0.45); }

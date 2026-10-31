@@ -152,6 +152,12 @@ async function main() {
     check('phone: the menu row "How to learn with Panna" comes directly after Guided tours',
       await evaluate(`(() => { const rows = [...document.querySelectorAll('#reading-menu .menu-row')]; const i = rows.findIndex((r) => r.id === 'guided-tours-btn'); return i >= 0 && rows[i + 1]?.id === 'learn-btn'; })()`),
       await evaluate(`[...document.querySelectorAll('#reading-menu .menu-row')].map((r) => r.id)`));
+    const fit = await evaluate(`(() => { const m = document.querySelector('#reading-menu'); const c = document.querySelector('#open-credits-btn').getBoundingClientRect();
+      const l = document.querySelector('#lighting-auto').getBoundingClientRect(), t = document.querySelector('#reading-menu [aria-label="Desk lighting"]').closest('.menu-row').querySelector('.menu-title').getBoundingClientRect();
+      const tiles = ['explore-btn', 'cover-toggle-btn', 'restore-btn'].map((id) => document.getElementById(id).getBoundingClientRect());
+      return { scroll: m.scrollHeight - m.clientHeight, creditsBottom: c.bottom, h: innerHeight, lightingBeside: l.top < t.bottom, shared: tiles[0].top === tiles[1].top, small: Math.min(c.height, ...tiles.map((r) => r.height)) }; })()`);
+    check('phone: the whole menu fits on a 390×844 screen, Sources & credits included', fit && fit.scroll <= 0 && fit.creditsBottom <= fit.h, fit);
+    check('phone: Desk lighting fits on one line; the book actions share a row; every target is 44px+', fit?.lightingBeside && fit.shared && fit.small >= 44, fit);
     await evaluate(`document.querySelector('#open-credits-btn').click(); true`);
     await sleep(300);
     check('phone: Sources & credits opens from the menu', await evaluate(`Boolean(document.querySelector('[aria-labelledby="credits-title"]')) && !document.querySelector('#reading-menu')`));

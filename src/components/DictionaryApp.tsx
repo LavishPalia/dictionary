@@ -1447,6 +1447,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onRemoveHistory={(key) => setHistory(saveHistory(removeWord(loadHistory(), key)))}
           onRestoreHistory={(list) => setHistory(saveHistory(mergeHistory(loadHistory(), list)))}
           onClearHistory={() => setHistory(clearHistory())}
+          onLookUp={(text) => setLookupFill({ text, show: 'list' })}
           initialTab={savedTab.tab}
           tabRequest={savedTab.n}
         />

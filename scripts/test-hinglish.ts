@@ -66,5 +66,15 @@ check('English results that start with the query keep their place first', top('u
 check('Hinglish results come before typo suggestions', top('chhod').every((r) => r.match !== 'suggestion'));
 check('at most four Hinglish results', ['ka', 'kar', 'pan', 'sam', 'man'].every((q) => hing(q).length <= 4));
 
+
+// D8: a word the query spells whole beats one it only starts; "X करना" counts as the meaning X.
+const firstHing = (q: string) => hing(q)[0]?.normalized;
+check('pyaar → love first (प्यार करना), pyar too', firstHing('pyaar') === 'love' && firstHing('pyar') === 'love', hing('pyaar').map((r) => r.normalized));
+check('pyaara → darling first (प्यारा)', firstHing('pyaara') === 'darling', hing('pyaara').map((r) => r.normalized));
+check('chhod still → leave first (छोड़ना, not छोड़ देना)', firstHing('chhod') === 'leave', hing('chhod').map((r) => r.normalized));
+check('maaph finds forgive (माफ़ करना)', hing('maaph').some((r) => r.normalized === 'forgive'), hing('maaph').map((r) => r.normalized));
+check('nouns lead their verbs: dard → pain', firstHing('dard') === 'pain', hing('dard').map((r) => r.normalized));
+check('a light verb needs the word spelled whole: neend → slumber, not condemn',
+  !hing('neend').slice(0, 3).some((r) => r.normalized === 'condemn') && hing('neend').slice(0, 3).some((r) => r.normalized === 'slumber'), hing('neend').map((r) => r.normalized));
 if (failures) { console.error(`\n${failures} Hinglish check(s) failed.`); process.exit(1); }
 console.log('Hinglish checks passed.');

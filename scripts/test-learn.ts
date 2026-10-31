@@ -43,7 +43,7 @@ check('12 due: plural in English and Hindi', t.en === 'Review your 12 due words 
 t = NEXT_STEP_TEXT['add-words'](1);
 check('1 word left today: "1 more", not "up to 1"', t.en === 'Add 1 more new word today.' && t.hi === 'आज 1 और नया शब्द जोड़ें।', t);
 t = NEXT_STEP_TEXT['add-words'](7);
-check('7 words left today: "up to 7"', t.en === 'Add up to 7 new words today.' && t.hi === 'आज 7 तक नए शब्द जोड़ें।', t);
+check('7 words left today: "up to 7"', t.en === 'Add up to 7 new words today.' && t.hi === 'आज ज़्यादा से ज़्यादा 7 नए शब्द जोड़ें।', t);
 t = NEXT_STEP_TEXT['first-save']();
 check('first save names the "Save word" button', t.en.includes('tap Save word.') && t.hi.includes('Save word छुएँ'), t);
 

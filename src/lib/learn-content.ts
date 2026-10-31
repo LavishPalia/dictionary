@@ -7,7 +7,7 @@ export type LearnAction = 'review' | 'book' | 'continue' | 'tour-word' | 'tour-r
 
 export interface LearnText { en: string; hi: string }
 
-type LearnItem = LearnText & { action?: LearnAction; actionLabel?: string; hideUnlessAvailable?: boolean };
+type LearnItem = LearnText & { action?: LearnAction; actionLabel?: string; hideUnlessAvailable?: boolean; desktopOnly?: boolean };
 
 // Button labels, from the Design's action table.
 const OPEN_REVIEW = { action: 'review', actionLabel: 'Open Review' } as const;
@@ -42,7 +42,7 @@ export const LEARN_SECTIONS: Array<{ id: 'method' | 'day' | 'tips' | 'mistakes' 
     title: { en: 'A 15-minute day', hi: 'रोज़ के 15 मिनट' },
     items: [
       { en: 'Review what’s due first (about 5 minutes).', hi: 'पहले Review में आए शब्द दोहराएँ (लगभग 5 मिनट)।', ...OPEN_REVIEW },
-      { en: `Read your own exam material, and save up to ${NEW_WORDS_PER_DAY} new words (about 8 minutes).`, hi: `अपनी परीक्षा की सामग्री पढ़ें, और ${NEW_WORDS_PER_DAY} तक नए शब्द सहेजें (लगभग 8 मिनट)।`, ...CONTINUE },
+      { en: `Read your own exam material, and save up to ${NEW_WORDS_PER_DAY} new words (about 8 minutes).`, hi: `अपनी परीक्षा की सामग्री पढ़ें, और ज़्यादा से ज़्यादा ${NEW_WORDS_PER_DAY} नए शब्द सहेजें (लगभग 8 मिनट)।`, ...CONTINUE },
       { en: 'Look at the similar and opposite chips of today’s words (about 2 minutes).', hi: 'आज के शब्दों के मिलते-जुलते और उल्टे शब्द देखें (लगभग 2 मिनट)।', ...WORD_TOUR },
     ],
   },
@@ -54,8 +54,8 @@ export const LEARN_SECTIONS: Array<{ id: 'method' | 'day' | 'tips' | 'mistakes' 
       // The search box sits above the book; there is no action of its own for it.
       { en: 'Search in Hindi or Hinglish to find the English word for an essay.', hi: 'निबंध के लिए अंग्रेज़ी शब्द चाहिए? हिंदी या Hinglish में खोजें।', ...OPEN_BOOK },
       { en: 'Press 🔊 to learn the pronunciation.', hi: 'सही उच्चारण सीखने के लिए 🔊 दबाएँ।', ...WORD_TOUR },
-      // Folded corners and margin notes have their own tour ("Marking the book") in the tours list.
-      { en: 'Fold a corner or write a margin note on a word you keep missing.', hi: 'जो शब्द बार-बार भूलते हैं, उस पर कोना मोड़ें या हाशिये में नोट लिखें।', ...ALL_TOURS },
+      // Folded corners and margin notes have their own tour ("Marking the book") in the tours list. Desktop only, like the marks.
+      { en: 'Fold a corner or write a margin note on a word you keep missing.', hi: 'जो शब्द बार-बार भूलते हैं, उस पर कोना मोड़ें या हाशिये में नोट लिखें।', ...ALL_TOURS, desktopOnly: true },
       { en: `Trust the schedule: mastered words still come back after ${LAST_INTERVAL} days.`, hi: `Review के समय पर भरोसा रखें — याद हुए शब्द भी ${LAST_INTERVAL} दिन बाद लौटते हैं।`, ...REVIEW_TOUR },
     ],
   },
@@ -98,7 +98,7 @@ export const NEXT_STEP_TEXT: Record<StepId, (count?: number, minutes?: number) =
   // "Up to 1" reads oddly: one word left is "1 more".
   'add-words': (count = NEW_WORDS_PER_DAY) => ({
     en: count === 1 ? 'Add 1 more new word today.' : `Add up to ${count} new words today.`,
-    hi: count === 1 ? 'आज 1 और नया शब्द जोड़ें।' : `आज ${count} तक नए शब्द जोड़ें।`,
+    hi: count === 1 ? 'आज 1 और नया शब्द जोड़ें।' : `आज ज़्यादा से ज़्यादा ${count} नए शब्द जोड़ें।`,
     ...CONTINUE,
   }),
   'done-today': () => ({ en: 'Done for today: come back tomorrow for Review.', hi: 'आज का काम पूरा — कल Review के लिए लौटें।' }),
