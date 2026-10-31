@@ -15,7 +15,12 @@ concurrency:
 
 jobs:
   test:
-    name: Full suite
+    # Three parts run side by side (see the parts in scripts/ci-suite.sh); each builds the app itself.
+    name: Suite part ${{ matrix.part }}
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
     # Windows: the browser tests drive Edge at its default Windows path, as on the dev PC.
     runs-on: windows-latest
     timeout-minutes: 60
@@ -47,14 +52,23 @@ jobs:
           "Client-area animation: $on"
           if (-not $on) { exit 1 }
 
-      # Builds the dictionary and the app, starts it, and runs every test.
+      # Builds the dictionary and the app, starts it, and runs this part's tests.
       - name: Test suite
-        run: bash scripts/ci-suite.sh
+        run: bash scripts/ci-suite.sh ${{ matrix.part }}
 
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-logs
+          name: ci-logs-part-${{ matrix.part }}
           path: scratch/ci-logs/
           retention-days: 14
+
+  # The one check the master ruleset requires: green only if every part passed.
+  all:
+    name: Full suite
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test.result }}" = success
