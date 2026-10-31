@@ -493,12 +493,22 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
     const answerTokens = hindiTokens(row.meaning_hi_search);
     const rank = row.freq_rank ?? 1_000_000;
     const pos = primaryPos(row.pos);
-    const nearest = (samePos: boolean) => db().prepare(`
-      SELECT * FROM entries
-      WHERE normalized != ? ${samePos ? "AND (pos = ? OR pos LIKE ? || ' &%')" : ''}
-      ORDER BY abs(coalesce(freq_rank, 1000000) - ?), normalized
-      LIMIT 40
-    `).all(...(samePos ? [row.normalized, pos, pos, rank] : [row.normalized, rank])) as HindiSearchRow[];
+    // The 40 words nearest in frequency, read outward from the word's rank on the freq_rank index: sorting the whole
+    // table by abs(rank - x) on every call made test:quiz take over 10 minutes. Unranked words count as rank 1,000,000.
+    const nearest = (samePos: boolean) => {
+      const posFilter = samePos ? "AND (pos = ? OR pos LIKE ? || ' &%')" : '';
+      const posArgs = samePos ? [pos, pos] : [];
+      const side = (where: string, order: string, ...args: number[]) => db().prepare(`
+        SELECT * FROM entries WHERE normalized != ? ${posFilter} AND ${where} ORDER BY ${order} LIMIT 40
+      `).all(row.normalized, ...posArgs, ...args) as HindiSearchRow[];
+      const gap = (r: HindiSearchRow) => Math.abs((r.freq_rank ?? 1_000_000) - rank);
+      return [
+        ...side('freq_rank >= ?', 'freq_rank, normalized', rank),
+        ...side('freq_rank < ?', 'freq_rank DESC, normalized', rank),
+        ...side('freq_rank IS NULL', 'normalized'),
+      ].sort((a, b) => gap(a) - gap(b) || (a.normalized < b.normalized ? -1 : a.normalized > b.normalized ? 1 : 0)).slice(0, 40);
+    };
+    const samePosNearest = nearest(true);
 
     // With an exact example the card is a fill-in-the-blank: the Hindi sentence is shown, so no wrong option may be
     // translated in it, and options stay lower case (a capital would show in a lower-case gap).
@@ -511,7 +521,7 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
       && !(Math.min(c.normalized.length, row.normalized.length) >= 3 && (c.normalized.startsWith(row.normalized) || row.normalized.startsWith(c.normalized)))
       && ![...hindiTokens(c.meaning_hi_search)].some((t) => answerTokens.has(t))
       && !picked.some((p) => p.meaning_hi === c.meaning_hi || [...hindiTokens(p.meaning_hi_search)].some((t) => hindiTokens(c.meaning_hi_search).has(t)));
-    for (const pool of [nearest(true), nearest(false)]) {
+    for (const pool of [samePosNearest, nearest(false)]) {
       // Shuffle the 12 closest usable candidates so the same word does not always get the same options.
       const candidates = pool.filter(usable).slice(0, 12);
       for (let i = candidates.length - 1; i > 0; i--) {
@@ -521,7 +531,7 @@ export function getQuizCards(headwords: string[], random: () => number = Math.ra
       for (const c of candidates) if (picked.length < 3 && usable(c)) picked.push(c);
       if (picked.length === 3) break;
     }
-    const opposite = oppositeQuestion(row, nearest(true), random);
+    const opposite = oppositeQuestion(row, samePosNearest, random);
     cards.push({ entry: toEntry(row), distractors: picked.map(toOption), ...(opposite ? { opposite } : {}) });
   }
   // Examples for all the cards' entries in one query.

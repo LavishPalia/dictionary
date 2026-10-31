@@ -196,6 +196,8 @@ CREATE TABLE entries (
   position_in_col INTEGER NOT NULL
 );
 CREATE INDEX idx_entries_page ON entries(page_number);
+-- Review options are the words nearest in frequency (getQuizCards), read outward from the word's rank.
+CREATE INDEX idx_entries_freq ON entries(freq_rank, normalized);
 
 -- Inflection redirects; populated from AGID in Phase 3.
 CREATE TABLE forms (
