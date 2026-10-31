@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Full suite
+    # Windows: the browser tests drive Edge at its default Windows path, as on the dev PC.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Keep line endings as committed
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The runner has Windows animations off, so Edge reports prefers-reduced-motion: reduce and the motion tests
+      # fail. Turn them on, as on a normal PC; the tests emulate reduced motion themselves where they need it.
+      - name: Turn on Windows animations
+        shell: pwsh
+        run: |
+          Add-Type -Namespace Win32 -Name User32 -MemberDefinition '[DllImport("user32.dll")] public static extern bool SystemParametersInfo(uint a, uint b, IntPtr c, uint d); [DllImport("user32.dll")] public static extern bool SystemParametersInfo(uint a, uint b, ref bool c, uint d);'
+          # SPI_SETCLIENTAREAANIMATION = 0x1043, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE = 3
+          [Win32.User32]::SystemParametersInfo(0x1043, 0, [IntPtr]1, 3) | Out-Null
+          $on = $false; [Win32.User32]::SystemParametersInfo(0x1042, 0, [ref]$on, 0) | Out-Null
+          "Client-area animation: $on"
+          if (-not $on) { exit 1 }
+
+      # Builds the dictionary and the app, starts it, and runs every test.
+      - name: Test suite
+        run: bash scripts/ci-suite.sh
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: scratch/ci-logs/
+          retention-days: 14
