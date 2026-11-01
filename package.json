@@ -72,7 +72,8 @@
     "test:duel-purity": "tsx scripts/test-duel-purity.ts",
     "test:duel-engine": "tsx scripts/test-duel-engine.ts",
     "test:duel-sim": "tsx scripts/test-duel-sim.ts",
-    "duel:bot-tune": "tsx scripts/duel/bot-tune.ts"
+    "duel:bot-tune": "tsx scripts/duel/bot-tune.ts",
+    "test:duel-controller": "tsx scripts/test-duel-controller.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

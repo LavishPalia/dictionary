@@ -31,5 +31,13 @@ check('engine imports only from its own folder', outside.length === 0, outside);
 const uiNext = [...tsFiles('src/duel/ui'), ...tsFiles('src/duel/platform')].flatMap(f => specifiers(f).filter(s => s === 'next' || s.startsWith('next/')).map(s => `${f}: ${s}`));
 check('Duel UI and platform never import next/*', uiNext.length === 0, uiNext);
 
+// The controller is plain TypeScript, unit-tested in Node: no DOM and no React.
+const controllerDom = tsFiles('src/duel/ui/controller').flatMap(f => {
+  const src = readFileSync(f, 'utf8');
+  const bad = [/\bdocument\./, /\bwindow\./].filter(re => re.test(src)).map(re => `${f}: ${re.source}`);
+  return [...bad, ...specifiers(f).filter(s => s === 'react' || s.startsWith('react/') || s === 'react-dom').map(s => `${f}: ${s}`)];
+});
+check('Duel controller touches no DOM or React', controllerDom.length === 0, controllerDom);
+
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }
 console.log('\nAll duel purity checks passed.');
