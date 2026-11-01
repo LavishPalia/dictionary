@@ -189,7 +189,7 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   const s = apply(p0, newGame(p0, 11), { t: 'pass' }).state;
   const b = botTurn(p0, s);
   const n = placedOf(b.events).length;
-  check('quill places 1–4 tiles', n >= 1 && n <= 4, n);
+  check('quill places 1–3 tiles', n >= 1 && n <= 3, n);
   check('quill turn is deterministic', JSON.stringify(botTurn(p0, s)) === JSON.stringify(b));
   check('turn returns to you, invariant holds', b.state.turn === 'you' && checkInvariant(p0, b.state) === null);
   check('lastQuill = his correct cells', b.state.lastQuill.length === judgedOf(b.events).filter(t => t.ok).length && b.state.lastQuill.every(c => b.state.filled[c]?.by === 'quill'));
@@ -205,10 +205,10 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
     const ev = botTurn(p0, st).events;
     const t = judgedOf(ev);
     tiles += t.length; wrongs += t.filter(x => !x.ok).length;
-    if (t.length === 0) zero++; if (t.length > 4) tooMany++;
+    if (t.length === 0) zero++; if (t.length > 3) tooMany++;
   }
-  check('400 openings: always 1–4 tiles', zero === 0 && tooMany === 0, { zero, tooMany });
-  check('400 openings: wrong tiles between 8 % and 28 %', wrongs / tiles > 0.08 && wrongs / tiles < 0.28, { tiles, wrongs });
+  check('400 openings: always 1–3 tiles', zero === 0 && tooMany === 0, { zero, tooMany });
+  check('400 openings: wrong tiles between 20 % and 40 %', wrongs / tiles > 0.2 && wrongs / tiles < 0.4, { tiles, wrongs });
 
   // He prefers to finish words: T at 66 completes TI and ETA
   let finished = 0;

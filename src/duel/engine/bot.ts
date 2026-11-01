@@ -8,9 +8,9 @@ import type { CellId, GameEvent, GameState, Puzzle } from './types';
 
 export const BOT = {
   /** How many tiles he tries to play, picked uniformly from this list. Never 0. */
-  counts: [1, 2, 2, 3, 3, 4],
+  counts: [1, 1, 2, 2, 2, 3],
   /** The chance that a pick lands on a wrong cell. */
-  wrongChance: 0.17,
+  wrongChance: 0.3,
   /** Extra weight for a cell that is the last (or second-last) gap in an answer. */
   finishBonus: { last: 3, secondLast: 1 },
 };
