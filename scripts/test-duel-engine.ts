@@ -1,5 +1,6 @@
 // Checks the Duel engine (src/duel/engine). Usage: npx tsx scripts/test-duel-engine.ts
 import { readFileSync } from 'node:fs';
+import { checkInvariant, emptyCells, newGame } from '../src/duel/engine/game';
 import { checkPuzzleShape } from '../src/duel/engine/puzzle';
 import { nextInt, nextU32, seedRng } from '../src/duel/engine/rng';
 import type { Puzzle } from '../src/duel/engine/types';
@@ -40,6 +41,22 @@ const p0 = JSON.parse(readFileSync('data/duel/puzzles/p0000.json', 'utf8')) as P
   check('a cell in two across slots is rejected', checkPuzzleShape(twoAcross).some(m => /across/.test(m)));
   const overlap = { ...p0, clueCells: [...p0.clueCells, p0.slots[0].cells[0]] };
   check('a clue cell that is also a letter cell is rejected', checkPuzzleShape(overlap).some(m => /clue cell/.test(m)));
+}
+
+// ---------- new game ----------
+{
+  const g1 = newGame(p0, 123), g2 = newGame(p0, 123), g3 = newGame(p0, 124);
+  check('same seed → same deal', JSON.stringify(g1) === JSON.stringify(g2));
+  check('different seed → different deal', g1.racks.you.join() !== g3.racks.you.join() || g1.bag.join() !== g3.bag.join());
+  check('racks hold 5 each, you move first, 0–0', g1.racks.you.length === 5 && g1.racks.quill.length === 5 && [...g1.racks.you, ...g1.racks.quill].every(l => l) && g1.turn === 'you' && g1.scores.you === 0 && g1.scores.quill === 0);
+  check('given cells are pre-filled', p0.given.every(c => g1.filled[c]?.by === 'given' && g1.filled[c].letter === p0.solution[c]));
+  check('only given cells are filled at start', Object.keys(g1.filled).length === 3);
+  check('bag holds the rest: 52 − 3 given − 10 dealt = 39', g1.bag.length === 39, g1.bag.length);
+  check('empty cells = 49', emptyCells(p0, g1).length === 49);
+  check('invariant holds at start', checkInvariant(p0, g1) === null, checkInvariant(p0, g1));
+  check('a broken bag breaks the invariant', checkInvariant(p0, { ...g1, bag: [...g1.bag.slice(1), 'Q'] }) !== null);
+  check('state is plain JSON', JSON.stringify(JSON.parse(JSON.stringify(g1))) === JSON.stringify(g1));
+  check('rules version 1, seed and puzzle recorded', g1.rulesVersion === 1 && g1.seed === 123 && g1.puzzleId === 'p0000' && g1.puzzleVersion === 1);
 }
 
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }

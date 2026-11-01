@@ -1,5 +1,6 @@
 // The Duel's data shapes. Everything here is plain JSON, so puzzles and games can be
 // saved, sent to the server and replayed as they are.
+import type { RngState } from './rng';
 
 /** r * cols + c on the full board, clue border included. */
 export type CellId = number;
@@ -39,3 +40,46 @@ export interface Puzzle {
   given: CellId[];
   slots: Slot[];
 }
+
+export type Who = 'you' | 'quill';
+
+export type Action =
+  | { t: 'submit'; place: { cell: CellId; rackSlot: number }[] }
+  | { t: 'pass' }
+  | { t: 'swap'; rackSlots: number[] }
+  | { t: 'reveal'; slot: SlotId }
+  | { t: 'hint' };
+
+export interface GameState {
+  rulesVersion: 1;
+  puzzleId: string;
+  puzzleVersion: number;
+  seed: number;
+  filled: Record<CellId, { by: 'given' | Who; letter: string }>;
+  bag: string[];
+  /** Five slots each; null is a gap (a gap stays where a tile left until the refill). */
+  racks: { you: (string | null)[]; quill: (string | null)[] };
+  scores: Record<Who, number>;
+  turn: Who;
+  over: boolean;
+  passStreak: number;
+  ghosts: SlotId[];
+  lastQuill: CellId[];
+  /** The player's actions only; Quill's turns are re-derived from the seed. */
+  log: Action[];
+  rng: { bag: RngState; bot: RngState };
+}
+
+export type GameEvent =
+  | { e: 'emptyHand'; who: Who; points: 5 }
+  | { e: 'judged'; who: Who; tiles: { cell: CellId; letter: string; ok: boolean; rackSlot: number }[] }
+  | { e: 'word'; who: Who; slot: SlotId; points: number }
+  | { e: 'score'; who: Who; from: number; to: number }
+  | { e: 'returned'; who: Who; rackSlots: number[] }
+  | { e: 'refill'; who: Who; rackSlots: number[]; letters: string[] }
+  | { e: 'botPlaced'; tiles: { cell: CellId; letter: string; rackSlot: number }[] }
+  | { e: 'swapped'; rackSlots: number[] }
+  | { e: 'passed'; who: Who; streak: number }
+  | { e: 'ghosts'; slot: SlotId; cells: CellId[] }
+  | { e: 'turn'; who: Who }
+  | { e: 'gameOver'; scores: Record<Who, number>; result: 'win' | 'loss' | 'tie' };
