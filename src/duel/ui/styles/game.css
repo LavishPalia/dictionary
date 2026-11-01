@@ -85,7 +85,6 @@
 
 /* clue cells */
 .duel-cl { background: #e8ecf1; color: #2a2f36; overflow: visible; }
-.duel-cl.orn { color: rgba(90, 96, 105, .35); font-size: calc(var(--cell) * .42); }
 .duel-cl.two { display: flex; flex-direction: column; align-items: stretch; }
 .duel .duel-clue { position: relative; width: 100%; height: 100%; display: grid; place-items: center; min-height: 0; flex: 1; cursor: pointer; }
 .duel-cl.two > .duel-clue:first-child { border-bottom: 1px solid #cfd4db; }
@@ -123,6 +122,8 @@
 .duel-tile.pend { position: absolute; inset: 2px; width: auto; height: auto; transform: translateY(-2px); border-radius: 5px; cursor: grab; z-index: 2; }
 .duel-tile.pend .lt { font-size: calc(var(--cell) * .54); }
 [data-fx-hidden] { visibility: hidden; }
+/* a new rack tile waiting for Quill's turn to end */
+.duel-tile[data-held] { opacity: 0; pointer-events: none; }
 /* the drop target under a dragged tile: a brass ring that pops in */
 .duel-cell[data-fx-target]::after { content: ""; position: absolute; inset: 2px; border-radius: 5px; pointer-events: none;
   box-shadow: inset 0 0 0 2px var(--brass), 0 0 10px rgba(201, 162, 74, .6); animation: duel-target-in .18s var(--out); }
@@ -237,7 +238,7 @@
 .duel-fx .fx-tile.ok { box-shadow: inset 0 0 0 1px rgba(255, 220, 170, .35), 0 0 0 3px var(--ok), 0 0 16px rgba(47, 158, 68, .85); }
 .duel-fx .fx-tile.bad { box-shadow: inset 0 0 0 1px rgba(255, 220, 170, .35), 0 0 0 3px var(--bad), 0 0 16px rgba(224, 49, 49, .85); }
 .duel-fx .fx-tile.bad::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(224, 49, 49, .28); }
-.duel-fx .mark { position: absolute; top: -9px; right: -9px; min-width: 24px; height: 19px; padding: 0 4px; border-radius: 7px; display: grid; place-items: center;
+.duel-fx .mark { position: absolute; top: -10px; right: -10px; min-width: 24px; height: 19px; padding: 0 4px; border-radius: 7px; display: grid; place-items: center;
   font: 700 13px/1 var(--letters); color: #fff; z-index: 4; box-shadow: 0 2px 4px rgba(0, 0, 0, .35); animation: duel-mark-in .22s var(--spring) both; }
 .duel-fx .mark.up { background: var(--ok); }
 .duel-fx .mark.down { background: var(--bad); }
@@ -246,23 +247,29 @@
   color: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); z-index: 3; }
 .duel-fx .chip.ok { background: var(--ok); }
 .duel-fx .chip.neg { background: var(--bad); }
-.duel-fx .chip.gold { background: radial-gradient(circle at 40% 30%, #ffe9a6, #d4ab4c 60%, #9c7628); color: #3a2408; }
 .duel-fx .chip.big { width: 44px; height: 30px; margin: -15px 0 0 -22px; font-size: 18px; }
 .duel-fx .trail { height: 16px; margin-top: -8px; border-radius: 8px; transform-origin: 0 50%; }
 .duel-fx .trail.ok { background: linear-gradient(to right, rgba(47, 158, 68, 0), rgba(47, 158, 68, .45) 70%, rgba(47, 158, 68, .8)); box-shadow: 0 0 12px rgba(47, 158, 68, .45); }
 .duel-fx .trail.neg { background: linear-gradient(to right, rgba(224, 49, 49, 0), rgba(224, 49, 49, .45) 70%, rgba(224, 49, 49, .8)); box-shadow: 0 0 12px rgba(224, 49, 49, .45); }
-.duel-fx .trail.gold { background: linear-gradient(to right, rgba(201, 162, 74, 0), rgba(201, 162, 74, .45) 70%, rgba(201, 162, 74, .8)); box-shadow: 0 0 12px rgba(201, 162, 74, .45); }
 .duel-fx .trail.lite { box-shadow: none; }
-.duel-fx .glow { border-radius: 2px; background: rgba(247, 215, 122, .55); box-shadow: inset 0 0 0 2px #c9a24a, 0 0 14px rgba(240, 190, 80, .8); opacity: 0; }
-.duel-fx .seal { width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; display: grid; place-items: center; font: 700 19px/1 var(--letters);
-  color: #f9e7c4; background: radial-gradient(circle at 38% 32%, #a83a2c, #7a2b22 55%, #4d140f);
-  box-shadow: 0 0 0 3px #c9a24a, 0 0 0 4px #6e5532, 0 6px 14px rgba(0, 0, 0, .45); text-shadow: 0 1px 0 rgba(0, 0, 0, .4); z-index: 4; }
+/* a finished word: the same green box a right tile gets, around the whole word */
+.duel-fx .wordbox { border-radius: 5px; box-shadow: inset 0 0 0 3px var(--ok), 0 0 14px rgba(47, 158, 68, .7); background: rgba(47, 158, 68, .08); z-index: 2; }
+/* a right tile once its point has landed: it looks like the settled letter React draws next */
+.duel-fx .fx-settled { display: grid; place-items: center; }
+.duel-fx .fx-settled .lt { color: #1f2328; }
 .duel-fx .confetto { width: 8px; height: 12px; margin: -6px 0 0 -4px; border-radius: 1px; }
 .duel-fx .confetto.round { width: 6px; height: 6px; border-radius: 50%; }
 .duel-fx .fx-card { left: 50%; top: 38%; width: 250px; padding: 16px 18px 18px; border-radius: 14px; text-align: center; color: var(--ink); z-index: 6;
   transform: translate(-50%, 0); background: linear-gradient(160deg, #f6ecd0, #e6d4a8); border: 2px solid var(--brass);
   box-shadow: 0 0 0 4px rgba(42, 29, 20, .2), 0 18px 40px rgba(0, 0, 0, .35); font-family: var(--font-fell); }
 .duel-fx .fx-card .k { font: 13px var(--font-fell-sc); letter-spacing: 1.2px; color: var(--crimson); }
+/* Empty hand: no card behind it, just the emoji and words over the board */
+.duel-fx .fx-card.empty { width: auto; padding: 4px 14px; background: none; border: 0; box-shadow: none; }
+.duel-fx .fx-card.empty .emo { font-size: 64px; line-height: 1.1; }
+.duel-fx .fx-card.empty .k { font: 700 22px var(--font-fell-sc); color: var(--binding); }
+.duel-fx .fx-card.empty .s { font-size: 15px; color: var(--ink); }
+.duel-fx .fx-card.empty .k, .duel-fx .fx-card.empty .s { text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff; }
+.duel-fx .fx-card.empty .mark { top: 2px; right: -6px; min-width: 34px; height: 26px; font-size: 17px; }
 .duel-fx .fx-card .big { font: 700 40px/1.1 var(--letters); color: var(--binding); }
 .duel-fx .fx-card .s { font: italic 14.5px var(--font-fell); color: var(--inks); }
 .duel-fx .fx-card.remark { top: 44%; }

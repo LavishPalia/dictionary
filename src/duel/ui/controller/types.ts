@@ -31,6 +31,8 @@ export interface Snapshot {
   sheet: Sheet;
   /** Input is locked: a sequence is playing. */
   busy: boolean;
+  /** Rack slots whose new tiles are not shown yet: they arrive after Quill's turn. */
+  held: number[];
   balance: { hint: number; word: number };
 }
 
@@ -41,6 +43,8 @@ export interface Director {
   /** Motion after the new snapshot is committed (the refill, the turn glow). */
   arrive(events: GameEvent[], who: Who, after: Snapshot): Promise<void>;
   toast(text: string): void;
+  /** Your new tiles arrive in these rack slots (after Quill's turn): dropped in from the bag, or popped up after a swap. */
+  deal?(rackSlots: number[], how: 'refill' | 'swap'): Promise<void>;
   /** Ghost letters are fading into these cells (already on screen): resolves when they have. */
   ghosts?(cells: CellId[]): Promise<void>;
 }

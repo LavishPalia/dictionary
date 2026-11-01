@@ -24,8 +24,10 @@ export class WebDirector implements Director {
   private leftovers: HTMLElement[] = [];
   private hidden: Element[] = [];
   private monitor = new FrameMonitor();
-  /** Rack slots that got new tiles from a swap: they pop in once the new rack is on screen. */
-  private swapped: number[] = [];
+  /** Drop-in animations on the new rack tiles, held (fill) until React shows the tiles, then cancelled. */
+  private dealt: Animation[] = [];
+  /** Your score as shown while points land one by one (the engine's floor at 0 applies at every step). */
+  private shown = 0;
 
   constructor(private p: Puzzle, private stage: Stage, private layer: FxLayer, private platform: Platform,
     private motion: Motion, private trace?: string[]) {}
@@ -53,18 +55,16 @@ export class WebDirector implements Director {
   private async resolveYou(events: GameEvent[], before: Snapshot) {
     const passed = events.find(e => e.e === 'passed');
     if (passed) {
-      for (const e of events) {
-        this.note(`you:${e.e}`);
-        if (e.e === 'swapped') this.swapped = e.rackSlots;
-      }
+      for (const e of events) this.note(`you:${e.e}`);
       if (passed.e === 'passed' && passed.streak === 1) await this.remark(REMARKS[Math.floor(Math.random() * REMARKS.length)]);
       return;
     }
     await this.wait(this.layer.dur(T.submitPause));
+    this.shown = before.state.scores.you;
     for (const ev of events) {
       switch (ev.e) {
         case 'emptyHand': this.note('you:emptyHand'); await this.emptyHand(); break;
-        case 'judged': this.note('you:judged'); await this.judge(ev, before); break;
+        case 'judged': this.note('you:judged'); await this.judge(ev); break;
         case 'word': this.note(`you:word:${ev.points}`); await this.word(ev.slot, ev.points); break;
         case 'score': await this.count(ev.who, ev.to); break;
         default: this.note(`you:${ev.e}`);
@@ -72,19 +72,21 @@ export class WebDirector implements Director {
     }
   }
 
-  /** All tiles judged at once: rings and ±1 badges, a hold, then the badges fly together and wrong tiles go home. */
-  private async judge(ev: Judged, before: Snapshot) {
+  /**
+   * All tiles judged at once: a green (or red) box and a ±1 badge on its top-right corner. After a hold
+   * the badges fly to your score one by one, right ones first; each adds as it lands, and its tile is
+   * done: a right one becomes a plain board letter, a wrong one goes home to the rack.
+   */
+  private async judge(ev: Judged) {
     const { sound, haptics } = this.platform;
-    const clones = ev.tiles.map(t => {
+    const tiles = [...ev.tiles.filter(t => t.ok), ...ev.tiles.filter(t => !t.ok)];
+    const clones = tiles.map(t => {
       const cellEl = this.stage.el('cell', t.cell);
       const pend = cellEl?.querySelector('.duel-tile.pend');
       if (pend) { pend.setAttribute('data-fx-hidden', ''); this.hidden.push(pend); }
       const r = inset(this.stage.rect('cell', t.cell)!, 2);
       const clone = this.layer.tile(t.letter, r, t.ok ? 'ok' : 'bad');
-      const badge = document.createElement('span');
-      badge.className = `mark ${t.ok ? 'up' : 'down'}`;
-      badge.textContent = t.ok ? '+1' : '−1';
-      clone.appendChild(badge);
+      const badge = this.badge(clone, t.ok ? 1 : -1);
       if (!t.ok && !this.motion.reduced) {
         const b = topLeft(r);
         void this.layer.anim(clone, [0, -5, 5, -4, 3, 0].map((dx, i) => ({ transform: `translate3d(${b.x + dx}px,${b.y}px,0) rotate(${[0, -4, 4, -2, 0, 0][i]}deg)` })),
@@ -97,64 +99,107 @@ export class WebDirector implements Director {
     await this.wait(this.motion.reduced ? T.judgeHoldReduced : T.judgeHold);
 
     const score = centerOf(this.stage.rect('score', 'you')!);
-    const flights = clones.map(({ t, r, badge }, i) => {
-      badge.remove();
-      return this.layer.chip({ x: r.right, y: r.top }, score, t.ok ? 1 : -1, t.ok ? 'ok' : 'neg', { delay: i * T.chipStagger });
-    });
-    const homes = clones.filter(c => !c.t.ok).map(({ t, r, clone }) => {
+    await Promise.all(clones.map(async ({ t, r, clone, badge }, i) => {
+      await this.flyBadge(badge, { x: r.right, y: r.top }, score, t.ok ? 1 : -1, i * T.chipStagger);
+      if (t.ok) { this.settled(clone, t.cell, t.letter); return; }
       const slot = this.stage.rect('rack', t.rackSlot);
-      if (!slot) return Promise.resolve();
       clone.classList.remove('bad');
+      if (!slot) { clone.remove(); return; }
       const frames = this.motion.reduced
         ? [{ transform: `translate3d(${r.left}px,${r.top}px,0)`, opacity: 1 }, { transform: `translate3d(${slot.left}px,${slot.top}px,0) scale(${slot.width / r.width})`, opacity: 1 }]
         : arcFrames(topLeft(r), topLeft(slot), 50, { s1: slot.width / r.width });
-      return this.layer.anim(clone, frames, { duration: T.wrongHome, easing: EASE.home });
-    });
-    await Promise.all([...flights, ...homes]);
-    for (const c of clones) this.leftovers.push(c.clone);
+      await this.layer.anim(clone, frames, { duration: T.wrongHome, easing: EASE.home });
+      this.leftovers.push(clone);
+    }));
     await this.wait(this.layer.dur(T.afterChips));
   }
 
-  /** A finished word: a gold glow across it, a wax seal "+N" stamps on, then flies to your score. */
+  /** A "+N" or "−N" badge on the top-right corner of a box (a tile, a word, the Empty hand card). */
+  private badge(on: HTMLElement, n: number): HTMLElement {
+    const b = document.createElement('span');
+    b.className = `mark ${n > 0 ? 'up' : 'down'}`;
+    b.textContent = `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
+    on.appendChild(b);
+    return b;
+  }
+
+  /** The badge leaves its box and flies to your score, which moves by `n` the moment it lands. */
+  private async flyBadge(badge: HTMLElement, from: Pt, to: Pt, n: number, delay = 0) {
+    if (delay) await this.wait(this.layer.dur(delay));
+    badge.remove();
+    await this.layer.chip(from, to, n, n > 0 ? 'ok' : 'neg');
+    this.shown = Math.max(0, this.shown + n);
+    this.show('you', this.shown);
+  }
+
+  /** A right tile is done: its box goes, and it looks like the settled letter React will draw there. */
+  private settled(clone: HTMLElement, cell: CellId, letter: string) {
+    clone.remove();
+    const r = this.stage.rect('cell', cell);
+    if (!r) return;
+    const d = this.layer.add('fx-settled');
+    d.style.width = `${r.width}px`;
+    d.style.height = `${r.height}px`;
+    d.style.transform = `translate3d(${r.left}px,${r.top}px,0)`;
+    const lt = document.createElement('span');
+    lt.className = 'lt';
+    lt.style.fontSize = `${Math.round(r.height * 0.56)}px`;
+    lt.textContent = letter;
+    d.appendChild(lt);
+    this.leftovers.push(d);
+  }
+
+  /** A finished word: one green box around it with "+N" on its top-right corner, which flies to your score; then the box goes. */
   private async word(slotId: SlotId, points: number) {
     const slot = this.p.slots.find(s => s.id === slotId);
     if (!slot) return;
-    const rects = slot.cells.map(c => this.stage.rect('cell', c)!).filter(Boolean);
-    rects.forEach((r, i) => {
-      const g = this.layer.add('glow');
-      g.style.width = `${r.width}px`; g.style.height = `${r.height}px`;
-      g.style.transform = `translate3d(${r.left}px,${r.top}px,0)`;
-      void this.layer.anim(g, [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 0 }], { duration: T.wordGlow, delay: i * T.wordGlowStagger, easing: 'ease-out' })
-        .then(() => g.remove());
-    });
+    const rects = slot.cells.map(c => this.stage.rect('cell', c)).filter((r): r is DOMRect => Boolean(r));
+    if (!rects.length) return;
+    const left = Math.min(...rects.map(r => r.left)), top = Math.min(...rects.map(r => r.top));
+    const right = Math.max(...rects.map(r => r.right)), bottom = Math.max(...rects.map(r => r.bottom));
+    const box = this.layer.add('wordbox');
+    box.style.width = `${right - left}px`;
+    box.style.height = `${bottom - top}px`;
+    box.style.transform = `translate3d(${left}px,${top}px,0)`;
+    const badge = this.badge(box, points);
     this.platform.sound.play('word');
     this.platform.haptics.drop();
-    const a = centerOf(rects[Math.floor((rects.length - 1) / 2)]), b = centerOf(rects[Math.ceil((rects.length - 1) / 2)]);
-    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    const seal = this.layer.add('seal', `+${points}`);
-    await this.layer.anim(seal, [{ transform: `translate3d(${mid.x}px,${mid.y}px,0) scale(2.4) rotate(-18deg)`, opacity: 0 },
-      { transform: `translate3d(${mid.x}px,${mid.y}px,0) scale(1) rotate(-6deg)`, opacity: 1 }],
-      { duration: T.sealStamp, delay: this.motion.reduced ? 0 : rects.length * 40, easing: EASE.stamp });
-    await this.wait(this.layer.dur(T.sealHold));
-    seal.remove();
-    await this.layer.chip(mid, centerOf(this.stage.rect('score', 'you')!), points, 'gold', { big: true });
+    await this.layer.anim(box, [{ opacity: 0 }, { opacity: 1 }], { duration: T.boxIn, easing: 'ease-out' });
+    await this.wait(this.motion.reduced ? T.judgeHoldReduced : T.judgeHold);
+    await this.flyBadge(badge, { x: right, y: top }, centerOf(this.stage.rect('score', 'you')!), points);
+    await this.layer.anim(box, [{ opacity: 1 }, { opacity: 0 }], { duration: T.boxOut });
+    box.remove();
+    await this.wait(this.layer.dur(T.afterChips));
   }
 
-  /** Empty hand: a card drops in with confetti and a fanfare, holds, then "+5" flies to your score. */
+  /** Empty hand: 🎉 and "+5" on a clear background, with confetti; then the "+5" flies to your score like any other badge. */
   private async emptyHand() {
     const card = this.layer.card('empty', (el) => {
-      el.innerHTML = '<div class="k">Empty hand</div><div class="big">+5</div><div class="s">Every tile played in one turn</div>';
+      el.innerHTML = '<div class="emo">🎉</div><div class="k">Empty hand</div><div class="s">All 5 tiles played</div>';
     });
+    const badge = this.badge(card, 5);
     this.platform.sound.play('bonus');
     this.platform.haptics.celebrate();
-    void this.layer.anim(card, [{ transform: 'translate(-50%, -60px) scale(.6) rotate(-4deg)', opacity: 0 },
-      { transform: 'translate(-50%, 6px) scale(1.04) rotate(1deg)', opacity: 1, offset: 0.6 }, { transform: 'translate(-50%, 0)', opacity: 1 }],
+    void this.layer.anim(card, [{ transform: 'translate(-50%, -40px) scale(.6)', opacity: 0 },
+      { transform: 'translate(-50%, 4px) scale(1.04)', opacity: 1, offset: 0.6 }, { transform: 'translate(-50%, 0)', opacity: 1 }],
       { duration: T.emptyIn, easing: EASE.out });
     const c = card.getBoundingClientRect();
     this.layer.confetti(centerOf(c));
     await this.wait(this.motion.reduced ? 300 : T.emptyHold);
-    void this.layer.anim(card, [{ opacity: 1 }, { opacity: 0, transform: 'translate(-50%, 10px) scale(.9)' }], { duration: 220 }).then(() => card.remove());
-    await this.layer.chip(centerOf(c), centerOf(this.stage.rect('score', 'you')!), 5, 'gold', { big: true });
+    const b = badge.getBoundingClientRect();
+    await this.flyBadge(badge, centerOf(b), centerOf(this.stage.rect('score', 'you')!), 5);
+    await this.layer.anim(card, [{ opacity: 1 }, { opacity: 0, transform: 'translate(-50%, 10px) scale(.9)' }], { duration: T.boxOut });
+    card.remove();
+  }
+
+  /** Shows a score at once with a small pulse (one badge landing). */
+  private show(who: Who, v: number) {
+    const el = this.stage.el('score', who);
+    if (!el || el.textContent === String(v)) return;
+    const up = v > (Number(el.textContent) || 0);
+    el.textContent = String(v);
+    this.note(`score:${who}:${v}`);
+    if (!this.motion.reduced) el.animate([{ transform: 'none' }, { transform: `scale(${up ? 1.3 : 0.86})`, offset: 0.4 }, { transform: 'none' }], { duration: 320, easing: EASE.stamp });
   }
 
   /** Counts a score to its new total (never below 0: the engine's `to` already is). */
@@ -246,15 +291,30 @@ export class WebDirector implements Director {
   // ── After the new snapshot ──
   async arrive(events: GameEvent[], who: Who) {
     await this.afterPublish();
-    if (who === 'you' && this.swapped.length) {
-      const slots = this.swapped;
-      this.swapped = [];
-      await this.popIn(slots, T.swapPop, T.swapPopStagger);
-    }
-    for (const ev of events) {
-      this.note(`${who}:${ev.e}`);
-      if (ev.e === 'refill' && ev.who === 'you' && ev.rackSlots.length) await this.refill(ev.rackSlots);
-    }
+    for (const ev of events) this.note(`${who}:${ev.e}`);
+  }
+
+  /**
+   * Your new tiles, after Quill's turn: they drop into the rack gaps (a refill) or pop up (a swap).
+   * React has them on screen but held invisible; these animations end visible and hold there until
+   * React shows the tiles, then afterPublish() cancels them.
+   */
+  async deal(rackSlots: number[], how: 'refill' | 'swap') {
+    mark('refill', 'start');
+    const swap = how === 'swap';
+    const stagger = swap ? T.swapPopStagger : T.refillStagger, dur = swap ? T.swapPop : T.refillSpring;
+    const frames: Keyframe[] = this.motion.reduced ? [{ opacity: 0 }, { opacity: 1 }]
+      : swap ? [{ transform: 'translateY(40px) scale(.25)', opacity: 0 }, { transform: 'translateY(-18px) scale(1.08)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }]
+        : [{ transform: 'translateY(-46px) scale(.7)', opacity: 0 }, { opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }];
+    await Promise.all(rackSlots.map((i, k) => {
+      const tile = this.stage.el('rack', i)?.querySelector('.duel-tile');
+      if (!tile) return Promise.resolve();
+      setTimeout(() => this.platform.sound.play('rack'), k * stagger + (swap ? 300 : 180));
+      const a = tile.animate(frames, { duration: this.layer.dur(dur), delay: this.motion.reduced ? 0 : k * stagger, easing: swap ? 'cubic-bezier(.2,.8,.3,1)' : EASE.spring, fill: 'both' });
+      this.dealt.push(a);
+      return a.finished.then(() => undefined, () => undefined);
+    }));
+    mark('refill', 'end');
   }
 
   /** Ghost letters are already fading in (CSS, 110 ms apart): wait for them. */
@@ -262,39 +322,13 @@ export class WebDirector implements Director {
     return this.wait(this.motion.reduced ? T.reducedMax : (cells.length - 1) * T.ghostStagger + 600);
   }
 
-  /** New tiles from the bag pop up into their rack places. */
-  private async popIn(slots: number[], dur: number, stagger: number) {
-    await Promise.all(slots.map((i, k) => {
-      const tile = this.stage.el('rack', i)?.querySelector('.duel-tile');
-      if (!tile) return Promise.resolve();
-      setTimeout(() => this.platform.sound.play('rack'), k * stagger + 300);
-      const frames = this.motion.reduced ? [{ opacity: 0 }, { opacity: 1 }]
-        : [{ transform: 'translateY(40px) scale(.25)', opacity: 0 }, { transform: 'translateY(-18px) scale(1.08)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }];
-      return this.layer.anim(tile, frames, { duration: dur, delay: this.motion.reduced ? 0 : k * stagger, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'backwards' });
-    }));
-  }
-
-  /** New tiles drop into the rack gaps one by one. */
-  private async refill(slots: number[]) {
-    mark('refill', 'start');
-    const drops = slots.map((i, k) => {
-      const tile = this.stage.el('rack', i)?.querySelector('.duel-tile');
-      if (!tile) return Promise.resolve();
-      setTimeout(() => this.platform.sound.play('rack'), k * T.refillStagger + 180);
-      const frames = this.motion.reduced
-        ? [{ opacity: 0 }, { opacity: 1 }]
-        : [{ transform: 'translateY(-46px) scale(.7)', opacity: 0 }, { opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }];
-      return this.layer.anim(tile, frames, { duration: T.refillSpring, delay: this.motion.reduced ? 0 : k * T.refillStagger, easing: EASE.spring, fill: 'backwards' });
-    });
-    await Promise.all(drops);
-    mark('refill', 'end');
-  }
-
   /** Waits until React has committed the new snapshot, then drops the stand-in clones. */
   async afterPublish() {
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     for (const el of this.leftovers) el.remove();
     for (const el of this.hidden) el.removeAttribute('data-fx-hidden');
+    for (const a of this.dealt) a.cancel();
+    this.dealt = [];
     this.leftovers = [];
     this.hidden = [];
   }

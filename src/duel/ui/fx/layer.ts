@@ -74,9 +74,9 @@ export class FxLayer {
 
   /**
    * A chip ("+1", "−1", "+5") that pops, flies straight to `to` with a glowing streak behind it, and merges in.
-   * kind: ok = green, neg = red, gold = word bonuses and Empty hand.
+   * kind: ok = green (every point you win: tiles, words, Empty hand), neg = red.
    */
-  async chip(from: Pt, to: Pt, n: number, kind: 'ok' | 'neg' | 'gold', { big = false, delay = 0 } = {}) {
+  async chip(from: Pt, to: Pt, n: number, kind: 'ok' | 'neg', { big = false, delay = 0 } = {}) {
     const chip = this.add(`chip ${kind}${big ? ' big' : ''}`, `${n > 0 ? '+' : '−'}${Math.abs(n)}`);
     const dx = to.x - from.x, dy = to.y - from.y, dist = Math.hypot(dx, dy), ang = Math.atan2(dy, dx) * 180 / Math.PI;
     let rot = ang + 90;

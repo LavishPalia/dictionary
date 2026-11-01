@@ -19,6 +19,15 @@ function split(events: GameEvent[]): [GameEvent[], GameEvent[]] {
   return i < 0 ? [events, []] : [events.slice(0, i), events.slice(i)];
 }
 
+/** The rack slots that got new tiles in your turn: from the bag after a submit, or from a swap. */
+function newTiles(events: GameEvent[]): { slots: number[]; how: 'refill' | 'swap' } {
+  for (const e of events) {
+    if (e.e === 'swapped') return { slots: e.rackSlots, how: 'swap' };
+    if (e.e === 'refill' && e.who === 'you') return { slots: e.rackSlots, how: 'refill' };
+  }
+  return { slots: [], how: 'refill' };
+}
+
 /** A hint lasts until the turn ends, so it is on when the log has one after the last turn-ending action. */
 function hintIsOn(log: Action[]): boolean {
   for (let i = log.length - 1; i >= 0; i--) {
@@ -58,7 +67,7 @@ export class GameController {
   private rest(state: GameState): Snapshot {
     return {
       state, pending: [], lifted: null, selected: null, zoom: null, lastQuill: state.lastQuill,
-      hintOn: hintIsOn(state.log), wordMode: false, sheet: null, busy: false, balance: this.platform.help.balance(),
+      hintOn: hintIsOn(state.log), wordMode: false, sheet: null, busy: false, held: [], balance: this.platform.help.balance(),
     };
   }
 
@@ -294,10 +303,13 @@ export class GameController {
 
     this.lastTap = null;
     this.publish({ busy: true, lastQuill: [], lifted: null, zoom: null, wordMode: false, sheet: null });
+    // Your new tiles (a refill, or a swap's) stay out of sight until Quill has moved, so the rack
+    // never shows tiles you can't play yet.
+    const dealt = newTiles(you.events);
     try {
       const [youNow, youAfter] = split(you.events);
       await this.director.resolve(youNow, 'you', this.snap);
-      this.publish({ state: you.state, pending: [], hintOn: false });
+      this.publish({ state: you.state, pending: [], hintOn: false, held: dealt.slots });
       await this.director.arrive(youAfter, 'you', this.snap);
 
       if (quill) {
@@ -306,11 +318,16 @@ export class GameController {
         this.publish({ state: quill.state, lastQuill: quill.state.lastQuill });
         await this.director.arrive(qAfter, 'quill', this.snap);
       }
+      if (dealt.slots.length && !(quill ?? you).state.over) {
+        await this.director.deal?.(dealt.slots, dealt.how);
+        this.publish({ held: [] });
+        await this.director.arrive([], 'you', this.snap);
+      }
     } catch {
       // A failed animation must never lock the game: the result below is already saved.
     } finally {
       const end = quill ?? you;
-      this.publish({ state: end.state, pending: [], hintOn: false, lastQuill: quill ? quill.state.lastQuill : [], busy: false });
+      this.publish({ state: end.state, pending: [], hintOn: false, lastQuill: quill ? quill.state.lastQuill : [], busy: false, held: [] });
     }
   }
 }

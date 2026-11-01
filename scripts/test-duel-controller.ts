@@ -97,9 +97,25 @@ async function controllerChecks() {
   // d. a whole correct rack: you resolve, arrive, then Quill
   for (const t of correctPlacements(c)) c.place(t.rackSlot, t.cell);
   await c.submit();
-  check('d: director order you → quill', d.calls.map(x => `${x.fn}:${x.who}`).join() === 'resolve:you,arrive:you,resolve:quill,arrive:quill', d.calls);
+  check('d: director order you → quill → your new tiles', d.calls.map(x => `${x.fn}:${x.who}`).join() === 'resolve:you,arrive:you,resolve:quill,arrive:quill,deal:you,arrive:you', d.calls);
+  check('d: all 5 new tiles are dealt as a refill, after Quill', d.calls[4].kinds.join() === 'refill,0,1,2,3,4', d.calls[4]);
   check('d: an empty hand comes first', d.calls[0].kinds.slice(0, 3).join() === 'emptyHand,score,judged', d.calls[0].kinds);
   check('d: not busy afterwards, your turn, nothing pending', !c.snapshot().busy && c.snapshot().state.turn === 'you' && c.snapshot().pending.length === 0);
+
+  // d2. while Quill moves, your new tiles are held out of sight and the game is busy; they show after
+  {
+    const seen: { held: number[]; busy: boolean }[] = [];
+    const watch: Director = {
+      async resolve(_e, who, snap) { if (who === 'quill') seen.push({ held: [...snap.held], busy: snap.busy }); },
+      async arrive() {}, toast() {},
+    };
+    const c2 = new GameController(p0, DATE, memoryPlatform(), watch, { seed: 123 });
+    const [t] = correctPlacements(c2);
+    c2.place(t.rackSlot, t.cell);
+    await c2.submit();
+    check('d2: during Quill’s turn your refilled slot is held, input locked', seen.length === 1 && seen[0].held.join() === String(t.rackSlot) && seen[0].busy, seen);
+    check('d2: afterwards nothing is held', c2.snapshot().held.length === 0 && !c2.snapshot().busy);
+  }
 
   // e. Submit twice → one action
   pf = memoryPlatform(); d = new NullDirector(); c = new GameController(p0, DATE, pf, d, { seed: 123 });

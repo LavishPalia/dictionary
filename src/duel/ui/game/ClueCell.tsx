@@ -19,13 +19,13 @@ export function ClueFace({ slot }: { slot: Slot }) {
 
 const clueLabel = (s: Slot) => `Clue, ${s.dir === 'a' ? 'across' : 'down'}: ${s.clue.full}, ${s.cells.length} letters`;
 
-/** A clue cell: one clue, two (split top/bottom), or none (an ornament). */
+/** A clue cell: one clue, two (split top/bottom), or none (plain: a decoration there read as a clue). */
 export const ClueCell = memo(function ClueCell({ id, slots, lit, stage, onTap }: {
   id: CellId; slots: Slot[]; lit: SlotId[]; stage: Stage; onTap: (slot: SlotId) => void;
 }) {
   const WORD_STAGGER = 30;
   if (!slots.length) {
-    return <div role="gridcell" className="duel-cell duel-cl orn" data-cell={id} aria-label="Blank">{id === 0 ? '' : <span aria-hidden="true">❦</span>}</div>;
+    return <div role="gridcell" className="duel-cell duel-cl orn" data-cell={id} aria-label="Blank" />;
   }
   const half = (s: Slot) => (
     <button type="button" key={s.id} tabIndex={-1} className={`duel-clue${lit.includes(s.id) ? ' cand' : ''}`} data-slot={s.id} aria-label={clueLabel(s)}

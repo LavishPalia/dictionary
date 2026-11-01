@@ -4,8 +4,8 @@ export const T = {
   submitPause: 240, judgeHold: 650, judgeHoldReduced: 300,
   chipPop: 150, chipStagger: 50, chipFly: 560, chipMerge: 130,
   wrongHome: 380, afterChips: 200,
-  wordGlow: 900, wordGlowStagger: 55, sealStamp: 260, sealHold: 420, afterSeal: 330, afterWords: 350,
-  emptyIn: 480, emptyHold: 1300,
+  // a finished word's green box, and the Empty hand card (their badges fly like a tile's)
+  boxIn: 180, boxOut: 200, emptyIn: 480, emptyHold: 1100,
   refillStagger: 90, refillSpring: 420,
   thinkMin: 1100, thinkMax: 1500, thinkReduced: 400, quillFly: 430, quillAfterLand: 300, quillFade: 220,
   turnGlow: 350, remarkIn: 260, remarkHold: 1300,

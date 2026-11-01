@@ -12,7 +12,8 @@ export function Rack({ snap, ctl, stage }: { snap: Snapshot; ctl: GameController
           <div key={i} className="duel-slot" data-rack={i} ref={(el) => stage.register('rack', i, el)}>
             {l !== null && !out.has(i) && (
               <button type="button" className={`duel-tile${snap.lifted === i ? ' picked' : ''}`} aria-pressed={snap.lifted === i}
-                aria-label={`Tile ${l}`} onClick={() => ctl.lift(i)}>
+                aria-label={`Tile ${l}`} onClick={() => ctl.lift(i)}
+                {...(snap.held.includes(i) ? { 'data-held': '', 'aria-hidden': true, tabIndex: -1 } : {})}>
                 <span className="lt">{l}</span>
               </button>
             )}

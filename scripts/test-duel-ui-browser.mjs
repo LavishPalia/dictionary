@@ -9,7 +9,7 @@ const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge
 const PORT = 9331;
 const BASE = 'http://localhost:3000';
 const USER_DATA = path.join(process.cwd(), 'scratch', `panna-duel-edge-${process.pid}-${Date.now()}`);
-const P0 = JSON.parse(fs.readFileSync('data/duel/puzzles/p0000.json', 'utf8'));
+const P0 = JSON.parse(fs.readFileSync('data/duel/puzzles/p0001.json', 'utf8'));
 const GAME = '/play/game/2026-11-01';
 const AXE = fs.readFileSync(path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
 let checks = 0;
@@ -243,8 +243,38 @@ async function main() {
     // ── Phone, normal motion: the order of the moments ──
     await reduce(false);
     await open(`${GAME}?seed=7`, { clear: true });
+    // watch the screen through the turn: the boxes, the Empty hand card, and the rack while Quill moves
+    await evaluate(`(() => {
+      const o = window.__obs = { wordbox: 0, oldFx: 0, settled: 0, heldWhileQuill: -1, shownWhileQuill: -1, emptyBg: '', emo: '' };
+      window.__obsT = setInterval(() => {
+        if (document.querySelector('.duel-fx .wordbox')) o.wordbox++;
+        if (document.querySelector('.duel-fx .seal, .duel-fx .glow, .duel-fx .chip.gold')) o.oldFx++;
+        if (document.querySelector('.duel-fx .fx-settled')) o.settled++;
+        if (document.querySelector('[data-fx-thinking]')) {
+          o.heldWhileQuill = Math.max(o.heldWhileQuill, document.querySelectorAll('.duel-rack .duel-tile[data-held]').length);
+          o.shownWhileQuill = Math.max(o.shownWhileQuill, [...document.querySelectorAll('.duel-rack .duel-tile')].filter((t) => getComputedStyle(t).opacity !== '0').length);
+        }
+        const e = document.querySelector('.duel-fx .fx-card.empty');
+        if (e) { const cs = getComputedStyle(e); o.emptyBg = cs.backgroundImage + '|' + cs.backgroundColor; o.emo = e.querySelector('.emo')?.textContent ?? ''; }
+      }, 25);
+      return true;
+    })()`);
     await tapTurn(correctPlacements((await snap()).state));
     let trace = await evaluate('window.__duel.trace.slice()');
+    const firstSteps = trace.filter((t) => t.startsWith('score:you:')).map((t) => Number(t.split(':')[2])).filter((v, i, a) => i === 0 || v !== a[i - 1]);
+    // more full turns until one finishes a word, so the word box is seen
+    for (let i = 0; i < 6 && !(await evaluate(`window.__duel.trace.some((t) => t.startsWith('you:word:'))`)); i++) {
+      const st = (await snap()).state;
+      if (st.over) break;
+      await tapTurn(correctPlacements(st));
+    }
+    const wordSeen = await evaluate(`window.__duel.trace.some((t) => t.startsWith('you:word:'))`);
+    const obs = await evaluate('clearInterval(window.__obsT); window.__obs');
+    check('normal: the Empty hand card is see-through, with 🎉', obs.emptyBg === 'none|rgba(0, 0, 0, 0)' && obs.emo === '🎉', obs);
+    check('normal: right tiles lose their box once their point lands', obs.settled > 0, obs);
+    check('normal: a finished word gets a green box (no gold glow or wax seal)', wordSeen && obs.wordbox > 0 && obs.oldFx === 0, { wordSeen, ...obs });
+    check('normal: while Quill moves, your 5 new tiles are held out of sight', obs.heldWhileQuill === 5 && obs.shownWhileQuill === 0, obs);
+    check('normal: your score moves badge by badge (+5, then +1 per tile)', firstSteps[0] === 5 && firstSteps.slice(1, 6).join() === '6,7,8,9,10', firstSteps);
     const mine = trace.filter((t) => t.startsWith('you:'));
     check('normal: Empty hand comes first, then all tiles judged together', mine[0] === 'you:emptyHand' && mine[1] === 'you:judged', mine);
     const lens = mine.filter((t) => t.startsWith('you:word:')).map((t) => Number(t.split(':')[2]));
