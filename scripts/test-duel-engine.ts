@@ -1,5 +1,6 @@
 // Checks the Duel engine (src/duel/engine). Usage: npx tsx scripts/test-duel-engine.ts
 import { readFileSync } from 'node:fs';
+import { botTurn } from '../src/duel/engine/bot';
 import { apply, checkInvariant, emptyCells, newGame } from '../src/duel/engine/game';
 import { checkPuzzleShape } from '../src/duel/engine/puzzle';
 import { nextInt, nextU32, seedRng } from '../src/duel/engine/rng';
@@ -179,6 +180,61 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   for (let i = 0; i < 100; i++) { x = apply(p0, x, { t: 'pass' }).state; x = { ...x, turn: 'you' }; }
   check('100 passes in a row stay legal', x.passStreak === 100);
   check('a submit resets the pass streak', apply(p0, x, { t: 'submit', place: [{ cell: p0.slots[0].cells[0], rackSlot: 0 }] }).state.passStreak === 0);
+}
+
+// ---------- Professor Quill ----------
+{
+  const placedOf = (ev: GameEvent[]) => (ev.find(e => e.e === 'botPlaced') as Extract<GameEvent, { e: 'botPlaced' }>).tiles;
+  const judgedOf = (ev: GameEvent[]) => (ev.find(e => e.e === 'judged') as Extract<GameEvent, { e: 'judged' }>).tiles;
+  const s = apply(p0, newGame(p0, 11), { t: 'pass' }).state;
+  const b = botTurn(p0, s);
+  const n = placedOf(b.events).length;
+  check('quill places 1–4 tiles', n >= 1 && n <= 4, n);
+  check('quill turn is deterministic', JSON.stringify(botTurn(p0, s)) === JSON.stringify(b));
+  check('turn returns to you, invariant holds', b.state.turn === 'you' && checkInvariant(p0, b.state) === null);
+  check('lastQuill = his correct cells', b.state.lastQuill.length === judgedOf(b.events).filter(t => t.ok).length && b.state.lastQuill.every(c => b.state.filled[c]?.by === 'quill'));
+  check('his turn is not logged', b.state.log.length === s.log.length);
+  check('his turn keeps your pass streak (the remark shows once per streak)', b.state.passStreak === 1);
+  check('events: botPlaced then judged', kinds(b.events).startsWith('botPlaced,') && kinds(b.events).includes('judged'), kinds(b.events));
+  check('the input state is not changed', JSON.stringify(s) === JSON.stringify(apply(p0, newGame(p0, 11), { t: 'pass' }).state));
+
+  // Over many openings: never 0 tiles, never more than 4, makes some mistakes but not most
+  let tiles = 0, wrongs = 0, zero = 0, tooMany = 0;
+  for (let seed = 1; seed <= 400; seed++) {
+    const st = apply(p0, newGame(p0, seed), { t: 'pass' }).state;
+    const ev = botTurn(p0, st).events;
+    const t = judgedOf(ev);
+    tiles += t.length; wrongs += t.filter(x => !x.ok).length;
+    if (t.length === 0) zero++; if (t.length > 4) tooMany++;
+  }
+  check('400 openings: always 1–4 tiles', zero === 0 && tooMany === 0, { zero, tooMany });
+  check('400 openings: wrong tiles between 8 % and 28 %', wrongs / tiles > 0.08 && wrongs / tiles < 0.28, { tiles, wrongs });
+
+  // He prefers to finish words: T at 66 completes TI and ETA
+  let finished = 0;
+  for (let seed = 1; seed <= 100; seed++) {
+    const st = { ...arrange({ fill: [65, 67, 74], you: ['I', 'N', 'D', 'U', 'L'], quill: ['T', 'O', 'R', 'H', 'E'], seed }), turn: 'quill' as const };
+    if (judgedOf(botTurn(p0, st).events).some(t => t.cell === 66 && t.ok)) finished++;
+  }
+  check('he finishes an open word in most turns (≥ 70 of 100)', finished >= 70, finished);
+
+  // The end: one empty cell, its letter in his rack
+  for (let seed = 1; seed <= 30; seed++) {
+    const end = { ...arrange({ fill: allCellsBut([9]), you: [], quill: ['I'], seed }), turn: 'quill' as const };
+    const r = botTurn(p0, end);
+    if (placedOf(r.events).length !== 1 || !judgedOf(r.events).every(t => t.ok) || !r.state.over) {
+      check(`one empty cell left (seed ${seed}): exactly 1 right tile and the game ends`, false, kinds(r.events));
+      break;
+    }
+    if (seed === 30) check('one empty cell left: exactly 1 right tile and the game ends (30 seeds)', true);
+  }
+
+  // No tiles at all: his turn passes
+  const bare = { ...arrange({ fill: allCellsBut([9, 10]), you: ['I', 'N'], quill: [] }), turn: 'quill' as const };
+  const rb = botTurn(p0, bare);
+  check('with an empty rack his turn passes to you', kinds(rb.events) === 'passed,turn' && rb.state.turn === 'you', kinds(rb.events));
+
+  check('botTurn on your turn is illegal', throws(() => botTurn(p0, newGame(p0, 1))));
 }
 
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }
