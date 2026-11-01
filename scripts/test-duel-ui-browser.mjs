@@ -33,6 +33,17 @@ function correctPlacements(state, count = 5) {
   return out;
 }
 
+/** Tiles from your rack on empty cells where they don't belong. */
+function wrongPlacements(state, count, skip = new Set()) {
+  const used = new Set(), out = [];
+  state.racks.you.forEach((l, rackSlot) => {
+    if (l == null || out.length >= count || skip.has(rackSlot)) return;
+    const cell = Object.keys(P0.solution).map(Number).find((c) => !state.filled[c] && !used.has(c) && P0.solution[c] !== l);
+    if (cell !== undefined) { used.add(cell); out.push({ rackSlot, cell }); }
+  });
+  return out;
+}
+
 async function main() {
   const edge = spawn(EDGE_PATH, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${USER_DATA}`,
     '--disable-gpu', '--window-size=1280,800', 'about:blank'], { stdio: 'ignore' });
@@ -193,6 +204,77 @@ async function main() {
     const was = JSON.stringify((await snap()).state);
     await open(`${GAME}?seed=7`);
     check('phone: a reload gives the identical board', JSON.stringify((await snap()).state) === was);
+
+    // ── Phone, normal motion: the order of the moments ──
+    await reduce(false);
+    await open(`${GAME}?seed=7`, { clear: true });
+    await tapTurn(correctPlacements((await snap()).state));
+    let trace = await evaluate('window.__duel.trace.slice()');
+    const mine = trace.filter((t) => t.startsWith('you:'));
+    check('normal: Empty hand comes first, then all tiles judged together', mine[0] === 'you:emptyHand' && mine[1] === 'you:judged', mine);
+    const lens = mine.filter((t) => t.startsWith('you:word:')).map((t) => Number(t.split(':')[2]));
+    check('normal: word bonuses come shortest first', lens.every((n, i) => i === 0 || lens[i - 1] <= n), lens);
+    check("normal: Quill's tiles fly in", trace.includes('quill:botPlaced'), trace);
+    check('normal: Quill gets no seals or chips', !trace.some((t) => t.startsWith('quill:word') || t.startsWith('quill:chip')), trace);
+    check('normal: the fx layer is empty at rest', await evaluate(`document.querySelector('.duel-fx').children.length === 0`));
+    s = await snap();
+    const blue = await evaluate(`[...document.querySelectorAll('.duel-cell.last')].map((e) => Number(e.dataset.cell)).sort((a, b) => a - b)`);
+    check("normal: Quill's last move shows as blue letters", JSON.stringify(blue) === JSON.stringify([...s.lastQuill].sort((a, b) => a - b)), { blue, last: s.lastQuill });
+    {
+      const [t] = correctPlacements(s.state, 1);
+      await tap(`[data-rack="${t.rackSlot}"] .duel-tile`);
+      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      await tap('[data-act="submit"]');
+      await sleep(50);
+      check('normal: the blue letters turn ink as Submit is tapped', s.lastQuill.length > 0 && await evaluate(`document.querySelectorAll('.duel-cell.last').length === 0`), s.lastQuill);
+      await idle();
+    }
+
+    // the score never shows a negative number
+    await open(`${GAME}?seed=7`, { clear: true });
+    s = await snap();
+    {
+      const right = correctPlacements(s.state, 1);
+      const wrong = wrongPlacements(s.state, 2, new Set(right.map((t) => t.rackSlot)));
+      await evaluate('window.__duel.trace.length = 0; true');
+      await tapTurn([...right, ...wrong]);
+      trace = await evaluate('window.__duel.trace.slice()');
+      const shown = trace.filter((t) => t.startsWith('score:you:')).map((t) => Number(t.split(':')[2]));
+      check('normal: 1 right and 2 wrong from 0 never shows a negative score', shown.length > 0 && shown.every((n) => n >= 0), shown);
+      check('normal: wrong tiles go back to the rack', (await snap()).state.racks.you.filter((l) => l).length === 5);
+    }
+
+    // a reload mid-sequence keeps the move
+    await open(`${GAME}?seed=7`, { clear: true });
+    {
+      const [t] = correctPlacements((await snap()).state, 1);
+      await tap(`[data-rack="${t.rackSlot}"] .duel-tile`);
+      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      await tap('[data-act="submit"]');
+      await sleep(400);
+      await open(`${GAME}?seed=7`);
+      s = await snap();
+      check('normal: a reload mid-sequence keeps the submit, and it is your turn', s.state.log.length === 1 && s.state.log[0].t === 'submit' && s.state.turn === 'you' && !s.busy, s.state.log);
+    }
+
+    // a turn is no slower than the prototype's
+    const timedTurn = async () => {
+      await open(`${GAME}?seed=7`, { clear: true });
+      const two = correctPlacements((await snap()).state, 2);
+      for (const t of two) { await tap(`[data-rack="${t.rackSlot}"] .duel-tile`); await tap(`.duel-board [data-cell="${t.cell}"]`); }
+      const t0 = Date.now();
+      await tap('[data-act="submit"]');
+      await sleep(200);
+      const longest = await evaluate(`Math.max(0, ...document.getAnimations().filter((a) => a.effect?.target?.closest?.('.duel-fx')).map((a) => a.effect.getTiming().duration))`);
+      await idle();
+      return { ms: Date.now() - t0, longest };
+    };
+    const normal = await timedTurn();
+    check('normal: two right tiles and Quill’s reply take under 9 s', normal.ms < 9000, normal);
+    await reduce(true);
+    const quick = await timedTurn();
+    check('reduced motion: the same turn takes under 3.5 s', quick.ms < 3500, quick);
+    check('reduced motion: no effect runs longer than 120 ms', quick.longest <= 120, quick);
 
     // ── Desktop ──
     await setSize(desktop);

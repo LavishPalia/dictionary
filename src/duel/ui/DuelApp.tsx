@@ -3,9 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Puzzle } from '../engine';
 import type { Platform } from '../platform/types';
 import { GameController } from './controller/controller';
-import { NullDirector } from './controller/null-director';
 import { readFlags } from './flags';
+import { WebDirector } from './fx/director';
+import { FxLayer } from './fx/layer';
+import { setPerf } from './fx/perf';
 import { Stage } from './fx/stage';
+import { pickTier } from './fx/tier';
 import { GameScreen } from './game/GameScreen';
 import { istToday, parsePath, type Route } from './router';
 import './styles/game.css';
@@ -20,14 +23,19 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
 
   useEffect(() => {
     let live = true;
+    setPerf(flags.perf);
+    const motion = { reduced: platform.reducedMotion(), tier: flags.tier ?? pickTier(navigator as Navigator & { deviceMemory?: number }) };
+    const layer = new FxLayer(motion);
     void platform.puzzles.forDate(date).then((p) => {
       if (!live) return;
       const stage = new Stage();
-      const ctl = new GameController(p, date, platform, new NullDirector(), { seed: flags.seed });
-      if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace: [] };
+      const trace: string[] = [];
+      const director = new WebDirector(p, stage, layer, platform, motion, flags.test ? trace : undefined);
+      const ctl = new GameController(p, date, platform, director, { seed: flags.seed });
+      if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace };
       setGame({ p, ctl, stage });
     });
-    return () => { live = false; };
+    return () => { live = false; layer.destroy(); };
   }, [date, platform, flags]);
 
   if (!game) return <div className="duel-game" aria-busy="true" />;

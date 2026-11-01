@@ -9,6 +9,7 @@ import { NullDirector } from '../src/duel/ui/controller/null-director';
 import { hintCells, nextEmpty, wordCandidates } from '../src/duel/ui/controller/selectors';
 import type { Director, SavedGame } from '../src/duel/ui/controller/types';
 import { readFlags } from '../src/duel/ui/flags';
+import { pickTier, shouldStepDown } from '../src/duel/ui/fx/tier';
 import { istToday, parsePath } from '../src/duel/ui/router';
 
 let failures = 0;
@@ -31,6 +32,16 @@ async function main() {
   check('seed flag', readFlags('?seed=7').seed === 7 && readFlags('?seed=7').test && !readFlags('').test);
   check('bad seed ignored', readFlags('?seed=-1').seed === undefined && readFlags('?seed=4294967296').seed === undefined && readFlags('?seed=1.5').seed === undefined);
   check('tier and perf flags', readFlags('?tier=lite&perf=1').tier === 'lite' && readFlags('?perf=1').perf && readFlags('?tier=fast').tier === undefined);
+
+  // ── Quality tiers ──
+  check('8 cores, 6 GB → normal', pickTier({ hardwareConcurrency: 8, deviceMemory: 6 }) === 'normal');
+  check('4 cores → lite', pickTier({ hardwareConcurrency: 4, deviceMemory: 8 }) === 'lite');
+  check('3 GB → lite', pickTier({ hardwareConcurrency: 8, deviceMemory: 3 }) === 'lite');
+  check('unknown → normal', pickTier({}) === 'normal');
+  check('9 % slow over 2 s → step down', shouldStepDown([...Array(110).fill(16.7), ...Array(11).fill(25)]));
+  check('7 % slow → stay', !shouldStepDown([...Array(112).fill(16.7), ...Array(8).fill(25)]));
+  check('under 2 s of frames → stay', !shouldStepDown(Array(60).fill(25)));
+  check('no frames → stay', !shouldStepDown([]));
 
   await controllerChecks();
 
