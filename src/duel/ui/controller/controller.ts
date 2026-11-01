@@ -172,12 +172,28 @@ export class GameController {
     if (this.snap.zoom !== null || this.snap.wordMode) this.publish({ zoom: null, wordMode: false });
   }
 
-  typeLetter(letter: string): boolean {
-    if (this.locked || !this.snap.selected) return false;
+  /** Where a typed letter would go: the first rack tile with it, into the selected answer's next empty cell. */
+  planType(letter: string): { rackSlot: number; cell: CellId } | null {
+    if (this.locked || !this.snap.selected) return null;
     const l = letter.toUpperCase();
     const rackSlot = this.snap.state.racks.you.findIndex((x, i) => x === l && this.inHand(i));
     const cell = nextEmpty(this.p, this.snap.state, this.snap.pending, this.snap.selected);
-    return rackSlot >= 0 && cell !== null && this.place(rackSlot, cell);
+    return rackSlot >= 0 && cell !== null ? { rackSlot, cell } : null;
+  }
+
+  typeLetter(letter: string): boolean {
+    const plan = this.planType(letter);
+    return plan !== null && this.place(plan.rackSlot, plan.cell);
+  }
+
+  /** Tab / Shift+Tab: the next or previous answer that still has an empty cell. */
+  selectNext(dir: 1 | -1) {
+    if (this.locked) return;
+    const open = this.p.slots.filter(sl => sl.cells.some(c => !this.snap.state.filled[c]));
+    if (!open.length) return;
+    const i = open.findIndex(sl => sl.id === this.snap.selected);
+    const next = i < 0 ? (dir > 0 ? open[0] : open[open.length - 1]) : open[(i + dir + open.length) % open.length];
+    this.publish({ selected: next.id });
   }
 
   backspace(): boolean {

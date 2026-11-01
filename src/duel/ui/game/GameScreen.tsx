@@ -1,7 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import type { CellId } from '../../engine';
 import type { Puzzle } from '../../engine';
 import type { Platform } from '../../platform/types';
 import type { GameController } from '../controller/controller';
+import { Input } from '../fx/drag';
+import type { FxLayer, Motion } from '../fx/layer';
 import type { Stage } from '../fx/stage';
 import { ActionRow } from './ActionRow';
 import { Board } from './Board';
@@ -45,11 +48,21 @@ function useFit(root: React.RefObject<HTMLDivElement | null>, area: React.RefObj
 }
 
 /** The game screen (UI-DESIGN §3.3 as changed by §0), phone first; desktop shows the same column, centred. */
-export function GameScreen({ p, date, ctl, stage, platform }: { p: Puzzle; date: string; ctl: GameController; stage: Stage; platform: Platform }) {
+export function GameScreen({ p, date, ctl, stage, layer, motion, platform }: {
+  p: Puzzle; date: string; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion; platform: Platform;
+}) {
   const snap = useSnapshot(ctl);
   const root = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLDivElement>(null);
+  const input = useRef<Input | null>(null);
   useFit(root, area, p, stage);
+  useEffect(() => {
+    if (!root.current) return;
+    const i = new Input(root.current, stage, layer, ctl, motion, platform);
+    input.current = i;
+    return () => { i.detach(); input.current = null; };
+  }, [stage, layer, ctl, motion, platform]);
+  const onCell = useCallback((c: CellId) => { if (input.current) input.current.tapCell(c); else ctl.tapCell(c); }, [ctl]);
 
   // The clue zoom stays until the next tap anywhere; a tap on a clue moves or closes it itself.
   const onPointerDown = (e: React.PointerEvent) => {
@@ -70,7 +83,7 @@ export function GameScreen({ p, date, ctl, stage, platform }: { p: Puzzle; date:
       </header>
       <ScoreBar snap={snap} stage={stage} />
       <div className="duel-boardarea" ref={area} onClick={(e) => { if (e.target === e.currentTarget) ctl.tapOutside(); }}>
-        <Board p={p} snap={snap} ctl={ctl} stage={stage} />
+        <Board p={p} snap={snap} ctl={ctl} stage={stage} onCell={onCell} />
       </div>
       <Rack snap={snap} ctl={ctl} stage={stage} />
       <ActionRow snap={snap} ctl={ctl} />

@@ -118,12 +118,37 @@ async function main() {
       return true;
     };
     const idle = () => waitFor('window.__duel && !window.__duel.snapshot().busy', 30000);
+    /** Tap a rack tile, then a cell; waits until the tile has flown in. */
+    const tapPlace = async (t) => {
+      await tap(`[data-rack="${t.rackSlot}"] .duel-tile`);
+      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      return waitFor(`window.__duel.snapshot().pending.some((x) => x.cell === ${t.cell})`, 2000);
+    };
+    /** Drags with a finger (phone) or the mouse (desktop) from an element's centre to a point, in small steps. */
+    const drag = async (fromSel, to, { steps = 20, end = true } = {}) => {
+      const a = await center(fromSel);
+      if (!a) return false;
+      const point = (x, y) => (size.mobile ? { touchPoints: [{ x, y }] } : { x, y, button: 'left', buttons: 1 });
+      const type = size.mobile ? 'Input.dispatchTouchEvent' : 'Input.dispatchMouseEvent';
+      await send(type, { type: size.mobile ? 'touchStart' : 'mousePressed', ...point(a.x, a.y), clickCount: 1 });
+      for (let i = 1; i <= steps; i++) {
+        await send(type, { type: size.mobile ? 'touchMove' : 'mouseMoved', ...point(a.x + (to.x - a.x) * i / steps, a.y + (to.y - a.y) * i / steps) });
+        await sleep(16);
+      }
+      if (end) await send(type, size.mobile ? { type: 'touchEnd', touchPoints: [] } : { type: 'mouseReleased', x: to.x, y: to.y, button: 'left', clickCount: 1 });
+      return true;
+    };
+    /** Where to aim so the dragged tile lands on a cell: on touch the tile rides 30 px above the finger. */
+    const aimAt = async (cell) => { const c = await center(`.duel-board [data-cell="${cell}"]`); return { x: c.x, y: c.y + (size.mobile ? 30 : 0) }; };
+    const key = async (k, code = k, text) => {
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code, text, windowsVirtualKeyCode: k.length === 1 ? k.toUpperCase().charCodeAt(0) : { Tab: 9, Enter: 13, Backspace: 8, Escape: 27 }[k] });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code });
+    };
     /** One turn by tap: each tile, then its cell, then Submit. */
     const tapTurn = async (placements) => {
       const before = (await snap()).state.log.length;
       for (const t of placements) {
-        await tap(`[data-rack="${t.rackSlot}"] .duel-tile`);
-        await tap(`.duel-board [data-cell="${t.cell}"]`);
+        await tapPlace(t);
       }
       await tap('[data-act="submit"]');
       await waitFor(`window.__duel.snapshot().state.log.length > ${before}`, 5000);
@@ -169,6 +194,8 @@ async function main() {
     await tap(`[data-rack="${first.rackSlot}"] .duel-tile`);
     check('phone: a tapped tile lifts', (await snap()).lifted === first.rackSlot);
     await tap(`.duel-board [data-cell="${first.cell}"]`);
+    await waitFor(`window.__duel.snapshot().pending.length === 1`, 2000);
+    await sleep(100);
     s = await snap();
     check('phone: tapping a square places the lifted tile', s.pending.length === 1 && s.pending[0].cell === first.cell, s.pending);
     check('phone: the rack keeps a gap where the tile was', await evaluate(`!document.querySelector('[data-rack="${first.rackSlot}"] .duel-tile')`));
@@ -222,8 +249,7 @@ async function main() {
     check("normal: Quill's last move shows as blue letters", JSON.stringify(blue) === JSON.stringify([...s.lastQuill].sort((a, b) => a - b)), { blue, last: s.lastQuill });
     {
       const [t] = correctPlacements(s.state, 1);
-      await tap(`[data-rack="${t.rackSlot}"] .duel-tile`);
-      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      await tapPlace(t);
       await tap('[data-act="submit"]');
       await sleep(50);
       check('normal: the blue letters turn ink as Submit is tapped', s.lastQuill.length > 0 && await evaluate(`document.querySelectorAll('.duel-cell.last').length === 0`), s.lastQuill);
@@ -248,8 +274,7 @@ async function main() {
     await open(`${GAME}?seed=7`, { clear: true });
     {
       const [t] = correctPlacements((await snap()).state, 1);
-      await tap(`[data-rack="${t.rackSlot}"] .duel-tile`);
-      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      await tapPlace(t);
       await tap('[data-act="submit"]');
       await sleep(400);
       await open(`${GAME}?seed=7`);
@@ -261,7 +286,7 @@ async function main() {
     const timedTurn = async () => {
       await open(`${GAME}?seed=7`, { clear: true });
       const two = correctPlacements((await snap()).state, 2);
-      for (const t of two) { await tap(`[data-rack="${t.rackSlot}"] .duel-tile`); await tap(`.duel-board [data-cell="${t.cell}"]`); }
+      for (const t of two) { await tapPlace(t); }
       const t0 = Date.now();
       await tap('[data-act="submit"]');
       await sleep(200);
@@ -276,12 +301,140 @@ async function main() {
     check('reduced motion: the same turn takes under 3.5 s', quick.ms < 3500, quick);
     check('reduced motion: no effect runs longer than 120 ms', quick.longest <= 120, quick);
 
+    // ── Phone: drag ──
+    await reduce(false);
+    await open(`${GAME}?seed=7`, { clear: true });
+    s = await snap();
+    {
+      const [t0] = correctPlacements(s.state, 1);
+      await drag(`[data-rack="${t0.rackSlot}"] .duel-tile`, await aimAt(t0.cell));
+      await sleep(500);
+      s = await snap();
+      check('phone: a drag places the tile in the cell under it', s.pending.length === 1 && s.pending[0].cell === t0.cell && s.pending[0].rackSlot === t0.rackSlot, s.pending);
+      check('phone: the dragged tile shows in the cell', await evaluate(`Boolean(document.querySelector('.duel-board [data-cell="${t0.cell}"] .duel-tile.pend'))`));
+      check('phone: the rack keeps a gap', await evaluate(`!document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile')`));
+      check('phone: no drag clone is left behind', await evaluate(`document.querySelectorAll('.duel-fx .fx-tile').length === 0`));
+      const other = s.state.racks.you.findIndex((l, i) => l && i !== t0.rackSlot);
+      await drag(`[data-rack="${other}"] .duel-tile`, await aimAt(t0.cell));
+      await sleep(500);
+      s = await snap();
+      check('phone: a drop on a pending tile slides back', s.pending.length === 1 && s.pending[0].rackSlot === t0.rackSlot && await evaluate(`Boolean(document.querySelector('[data-rack="${other}"] .duel-tile'))`), s.pending);
+      const bar = await center('.duel-rackbar');
+      await drag(`.duel-board [data-cell="${t0.cell}"] .duel-tile`, { x: bar.x, y: bar.y + (size.mobile ? 30 : 0) });
+      await sleep(500);
+      check('phone: a pending tile dragged to the rack goes home', (await snap()).pending.length === 0 && await evaluate(`Boolean(document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile'))`));
+
+      // the phone turns mid-drag: the tile goes home, and then drops land where the cells now are
+      await drag(`[data-rack="${t0.rackSlot}"] .duel-tile`, await aimAt(t0.cell), { end: false });
+      await setSize({ width: 740, height: 360, mobile: true });
+      await sleep(300);
+      await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await sleep(500);
+      check('phone: turning the phone mid-drag sends the tile home', (await snap()).pending.length === 0 && await evaluate(`Boolean(document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile'))`));
+      await drag(`[data-rack="${t0.rackSlot}"] .duel-tile`, await aimAt(t0.cell));
+      await sleep(500);
+      s = await snap();
+      check('phone: after turning, a drop lands on the cell under it', s.pending.length === 1 && s.pending[0].cell === t0.cell, s.pending);
+      await setSize(phone);
+      await sleep(300);
+    }
+
+    // a drag during a sequence does nothing
+    await open(`${GAME}?seed=7`, { clear: true });
+    s = await snap();
+    {
+      const [a, b] = correctPlacements(s.state, 2);
+      await tapPlace(a);
+      await sleep(400);
+      await tap('[data-act="submit"]');
+      await sleep(60);
+      await drag(`[data-rack="${b.rackSlot}"] .duel-tile`, await aimAt(b.cell), { steps: 6 });
+      await idle();
+      s = await snap();
+      check('phone: a drag while the turn plays out is ignored', s.state.log.length === 1 && s.pending.length === 0, { log: s.state.log.length, pending: s.pending });
+    }
+
+    // tap-to-place flies the tile in
+    {
+      s = await snap();
+      const [t] = correctPlacements(s.state, 1);
+      await tap(`[data-rack="${t.rackSlot}"] .duel-tile`);
+      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      await sleep(30);
+      const flying = await evaluate(`[...document.querySelectorAll('.duel-fx .fx-tile')].map((e) => e.className + ':' + e.textContent).join('|')`);
+      await sleep(500);
+      check('phone: tap-to-place flies the tile along an arc', flying.split('|').length === 1 && flying.includes('lifted') && (await snap()).pending.some((x) => x.cell === t.cell), flying);
+    }
+
     // ── Desktop ──
     await setSize(desktop);
     await open(`${GAME}?seed=7`, { clear: true });
     const col = await evaluate(`(() => { const r = document.querySelector('.duel-game').getBoundingClientRect(); return { w: r.width, l: r.left, r: innerWidth - r.right }; })()`);
     check('desktop: the game is a centred column at most 560 px wide', col.w <= 560 && Math.abs(col.l - col.r) <= 2, col);
     await axe('desktop: the game screen');
+
+    // mouse drag
+    s = await snap();
+    {
+      const [t] = correctPlacements(s.state, 1);
+      await drag(`[data-rack="${t.rackSlot}"] .duel-tile`, await aimAt(t.cell));
+      await sleep(500);
+      check('desktop: a mouse drag places the tile', (await snap()).pending.some((x) => x.cell === t.cell));
+      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      await sleep(400);
+    }
+
+    // keyboard: Tab to an answer, type, Backspace, Enter
+    await evaluate('document.activeElement?.blur(); true');
+    await key('Tab');
+    s = await snap();
+    const sel = P0.slots.find((x) => x.id === s.selected);
+    check('desktop: Tab selects an answer', Boolean(sel), s.selected);
+    {
+      const rack = s.state.racks.you;
+      const l1 = rack.find((l) => l);
+      await key(l1.toLowerCase(), `Key${l1}`, l1.toLowerCase());
+      await sleep(450);
+      check('desktop: a typed letter goes into the answer', (await snap()).pending.length === 1 && sel.cells.includes((await snap()).pending[0].cell));
+      await key('Backspace');
+      await sleep(100);
+      check('desktop: Backspace takes it back', (await snap()).pending.length === 0);
+      await key(l1.toLowerCase(), `Key${l1}`, l1.toLowerCase());
+      await sleep(450);
+      const placed = (await snap()).pending.map((x) => x.cell);
+      await key('Enter');
+      await sleep(200);
+      await idle();
+      const last = (await snap()).state.log.at(-1);
+      check('desktop: Enter submits the typed tiles', last?.t === 'submit' && JSON.stringify(last.place.map((x) => x.cell)) === JSON.stringify(placed), last);
+    }
+
+    // a full game by keyboard (reduced motion)
+    await reduce(true);
+    await open(`${GAME}?seed=11`, { clear: true });
+    await evaluate('document.activeElement?.blur(); true');
+    for (let turn = 0; turn < 80; turn++) {
+      s = await snap();
+      if (s.state.over) break;
+      for (let tabs = 0; tabs < P0.slots.length; tabs++) {
+        await key('Tab');
+        for (let typed = 0; typed < 5; typed++) {
+          const now = await snap();
+          const slot = P0.slots.find((x) => x.id === now.selected);
+          const next = slot?.cells.find((c) => !now.state.filled[c] && !now.pending.some((t) => t.cell === c));
+          const want = next === undefined ? null : P0.solution[next];
+          const free = now.state.racks.you.some((l, i) => l === want && !now.pending.some((t) => t.rackSlot === i));
+          if (!want || !free) break;
+          await key(want.toLowerCase(), `Key${want}`, want.toLowerCase());
+          await sleep(140);
+        }
+      }
+      await key('Enter');
+      await sleep(100);
+      await idle();
+    }
+    s = await snap();
+    check('desktop: a full game by keyboard ends', s.state.over, { log: s.state.log.length });
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

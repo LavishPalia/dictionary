@@ -5,7 +5,7 @@ import type { Platform } from '../platform/types';
 import { GameController } from './controller/controller';
 import { readFlags } from './flags';
 import { WebDirector } from './fx/director';
-import { FxLayer } from './fx/layer';
+import { FxLayer, type Motion } from './fx/layer';
 import { setPerf } from './fx/perf';
 import { Stage } from './fx/stage';
 import { pickTier } from './fx/tier';
@@ -18,13 +18,13 @@ declare global {
 }
 
 function Game({ date, platform }: { date: string; platform: Platform }) {
-  const [game, setGame] = useState<{ p: Puzzle; ctl: GameController; stage: Stage } | null>(null);
+  const [game, setGame] = useState<{ p: Puzzle; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion } | null>(null);
   const flags = useMemo(() => readFlags(location.search), []);
 
   useEffect(() => {
     let live = true;
     setPerf(flags.perf);
-    const motion = { reduced: platform.reducedMotion(), tier: flags.tier ?? pickTier(navigator as Navigator & { deviceMemory?: number }) };
+    const motion: Motion = { reduced: platform.reducedMotion(), tier: flags.tier ?? pickTier(navigator as Navigator & { deviceMemory?: number }) };
     const layer = new FxLayer(motion);
     void platform.puzzles.forDate(date).then((p) => {
       if (!live) return;
@@ -33,13 +33,13 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
       const director = new WebDirector(p, stage, layer, platform, motion, flags.test ? trace : undefined);
       const ctl = new GameController(p, date, platform, director, { seed: flags.seed });
       if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace };
-      setGame({ p, ctl, stage });
+      setGame({ p, ctl, stage, layer, motion });
     });
     return () => { live = false; layer.destroy(); };
   }, [date, platform, flags]);
 
   if (!game) return <div className="duel-game" aria-busy="true" />;
-  return <GameScreen p={game.p} date={date} ctl={game.ctl} stage={game.stage} platform={platform} />;
+  return <GameScreen p={game.p} date={date} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} />;
 }
 
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {

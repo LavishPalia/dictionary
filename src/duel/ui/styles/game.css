@@ -119,6 +119,10 @@
 .duel-tile.pend { position: absolute; inset: 2px; width: auto; height: auto; transform: translateY(-2px); border-radius: 5px; cursor: grab; z-index: 2; }
 .duel-tile.pend .lt { font-size: calc(var(--cell) * .54); }
 [data-fx-hidden] { visibility: hidden; }
+/* the drop target under a dragged tile: a brass ring that pops in */
+.duel-cell[data-fx-target]::after { content: ""; position: absolute; inset: 2px; border-radius: 5px; pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--brass), 0 0 10px rgba(201, 162, 74, .6); animation: duel-target-in .18s var(--out); }
+@keyframes duel-target-in { from { transform: scale(.7); opacity: 0; } }
 .duel-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* rack: no slot boxes, a gap stays where a tile left (§0) */
@@ -169,6 +173,7 @@
 .duel-fx > * { position: absolute; left: 0; top: 0; }
 .duel-fx .fx-tile { transform-origin: 0 0; border-radius: 5px; }
 .duel-fx .fx-tile .lt { font-size: var(--fs); }
+.duel-fx .fx-tile.lifted { z-index: 5; box-shadow: inset 0 0 0 1px rgba(255, 220, 170, .35), inset 0 -4px 0 rgba(60, 30, 10, .45), 0 18px 22px rgba(0, 0, 0, .35); }
 .duel-fx .fx-tile.bot { background: linear-gradient(160deg, #c49364, #99683b 55%, #855428); }
 .duel-fx .fx-tile.bot .lt { color: #dce8fa; text-shadow: 0 -1px 0 rgba(20, 40, 80, .8); }
 .duel-fx .fx-tile.ok { box-shadow: inset 0 0 0 1px rgba(255, 220, 170, .35), 0 0 0 3px var(--ok), 0 0 16px rgba(47, 158, 68, .85); }

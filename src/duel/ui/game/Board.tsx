@@ -8,7 +8,7 @@ import { Cell, type CellView } from './Cell';
 import { ClueCell } from './ClueCell';
 
 /** The 10 × 8 board: letter cells and clue cells, as a grid of rows for screen readers. */
-export function Board({ p, snap, ctl, stage }: { p: Puzzle; snap: Snapshot; ctl: GameController; stage: Stage }) {
+export function Board({ p, snap, ctl, stage, onCell }: { p: Puzzle; snap: Snapshot; ctl: GameController; stage: Stage; onCell: (cell: CellId) => void }) {
   // Clue cell → the answers it clues, across first. Fixed for the puzzle.
   const cluesAt = useMemo(() => {
     const m = new Map<CellId, Slot[]>();
@@ -22,7 +22,6 @@ export function Board({ p, snap, ctl, stage }: { p: Puzzle; snap: Snapshot; ctl:
   }, [p, snap.state.ghosts]);
   const hinted = useMemo(() => new Set(snap.hintOn ? hintCells(p, snap.state, snap.pending) : []), [p, snap.hintOn, snap.state, snap.pending]);
   const lit = useMemo(() => (snap.wordMode ? wordCandidates(p, snap.state) : []), [p, snap.wordMode, snap.state]);
-  const tapCell = useCallback((c: CellId) => { ctl.tapCell(c); }, [ctl]);
   const tapClue = useCallback((slot: string) => ctl.tapClue(slot), [ctl]);
   const none: string[] = useMemo(() => [], []);
 
@@ -45,7 +44,7 @@ export function Board({ p, snap, ctl, stage }: { p: Puzzle; snap: Snapshot; ctl:
     for (let col = 0; col < p.cols; col++) {
       const id = r * p.cols + col;
       if (p.solution[id] !== undefined) {
-        cells.push(<Cell key={id} id={id} row={r} col={col} view={view(id)} stage={stage} onTap={tapCell} />);
+        cells.push(<Cell key={id} id={id} row={r} col={col} view={view(id)} stage={stage} onTap={onCell} />);
       } else {
         const slots = cluesAt.get(id) ?? [];
         const here = slots.some(s => lit.includes(s.id)) ? lit : none;

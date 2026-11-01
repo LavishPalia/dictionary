@@ -184,6 +184,7 @@ export class WebDirector implements Director {
     pill?.removeAttribute('data-fx-thinking');
 
     const clones = new Map<CellId, HTMLElement>();
+    const fades: Promise<void>[] = [];
     let last: number | null = null;
     for (const ev of events) {
       switch (ev.e) {
@@ -194,7 +195,7 @@ export class WebDirector implements Director {
             const c = clones.get(t.cell);
             if (!c) continue;
             if (t.ok) this.leftovers.push(c);
-            else void this.layer.anim(c, [{ opacity: 1 }, { opacity: 0 }], { duration: T.quillFade }).then(() => c.remove());
+            else fades.push(this.layer.anim(c, [{ opacity: 1 }, { opacity: 0 }], { duration: T.quillFade }).then(() => c.remove()));
           }
           break;
         case 'score': last = ev.to; break;
@@ -202,7 +203,8 @@ export class WebDirector implements Director {
         default: break; // no chips, seals or glow for Quill
       }
     }
-    if (last !== null) await this.count('quill', last);
+    // Wrong tiles finish fading before the turn ends, so nothing is left on screen at rest.
+    await Promise.all([...fades, last !== null ? this.count('quill', last) : Promise.resolve()]);
   }
 
   private async botLand(ev: BotPlaced, clones: Map<CellId, HTMLElement>) {
