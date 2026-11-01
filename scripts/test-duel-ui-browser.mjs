@@ -33,6 +33,14 @@ function correctPlacements(state, count = 5) {
   return out;
 }
 
+/** Empty, non-pending cells where a letter still in your hand belongs (what Hint lights). */
+function hintCellsOf(snap) {
+  const used = new Set(snap.pending.map((t) => t.rackSlot)), taken = new Set(snap.pending.map((t) => t.cell));
+  const hand = new Set(snap.state.racks.you.filter((l, i) => l && !used.has(i)));
+  return Object.keys(P0.solution).map(Number).filter((c) => !snap.state.filled[c] && !taken.has(c) && hand.has(P0.solution[c])).sort((a, b) => a - b);
+}
+const candidatesOf = (state) => P0.slots.filter((sl) => !state.ghosts.includes(sl.id) && sl.cells.some((c) => !state.filled[c])).map((sl) => sl.id);
+
 /** Tiles from your rack on empty cells where they don't belong. */
 function wrongPlacements(state, count, skip = new Set()) {
   const used = new Set(), out = [];
@@ -365,6 +373,124 @@ async function main() {
       await sleep(500);
       check('phone: tap-to-place flies the tile along an arc', flying.split('|').length === 1 && flying.includes('lifted') && (await snap()).pending.some((x) => x.cell === t.cell), flying);
     }
+
+    // ── Phone: Hint, Word, Swap, Pass ──
+    await reduce(true);
+    await open(`${GAME}?seed=7`, { clear: true });
+    const lit = () => evaluate(`[...document.querySelectorAll('.duel-cell.hint')].map((e) => Number(e.dataset.cell)).sort((a, b) => a - b)`);
+    const toastText = () => evaluate(`[...document.querySelectorAll('.duel-fx .fx-toast')].map((e) => e.textContent).join('|')`);
+    await tap('[data-act="hint"]');
+    s = await snap();
+    check('hint: tapping Hint spends one', s.hintOn && s.balance.hint === 0, s.balance);
+    check('hint: the glowing cells are where your letters belong', JSON.stringify(await lit()) === JSON.stringify(hintCellsOf(s)), { lit: await lit(), want: hintCellsOf(s) });
+    {
+      const rack = s.state.racks.you;
+      const i = rack.findIndex((l) => l && rack.filter((x) => x === l).length === 1);
+      const [t] = correctPlacements({ ...s.state, racks: { ...s.state.racks, you: rack.map((l, k) => (k === i ? l : null)) } }, 1);
+      await tapPlace(t);
+      const after = await lit();
+      check("hint: placing a letter's only copy takes its glows away", !after.some((c) => P0.solution[c] === rack[i]) && JSON.stringify(after) === JSON.stringify(hintCellsOf(await snap())), after);
+      await tap(`.duel-board [data-cell="${t.cell}"]`);
+      await sleep(100);
+      check('hint: taking it back brings them back', (await lit()).some((c) => P0.solution[c] === rack[i]));
+    }
+    await tap('[data-act="hint"]');
+    await sleep(100);
+    check('hint: a second tap only reminds you', /Hint is on until you end this turn/.test(await toastText()) && (await snap()).balance.hint === 0);
+    await tap('[data-act="submit"]'); // a pass ends the turn and the hint
+    await idle();
+    check('hint: the glow ends with the turn', (await lit()).length === 0 && !(await snap()).hintOn);
+    await tap('[data-act="hint"]');
+    await sleep(200);
+    const help = await evaluate(`document.querySelector('[role="dialog"].duel-sheet')?.textContent ?? ''`);
+    check('hint: with none left, Hint opens the help sheet', /Free every day/.test(help) && /\d+ h \d+ m/.test(help) && /Coming soon/.test(help), help.slice(0, 200));
+    await axe('the help sheet');
+    await key('Escape');
+    await sleep(200);
+    check('sheets: Escape closes the sheet and focus goes back to its button', await evaluate(`!document.querySelector('.duel-sheet') && document.activeElement?.dataset.act === 'hint'`));
+
+    // Word
+    await tap('[data-act="word"]');
+    await sleep(100);
+    s = await snap();
+    const lights = await evaluate(`document.querySelectorAll('.duel-clue.cand').length`);
+    check('word: every answer it can reveal lights up', s.wordMode && lights === candidatesOf(s.state).length, { lights, want: candidatesOf(s.state).length });
+    await tap('.duel-top .ttl');
+    await sleep(100);
+    check('word: a tap elsewhere leaves Word mode', !(await snap()).wordMode);
+    await tap('[data-act="word"]');
+    await sleep(100);
+    const target = candidatesOf((await snap()).state).map((id) => P0.slots.find((x) => x.id === id)).find((x) => x.cells.length >= 3);
+    await tap(`[data-slot="${target.id}"]`);
+    await sleep(200);
+    const confirm = await evaluate(`document.querySelector('[role="dialog"].duel-confirm')?.textContent ?? ''`);
+    check('word: a lit clue asks before revealing', /Reveal this word\?/.test(confirm) && confirm.includes(target.clue.full) && confirm.includes(`${target.cells.length} letters`), confirm);
+    await axe('the reveal dialog');
+    await tap('.duel-confirm [data-ok]');
+    await idle();
+    s = await snap();
+    const ghosts = await evaluate(`[...document.querySelectorAll('.duel-cell .gl')].map((e) => Number(e.closest('[data-cell]').dataset.cell)).sort((a, b) => a - b)`);
+    const emptyIn = target.cells.filter((c) => !s.state.filled[c]).sort((a, b) => a - b);
+    check('word: the answer’s empty cells show faint letters', JSON.stringify(ghosts) === JSON.stringify(emptyIn), { ghosts, emptyIn });
+    check('word: it costs one Word and keeps your turn', s.balance.word === 0 && s.state.turn === 'you' && s.state.ghosts.includes(target.id));
+    await tap('[data-act="word"]');
+    await sleep(200);
+    check('word: with none left, Word opens the help sheet', /Free every day/.test(await evaluate(`document.querySelector('.duel-sheet')?.textContent ?? ''`)));
+    await tap('.duel-sheet [data-close]');
+    await sleep(200);
+
+    // Pass: a remark on the first pass of a streak only
+    await open(`${GAME}?seed=7`, { clear: true });
+    await tap('[data-act="submit"]');
+    check('pass: Professor Quill remarks on your first pass', await waitFor(`Boolean(document.querySelector('.duel-fx .fx-card.remark'))`, 1500));
+    await idle();
+    await tap('[data-act="submit"]');
+    let seen = false;
+    for (let i = 0; i < 20; i++) { if (await evaluate(`Boolean(document.querySelector('.duel-fx .fx-card.remark'))`)) seen = true; await sleep(50); }
+    await idle();
+    check('pass: not on a second pass in a row', !seen);
+
+    // Swap
+    await open(`${GAME}?seed=7`, { clear: true });
+    await tap('[data-act="swap"]');
+    await sleep(200);
+    check('swap: the sheet opens', /Swap tiles/.test(await evaluate(`document.querySelector('.duel-sheet')?.textContent ?? ''`)));
+    await axe('the swap sheet');
+    await tap('.duel-sheet [data-pick="1"]');
+    await tap('.duel-sheet [data-pick="3"]');
+    const label = await evaluate(`document.querySelector('.duel-sheet [data-confirm]').textContent`);
+    check('swap: the button counts the tiles', /Swap 2 and pass/.test(label), label);
+    await tap('.duel-sheet [data-confirm]');
+    await idle();
+    s = await snap();
+    const lastSwap = s.state.log.at(-1);
+    check('swap: those two tiles are swapped and Quill played', lastSwap?.t === 'swap' && JSON.stringify(lastSwap.rackSlots) === '[1,3]' && s.state.turn === 'you', lastSwap);
+
+    // a nearly empty bag
+    for (let turn = 0; turn < 60; turn++) {
+      s = await snap();
+      if (s.state.over || s.state.bag.length <= 4) break;
+      await tapTurn(correctPlacements(s.state, s.state.bag.length > 8 ? 5 : 1));
+    }
+    s = await snap();
+    if (!s.state.over && s.state.bag.length > 0) {
+      const k = s.state.bag.length;
+      await tap('[data-act="swap"]');
+      await sleep(200);
+      await tap('.duel-sheet [data-all]');
+      const picked = await evaluate(`document.querySelectorAll('.duel-sheet [data-pick][aria-pressed="true"]').length`);
+      const note = await evaluate(`document.querySelector('.duel-sheet').textContent`);
+      check('swap: with few tiles in the bag, Select all picks only that many', picked === k && note.includes(`Only ${k} tile${k === 1 ? '' : 's'} left in the bag`), { picked, k });
+      await tap('.duel-sheet [data-close]');
+      await sleep(200);
+    } else check('swap: reached a nearly empty bag', false, s.state.bag.length);
+    for (let turn = 0; turn < 60; turn++) {
+      s = await snap();
+      if (s.state.over || s.state.bag.length === 0) break;
+      await tapTurn(correctPlacements(s.state, 1));
+    }
+    s = await snap();
+    check('swap: with an empty bag, Swap is off', s.state.over || await evaluate(`document.querySelector('[data-act="swap"]').disabled && document.querySelector('[data-act="swap"]').getAttribute('aria-label') === 'Swap: the bag is empty'`));
 
     // ── Desktop ──
     await setSize(desktop);

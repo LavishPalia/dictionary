@@ -23,7 +23,7 @@ export function ActionRow({ snap, ctl }: { snap: Snapshot; ctl: GameController }
   return (
     <div className={`duel-actions${snap.busy ? ' locked' : ''}`}>
       <button type="button" className="ab" data-act="swap" disabled={bagEmpty}
-        aria-label={bagEmpty ? 'Swap: the bag is empty' : 'Swap'} onClick={() => ctl.openSheet({ k: 'swap' })}>
+        aria-label={bagEmpty ? 'Swap: the bag is empty' : 'Swap'} onClick={() => { ctl.takeBackAll(); ctl.openSheet({ k: 'swap' }); }}>
         <Icon k="swap" />Swap
       </button>
       <button type="button" className={`sub${has ? '' : ' pass'}`} data-act="submit" onClick={() => void ctl.submit()}>

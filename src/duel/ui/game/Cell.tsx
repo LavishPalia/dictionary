@@ -12,7 +12,11 @@ export interface CellView {
   pending: string | null;
   /** A faint letter from a Word reveal. */
   ghost: string | null;
+  /** The ghost fades in now (the answer was just revealed), after this many ms. */
+  ghostIn: number | null;
   hint: boolean;
+  /** Hint glows appear in a stagger: this cell's delay in ms. */
+  hintDelay: number;
 }
 
 function label(row: number, col: number, v: CellView): string {
@@ -32,12 +36,16 @@ export const Cell = memo(function Cell({ id, row, col, view, stage, onTap }: {
   const cls = ['duel-cell', 'duel-l', view.by ? `by-${view.by}` : '', view.last ? 'last' : '', view.hint ? 'hint' : ''].filter(Boolean).join(' ');
   return (
     <div role="gridcell" tabIndex={-1} className={cls} data-cell={id} aria-label={label(row, col, view)}
+      style={view.hint ? ({ '--hd': `${view.hintDelay}ms` } as React.CSSProperties) : undefined}
       ref={(el) => stage.register('cell', id, el)} onClick={() => onTap(id)}>
       {view.letter && <span className="lt">{view.letter}</span>}
-      {!view.letter && view.ghost && !view.pending && <span className="lt gl">{view.ghost}</span>}
+      {!view.letter && view.ghost && !view.pending && (
+        <span className={`lt gl${view.ghostIn !== null ? ' in' : ''}`} style={view.ghostIn !== null ? ({ '--gd': `${view.ghostIn}ms` } as React.CSSProperties) : undefined}>{view.ghost}</span>
+      )}
       {view.pending && <div className="duel-tile pend"><span className="lt">{view.pending}</span></div>}
     </div>
   );
 }, (a, b) => a.id === b.id && a.stage === b.stage && a.onTap === b.onTap
   && a.view.letter === b.view.letter && a.view.by === b.view.by && a.view.last === b.view.last
-  && a.view.pending === b.view.pending && a.view.ghost === b.view.ghost && a.view.hint === b.view.hint);
+  && a.view.pending === b.view.pending && a.view.ghost === b.view.ghost && a.view.ghostIn === b.view.ghostIn
+  && a.view.hint === b.view.hint && a.view.hintDelay === b.view.hintDelay);

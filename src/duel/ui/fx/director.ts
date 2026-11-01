@@ -24,6 +24,8 @@ export class WebDirector implements Director {
   private leftovers: HTMLElement[] = [];
   private hidden: Element[] = [];
   private monitor = new FrameMonitor();
+  /** Rack slots that got new tiles from a swap: they pop in once the new rack is on screen. */
+  private swapped: number[] = [];
 
   constructor(private p: Puzzle, private stage: Stage, private layer: FxLayer, private platform: Platform,
     private motion: Motion, private trace?: string[]) {}
@@ -51,7 +53,10 @@ export class WebDirector implements Director {
   private async resolveYou(events: GameEvent[], before: Snapshot) {
     const passed = events.find(e => e.e === 'passed');
     if (passed) {
-      for (const e of events) this.note(`you:${e.e}`);
+      for (const e of events) {
+        this.note(`you:${e.e}`);
+        if (e.e === 'swapped') this.swapped = e.rackSlots;
+      }
       if (passed.e === 'passed' && passed.streak === 1) await this.remark(REMARKS[Math.floor(Math.random() * REMARKS.length)]);
       return;
     }
@@ -241,10 +246,32 @@ export class WebDirector implements Director {
   // ── After the new snapshot ──
   async arrive(events: GameEvent[], who: Who) {
     await this.afterPublish();
+    if (who === 'you' && this.swapped.length) {
+      const slots = this.swapped;
+      this.swapped = [];
+      await this.popIn(slots, T.swapPop, T.swapPopStagger);
+    }
     for (const ev of events) {
       this.note(`${who}:${ev.e}`);
       if (ev.e === 'refill' && ev.who === 'you' && ev.rackSlots.length) await this.refill(ev.rackSlots);
     }
+  }
+
+  /** Ghost letters are already fading in (CSS, 110 ms apart): wait for them. */
+  ghosts(cells: CellId[]): Promise<void> {
+    return this.wait(this.motion.reduced ? T.reducedMax : (cells.length - 1) * T.ghostStagger + 600);
+  }
+
+  /** New tiles from the bag pop up into their rack places. */
+  private async popIn(slots: number[], dur: number, stagger: number) {
+    await Promise.all(slots.map((i, k) => {
+      const tile = this.stage.el('rack', i)?.querySelector('.duel-tile');
+      if (!tile) return Promise.resolve();
+      setTimeout(() => this.platform.sound.play('rack'), k * stagger + 300);
+      const frames = this.motion.reduced ? [{ opacity: 0 }, { opacity: 1 }]
+        : [{ transform: 'translateY(40px) scale(.25)', opacity: 0 }, { transform: 'translateY(-18px) scale(1.08)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }];
+      return this.layer.anim(tile, frames, { duration: dur, delay: this.motion.reduced ? 0 : k * stagger, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'backwards' });
+    }));
   }
 
   /** New tiles drop into the rack gaps one by one. */

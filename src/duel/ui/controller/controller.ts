@@ -3,7 +3,7 @@
 // motion. A snapshot changes only at rest: never while a director promise is pending.
 import { apply, botTurn, newGame, replay, type Action, type CellId, type GameEvent, type GameState, type Puzzle, type SlotId } from '../../engine';
 import type { Platform } from '../../platform/types';
-import { hintCells, nextEmpty, slotsThrough, wordCandidates } from './selectors';
+import { nextEmpty, slotsThrough, wordCandidates } from './selectors';
 import type { Director, Pending, SavedGame, Sheet, Snapshot } from './types';
 
 const RESTORE_TOAST = "That game couldn't be restored, so here's a fresh one.";
@@ -211,7 +211,6 @@ export class GameController {
     if (this.locked) return;
     if (this.platform.help.balance().word <= 0) { this.publish({ sheet: { k: 'help', want: 'word' }, wordMode: false }); return; }
     this.publish({ wordMode: true, zoom: null });
-    this.director.wordMode?.(wordCandidates(this.p, this.snap.state));
   }
 
   exitWordMode() { if (this.snap.wordMode) this.publish({ wordMode: false }); }
@@ -224,7 +223,6 @@ export class GameController {
     const { state } = apply(this.p, this.snap.state, { t: 'hint' });
     this.save(state);
     this.publish({ state, hintOn: true });
-    this.director.hintOn?.(hintCells(this.p, state, this.snap.pending));
   }
 
   async reveal(slot: SlotId) {
@@ -232,10 +230,10 @@ export class GameController {
     if (!this.platform.help.spend('word')) { this.publish({ sheet: { k: 'help', want: 'word' }, wordMode: false }); return; }
     const { state, events } = apply(this.p, this.snap.state, { t: 'reveal', slot });
     this.save(state);
-    this.publish({ busy: true, sheet: null, wordMode: false });
+    this.publish({ state, busy: true, sheet: null, wordMode: false, selected: slot });
     const ghosts = events.find(e => e.e === 'ghosts');
     if (ghosts && ghosts.e === 'ghosts') await this.director.ghosts?.(ghosts.cells);
-    this.publish({ state, busy: false, selected: slot });
+    this.publish({ busy: false });
   }
 
   // ── Ending a turn ──

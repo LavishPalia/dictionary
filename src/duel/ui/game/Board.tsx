@@ -20,7 +20,14 @@ export function Board({ p, snap, ctl, stage, onCell }: { p: Puzzle; snap: Snapsh
     for (const id of snap.state.ghosts) for (const c of p.slots.find(s => s.id === id)?.cells ?? []) m.set(c, p.solution[c]);
     return m;
   }, [p, snap.state.ghosts]);
-  const hinted = useMemo(() => new Set(snap.hintOn ? hintCells(p, snap.state, snap.pending) : []), [p, snap.hintOn, snap.state, snap.pending]);
+  // Hint glows come on in a 45 ms stagger, in reading order.
+  const hinted = useMemo(() => new Map((snap.hintOn ? hintCells(p, snap.state, snap.pending) : []).map((c, i) => [c, i * 45])), [p, snap.hintOn, snap.state, snap.pending]);
+  // The answer just revealed fades its ghost letters in, 110 ms apart.
+  const freshGhost = useMemo(() => {
+    const id = snap.state.ghosts[snap.state.ghosts.length - 1];
+    const cells = p.slots.find(s => s.id === id)?.cells.filter(c => !snap.state.filled[c]) ?? [];
+    return new Map(cells.map((c, i) => [c, i * 110]));
+  }, [p, snap.state.ghosts, snap.state.filled]);
   const lit = useMemo(() => (snap.wordMode ? wordCandidates(p, snap.state) : []), [p, snap.wordMode, snap.state]);
   const tapClue = useCallback((slot: string) => ctl.tapClue(slot), [ctl]);
   const none: string[] = useMemo(() => [], []);
@@ -34,7 +41,9 @@ export function Board({ p, snap, ctl, stage, onCell }: { p: Puzzle; snap: Snapsh
       last: !!f && f.by === 'quill' && snap.lastQuill.includes(c),
       pending: pend ? snap.state.racks.you[pend.rackSlot] : null,
       ghost: ghostAt.get(c) ?? null,
+      ghostIn: freshGhost.get(c) ?? null,
       hint: hinted.has(c),
+      hintDelay: hinted.get(c) ?? 0,
     };
   };
 

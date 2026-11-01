@@ -63,6 +63,7 @@
 .duel-boardwrap { position: relative; padding: 2px; border-radius: 6px; background: #b9bec6; box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
 .duel-board { display: grid; grid-template-columns: repeat(8, var(--cell)); grid-auto-rows: var(--cell); background: #fff; border: 1px solid #b9bec6; }
 .duel-row { display: contents; }
+.duel-main { display: contents; }
 .duel-cell { position: relative; display: grid; place-items: center; background: #fff;
   border-right: 1px solid #d3d7dd; border-bottom: 1px solid #d3d7dd; transition: filter .3s; outline: none; }
 .duel-l { cursor: pointer; }
@@ -72,6 +73,8 @@
 .duel-cell.by-given .lt { color: var(--crimson); }
 .duel-cell.by-quill.last .lt { color: var(--blue); }
 .duel-cell .gl { color: rgba(94, 74, 51, .42); font-style: normal; font-weight: 700; }
+.duel-cell .gl.in { animation: duel-ghost-in .6s var(--out) both; animation-delay: var(--gd, 0ms); }
+@keyframes duel-ghost-in { 0% { opacity: 0; filter: blur(3px); transform: translateY(-4px) scale(1.15); } 60% { opacity: 1; color: rgba(201, 140, 40, .9); } 100% {} }
 .duel-cell.hint::after { content: ""; position: absolute; inset: 1px; border-radius: 4px; pointer-events: none;
   box-shadow: inset 0 0 0 2px rgba(214, 150, 40, .95), inset 0 0 12px rgba(255, 196, 80, .85); background: rgba(255, 215, 120, .28);
   animation: duel-hint-in .35s var(--out) both, duel-hint-pulse 1.8s ease-in-out .35s infinite;
@@ -159,6 +162,60 @@
 .duel .sub.pass { background: linear-gradient(#5a4430, #3e2d1f); border-color: rgba(201, 162, 74, .55); color: var(--brass-soft); }
 .duel .sub .lbl { display: inline-block; animation: duel-lbl-in .22s var(--out); }
 @keyframes duel-lbl-in { from { transform: translateY(60%); opacity: 0; } }
+
+/* sheets and the reveal dialog: bottom sheets on phones, centred cards on desktop */
+.duel-scrim { position: fixed; inset: 0; background: rgba(15, 9, 5, .5); z-index: 90; animation: duel-fade-in .25s ease-out; }
+@keyframes duel-fade-in { from { opacity: 0; } }
+.duel-sheet { position: fixed; left: 50%; bottom: 0; width: 100%; max-width: 560px; transform: translateX(-50%); z-index: 91; color: var(--ink);
+  padding: 10px 18px 22px; border-radius: 22px 22px 0 0; background: linear-gradient(170deg, #f6ecd0, #e8d8af);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, .35), inset 0 1px 0 #fff8e6; animation: duel-sheet-up .38s cubic-bezier(.2, .9, .25, 1.04) both; }
+@keyframes duel-sheet-up { from { transform: translate(-50%, 100%); } }
+@media (min-width: 700px) {
+  .duel-sheet { bottom: auto; top: 50%; width: 420px; border-radius: 18px; transform: translate(-50%, -50%); animation: duel-dlg-in .3s cubic-bezier(.2, .9, .3, 1.2) both; }
+}
+.duel-sheet .grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(94, 74, 51, .35); margin: 0 auto 10px; }
+.duel-sheet h3 { margin: 0; font: 22px var(--font-fell-sc); letter-spacing: .4px; color: var(--binding); text-align: center; }
+.duel-sheet .sub2 { margin: 2px 0 10px; text-align: center; font: italic 15px var(--font-fell); color: var(--inks); }
+.duel-sheet .x { position: absolute; right: 8px; top: 6px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--inks); font-size: 24px; }
+.duel-sheet .pouch { display: block; margin: -4px auto 8px; width: 58px; height: 58px; }
+.duel-sheet .srack { display: flex; justify-content: center; gap: 8px; margin: 4px 0 6px; }
+.duel-sheet .srack .duel-tile { transition: transform .18s var(--out), box-shadow .18s; }
+.duel-sheet .srack .duel-tile[aria-pressed="true"] { transform: translateY(-10px);
+  box-shadow: inset 0 0 0 1px rgba(255, 220, 170, .35), inset 0 -4px 0 rgba(60, 30, 10, .45), 0 12px 14px rgba(0, 0, 0, .3), 0 0 0 2.5px var(--crimson); }
+.duel-sheet .srack .duel-tile[aria-pressed="true"]::after { content: "✓"; position: absolute; top: -8px; right: -7px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--crimson); color: #fff; font: 13px/20px Georgia, serif; text-align: center; }
+.duel-sheet .note { margin: 4px 0 0; text-align: center; font: italic 14.5px var(--font-fell); color: var(--crimson); }
+.duel-sheet .selall { display: block; margin: 4px auto 10px; min-height: 44px; padding: 0 12px; font: 15px var(--font-fell-sc); color: var(--crimson);
+  text-decoration: underline; text-underline-offset: 3px; }
+.duel .bigbtn, .duel-sheet .bigbtn { margin-top: 8px; }
+.duel-sheet .bigbtn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 54px; border-radius: 14px;
+  font: 18px var(--font-fell-sc); letter-spacing: .4px; position: relative; }
+.duel-sheet .bigbtn small { font: italic 13px var(--font-fell); letter-spacing: 0; opacity: .9; }
+.duel-sheet .bigbtn.pri { background: linear-gradient(#8b2b22, #5b1f19); color: var(--onb); border: 1.5px solid var(--brass); box-shadow: 0 3px 0 #2e0e0a; }
+.duel-sheet .bigbtn.pri:disabled { filter: grayscale(.6); opacity: .6; }
+.duel-sheet .bigbtn.sec { background: rgba(255, 255, 255, .35); border: 1.5px dashed rgba(94, 74, 51, .55); color: var(--inks); }
+.duel-sheet .soon { position: absolute; right: 10px; top: -9px; background: #3d5a2a; color: #f4e6c5; font: 11px var(--font-fell-sc); letter-spacing: .6px; padding: 2px 8px; border-radius: 999px; }
+.duel-sheet .bal { display: flex; justify-content: center; gap: 12px; margin: 10px 0 8px; }
+.duel-sheet .bal div { padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, .45); border: 1px solid rgba(138, 116, 82, .45); font: 16px var(--font-fell); }
+.duel-sheet .lbl2 { font: 12px var(--font-fell-sc); letter-spacing: 1.2px; color: #6b5536; margin: 8px 0 2px; }
+.duel-sheet .free { margin: 0 0 4px; font: 15.5px var(--font-fell); }
+.duel-sheet .earn { list-style: none; margin: 0 0 6px; padding: 0; }
+.duel-sheet .earn li { display: flex; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px dashed rgba(138, 116, 82, .45); font: 15.5px var(--font-fell); }
+.duel-sheet .earn li b { margin-left: auto; font: normal 14px var(--font-fell-sc); color: #2f4a20; white-space: nowrap; }
+
+.duel-confirm { position: fixed; left: 50%; top: 50%; width: 296px; transform: translate(-50%, -50%); z-index: 92; color: var(--ink); text-align: center;
+  padding: 18px 18px 16px; border-radius: 16px; background: linear-gradient(160deg, #f6ecd0, #e6d4a8); border: 2px solid var(--brass);
+  box-shadow: 0 0 0 4px rgba(42, 29, 20, .25), 0 18px 40px rgba(0, 0, 0, .45); animation: duel-dlg-in .3s cubic-bezier(.2, .9, .3, 1.2) both; }
+@keyframes duel-dlg-in { from { opacity: 0; transform: translate(-50%, -46%) scale(.9); } }
+.duel-confirm .bigclue { --cell: 86px; width: 86px; height: 86px; margin: 2px auto 10px; border-radius: 8px; display: grid; border: 1.5px solid #9aa0a8; overflow: hidden; }
+.duel-confirm .bigclue .ar-r, .duel-confirm .bigclue .ar-d { display: none; }
+.duel-confirm h4 { margin: 0 0 2px; font: 21px var(--font-fell-sc); color: var(--binding); }
+.duel-confirm p { margin: 0 0 10px; font: italic 15px/1.35 var(--font-fell); color: var(--inks); }
+.duel-confirm .full { font-style: normal; color: var(--ink); }
+.duel-confirm .row { display: flex; gap: 10px; }
+.duel-confirm .row button { flex: 1; min-height: 46px; border-radius: 12px; font: 17px var(--font-fell-sc); }
+.duel-confirm .row .ok { background: linear-gradient(#8b2b22, #5b1f19); color: var(--onb); border: 1.5px solid var(--brass); }
+.duel-confirm .row .no { border: 1.5px solid rgba(94, 74, 51, .55); color: var(--inks); }
 
 /* game over (a stand-in for M4's end screens) */
 .duel-over { position: absolute; left: 50%; top: 40%; width: 280px; margin-left: -140px; padding: 18px; border-radius: 16px; text-align: center; z-index: 70;

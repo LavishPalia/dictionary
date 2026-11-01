@@ -37,10 +37,6 @@ export interface Director {
   /** Motion after the new snapshot is committed (the refill, the turn glow). */
   arrive(events: GameEvent[], who: Who, after: Snapshot): Promise<void>;
   toast(text: string): void;
-  /** Hint glows appear on these cells. */
-  hintOn?(cells: CellId[]): void;
-  /** Word mode lights these answers' clues. */
-  wordMode?(slots: SlotId[]): void;
-  /** Ghost letters fade into these cells. */
+  /** Ghost letters are fading into these cells (already on screen): resolves when they have. */
   ghosts?(cells: CellId[]): Promise<void>;
 }

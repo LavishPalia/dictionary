@@ -10,6 +10,9 @@ import { ActionRow } from './ActionRow';
 import { Board } from './Board';
 import { ClueZoom } from './ClueZoom';
 import { GameOver } from './GameOver';
+import { HelpSheet } from './HelpSheet';
+import { SwapSheet } from './SwapSheet';
+import { WordConfirm } from './WordConfirm';
 import { Rack } from './Rack';
 import { ScoreBar } from './ScoreBar';
 import { useSnapshot } from './useController';
@@ -67,11 +70,17 @@ export function GameScreen({ p, date, ctl, stage, layer, motion, platform }: {
   // The clue zoom stays until the next tap anywhere; a tap on a clue moves or closes it itself.
   const onPointerDown = (e: React.PointerEvent) => {
     platform.sound.unlock();
-    if (!(e.target as HTMLElement).closest('.duel-cl')) ctl.closeZoom();
+    const t = e.target as HTMLElement;
+    if (!t.closest('.duel-cl')) ctl.closeZoom();
+    // Word mode ends with a tap anywhere but a clue or the Word button (UI-DESIGN §3.3).
+    if (ctl.snapshot().wordMode && !t.closest('.duel-clue, [data-act="word"]')) ctl.exitWordMode();
   };
 
+  // While a sheet is open, everything behind it is out of reach (focus, taps, screen readers).
+  const behind = snap.sheet !== null;
   return (
     <div className={`duel-game${snap.busy ? ' busy' : ''}`} ref={root} onPointerDownCapture={onPointerDown}>
+      <div className="duel-main" inert={behind}>
       <header className="duel-top">
         <a className="ib" href={platform.exitHref} aria-label="Back to Panna">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
@@ -87,7 +96,11 @@ export function GameScreen({ p, date, ctl, stage, layer, motion, platform }: {
       </div>
       <Rack snap={snap} ctl={ctl} stage={stage} />
       <ActionRow snap={snap} ctl={ctl} />
+      </div>
       {snap.zoom !== null && <ClueZoom p={p} cell={snap.zoom} stage={stage} />}
+      {snap.sheet?.k === 'swap' && <SwapSheet snap={snap} ctl={ctl} motion={motion} />}
+      {snap.sheet?.k === 'help' && <HelpSheet snap={snap} ctl={ctl} />}
+      {snap.sheet?.k === 'reveal' && <WordConfirm p={p} slot={snap.sheet.slot} ctl={ctl} />}
       {snap.state.over && !snap.busy && <GameOver snap={snap} ctl={ctl} />}
     </div>
   );
