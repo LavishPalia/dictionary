@@ -4,6 +4,7 @@
 import { apply, botTurn, newGame, replay, type Action, type CellId, type GameEvent, type GameState, type Puzzle, type SlotId } from '../../engine';
 import type { Platform } from '../../platform/types';
 import { nextEmpty, slotsThrough, wordCandidates } from './selectors';
+import { withQuill, type QuillVariant } from './quill-variants';
 import type { Director, Pending, SavedGame, Sheet, Snapshot } from './types';
 
 const RESTORE_TOAST = "That game couldn't be restored, so here's a fresh one.";
@@ -35,8 +36,12 @@ export class GameController {
   private lastTap: CellId | null = null;
   private readonly key: string;
 
-  constructor(private p: Puzzle, date: string, private platform: Platform, private director: Director, private opts: { seed?: number } = {}) {
+  /** PLAYTEST ONLY: the Quill variant of this game. */
+  private quill: QuillVariant | undefined;
+
+  constructor(private p: Puzzle, date: string, private platform: Platform, private director: Director, private opts: { seed?: number; quill?: QuillVariant } = {}) {
     this.key = `panna_duel_game:${date}`;
+    this.quill = opts.quill;
     const state = this.restore() ?? this.fresh(opts.seed ?? randomSeed());
     this.snap = this.rest(state);
   }
@@ -65,10 +70,12 @@ export class GameController {
     try {
       if (!saved || typeof saved !== 'object' || saved.puzzleId !== this.p.id || saved.puzzleVersion !== this.p.version
         || !Number.isInteger(saved.seed) || !Array.isArray(saved.log)) throw new Error('not a save');
-      const state = replay(this.p, saved.seed, saved.log);
+      this.quill = saved.quill;
+      const state = withQuill(saved.quill, () => replay(this.p, saved.seed, saved.log));
       this.startedAt = typeof saved.startedAt === 'string' ? saved.startedAt : this.startedAt;
       return state;
     } catch {
+      this.quill = this.opts.quill;
       this.director.toast(RESTORE_TOAST);
       return null;
     }
@@ -84,6 +91,7 @@ export class GameController {
 
   private save(state: GameState) {
     const saved: SavedGame = { puzzleId: this.p.id, puzzleVersion: this.p.version, seed: state.seed, log: state.log, startedAt: this.startedAt };
+    if (this.quill && this.quill !== 'a') saved.quill = this.quill;
     this.platform.storage.set(this.key, saved);
   }
 
@@ -260,7 +268,7 @@ export class GameController {
     let you: { state: GameState; events: GameEvent[] };
     try { you = apply(this.p, this.snap.state, a); } catch { this.director.toast('That move isn’t allowed.'); return; }
     this.save(you.state);
-    const quill = !you.state.over && you.state.turn === 'quill' ? botTurn(this.p, you.state) : null;
+    const quill = !you.state.over && you.state.turn === 'quill' ? withQuill(this.quill, () => botTurn(this.p, you.state)) : null;
 
     this.lastTap = null;
     this.publish({ busy: true, lastQuill: [], lifted: null, zoom: null, wordMode: false, sheet: null });

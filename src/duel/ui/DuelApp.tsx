@@ -31,7 +31,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
       const stage = new Stage();
       const trace: string[] = [];
       const director = new WebDirector(p, stage, layer, platform, motion, flags.test ? trace : undefined);
-      const ctl = new GameController(p, date, platform, director, { seed: flags.seed });
+      const ctl = new GameController(p, date, platform, director, { seed: flags.seed, quill: flags.quill });
       if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace };
       setGame({ p, ctl, stage, layer, motion });
     });

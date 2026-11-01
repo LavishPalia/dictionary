@@ -2,7 +2,11 @@
 import type { Action, CellId, GameEvent, GameState, SlotId, Who } from '../../engine';
 
 /** A game in progress on the device. The state is rebuilt from it with replay() on Continue. */
-export interface SavedGame { puzzleId: string; puzzleVersion: number; seed: number; log: Action[]; startedAt: string }
+export interface SavedGame {
+  puzzleId: string; puzzleVersion: number; seed: number; log: Action[]; startedAt: string;
+  /** PLAYTEST ONLY: the Quill variant the game was played with (absent = a). */
+  quill?: 'a' | 'b';
+}
 
 export type Sheet = null | { k: 'swap' } | { k: 'help'; want: 'hint' | 'word' } | { k: 'reveal'; slot: SlotId };
 

@@ -12,6 +12,8 @@ export interface Flags {
   perf: boolean;
   /** window.__duel is exposed (set when a seed is given). */
   test: boolean;
+  /** PLAYTEST ONLY: Quill's tile count, a = 1–3, b = 1–5 (see controller/quill-variants.ts). */
+  quill?: 'a' | 'b';
 }
 
 export function readFlags(search: string): Flags {
@@ -25,5 +27,6 @@ export function readFlags(search: string): Flags {
     tier: t === 'normal' || t === 'lite' ? t : undefined,
     perf: q.get('perf') === '1',
     test: seed !== undefined,
+    quill: q.get('quill') === 'a' || q.get('quill') === 'b' ? (q.get('quill') as 'a' | 'b') : undefined,
   };
 }
