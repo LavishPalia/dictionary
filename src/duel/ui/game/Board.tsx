@@ -30,7 +30,12 @@ export function Board({ p, snap, ctl, stage, onCell }: { p: Puzzle; snap: Snapsh
   }, [p, snap.state.ghosts, snap.state.filled]);
   const lit = useMemo(() => (snap.wordMode ? wordCandidates(p, snap.state) : []), [p, snap.wordMode, snap.state]);
   const tapClue = useCallback((slot: string) => ctl.tapClue(slot), [ctl]);
+  const focusCell = useCallback((c: CellId) => ctl.focusCell(c), [ctl]);
   const none: string[] = useMemo(() => [], []);
+
+  // The board is one stop in the tab order: the selected answer's next cell, else the first letter cell.
+  const firstLetter = useMemo(() => Math.min(...Object.keys(p.solution).map(Number)), [p]);
+  const stop = ctl.selectedCell() ?? firstLetter;
 
   const view = (c: CellId): CellView => {
     const f = snap.state.filled[c];
@@ -53,7 +58,7 @@ export function Board({ p, snap, ctl, stage, onCell }: { p: Puzzle; snap: Snapsh
     for (let col = 0; col < p.cols; col++) {
       const id = r * p.cols + col;
       if (p.solution[id] !== undefined) {
-        cells.push(<Cell key={id} id={id} row={r} col={col} view={view(id)} stage={stage} onTap={onCell} />);
+        cells.push(<Cell key={id} id={id} row={r} col={col} view={view(id)} stop={id === stop} stage={stage} onTap={onCell} onFocusCell={focusCell} />);
       } else {
         const slots = cluesAt.get(id) ?? [];
         const here = slots.some(s => lit.includes(s.id)) ? lit : none;

@@ -70,6 +70,8 @@ export class GameController {
     try {
       if (!saved || typeof saved !== 'object' || saved.puzzleId !== this.p.id || saved.puzzleVersion !== this.p.version
         || !Number.isInteger(saved.seed) || !Array.isArray(saved.log)) throw new Error('not a save');
+      // PLAYTEST ONLY: a ?quill= flag that differs from the saved game's variant starts a fresh game in it.
+      if (this.opts.quill && this.opts.quill !== (saved.quill ?? 'a')) return null;
       this.quill = saved.quill;
       const state = withQuill(saved.quill, () => replay(this.p, saved.seed, saved.log));
       this.startedAt = typeof saved.startedAt === 'string' ? saved.startedAt : this.startedAt;
@@ -94,6 +96,9 @@ export class GameController {
     if (this.quill && this.quill !== 'a') saved.quill = this.quill;
     this.platform.storage.set(this.key, saved);
   }
+
+  /** PLAYTEST ONLY: the Quill variant this game is played with. */
+  variant(): QuillVariant { return this.quill ?? 'a'; }
 
   /** Play again: a new deal of the same puzzle. */
   newGame() {
@@ -194,14 +199,31 @@ export class GameController {
     return plan !== null && this.place(plan.rackSlot, plan.cell);
   }
 
-  /** Tab / Shift+Tab: the next or previous answer that still has an empty cell. */
-  selectNext(dir: 1 | -1) {
-    if (this.locked) return;
+  /** The selected answer's next empty cell (or its first cell): where keys go, and the board's tab stop. */
+  selectedCell(): CellId | null {
+    const sl = this.p.slots.find(x => x.id === this.snap.selected);
+    if (!sl) return null;
+    return nextEmpty(this.p, this.snap.state, this.snap.pending, sl.id) ?? sl.cells[0];
+  }
+
+  /** A letter cell got keyboard focus: select an answer through it, unless the selected one already is. */
+  focusCell(cell: CellId) {
+    const through = slotsThrough(this.p, cell);
+    if (through.length && !through.some(sl => sl.id === this.snap.selected)) this.publish({ selected: through[0].id });
+  }
+
+  /**
+   * Tab / Shift+Tab: the next or previous answer that still has an empty cell. Returns false (and changes
+   * nothing) past the last or first one, so Tab can leave the board instead of trapping the keyboard.
+   */
+  selectNext(dir: 1 | -1): boolean {
+    if (this.locked) return false;
     const open = this.p.slots.filter(sl => sl.cells.some(c => !this.snap.state.filled[c]));
-    if (!open.length) return;
     const i = open.findIndex(sl => sl.id === this.snap.selected);
-    const next = i < 0 ? (dir > 0 ? open[0] : open[open.length - 1]) : open[(i + dir + open.length) % open.length];
+    const next = i < 0 ? (dir > 0 ? open[0] : open[open.length - 1]) : open[i + dir];
+    if (!next) return false;
     this.publish({ selected: next.id });
+    return true;
   }
 
   backspace(): boolean {
@@ -272,17 +294,23 @@ export class GameController {
 
     this.lastTap = null;
     this.publish({ busy: true, lastQuill: [], lifted: null, zoom: null, wordMode: false, sheet: null });
-    const [youNow, youAfter] = split(you.events);
-    await this.director.resolve(youNow, 'you', this.snap);
-    this.publish({ state: you.state, pending: [], hintOn: false });
-    await this.director.arrive(youAfter, 'you', this.snap);
+    try {
+      const [youNow, youAfter] = split(you.events);
+      await this.director.resolve(youNow, 'you', this.snap);
+      this.publish({ state: you.state, pending: [], hintOn: false });
+      await this.director.arrive(youAfter, 'you', this.snap);
 
-    if (quill) {
-      const [qNow, qAfter] = split(quill.events);
-      await this.director.resolve(qNow, 'quill', this.snap);
-      this.publish({ state: quill.state, lastQuill: quill.state.lastQuill });
-      await this.director.arrive(qAfter, 'quill', this.snap);
+      if (quill) {
+        const [qNow, qAfter] = split(quill.events);
+        await this.director.resolve(qNow, 'quill', this.snap);
+        this.publish({ state: quill.state, lastQuill: quill.state.lastQuill });
+        await this.director.arrive(qAfter, 'quill', this.snap);
+      }
+    } catch {
+      // A failed animation must never lock the game: the result below is already saved.
+    } finally {
+      const end = quill ?? you;
+      this.publish({ state: end.state, pending: [], hintOn: false, lastQuill: quill ? quill.state.lastQuill : [], busy: false });
     }
-    this.publish({ busy: false });
   }
 }

@@ -39,7 +39,8 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
   }, [date, platform, flags]);
 
   if (!game) return <div className="duel-game" aria-busy="true" />;
-  return <GameScreen p={game.p} date={date} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} />;
+  return <GameScreen p={game.p} date={date} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform}
+    playtest={flags.quill ? `Quill ${game.ctl.variant()}` : undefined} />;
 }
 
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {

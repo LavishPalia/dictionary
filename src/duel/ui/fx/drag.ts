@@ -33,6 +33,8 @@ interface Drag {
 export class Input {
   private d: Drag | null = null;
   private off: (() => void)[] = [];
+  /** Keys run one after another, so a letter is planned only after the one before it has landed. */
+  private keys: Promise<unknown> = Promise.resolve();
 
   constructor(private root: HTMLElement, private stage: Stage, private layer: FxLayer, private ctl: GameController,
     private motion: Motion, private platform: Platform) {
@@ -218,19 +220,25 @@ export class Input {
     if (snap.busy || snap.sheet || snap.state.over) return;
     const active = document.activeElement as HTMLElement | null;
     if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
-    const onBoard = !active || active === document.body || !!active.closest('.duel-board');
+    const onBoard = !!active?.closest('.duel-board');
+    const queue = (fn: () => unknown) => { this.keys = this.keys.then(fn, fn); };
     if (/^[a-z]$/i.test(e.key)) {
-      const plan = this.ctl.planType(e.key);
-      if (plan) { e.preventDefault(); void this.flyPlace(plan.rackSlot, plan.cell); }
+      if (!snap.selected) return;
+      e.preventDefault();
+      queue(() => { const plan = this.ctl.planType(e.key); return plan && this.flyPlace(plan.rackSlot, plan.cell); });
     } else if (e.key === 'Backspace') {
-      if (this.ctl.backspace()) e.preventDefault();
-    } else if (e.key === 'Enter' && onBoard) {
       e.preventDefault();
-      void this.ctl.submit();
+      queue(() => this.ctl.backspace());
+    } else if (e.key === 'Enter' && (onBoard || !active || active === document.body)) {
+      e.preventDefault();
+      queue(() => { void this.ctl.submit(); });
     } else if (e.key === 'Tab' && onBoard) {
-      // Tab moves between answers only from the board, so it still reaches the buttons from them.
+      // On the board, Tab moves between answers; past the last (or first) one it leaves the board as usual.
+      if (!this.ctl.selectNext(e.shiftKey ? -1 : 1)) return;
       e.preventDefault();
-      this.ctl.selectNext(e.shiftKey ? -1 : 1);
+      // Focus moves now, not on the next frame: a late focus could pull it back after a later Tab left the board.
+      const cell = this.ctl.selectedCell();
+      if (cell !== null) this.stage.el('cell', cell)?.focus();
     } else if (e.key === 'Escape') {
       this.ctl.tapOutside();
     }

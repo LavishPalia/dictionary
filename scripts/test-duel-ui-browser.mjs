@@ -339,10 +339,14 @@ async function main() {
       await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await sleep(500);
       check('phone: turning the phone mid-drag sends the tile home', (await snap()).pending.length === 0 && await evaluate(`Boolean(document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile'))`));
+      check('phone: on its side, the phone asks to be turned upright', await evaluate(`getComputedStyle(document.querySelector('.duel-rotate')).display !== 'none'`));
+      await setSize({ width: 412, height: 860, mobile: true });
+      await sleep(400);
+      check('phone: upright again, the note goes', await evaluate(`getComputedStyle(document.querySelector('.duel-rotate')).display === 'none'`));
       await drag(`[data-rack="${t0.rackSlot}"] .duel-tile`, await aimAt(t0.cell));
       await sleep(500);
       s = await snap();
-      check('phone: after turning, a drop lands on the cell under it', s.pending.length === 1 && s.pending[0].cell === t0.cell, s.pending);
+      check('phone: after a size change, a drop lands on the cell under it', s.pending.length === 1 && s.pending[0].cell === t0.cell, s.pending);
       await setSize(phone);
       await sleep(300);
     }
@@ -492,6 +496,10 @@ async function main() {
     s = await snap();
     check('swap: with an empty bag, Swap is off', s.state.over || await evaluate(`document.querySelector('[data-act="swap"]').disabled && document.querySelector('[data-act="swap"]').getAttribute('aria-label') === 'Swap: the bag is empty'`));
 
+    // the playtest flag shows which Quill is live
+    await open(`${GAME}?seed=7&quill=b`, { clear: true });
+    check('playtest: ?quill=b shows "Quill b" under the title', (await evaluate(`document.querySelector('.duel-variant')?.textContent`)) === 'Quill b');
+
     // ── Desktop ──
     await setSize(desktop);
     await open(`${GAME}?seed=7`, { clear: true });
@@ -510,12 +518,27 @@ async function main() {
       await sleep(400);
     }
 
-    // keyboard: Tab to an answer, type, Backspace, Enter
-    await evaluate('document.activeElement?.blur(); true');
+    // keyboard: Tab reaches every control (no trap), the board is one stop, Tab inside it moves between answers
+    const focusBoard = () => evaluate(`(() => { const el = document.querySelector('.duel-board [tabindex="0"]'); el?.focus(); return Boolean(el); })()`);
+    await evaluate(`document.querySelector('.duel-top a').focus(); true`); // start at the top of the page
+    const stops = [];
+    for (let i = 0; i < 60; i++) { // the board takes one Tab per open answer (27 in the fixture)
+      await key('Tab');
+      stops.push(await evaluate(`(() => { const a = document.activeElement; return a?.dataset?.act ?? (a?.closest?.('.duel-board') ? 'board' : a?.tagName); })()`));
+      if (stops.at(-1) === 'hint') break;
+    }
+    const firstSwap = stops.indexOf('swap');
+    check('desktop: Tab from the top reaches the board and then every button (no trap)', stops.includes('board') && ['swap', 'submit', 'word', 'hint'].every((b) => stops.includes(b)), stops);
+    check('desktop: once Tab leaves the board, focus never jumps back into it', firstSwap > 0 && !stops.slice(firstSwap).includes('board'), stops);
+    check('desktop: the board has exactly one tab stop', await evaluate(`document.querySelectorAll('.duel-board [tabindex="0"], .duel-board button:not([tabindex="-1"])').length === 1`));
+    // Focusing the first letter cell selects the first answer (the Tab walk above left the last one selected).
+    await evaluate(`document.querySelector('.duel-board .duel-l').focus(); true`);
+    s = await snap();
+    const firstSel = s.selected;
     await key('Tab');
     s = await snap();
     const sel = P0.slots.find((x) => x.id === s.selected);
-    check('desktop: Tab selects an answer', Boolean(sel), s.selected);
+    check('desktop: Tab on the board moves to the next answer', Boolean(sel) && s.selected !== firstSel && await evaluate(`Boolean(document.activeElement?.closest('.duel-board'))`), { firstSel, now: s.selected });
     {
       const rack = s.state.racks.you;
       const l1 = rack.find((l) => l);
@@ -535,15 +558,37 @@ async function main() {
       check('desktop: Enter submits the typed tiles', last?.t === 'submit' && JSON.stringify(last.place.map((x) => x.cell)) === JSON.stringify(placed), last);
     }
 
+    // fast typing: three letters and Enter with no pause all land and are submitted
+    {
+      await focusBoard();
+      for (let i = 0; i < P0.slots.length; i++) {
+        const now = await snap();
+        const sl = P0.slots.find((x) => x.id === now.selected);
+        if (sl && sl.cells.filter((c) => !now.state.filled[c]).length >= 3) break;
+        await key('Tab');
+        if (!(await evaluate(`Boolean(document.activeElement?.closest('.duel-board'))`))) await focusBoard();
+      }
+      const now = await snap();
+      const three = now.state.racks.you.filter((l) => l).slice(0, 3);
+      const before = now.state.log.length;
+      for (const l of three) await key(l.toLowerCase(), `Key${l}`, l.toLowerCase());
+      await key('Enter');
+      await waitFor(`window.__duel.snapshot().state.log.length > ${before}`, 5000);
+      await idle();
+      const last = (await snap()).state.log.at(-1);
+      check('desktop: three fast letters and Enter submit all three tiles', last?.t === 'submit' && last.place.length === 3, last);
+    }
+
     // a full game by keyboard (reduced motion)
     await reduce(true);
     await open(`${GAME}?seed=11`, { clear: true });
-    await evaluate('document.activeElement?.blur(); true');
     for (let turn = 0; turn < 80; turn++) {
       s = await snap();
       if (s.state.over) break;
+      await focusBoard();
       for (let tabs = 0; tabs < P0.slots.length; tabs++) {
-        await key('Tab');
+        if (tabs > 0) await key('Tab');
+        if (!(await evaluate(`Boolean(document.activeElement?.closest('.duel-board'))`))) break;
         for (let typed = 0; typed < 5; typed++) {
           const now = await snap();
           const slot = P0.slots.find((x) => x.id === now.selected);
@@ -555,6 +600,7 @@ async function main() {
           await sleep(140);
         }
       }
+      await focusBoard();
       await key('Enter');
       await sleep(100);
       await idle();

@@ -222,6 +222,42 @@ async function controllerChecks() {
   c = new GameController(p0, DATE, pf, new NullDirector(), { seed: 11 });
   for (let i = 0; i < 3; i++) await c.pass();
   check('no flag: Quill plays variant a', JSON.stringify(c.snapshot().state) === JSON.stringify(under('a', passes)) && pf.storage.get<SavedGame>(KEY)?.quill === undefined);
+  // review: the URL's variant wins over a saved game from the other variant (else a playtest silently runs as the wrong one)
+  {
+    const c2 = new GameController(p0, DATE, pf, new NullDirector(), { seed: 11, quill: 'b' });
+    check('?quill=b over a saved variant-a game starts a fresh b game', c2.snapshot().state.log.length === 0 && c2.variant() === 'b' && pf.storage.get<SavedGame>(KEY)?.quill === 'b');
+    for (let i = 0; i < 3; i++) await c2.pass();
+    check('…and Quill plays b in it', JSON.stringify(c2.snapshot().state) === JSON.stringify(under('b', passes)));
+    c2.newGame();
+    check('Play again keeps the URL variant', c2.variant() === 'b' && pf.storage.get<SavedGame>(KEY)?.quill === 'b');
+    const c3 = new GameController(p0, DATE, pf, new NullDirector());
+    check('no flag: Continue keeps the saved variant', c3.variant() === 'b');
+  }
+
+  // review: a director that throws must not lock the game
+  {
+    pf = memoryPlatform();
+    const broken: Director = { resolve: async () => { throw new Error('boom'); }, arrive: async () => {}, toast() {} };
+    c = new GameController(p0, DATE, pf, broken, { seed: 123 });
+    const [t] = correctPlacements(c); c.place(t.rackSlot, t.cell);
+    let threw = false;
+    try { await c.submit(); } catch { threw = true; }
+    const snap = c.snapshot();
+    check('a failing animation still ends the turn: not busy, the move and Quill’s reply applied', !threw && !snap.busy && snap.state.log.length === 1 && snap.state.turn === 'you' && snap.pending.length === 0);
+  }
+
+  // Tab order: answers in order, and Tab leaves the board after the last (no keyboard trap)
+  {
+    pf = memoryPlatform();
+    c = new GameController(p0, DATE, pf, new NullDirector(), { seed: 123 });
+    const open = p0.slots.filter(sl => sl.cells.some(x => !c.snapshot().state.filled[x])).map(sl => sl.id);
+    check('Tab from nothing selects the first open answer', c.selectNext(1) && c.snapshot().selected === open[0]);
+    check('Shift+Tab from the first answer leaves the board', !c.selectNext(-1) && c.snapshot().selected === open[0]);
+    c.select(open[open.length - 1]);
+    check('Tab from the last answer leaves the board', !c.selectNext(1) && c.snapshot().selected === open[open.length - 1]);
+    c.select(open[0]);
+    check('Tab moves to the next open answer', c.selectNext(1) && c.snapshot().selected === open[1]);
+  }
 
   // subscribe
   let heard = 0; const off = c.subscribe(() => heard++);

@@ -28,7 +28,7 @@ export const ClueCell = memo(function ClueCell({ id, slots, lit, stage, onTap }:
     return <div role="gridcell" className="duel-cell duel-cl orn" data-cell={id} aria-label="Blank">{id === 0 ? '' : <span aria-hidden="true">❦</span>}</div>;
   }
   const half = (s: Slot) => (
-    <button type="button" key={s.id} className={`duel-clue${lit.includes(s.id) ? ' cand' : ''}`} data-slot={s.id} aria-label={clueLabel(s)}
+    <button type="button" key={s.id} tabIndex={-1} className={`duel-clue${lit.includes(s.id) ? ' cand' : ''}`} data-slot={s.id} aria-label={clueLabel(s)}
       style={lit.includes(s.id) ? ({ '--cd': `${lit.indexOf(s.id) * WORD_STAGGER}ms` } as React.CSSProperties) : undefined}
       onClick={(e) => { e.stopPropagation(); onTap(s.id); }}>
       <ClueFace slot={s} />
