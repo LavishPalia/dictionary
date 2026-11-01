@@ -165,6 +165,9 @@ export class GameController {
     this.publish({ zoom: this.snap.zoom === sl.clueCell ? null : sl.clueCell, selected: slot });
   }
 
+  /** Any tap away from the clues closes the zoom (UI-DESIGN §0: it stays until the next tap). */
+  closeZoom() { if (this.snap.zoom !== null) this.publish({ zoom: null }); }
+
   tapOutside() {
     if (this.snap.zoom !== null || this.snap.wordMode) this.publish({ zoom: null, wordMode: false });
   }

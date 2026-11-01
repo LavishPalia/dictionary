@@ -1,0 +1,3 @@
+Pictures: Twemoji 15.1 (https://github.com/jdecked/twemoji)
+Twemoji © Twitter, Inc and other contributors, licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Changed for Panna Duel: a thin ink outline added to each shape (scripts/duel/pics-outline.ts).
