@@ -2,4 +2,4 @@
 export const RULES_VERSION = 1;
 export * from './types';
 export { checkPuzzleShape } from './puzzle';
-export { checkInvariant, emptyCells, newGame } from './game';
+export { apply, checkInvariant, emptyCells, newGame } from './game';

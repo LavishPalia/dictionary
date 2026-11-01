@@ -1,7 +1,8 @@
 // A game from start to finish: the deal and the player's actions.
-import { emptyCells, RACK_SIZE } from './board';
+import { checkInvariant, emptyCells, RACK_SIZE } from './board';
 import { seedRng, shuffle } from './rng';
-import type { GameState, Puzzle } from './types';
+import { resolvePlacement } from './score';
+import type { Action, GameEvent, GameState, Puzzle } from './types';
 
 export { checkInvariant, emptyCells } from './board';
 
@@ -20,4 +21,41 @@ export function newGame(p: Puzzle, seed: number): GameState {
   s.racks.you = s.bag.splice(0, RACK_SIZE);
   s.racks.quill = s.bag.splice(0, RACK_SIZE);
   return s;
+}
+
+const illegal = (why: string): never => { throw new Error(`illegal: ${why}`); };
+
+/** Applies one of the player's actions to a copy of the state. Throws on an illegal action. */
+export function apply(p: Puzzle, state: GameState, a: Action): { state: GameState; events: GameEvent[] } {
+  if (state.over) illegal('the game is over');
+  if (state.turn !== 'you') illegal('it is not your turn');
+  const s: GameState = JSON.parse(JSON.stringify(state));
+  s.log.push(a);
+  let events: GameEvent[];
+
+  switch (a.t) {
+    case 'submit': {
+      if (!a.place.length) illegal('nothing placed');
+      const cells = new Set<number>(), slots = new Set<number>();
+      for (const { cell, rackSlot } of a.place) {
+        if (!Number.isInteger(rackSlot) || rackSlot < 0 || rackSlot >= RACK_SIZE) illegal(`rack slot ${rackSlot}`);
+        if (s.racks.you[rackSlot] == null) illegal(`rack slot ${rackSlot} is empty`);
+        if (slots.has(rackSlot)) illegal(`rack slot ${rackSlot} used twice`);
+        if (p.solution[cell] === undefined) illegal(`cell ${cell} is not a letter cell`);
+        if (s.filled[cell]) illegal(`cell ${cell} is already filled`);
+        if (cells.has(cell)) illegal(`cell ${cell} used twice`);
+        cells.add(cell); slots.add(rackSlot);
+      }
+      s.passStreak = 0;
+      s.lastQuill = [];
+      events = resolvePlacement(p, s, 'you', a.place.map(({ cell, rackSlot }) => ({ cell, rackSlot, letter: s.racks.you[rackSlot]! })));
+      break;
+    }
+    default:
+      return illegal(`unknown action ${(a as Action).t}`);
+  }
+
+  const broken = checkInvariant(p, s);
+  if (broken) throw new Error(`engine bug: ${broken}`);
+  return { state: s, events };
 }
