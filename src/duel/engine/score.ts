@@ -47,11 +47,11 @@ export function endTurn(p: Puzzle, s: GameState, who: Who, events: GameEvent[]) 
 export function resolvePlacement(p: Puzzle, s: GameState, who: Who, tiles: Placed[]): GameEvent[] {
   const events: GameEvent[] = [];
   const rack = s.racks[who];
-  const inRack = rack.filter(l => l !== null).length;
   const judged = tiles.map(t => ({ ...t, ok: p.solution[t.cell] === t.letter }));
   const right = judged.filter(t => t.ok), wrong = judged.filter(t => !t.ok);
 
-  if (wrong.length === 0 && tiles.length === inRack) {
+  // Empty hand is a full rack of 5 played right in one turn, not the last few tiles of the game.
+  if (wrong.length === 0 && tiles.length === RACK_SIZE) {
     events.push({ e: 'emptyHand', who, points: 5 });
     addScore(s, who, 5, events);
   }
@@ -63,7 +63,8 @@ export function resolvePlacement(p: Puzzle, s: GameState, who: Who, tiles: Place
 
   const placedNow = new Set(right.map(t => t.cell));
   const finished = p.slots
-    .filter(sl => sl.cells.some(c => placedNow.has(c)) && sl.cells.every(c => s.filled[c]))
+    // A one-letter answer (a border clue like "Roman 500" = D) is a clue, not a word: no bonus.
+    .filter(sl => sl.cells.length >= 2 && sl.cells.some(c => placedNow.has(c)) && sl.cells.every(c => s.filled[c]))
     .sort((a, b) => a.cells.length - b.cells.length || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const sl of finished) {
     events.push({ e: 'word', who, slot: sl.id, points: sl.cells.length });

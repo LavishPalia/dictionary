@@ -119,7 +119,19 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   const sD = arrange({ fill: [65, 67, 74], you: ['T'] });
   const rD = apply(p0, sD, { t: 'submit', place: [{ cell: 66, rackSlot: 0 }] });
   check('D: both words pay, shortest first', words(rD.events).map(w => w.points).join() === '2,3', words(rD.events));
-  check('D: 1 tile + 2 + 3 + empty hand 5 = 11', rD.state.scores.you === 11, rD.state.scores);
+  check('D: 1 tile + 2 + 3 = 6 (the last tile in the rack is no empty hand)', rD.state.scores.you === 6 && !rD.events.some(e => e.e === 'emptyHand'), rD.state.scores);
+
+  // D2: the end of the game: 3 tiles left in the rack, all 3 right → no empty hand (it needs a full rack of 5)
+  const rD2 = apply(p0, arrange({ fill: allCellsBut([65, 66, 67]), you: ['E', 'T', 'A'] }), { t: 'submit', place: [{ cell: 65, rackSlot: 0 }, { cell: 66, rackSlot: 1 }, { cell: 67, rackSlot: 2 }] });
+  check('D2: 3 of 3 right at the end: no empty hand', !rD2.events.some(e => e.e === 'emptyHand'), kinds(rD2.events));
+
+  // D3: a one-letter answer gets no word bonus
+  {
+    const p1: Puzzle = JSON.parse(JSON.stringify(p0));
+    p1.slots.push({ id: 'd:1:3', dir: 'd', cells: [11], answer: 'D', clueCell: 3, clue: { kind: 'abbr', text: 'Roman 500', full: 'Roman 500' }, sense: { en: 'Roman 500', hi: '' } });
+    const rD3 = apply(p1, arrange({ you: ['D'] }), { t: 'submit', place: [{ cell: 11, rackSlot: 0 }] });
+    check('D3: a one-letter answer pays only its tile', rD3.state.scores.you === 1 && !rD3.events.some(e => e.e === 'word'), kinds(rD3.events));
+  }
 
   // E: whole rack, one wrong → no empty hand
   const rE = apply(p0, sB, { t: 'submit', place: [{ cell: 9, rackSlot: 0 }, { cell: 10, rackSlot: 1 }, { cell: 11, rackSlot: 2 }, { cell: 12, rackSlot: 3 }, { cell: 14, rackSlot: 4 }] });
@@ -140,7 +152,7 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   const rEnd = apply(p0, sEnd, { t: 'submit', place: [{ cell: 9, rackSlot: 0 }, { cell: 10, rackSlot: 1 }] });
   const over = rEnd.events.at(-1) as Extract<GameEvent, { e: 'gameOver' }>;
   check('end: filling the last cell ends the game', rEnd.state.over && over?.e === 'gameOver' && !rEnd.events.some(e => e.e === 'turn'), kinds(rEnd.events));
-  check('end: 10 + 2 + ITS 3 + NOTION 6 + INDULGE 7 + empty hand 5 = 33, a win', rEnd.state.scores.you === 33 && over.result === 'win', rEnd.state.scores);
+  check('end: 10 + 2 + ITS 3 + NOTION 6 + INDULGE 7 = 28 (2 last tiles are no empty hand), a win', rEnd.state.scores.you === 28 && over.result === 'win', rEnd.state.scores);
   check('end: no moves after the game is over', throws(() => apply(p0, rEnd.state, { t: 'pass' })));
 }
 
