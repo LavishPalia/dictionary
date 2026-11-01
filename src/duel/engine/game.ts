@@ -1,7 +1,7 @@
 // A game from start to finish: the deal and the player's actions.
 import { checkInvariant, emptyCells, RACK_SIZE } from './board';
-import { seedRng, shuffle } from './rng';
-import { resolvePlacement } from './score';
+import { nextInt, seedRng, shuffle } from './rng';
+import { endTurn, resolvePlacement } from './score';
 import type { Action, GameEvent, GameState, Puzzle } from './types';
 
 export { checkInvariant, emptyCells } from './board';
@@ -51,6 +51,41 @@ export function apply(p: Puzzle, state: GameState, a: Action): { state: GameStat
       events = resolvePlacement(p, s, 'you', a.place.map(({ cell, rackSlot }) => ({ cell, rackSlot, letter: s.racks.you[rackSlot]! })));
       break;
     }
+    case 'pass':
+      s.passStreak++;
+      s.lastQuill = [];
+      events = [{ e: 'passed', who: 'you', streak: s.passStreak }];
+      endTurn(p, s, 'you', events);
+      break;
+    case 'swap': {
+      const picked = new Set(a.rackSlots);
+      if (!a.rackSlots.length || a.rackSlots.length > RACK_SIZE) illegal(`swap of ${a.rackSlots.length} tiles`);
+      if (picked.size !== a.rackSlots.length) illegal('the same rack slot twice');
+      for (const i of a.rackSlots) if (!Number.isInteger(i) || i < 0 || i >= RACK_SIZE || s.racks.you[i] == null) illegal(`rack slot ${i} is empty`);
+      if (a.rackSlots.length > s.bag.length) illegal(`swap of ${a.rackSlots.length} with ${s.bag.length} in the bag`);
+      // Draw the new tiles first, so a swapped tile can't come straight back.
+      const old = a.rackSlots.map(i => s.racks.you[i]!);
+      for (const i of a.rackSlots) s.racks.you[i] = s.bag.shift()!;
+      for (const l of old) s.bag.splice(nextInt(s.rng.bag, s.bag.length + 1), 0, l);
+      s.passStreak++;
+      s.lastQuill = [];
+      events = [{ e: 'swapped', rackSlots: [...a.rackSlots] }, { e: 'passed', who: 'you', streak: s.passStreak }];
+      endTurn(p, s, 'you', events);
+      break;
+    }
+    case 'reveal': {
+      const slot = p.slots.find(sl => sl.id === a.slot);
+      if (!slot) illegal(`no slot ${a.slot}`);
+      if (s.ghosts.includes(a.slot)) illegal(`slot ${a.slot} is already revealed`);
+      const cells = slot!.cells.filter(c => !s.filled[c]);
+      if (!cells.length) illegal(`slot ${a.slot} is finished`);
+      s.ghosts.push(a.slot);
+      events = [{ e: 'ghosts', slot: a.slot, cells }];
+      break;
+    }
+    case 'hint':
+      events = [];
+      break;
     default:
       return illegal(`unknown action ${(a as Action).t}`);
   }

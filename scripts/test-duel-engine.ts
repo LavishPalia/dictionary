@@ -139,5 +139,47 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   check('end: no moves after the game is over', throws(() => apply(p0, rEnd.state, { t: 'pass' })));
 }
 
+// ---------- pass, swap, reveal, hint ----------
+{
+  const s = newGame(p0, 9);
+  const rP = apply(p0, s, { t: 'pass' });
+  check('pass ends the turn, streak 1', rP.state.turn === 'quill' && rP.state.passStreak === 1 && kinds(rP.events) === 'passed,turn', kinds(rP.events));
+  check('pass is logged and changes no score', rP.state.log.at(-1)?.t === 'pass' && rP.state.scores.you === 0);
+
+  const rS = apply(p0, s, { t: 'swap', rackSlots: [0, 1] });
+  check('swap keeps the invariant and ends the turn', checkInvariant(p0, rS.state) === null && rS.state.turn === 'quill');
+  check('swap events: swapped, passed, turn', kinds(rS.events) === 'swapped,passed,turn', kinds(rS.events));
+  check('swap is reproducible', JSON.stringify(apply(p0, s, { t: 'swap', rackSlots: [0, 1] }).state) === JSON.stringify(rS.state));
+  check('swap draws new tiles before the old ones go back', rS.state.racks.you[0] === s.bag[0] && rS.state.racks.you[1] === s.bag[1]);
+  check('swap leaves the other slots alone', rS.state.racks.you.slice(2).join() === s.racks.you.slice(2).join());
+  check('swap counts as a pass for the streak', rS.state.passStreak === 1);
+
+  // 11 empty cells: INDULGE (9–15) + 17 18 20 21 → you 5, Quill 5, bag 1
+  const low = arrange({ fill: allCellsBut([9, 10, 11, 12, 13, 14, 15, 17, 18, 20, 21]), you: ['I', 'N', 'D', 'U', 'L'], quill: ['G', 'E', 'T', 'O', 'R'] });
+  check('low-bag position: bag holds 1, invariant holds', low.bag.length === 1 && checkInvariant(p0, low) === null, low.bag);
+  check('swapping more tiles than the bag holds is illegal', throws(() => apply(p0, low, { t: 'swap', rackSlots: [0, 1] })));
+  check('swapping as many as the bag holds is fine', apply(p0, low, { t: 'swap', rackSlots: [0] }).state.bag.length === 1);
+  check('swap of 0 tiles is illegal', throws(() => apply(p0, s, { t: 'swap', rackSlots: [] })));
+  check('swap of the same slot twice is illegal', throws(() => apply(p0, s, { t: 'swap', rackSlots: [2, 2] })));
+  check('swap of an empty slot is illegal', throws(() => apply(p0, arrange({ fill: [65, 67, 74], you: ['T'] }), { t: 'swap', rackSlots: [1] })));
+
+  const slot0 = p0.slots[0].id;
+  const rR = apply(p0, s, { t: 'reveal', slot: slot0 });
+  check('reveal adds ghosts and keeps your turn', rR.state.ghosts.join() === slot0 && rR.state.turn === 'you');
+  check('reveal reports the slot’s empty cells', rR.events.length === 1 && rR.events[0].e === 'ghosts' && rR.events[0].cells.join() === p0.slots[0].cells.join());
+  check('revealing the same slot twice is illegal', throws(() => apply(p0, rR.state, { t: 'reveal', slot: slot0 })));
+  check('revealing an unknown slot is illegal', throws(() => apply(p0, s, { t: 'reveal', slot: 'a:99:99' })));
+  const full = apply(p0, arrange({ fill: [65, 67, 74], you: ['T'] }), { t: 'submit', place: [{ cell: 66, rackSlot: 0 }] }).state;
+  check('revealing a finished slot is illegal', throws(() => apply(p0, { ...full, turn: 'you' }, { t: 'reveal', slot: 'a:8:1' })));
+
+  const rH = apply(p0, s, { t: 'hint' });
+  check('hint keeps your turn and is logged', rH.state.turn === 'you' && rH.state.log.at(-1)?.t === 'hint' && rH.events.length === 0);
+
+  let x = s;
+  for (let i = 0; i < 100; i++) { x = apply(p0, x, { t: 'pass' }).state; x = { ...x, turn: 'you' }; }
+  check('100 passes in a row stay legal', x.passStreak === 100);
+  check('a submit resets the pass streak', apply(p0, x, { t: 'submit', place: [{ cell: p0.slots[0].cells[0], rackSlot: 0 }] }).state.passStreak === 0);
+}
+
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }
 console.log('\nAll duel engine checks passed.');
