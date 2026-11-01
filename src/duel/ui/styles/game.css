@@ -40,7 +40,6 @@
 .duel .ttl { margin: 0; text-align: center; font-size: 12px; line-height: 1.05; font-weight: normal; }
 .duel .ttl b { display: block; font: normal 17px var(--font-fell-sc); color: var(--binding); letter-spacing: .6px; }
 .duel .ttl i { font-size: 12px; color: #5b616b; }
-.duel .duel-variant { display: block; margin-top: 2px; font: 11px var(--font-fell-sc); color: #fff; background: var(--blue); border-radius: 6px; padding: 0 6px; }
 
 /* score bar */
 .duel-score { display: flex; align-items: center; gap: 8px; padding: 4px 12px 8px; flex: none; }
@@ -122,6 +121,9 @@
 .duel-tile.pend { position: absolute; inset: 2px; width: auto; height: auto; transform: translateY(-2px); border-radius: 5px; cursor: grab; z-index: 2; }
 .duel-tile.pend .lt { font-size: calc(var(--cell) * .54); }
 [data-fx-hidden] { visibility: hidden; }
+/* round 3: a letter square under a green (red) box is tinted to match, until its badge lands */
+.duel-cell[data-fx-tint="ok"] { box-shadow: inset 0 0 0 999px rgba(47, 158, 68, .22); }
+.duel-cell[data-fx-tint="bad"] { box-shadow: inset 0 0 0 999px rgba(224, 49, 49, .2); }
 /* a new rack tile waiting for Quill's turn to end */
 .duel-tile[data-held] { opacity: 0; pointer-events: none; }
 /* the drop target under a dragged tile: a brass ring that pops in */
@@ -238,6 +240,7 @@
 .duel-fx .fx-tile.ok { box-shadow: inset 0 0 0 1px rgba(255, 220, 170, .35), 0 0 0 3px var(--ok), 0 0 16px rgba(47, 158, 68, .85); }
 .duel-fx .fx-tile.bad { box-shadow: inset 0 0 0 1px rgba(255, 220, 170, .35), 0 0 0 3px var(--bad), 0 0 16px rgba(224, 49, 49, .85); }
 .duel-fx .fx-tile.bad::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(224, 49, 49, .28); }
+.duel-fx .fx-tile.ok::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(47, 158, 68, .3); }
 .duel-fx .mark { position: absolute; top: -10px; right: -10px; min-width: 24px; height: 19px; padding: 0 4px; border-radius: 7px; display: grid; place-items: center;
   font: 700 13px/1 var(--letters); color: #fff; z-index: 4; box-shadow: 0 2px 4px rgba(0, 0, 0, .35); animation: duel-mark-in .22s var(--spring) both; }
 .duel-fx .mark.up { background: var(--ok); }

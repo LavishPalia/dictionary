@@ -219,14 +219,16 @@ async function main() {
     await axe('phone: the game screen');
 
     // a full game by tap
-    let turns = 0;
+    let turns = 0, emptyRack = 0;
     for (; turns < 60; turns++) {
       s = await snap();
       if (s.state.over) break;
+      if (s.state.racks.you.every((l) => l === null)) emptyRack++;
       if (!(await tapTurn(correctPlacements(s.state)))) break;
     }
     s = await snap();
     check('phone: a full game by tap ends', s.state.over, { turns, log: s.state.log.length });
+    check('round 3: you never get a turn with an empty rack, so you never have to pass', emptyRack === 0 && s.state.log.every((a) => a.t === 'submit'), { emptyRack, kinds: s.state.log.map((a) => a.t) });
     const over = await evaluate(`document.querySelector('.duel-over')?.textContent ?? ''`);
     check('phone: the game-over card says who won and the score', /You (win|lose|tie)/.test(over) && over.includes(`${s.state.scores.you} to ${s.state.scores.quill}`), over);
     await tap('.duel-over button');
@@ -245,8 +247,14 @@ async function main() {
     await open(`${GAME}?seed=7`, { clear: true });
     // watch the screen through the turn: the boxes, the Empty hand card, and the rack while Quill moves
     await evaluate(`(() => {
-      const o = window.__obs = { wordbox: 0, oldFx: 0, settled: 0, heldWhileQuill: -1, shownWhileQuill: -1, emptyBg: '', emo: '' };
+      const o = window.__obs = { wordbox: 0, oldFx: 0, settled: 0, heldWhileQuill: -1, shownWhileQuill: -1, emptyBg: '', emo: '', okTint: 0, okTintBg: '', wordTint: 0, tintNoBox: 0 };
       window.__obsT = setInterval(() => {
+        // round 3: letter squares under a green box are tinted green, and only while a box shows
+        const tinted = document.querySelectorAll('.duel-cell[data-fx-tint="ok"]');
+        const boxes = document.querySelectorAll('.duel-fx .fx-tile.ok, .duel-fx .fx-tile.bad, .duel-fx .wordbox').length;
+        if (tinted.length && document.querySelector('.duel-fx .fx-tile.ok')) { o.okTint++; o.okTintBg = getComputedStyle(tinted[0]).boxShadow; }
+        if (document.querySelector('.duel-fx .wordbox') && tinted.length >= 2) o.wordTint++;
+        if (document.querySelector('.duel-cell[data-fx-tint]') && !boxes) o.tintNoBox++;
         if (document.querySelector('.duel-fx .wordbox')) o.wordbox++;
         if (document.querySelector('.duel-fx .seal, .duel-fx .glow, .duel-fx .chip.gold')) o.oldFx++;
         if (document.querySelector('.duel-fx .fx-settled')) o.settled++;
@@ -273,6 +281,9 @@ async function main() {
     check('normal: the Empty hand card is see-through, with 🎉', obs.emptyBg === 'none|rgba(0, 0, 0, 0)' && obs.emo === '🎉', obs);
     check('normal: right tiles lose their box once their point lands', obs.settled > 0, obs);
     check('normal: a finished word gets a green box (no gold glow or wax seal)', wordSeen && obs.wordbox > 0 && obs.oldFx === 0, { wordSeen, ...obs });
+    check("round 3: a right tile's letter square is tinted green while its box shows", obs.okTint > 0 && obs.okTintBg.includes('rgba(47, 158, 68'), obs);
+    check("round 3: a finished word's letter squares are tinted green while its box shows", obs.wordTint > 0, obs);
+    check('round 3: no square stays tinted once its badge has landed', obs.tintNoBox === 0, obs);
     check('normal: while Quill moves, your 5 new tiles are held out of sight', obs.heldWhileQuill === 5 && obs.shownWhileQuill === 0, obs);
     check('normal: your score moves badge by badge (+5, then +1 per tile)', firstSteps[0] === 5 && firstSteps.slice(1, 6).join() === '6,7,8,9,10', firstSteps);
     const mine = trace.filter((t) => t.startsWith('you:'));
@@ -301,7 +312,14 @@ async function main() {
       const right = correctPlacements(s.state, 1);
       const wrong = wrongPlacements(s.state, 2, new Set(right.map((t) => t.rackSlot)));
       await evaluate('window.__duel.trace.length = 0; true');
+      await evaluate(`(() => { const o = window.__bad = { tint: 0, bg: '', tile: '' }; window.__badT = setInterval(() => {
+        const c = document.querySelector('.duel-cell[data-fx-tint="bad"]'), t = document.querySelector('.duel-fx .fx-tile.bad');
+        if (c && t) { o.tint++; o.bg = getComputedStyle(c).boxShadow; o.tile = getComputedStyle(t, '::after').backgroundColor; }
+      }, 25); return true; })()`);
       await tapTurn([...right, ...wrong]);
+      const bad = await evaluate('clearInterval(window.__badT); window.__bad');
+      check("round 3: a wrong tile's letter square and tile are tinted red while its box shows", bad.tint > 0 && bad.bg.includes('rgba(224, 49, 49') && bad.tile.includes('224, 49, 49'), bad);
+      check('round 3: every tint is gone at rest', await evaluate(`document.querySelectorAll('.duel-cell[data-fx-tint]').length === 0`));
       trace = await evaluate('window.__duel.trace.slice()');
       const shown = trace.filter((t) => t.startsWith('score:you:')).map((t) => Number(t.split(':')[2]));
       check('normal: 1 right and 2 wrong from 0 never shows a negative score', shown.length > 0 && shown.every((n) => n >= 0), shown);
@@ -526,9 +544,9 @@ async function main() {
     s = await snap();
     check('swap: with an empty bag, Swap is off', s.state.over || await evaluate(`document.querySelector('[data-act="swap"]').disabled && document.querySelector('[data-act="swap"]').getAttribute('aria-label') === 'Swap: the bag is empty'`));
 
-    // the playtest flag shows which Quill is live
+    // the ?quill= playtest flag is gone
     await open(`${GAME}?seed=7&quill=b`, { clear: true });
-    check('playtest: ?quill=b shows "Quill b" under the title', (await evaluate(`document.querySelector('.duel-variant')?.textContent`)) === 'Quill b');
+    check('round 3: ?quill=b no longer shows a playtest label', (await evaluate(`document.querySelector('.duel-variant') === null`)));
 
     // ── Desktop ──
     await setSize(desktop);

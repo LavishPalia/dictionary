@@ -1,8 +1,7 @@
 // The Duel UI's logic that runs without a browser: the router, URL flags, tiers and the game controller.
 // Usage: npx tsx scripts/test-duel-controller.ts
 import { readFileSync } from 'node:fs';
-import { BOT, emptyCells, replay, type Action, type CellId, type Puzzle } from '../src/duel/engine';
-import { QUILL_VARIANTS } from '../src/duel/ui/controller/quill-variants';
+import { emptyCells, replay, type CellId, type Puzzle } from '../src/duel/engine';
 import type { Platform } from '../src/duel/platform/types';
 import { stubHelp } from '../src/duel/platform/web/help';
 import { GameController } from '../src/duel/ui/controller/controller';
@@ -222,32 +221,31 @@ async function controllerChecks() {
   check('n: Play again deals a new game and resets help', !c.snapshot().state.over && c.snapshot().state.log.length === 0 && c.snapshot().state.seed !== 123 && pf.help.balance().word === 1);
   check('n: the new game is saved', pf.storage.get<SavedGame>(KEY)?.seed === c.snapshot().state.seed);
 
-  // the playtest flag: Quill plays 1–3 tiles (a) or 1–5 (b)
-  check('quill flag', readFlags('?quill=b').quill === 'b' && readFlags('?quill=x').quill === undefined && readFlags('').quill === undefined);
-  const under = (v: 'a' | 'b', actions: Action[]) => { Object.assign(BOT, QUILL_VARIANTS[v]); try { return replay(p0, 11, actions); } finally { Object.assign(BOT, QUILL_VARIANTS.a); } };
-  const passes: Action[] = [{ t: 'pass' }, { t: 'pass' }, { t: 'pass' }];
-  check('variants a and b play differently on seed 11', JSON.stringify(under('a', passes)) !== JSON.stringify(under('b', passes)));
-  pf = memoryPlatform();
-  c = new GameController(p0, DATE, pf, new NullDirector(), { seed: 11, quill: 'b' });
-  for (let i = 0; i < 3; i++) await c.pass();
-  check('?quill=b: Quill plays variant b', JSON.stringify(c.snapshot().state) === JSON.stringify(under('b', passes)));
-  check('?quill=b: the save remembers the variant', pf.storage.get<SavedGame>(KEY)?.quill === 'b');
-  check('?quill=b: BOT is back to variant a afterwards', JSON.stringify(BOT.counts) === JSON.stringify(QUILL_VARIANTS.a.counts));
-  check('?quill=b: Continue replays under b', JSON.stringify(new GameController(p0, DATE, pf, new NullDirector()).snapshot().state) === JSON.stringify(c.snapshot().state));
-  pf = memoryPlatform();
-  c = new GameController(p0, DATE, pf, new NullDirector(), { seed: 11 });
-  for (let i = 0; i < 3; i++) await c.pass();
-  check('no flag: Quill plays variant a', JSON.stringify(c.snapshot().state) === JSON.stringify(under('a', passes)) && pf.storage.get<SavedGame>(KEY)?.quill === undefined);
-  // review: the URL's variant wins over a saved game from the other variant (else a playtest silently runs as the wrong one)
+  // round 3: your rack empties near the end, so Quill plays several turns in a row and you never press Pass
   {
-    const c2 = new GameController(p0, DATE, pf, new NullDirector(), { seed: 11, quill: 'b' });
-    check('?quill=b over a saved variant-a game starts a fresh b game', c2.snapshot().state.log.length === 0 && c2.variant() === 'b' && pf.storage.get<SavedGame>(KEY)?.quill === 'b');
-    for (let i = 0; i < 3; i++) await c2.pass();
-    check('…and Quill plays b in it', JSON.stringify(c2.snapshot().state) === JSON.stringify(under('b', passes)));
-    c2.newGame();
-    check('Play again keeps the URL variant', c2.variant() === 'b' && pf.storage.get<SavedGame>(KEY)?.quill === 'b');
-    const c3 = new GameController(p0, DATE, pf, new NullDirector());
-    check('no flag: Continue keeps the saved variant', c3.variant() === 'b');
+    check('the ?quill= playtest flag is gone', !('quill' in readFlags('?quill=b')));
+    let found: { seed: number; runs: number; emptyTurns: number; state: string; replayed: string; quillLast: boolean } | null = null;
+    for (let seed = 1; seed <= 60 && !found; seed++) {
+      pf = memoryPlatform(); d = new NullDirector(); c = new GameController(p0, DATE, pf, d, { seed });
+      let runs = 0, emptyTurns = 0;
+      for (let turns = 0; turns < 80 && !c.snapshot().state.over; turns++) {
+        if (c.snapshot().state.racks.you.every(l => l === null)) emptyTurns++;
+        for (const t of correctPlacements(c)) c.place(t.rackSlot, t.cell);
+        const before = d.calls.length;
+        await c.submit();
+        if (d.calls.slice(before).filter(x => x.fn === 'resolve' && x.who === 'quill').length >= 2) runs++;
+      }
+      if (runs) {
+        const st = c.snapshot().state;
+        found = { seed, runs, emptyTurns, state: JSON.stringify(st), replayed: JSON.stringify(replay(p0, seed, pf.storage.get<SavedGame>(KEY)!.log)), quillLast: st.over && !c.snapshot().busy };
+      }
+    }
+    check('round 3: some game ends with Quill moving several turns after one of yours', found !== null, found?.seed);
+    if (found) {
+      check('round 3: …the game ends with input unlocked', found.quillLast, found);
+      check('round 3: …you never get a turn with an empty rack', found.emptyTurns === 0, found.emptyTurns);
+      check('round 3: …and the save replays to the same state', found.state === found.replayed);
+    }
   }
 
   // review: a director that throws must not lock the game

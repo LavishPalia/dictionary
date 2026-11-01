@@ -51,10 +51,8 @@ function useFit(root: React.RefObject<HTMLDivElement | null>, area: React.RefObj
 }
 
 /** The game screen (UI-DESIGN §3.3 as changed by §0), phone first; desktop shows the same column, centred. */
-export function GameScreen({ p, date, ctl, stage, layer, motion, platform, playtest }: {
+export function GameScreen({ p, date, ctl, stage, layer, motion, platform }: {
   p: Puzzle; date: string; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion; platform: Platform;
-  /** PLAYTEST ONLY: which Quill variant is live, shown under the title. */
-  playtest?: string;
 }) {
   const snap = useSnapshot(ctl);
   const root = useRef<HTMLDivElement>(null);
@@ -87,7 +85,7 @@ export function GameScreen({ p, date, ctl, stage, layer, motion, platform, playt
         <a className="ib" href={platform.exitHref} aria-label="Back to Panna">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </a>
-        <h1 className="ttl"><b>Daily Duel</b><i>{longDate(date)}</i>{playtest && <span className="duel-variant">{playtest}</span>}</h1>
+        <h1 className="ttl"><b>Daily Duel</b><i>{longDate(date)}</i></h1>
         <button type="button" className="ib" aria-label="Settings (coming soon)" disabled>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="12" cy="12" r="3.2" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></svg>
         </button>

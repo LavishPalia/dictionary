@@ -4,7 +4,7 @@ import { botTurn } from './bot';
 import { apply, newGame } from './game';
 import type { Action, GameState, Puzzle } from './types';
 
-/** Replays a game: each player action, then Quill's reply whenever the turn passes to him. */
+/** Replays a game: each player action, then Quill's turns (several in a row once your rack is empty) until it is yours again. */
 export function replay(p: Puzzle, seed: number, actions: Action[]): GameState {
   if (actions.length > maxActions(p)) throw new Error(`log too long: ${actions.length} actions, at most ${maxActions(p)}`);
   let s = newGame(p, seed);
@@ -14,7 +14,7 @@ export function replay(p: Puzzle, seed: number, actions: Action[]): GameState {
     } catch (e) {
       throw new Error(`illegal at ${i}: ${e instanceof Error ? e.message : String(e)}`);
     }
-    if (!s.over && s.turn === 'quill') s = botTurn(p, s).state;
+    while (!s.over && s.turn === 'quill') s = botTurn(p, s).state;
   });
   return s;
 }

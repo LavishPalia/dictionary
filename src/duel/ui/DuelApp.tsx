@@ -31,7 +31,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
       const stage = new Stage();
       const trace: string[] = [];
       const director = new WebDirector(p, stage, layer, platform, motion, flags.test ? trace : undefined);
-      const ctl = new GameController(p, date, platform, director, { seed: flags.seed, quill: flags.quill });
+      const ctl = new GameController(p, date, platform, director, { seed: flags.seed });
       if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace };
       setGame({ p, ctl, stage, layer, motion });
     });
@@ -39,8 +39,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
   }, [date, platform, flags]);
 
   if (!game) return <div className="duel-game" aria-busy="true" />;
-  return <GameScreen p={game.p} date={date} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform}
-    playtest={flags.quill ? `Quill ${game.ctl.variant()}` : undefined} />;
+  return <GameScreen p={game.p} date={date} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} />;
 }
 
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {

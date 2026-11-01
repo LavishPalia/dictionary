@@ -4,7 +4,6 @@
 import { apply, botTurn, newGame, replay, type Action, type CellId, type GameEvent, type GameState, type Puzzle, type SlotId } from '../../engine';
 import type { Platform } from '../../platform/types';
 import { nextEmpty, slotsThrough, wordCandidates } from './selectors';
-import { withQuill, type QuillVariant } from './quill-variants';
 import type { Director, Pending, SavedGame, Sheet, Snapshot } from './types';
 
 const RESTORE_TOAST = "That game couldn't be restored, so here's a fresh one.";
@@ -45,12 +44,8 @@ export class GameController {
   private lastTap: CellId | null = null;
   private readonly key: string;
 
-  /** PLAYTEST ONLY: the Quill variant of this game. */
-  private quill: QuillVariant | undefined;
-
-  constructor(private p: Puzzle, date: string, private platform: Platform, private director: Director, private opts: { seed?: number; quill?: QuillVariant } = {}) {
+  constructor(private p: Puzzle, date: string, private platform: Platform, private director: Director, opts: { seed?: number } = {}) {
     this.key = `panna_duel_game:${date}`;
-    this.quill = opts.quill;
     const state = this.restore() ?? this.fresh(opts.seed ?? randomSeed());
     this.snap = this.rest(state);
   }
@@ -79,14 +74,10 @@ export class GameController {
     try {
       if (!saved || typeof saved !== 'object' || saved.puzzleId !== this.p.id || saved.puzzleVersion !== this.p.version
         || !Number.isInteger(saved.seed) || !Array.isArray(saved.log)) throw new Error('not a save');
-      // PLAYTEST ONLY: a ?quill= flag that differs from the saved game's variant starts a fresh game in it.
-      if (this.opts.quill && this.opts.quill !== (saved.quill ?? 'a')) return null;
-      this.quill = saved.quill;
-      const state = withQuill(saved.quill, () => replay(this.p, saved.seed, saved.log));
+      const state = replay(this.p, saved.seed, saved.log);
       this.startedAt = typeof saved.startedAt === 'string' ? saved.startedAt : this.startedAt;
       return state;
     } catch {
-      this.quill = this.opts.quill;
       this.director.toast(RESTORE_TOAST);
       return null;
     }
@@ -102,12 +93,8 @@ export class GameController {
 
   private save(state: GameState) {
     const saved: SavedGame = { puzzleId: this.p.id, puzzleVersion: this.p.version, seed: state.seed, log: state.log, startedAt: this.startedAt };
-    if (this.quill && this.quill !== 'a') saved.quill = this.quill;
     this.platform.storage.set(this.key, saved);
   }
-
-  /** PLAYTEST ONLY: the Quill variant this game is played with. */
-  variant(): QuillVariant { return this.quill ?? 'a'; }
 
   /** Play again: a new deal of the same puzzle. */
   newGame() {
@@ -299,7 +286,10 @@ export class GameController {
     let you: { state: GameState; events: GameEvent[] };
     try { you = apply(this.p, this.snap.state, a); } catch { this.director.toast('That move isn’t allowed.'); return; }
     this.save(you.state);
-    const quill = !you.state.over && you.state.turn === 'quill' ? withQuill(this.quill, () => botTurn(this.p, you.state)) : null;
+    // Quill's reply: one turn, or several in a row once your rack is empty (a player with no tiles gets no turn).
+    const quill: { state: GameState; events: GameEvent[] }[] = [];
+    for (let s = you.state; !s.over && s.turn === 'quill'; s = quill[quill.length - 1].state) quill.push(botTurn(this.p, s));
+    const end = quill[quill.length - 1] ?? you;
 
     this.lastTap = null;
     this.publish({ busy: true, lastQuill: [], lifted: null, zoom: null, wordMode: false, sheet: null });
@@ -312,13 +302,13 @@ export class GameController {
       this.publish({ state: you.state, pending: [], hintOn: false, held: dealt.slots });
       await this.director.arrive(youAfter, 'you', this.snap);
 
-      if (quill) {
-        const [qNow, qAfter] = split(quill.events);
+      for (const q of quill) {
+        const [qNow, qAfter] = split(q.events);
         await this.director.resolve(qNow, 'quill', this.snap);
-        this.publish({ state: quill.state, lastQuill: quill.state.lastQuill });
+        this.publish({ state: q.state, lastQuill: q.state.lastQuill });
         await this.director.arrive(qAfter, 'quill', this.snap);
       }
-      if (dealt.slots.length && !(quill ?? you).state.over) {
+      if (dealt.slots.length && !end.state.over) {
         await this.director.deal?.(dealt.slots, dealt.how);
         this.publish({ held: [] });
         await this.director.arrive([], 'you', this.snap);
@@ -326,8 +316,7 @@ export class GameController {
     } catch {
       // A failed animation must never lock the game: the result below is already saved.
     } finally {
-      const end = quill ?? you;
-      this.publish({ state: end.state, pending: [], hintOn: false, lastQuill: quill ? quill.state.lastQuill : [], busy: false, held: [] });
+      this.publish({ state: end.state, pending: [], hintOn: false, lastQuill: quill.length ? end.state.lastQuill : [], busy: false, held: [] });
     }
   }
 }

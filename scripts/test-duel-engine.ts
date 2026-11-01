@@ -1,6 +1,6 @@
 // Checks the Duel engine (src/duel/engine). Usage: npx tsx scripts/test-duel-engine.ts
 import { readFileSync } from 'node:fs';
-import { botTurn } from '../src/duel/engine/bot';
+import { BOT, botTurn, countWeights } from '../src/duel/engine/bot';
 import { apply, checkInvariant, emptyCells, newGame } from '../src/duel/engine/game';
 import { checkPuzzleShape } from '../src/duel/engine/puzzle';
 import { nextInt, nextU32, seedRng } from '../src/duel/engine/rng';
@@ -208,7 +208,7 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   const s = apply(p0, newGame(p0, 11), { t: 'pass' }).state;
   const b = botTurn(p0, s);
   const n = placedOf(b.events).length;
-  check('quill places 1–3 tiles', n >= 1 && n <= 3, n);
+  check('quill places 1–5 tiles', n >= 1 && n <= 5, n);
   check('quill turn is deterministic', JSON.stringify(botTurn(p0, s)) === JSON.stringify(b));
   check('turn returns to you, invariant holds', b.state.turn === 'you' && checkInvariant(p0, b.state) === null);
   check('lastQuill = his correct cells', b.state.lastQuill.length === judgedOf(b.events).filter(t => t.ok).length && b.state.lastQuill.every(c => b.state.filled[c]?.by === 'quill'));
@@ -217,25 +217,50 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   check('events: botPlaced then judged', kinds(b.events).startsWith('botPlaced,') && kinds(b.events).includes('judged'), kinds(b.events));
   check('the input state is not changed', JSON.stringify(s) === JSON.stringify(apply(p0, newGame(p0, 11), { t: 'pass' }).state));
 
-  // Over many openings: never 0 tiles, never more than 4, makes some mistakes but not most
-  let tiles = 0, wrongs = 0, zero = 0, tooMany = 0;
+  // Over many openings: never 0 tiles, never wrong, mostly few tiles and seldom 5
+  let tiles = 0, wrongs = 0, zero = 0, fives = 0, ones = 0;
   for (let seed = 1; seed <= 400; seed++) {
     const st = apply(p0, newGame(p0, seed), { t: 'pass' }).state;
-    const ev = botTurn(p0, st).events;
-    const t = judgedOf(ev);
+    const t = judgedOf(botTurn(p0, st).events);
     tiles += t.length; wrongs += t.filter(x => !x.ok).length;
-    if (t.length === 0) zero++; if (t.length > 3) tooMany++;
+    if (t.length === 0) zero++; if (t.length === 5) fives++; if (t.length === 1) ones++;
   }
-  check('400 openings: always 1–3 tiles', zero === 0 && tooMany === 0, { zero, tooMany });
-  check('400 openings: wrong tiles between 20 % and 40 %', wrongs / tiles > 0.2 && wrongs / tiles < 0.4, { tiles, wrongs });
+  check('400 openings: never 0 tiles, never a wrong tile', zero === 0 && wrongs === 0, { zero, wrongs });
+  check('400 openings: 5 tiles seldom (< 5 %), 1 tile most often (> 50 %)', fives < 20 && ones > 200, { fives, ones });
 
-  // He prefers to finish words: T at 66 completes TI and ETA
-  let finished = 0;
+  // The count weights blend from few tiles to mostly 5
+  check('count weights: 1 is likeliest at the start, 5 at the end', (() => { const a = countWeights(0), z = countWeights(1); return a[0] === Math.max(...a) && z[4] === Math.max(...z) && z[4] / z.reduce((x, y) => x + y) > 0.5; })());
+  check('count weights: 5 has a chance mid-game', countWeights(0.6)[4] > 0);
+
+  // Near the end with a full rack he mostly plays all 5, and Empty hand (+5) is his too
+  let all5 = 0, emptyHands = 0;
+  const keep = Object.keys(p0.solution).map(Number).filter(c => !p0.given.includes(c)).slice(-8);
   for (let seed = 1; seed <= 100; seed++) {
+    const st = { ...arrange({ fill: allCellsBut(keep), you: [], quill: keep.slice(0, 5).map(c => p0.solution[c]), seed }), turn: 'quill' as const };
+    st.racks.you = [...st.bag.splice(0, 3), null, null];
+    const r = botTurn(p0, st);
+    if (placedOf(r.events).length === 5) all5++;
+    if (r.events.some(e => e.e === 'emptyHand' && e.who === 'quill')) emptyHands++;
+  }
+  check('near the end (8 cells left) he plays all 5 in most turns (> 50 of 100)', all5 > 50, all5);
+  check('…and every one of those is an Empty hand (+5)', emptyHands === all5, { all5, emptyHands });
+
+  // He aims about 65 % of the time: T at 66 completes TI and ETA, the best cell for any count
+  let finished = 0;
+  for (let seed = 1; seed <= 400; seed++) {
     const st = { ...arrange({ fill: [65, 67, 74], you: ['I', 'N', 'D', 'U', 'L'], quill: ['T', 'O', 'R', 'H', 'E'], seed }), turn: 'quill' as const };
     if (judgedOf(botTurn(p0, st).events).some(t => t.cell === 66 && t.ok)) finished++;
   }
-  check('he finishes an open word in most turns (≥ 70 of 100)', finished >= 70, finished);
+  check('he takes the scoring cell in about 65 % + chance of turns (240–340 of 400)', finished >= 240 && finished <= 340, finished);
+  const aimOnly = (() => { const keepAim = BOT.aimChance; BOT.aimChance = 1; try {
+    let n = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      const st = { ...arrange({ fill: [65, 67, 74], you: ['I', 'N', 'D', 'U', 'L'], quill: ['T', 'O', 'R', 'H', 'E'], seed }), turn: 'quill' as const };
+      if (judgedOf(botTurn(p0, st).events).some(t => t.cell === 66)) n++;
+    }
+    return n;
+  } finally { BOT.aimChance = keepAim; } })();
+  check('an aimed turn always takes the scoring cell (100 of 100)', aimOnly === 100, aimOnly);
 
   // The end: one empty cell, its letter in his rack
   for (let seed = 1; seed <= 30; seed++) {
@@ -248,10 +273,27 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
     if (seed === 30) check('one empty cell left: exactly 1 right tile and the game ends (30 seeds)', true);
   }
 
-  // No tiles at all: his turn passes
+  // No tiles at all: he gets no turn
   const bare = { ...arrange({ fill: allCellsBut([9, 10]), you: ['I', 'N'], quill: [] }), turn: 'quill' as const };
-  const rb = botTurn(p0, bare);
-  check('with an empty rack his turn passes to you', kinds(rb.events) === 'passed,turn' && rb.state.turn === 'you', kinds(rb.events));
+  check('botTurn with an empty rack is illegal (endTurn never gives him one)', throws(() => botTurn(p0, bare)));
+  const rSkip = apply(p0, { ...bare, turn: 'you' }, { t: 'submit', place: [{ cell: 9, rackSlot: 0 }] });
+  check('your turn ends and his rack is empty: you move again', rSkip.state.turn === 'you' && !rSkip.state.over && (rSkip.events.at(-1) as Extract<GameEvent, { e: 'turn' }>).who === 'you', kinds(rSkip.events));
+  const rSkipPass = apply(p0, { ...bare, turn: 'you' }, { t: 'pass' });
+  check('…the same after a pass', rSkipPass.state.turn === 'you');
+
+  // Your rack runs dry: Quill keeps moving until the board is full
+  const dry = { ...arrange({ fill: allCellsBut([9, 10, 11, 12, 13, 14]), you: ['I'], quill: ['N', 'D', 'U', 'L', 'G'] }), turn: 'you' as const };
+  const rDry = apply(p0, dry, { t: 'submit', place: [{ cell: 9, rackSlot: 0 }] });
+  check('your last tile played: the turn goes to Quill', rDry.state.turn === 'quill' && rDry.state.racks.you.every(l => l === null), rDry.state.racks.you);
+  let q = rDry.state, quillTurns = 0;
+  while (!q.over && q.turn === 'quill' && quillTurns < 20) { q = botTurn(p0, q).state; quillTurns++; }
+  check('…and he plays turn after turn until the board is full', q.over && emptyCells(p0, q).length === 0 && quillTurns >= 1, { quillTurns, over: q.over, turn: q.turn });
+  const multi = (() => { for (let seed = 1; seed <= 50; seed++) {
+    let st: GameState = apply(p0, { ...dry, rng: newGame(p0, seed).rng }, { t: 'submit', place: [{ cell: 9, rackSlot: 0 }] }).state, n = 0;
+    while (!st.over && st.turn === 'quill') { st = botTurn(p0, st).state; n++; }
+    if (n >= 2) return { seed, n, over: st.over };
+  } return null; })();
+  check('…sometimes over several turns in a row, each one his', multi !== null && multi.over, multi);
 
   check('botTurn on your turn is illegal', throws(() => botTurn(p0, newGame(p0, 1))));
 }

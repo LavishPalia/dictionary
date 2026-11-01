@@ -23,6 +23,8 @@ export class WebDirector implements Director {
   /** Clones standing in for a final position (a settled letter, a returned tile), removed once React shows it. */
   private leftovers: HTMLElement[] = [];
   private hidden: Element[] = [];
+  /** Board cells tinted green or red while their box shows (round 3). */
+  private tinted: Element[] = [];
   private monitor = new FrameMonitor();
   /** Drop-in animations on the new rack tiles, held (fill) until React shows the tiles, then cancelled. */
   private dealt: Animation[] = [];
@@ -72,10 +74,20 @@ export class WebDirector implements Director {
     }
   }
 
+  /** Tints the board cells green (or red) while a box shows over them; `null` puts them back. */
+  private tint(cells: CellId[], how: 'ok' | 'bad' | null) {
+    for (const c of cells) {
+      const el = this.stage.el('cell', c);
+      if (!el) continue;
+      if (how) { el.setAttribute('data-fx-tint', how); this.tinted.push(el); } else el.removeAttribute('data-fx-tint');
+    }
+  }
+
   /**
-   * All tiles judged at once: a green (or red) box and a ±1 badge on its top-right corner. After a hold
-   * the badges fly to your score one by one, right ones first; each adds as it lands, and its tile is
-   * done: a right one becomes a plain board letter, a wrong one goes home to the rack.
+   * All tiles judged at once: a green (or red) box and a ±1 badge on its top-right corner, the letter square
+   * tinted to match. After a hold the badges fly to your score one by one, right ones first; each adds as it
+   * lands, and its tile is done: the tint goes, a right one becomes a plain board letter, a wrong one goes
+   * home to the rack.
    */
   private async judge(ev: Judged) {
     const { sound, haptics } = this.platform;
@@ -87,6 +99,7 @@ export class WebDirector implements Director {
       const r = inset(this.stage.rect('cell', t.cell)!, 2);
       const clone = this.layer.tile(t.letter, r, t.ok ? 'ok' : 'bad');
       const badge = this.badge(clone, t.ok ? 1 : -1);
+      this.tint([t.cell], t.ok ? 'ok' : 'bad');
       if (!t.ok && !this.motion.reduced) {
         const b = topLeft(r);
         void this.layer.anim(clone, [0, -5, 5, -4, 3, 0].map((dx, i) => ({ transform: `translate3d(${b.x + dx}px,${b.y}px,0) rotate(${[0, -4, 4, -2, 0, 0][i]}deg)` })),
@@ -101,6 +114,7 @@ export class WebDirector implements Director {
     const score = centerOf(this.stage.rect('score', 'you')!);
     await Promise.all(clones.map(async ({ t, r, clone, badge }, i) => {
       await this.flyBadge(badge, { x: r.right, y: r.top }, score, t.ok ? 1 : -1, i * T.chipStagger);
+      this.tint([t.cell], null);
       if (t.ok) { this.settled(clone, t.cell, t.letter); return; }
       const slot = this.stage.rect('rack', t.rackSlot);
       clone.classList.remove('bad');
@@ -149,7 +163,10 @@ export class WebDirector implements Director {
     this.leftovers.push(d);
   }
 
-  /** A finished word: one green box around it with "+N" on its top-right corner, which flies to your score; then the box goes. */
+  /**
+   * A finished word: one green box around it with "+N" on its top-right corner and its letter squares tinted
+   * green. The "+N" flies to your score, the tint goes as it lands, then the box goes.
+   */
   private async word(slotId: SlotId, points: number) {
     const slot = this.p.slots.find(s => s.id === slotId);
     if (!slot) return;
@@ -164,9 +181,11 @@ export class WebDirector implements Director {
     const badge = this.badge(box, points);
     this.platform.sound.play('word');
     this.platform.haptics.drop();
+    this.tint(slot.cells, 'ok');
     await this.layer.anim(box, [{ opacity: 0 }, { opacity: 1 }], { duration: T.boxIn, easing: 'ease-out' });
     await this.wait(this.motion.reduced ? T.judgeHoldReduced : T.judgeHold);
     await this.flyBadge(badge, { x: right, y: top }, centerOf(this.stage.rect('score', 'you')!), points);
+    this.tint(slot.cells, null);
     await this.layer.anim(box, [{ opacity: 1 }, { opacity: 0 }], { duration: T.boxOut });
     box.remove();
     await this.wait(this.layer.dur(T.afterChips));
@@ -249,7 +268,6 @@ export class WebDirector implements Director {
           }
           break;
         case 'score': last = ev.to; break;
-        case 'passed': this.note('quill:passed'); this.layer.toast('Professor Quill has no tiles left and passes.'); break;
         default: break; // no chips, seals or glow for Quill
       }
     }
@@ -327,9 +345,11 @@ export class WebDirector implements Director {
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     for (const el of this.leftovers) el.remove();
     for (const el of this.hidden) el.removeAttribute('data-fx-hidden');
+    for (const el of this.tinted) el.removeAttribute('data-fx-tint');
     for (const a of this.dealt) a.cancel();
     this.dealt = [];
     this.leftovers = [];
     this.hidden = [];
+    this.tinted = [];
   }
 }

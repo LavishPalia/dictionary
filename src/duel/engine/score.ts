@@ -28,14 +28,20 @@ export function refill(s: GameState, who: Who): GameEvent {
   return { e: 'refill', who, rackSlots, letters };
 }
 
-/** Ends the turn: game over when the board is full, otherwise the other player moves. */
+/**
+ * Ends the turn: game over when the board is full, otherwise the other player moves. A player with an
+ * empty rack gets no turn (round 3), so near the end the one still holding tiles keeps moving until the
+ * board is full. Both racks can't be empty while a cell is: the bag + racks hold every empty cell's letter,
+ * and a rack only runs dry once the bag has.
+ */
 export function endTurn(p: Puzzle, s: GameState, who: Who, events: GameEvent[]) {
   if (emptyCells(p, s).length === 0) {
     s.over = true;
     const { you, quill } = s.scores;
     events.push({ e: 'gameOver', scores: { ...s.scores }, result: you > quill ? 'win' : you < quill ? 'loss' : 'tie' });
   } else {
-    s.turn = other(who);
+    const next = other(who);
+    s.turn = s.racks[next].some(l => l !== null) ? next : who;
     events.push({ e: 'turn', who: s.turn });
   }
 }
