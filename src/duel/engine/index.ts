@@ -4,4 +4,4 @@ export * from './types';
 export { checkPuzzleShape } from './puzzle';
 export { apply, checkInvariant, emptyCells, newGame } from './game';
 export { BOT, botTurn } from './bot';
-export { maxScore, replay } from './replay';
+export { maxActions, maxScore, replay } from './replay';

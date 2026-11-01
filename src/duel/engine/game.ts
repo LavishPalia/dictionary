@@ -84,6 +84,12 @@ export function apply(p: Puzzle, state: GameState, a: Action): { state: GameStat
       break;
     }
     case 'hint':
+      // A hint lasts the whole turn (product spec §4.7), so a second one in the same turn is illegal.
+      for (let i = state.log.length - 1; i >= 0; i--) {
+        const t = state.log[i].t;
+        if (t === 'hint') illegal('a hint is already on this turn');
+        if (t === 'submit' || t === 'pass' || t === 'swap') break;
+      }
       events = [];
       break;
     default:

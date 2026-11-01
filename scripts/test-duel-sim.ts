@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { botTurn } from '../src/duel/engine/bot';
 import { apply, checkInvariant, emptyCells, newGame } from '../src/duel/engine/game';
-import { maxScore, replay } from '../src/duel/engine/replay';
+import { maxActions, maxScore, replay } from '../src/duel/engine/replay';
 import { nextFloat, nextInt, seedRng, type RngState } from '../src/duel/engine/rng';
 import type { Action, GameState, Puzzle } from '../src/duel/engine/types';
 
@@ -71,11 +71,13 @@ function play(p: Puzzle, seed: number) {
 }
 
 let firstProblem = '';
+let longest = 0;
 let ended = 0, clean = 0, identical = 0, prefixes = 0, prefixOk = 0;
 const t0 = Date.now();
 for (let seed = 1; seed <= GAMES; seed++) {
   const g = play(p0, seed);
   if (g.s.over) ended++;
+  longest = Math.max(longest, g.actions.length);
   if (!g.problems.length) clean++; else if (!firstProblem) firstProblem = `seed ${seed}: ${g.problems[0]}`;
   if (JSON.stringify(replay(p0, seed, g.actions)) === JSON.stringify(g.s)) identical++;
   if (seed <= 200) {
@@ -95,6 +97,11 @@ console.log(`(${secs} s)`);
 let msg = '';
 try { replay(p0, 1, [{ t: 'submit', place: [] }]); } catch (e) { msg = String(e); }
 check('replay of a bad log reports the index', /illegal at 0/.test(msg), msg);
+const longT0 = Date.now();
+let longMsg = '';
+try { replay(p0, 1, Array.from({ length: 50000 }, () => ({ t: 'pass' as const }))); } catch (e) { longMsg = String(e); }
+check('a 50,000-action log is rejected quickly, before replaying', /too long/.test(longMsg) && Date.now() - longT0 < 200, { longMsg, ms: Date.now() - longT0 });
+check(`real games stay well under the action cap (${maxActions(p0)})`, longest <= maxActions(p0), { longest });
 check('maxScore of p0 = 49 non-given cells + all slot lengths + 5 × 49', maxScore(p0) === 49 + p0.slots.reduce((n, s) => n + s.cells.length, 0) + 245, maxScore(p0));
 
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }

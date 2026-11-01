@@ -6,6 +6,7 @@ import type { Action, GameState, Puzzle } from './types';
 
 /** Replays a game: each player action, then Quill's reply whenever the turn passes to him. */
 export function replay(p: Puzzle, seed: number, actions: Action[]): GameState {
+  if (actions.length > maxActions(p)) throw new Error(`log too long: ${actions.length} actions, at most ${maxActions(p)}`);
   let s = newGame(p, seed);
   actions.forEach((a, i) => {
     try {
@@ -25,4 +26,12 @@ export function replay(p: Puzzle, seed: number, actions: Action[]): GameState {
 export function maxScore(p: Puzzle): number {
   const cells = Object.keys(p.solution).length - p.given.length;
   return cells + p.slots.reduce((n, s) => n + s.cells.length, 0) + 5 * cells;
+}
+
+/**
+ * The most actions a real game can need, with lots of room to spare: four per letter cell plus 200.
+ * Replay refuses longer logs before doing any work, so a crafted log can't tie up the server.
+ */
+export function maxActions(p: Puzzle): number {
+  return 4 * (Object.keys(p.solution).length - p.given.length) + 200;
 }

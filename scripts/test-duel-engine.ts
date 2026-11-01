@@ -109,6 +109,10 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   check('C: +1 −1 from 0 is 0', rC.state.scores.you === 0);
   const rC2 = apply(p0, arrange({ you: ['I', 'N', 'D', 'U', 'L'], scores: { you: 1, quill: 0 } }), { t: 'submit', place: [{ cell: 9, rackSlot: 0 }, { cell: 11, rackSlot: 1 }, { cell: 12, rackSlot: 2 }] });
   check('C: 1 + 1 − 2 = 0, not negative', rC2.state.scores.you === 0, rC2.state.scores);
+  // C3: from 0, one right tile finishing TO (17 18) and two wrong tiles: −1 floors to 0 first, then +2 for the word
+  const rC3 = apply(p0, arrange({ fill: [17], you: ['O', 'I', 'N'] }), { t: 'submit', place: [{ cell: 18, rackSlot: 0 }, { cell: 11, rackSlot: 1 }, { cell: 12, rackSlot: 2 }] });
+  const steps = rC3.events.filter((e): e is Extract<GameEvent, { e: 'score' }> => e.e === 'score').map(e => `${e.from}→${e.to}`).join(' ');
+  check('C3: the floor applies before word bonuses (0 → 0 → 2)', rC3.state.scores.you === 2 && steps === '0→0 0→2', steps);
   check('C: no score event goes below 0', [rB, rC, rC2].every(r => r.events.every(e => e.e !== 'score' || e.to >= 0)));
 
   // D: the T at 66 completes TI (66 74) and ETA (65 66 67) at once
@@ -175,6 +179,9 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
 
   const rH = apply(p0, s, { t: 'hint' });
   check('hint keeps your turn and is logged', rH.state.turn === 'you' && rH.state.log.at(-1)?.t === 'hint' && rH.events.length === 0);
+  check('a second hint in the same turn is illegal', throws(() => apply(p0, rH.state, { t: 'hint' })));
+  check('a hint is fine again next turn', (() => { const next = botTurn(p0, apply(p0, rH.state, { t: 'pass' }).state).state; return apply(p0, next, { t: 'hint' }).state.log.at(-1)?.t === 'hint'; })());
+  check('a reveal between two hints does not reset the turn', throws(() => apply(p0, apply(p0, rH.state, { t: 'reveal', slot: slot0 }).state, { t: 'hint' })));
 
   let x = s;
   for (let i = 0; i < 100; i++) { x = apply(p0, x, { t: 'pass' }).state; x = { ...x, turn: 'you' }; }
