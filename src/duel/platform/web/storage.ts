@@ -9,6 +9,7 @@ export function webStorage(): Storage {
         return raw === null ? null : (JSON.parse(raw) as T);
       } catch { return null; }
     },
+    has(key) { try { return localStorage.getItem(key) !== null; } catch { return false; } },
     set(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} },
     remove(key) { try { localStorage.removeItem(key); } catch {} },
   };

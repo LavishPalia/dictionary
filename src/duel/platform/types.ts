@@ -5,6 +5,8 @@ import type { Puzzle } from '../engine';
 export interface Storage {
   /** The parsed value, or null when it's missing or not valid JSON. */
   get<T>(key: string): T | null;
+  /** True when something is stored under the key, even something unreadable. */
+  has(key: string): boolean;
   set(key: string, v: unknown): void;
   remove(key: string): void;
 }
