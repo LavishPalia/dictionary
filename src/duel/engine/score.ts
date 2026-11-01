@@ -28,14 +28,20 @@ export function refill(s: GameState, who: Who): GameEvent {
   return { e: 'refill', who, rackSlots, letters };
 }
 
-/** Ends the turn: game over when the board is full, otherwise the other player moves. */
+/**
+ * Ends the turn: game over when the board is full, otherwise the other player moves. A player with an
+ * empty rack gets no turn (round 3), so near the end the one still holding tiles keeps moving until the
+ * board is full. Both racks can't be empty while a cell is: the bag + racks hold every empty cell's letter,
+ * and a rack only runs dry once the bag has.
+ */
 export function endTurn(p: Puzzle, s: GameState, who: Who, events: GameEvent[]) {
   if (emptyCells(p, s).length === 0) {
     s.over = true;
     const { you, quill } = s.scores;
     events.push({ e: 'gameOver', scores: { ...s.scores }, result: you > quill ? 'win' : you < quill ? 'loss' : 'tie' });
   } else {
-    s.turn = other(who);
+    const next = other(who);
+    s.turn = s.racks[next].some(l => l !== null) ? next : who;
     events.push({ e: 'turn', who: s.turn });
   }
 }
@@ -47,11 +53,11 @@ export function endTurn(p: Puzzle, s: GameState, who: Who, events: GameEvent[]) 
 export function resolvePlacement(p: Puzzle, s: GameState, who: Who, tiles: Placed[]): GameEvent[] {
   const events: GameEvent[] = [];
   const rack = s.racks[who];
-  const inRack = rack.filter(l => l !== null).length;
   const judged = tiles.map(t => ({ ...t, ok: p.solution[t.cell] === t.letter }));
   const right = judged.filter(t => t.ok), wrong = judged.filter(t => !t.ok);
 
-  if (wrong.length === 0 && tiles.length === inRack) {
+  // Empty hand is a full rack of 5 played right in one turn, not the last few tiles of the game.
+  if (wrong.length === 0 && tiles.length === RACK_SIZE) {
     events.push({ e: 'emptyHand', who, points: 5 });
     addScore(s, who, 5, events);
   }
@@ -63,7 +69,8 @@ export function resolvePlacement(p: Puzzle, s: GameState, who: Who, tiles: Place
 
   const placedNow = new Set(right.map(t => t.cell));
   const finished = p.slots
-    .filter(sl => sl.cells.some(c => placedNow.has(c)) && sl.cells.every(c => s.filled[c]))
+    // A one-letter answer (a border clue like "Roman 500" = D) is a clue, not a word: no bonus.
+    .filter(sl => sl.cells.length >= 2 && sl.cells.some(c => placedNow.has(c)) && sl.cells.every(c => s.filled[c]))
     .sort((a, b) => a.cells.length - b.cells.length || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const sl of finished) {
     events.push({ e: 'word', who, slot: sl.id, points: sl.cells.length });

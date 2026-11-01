@@ -59,24 +59,35 @@ function play(p: Puzzle, seed: number) {
     if (st.scores.you < 0 || st.scores.quill < 0) problems.push(`${where}: negative score`);
     if (st.scores.you > cap || st.scores.quill > cap) problems.push(`${where}: score over the cap ${cap}`);
   };
+  let quillWrong = 0, quillRuns = 0, emptyTurns = 0;
   while (!s.over && actions.length < CAP) {
+    if (s.racks.you.every(l => l === null)) emptyTurns++;
     const a = randomPlayer(p, s, rng);
     s = apply(p, s, a).state;
     actions.push(a);
     look(s, `after action ${actions.length}`);
-    if (!s.over && s.turn === 'quill') { s = botTurn(p, s).state; look(s, `after Quill ${actions.length}`); }
+    // Once your rack is empty Quill keeps moving, so one action can be followed by several of his turns.
+    let run = 0;
+    while (!s.over && s.turn === 'quill') {
+      const r = botTurn(p, s);
+      for (const e of r.events) if (e.e === 'judged') quillWrong += e.tiles.filter(t => !t.ok).length;
+      s = r.state; run++;
+      look(s, `after Quill ${actions.length}`);
+    }
+    if (run > 1) quillRuns++;
     after.push(JSON.stringify(s));
   }
-  return { s, actions, after, problems };
+  return { s, actions, after, problems, quillWrong, quillRuns, emptyTurns };
 }
 
 let firstProblem = '';
 let longest = 0;
-let ended = 0, clean = 0, identical = 0, prefixes = 0, prefixOk = 0;
+let ended = 0, clean = 0, identical = 0, prefixes = 0, prefixOk = 0, quillWrong = 0, quillRuns = 0, emptyTurns = 0;
 const t0 = Date.now();
 for (let seed = 1; seed <= GAMES; seed++) {
   const g = play(p0, seed);
   if (g.s.over) ended++;
+  quillWrong += g.quillWrong; quillRuns += g.quillRuns; emptyTurns += g.emptyTurns;
   longest = Math.max(longest, g.actions.length);
   if (!g.problems.length) clean++; else if (!firstProblem) firstProblem = `seed ${seed}: ${g.problems[0]}`;
   if (JSON.stringify(replay(p0, seed, g.actions)) === JSON.stringify(g.s)) identical++;
@@ -92,6 +103,9 @@ check(`${GAMES} games end before ${CAP} actions`, ended === GAMES, { ended });
 check(`${GAMES} games keep the invariant, never go negative, stay under the cap`, clean === GAMES, { clean, firstProblem });
 check(`${GAMES} games replay identically from seed + actions`, identical === GAMES, { identical });
 check(`${prefixes} saved mid-game logs replay to the exact state`, prefixOk === prefixes, { prefixOk });
+check(`${GAMES} games: Quill never plays a wrong tile`, quillWrong === 0, { quillWrong });
+check(`${GAMES} games: you never get a turn with an empty rack`, emptyTurns === 0, { emptyTurns });
+check(`some games end with Quill moving several turns in a row`, quillRuns > 0, { quillRuns });
 console.log(`(${secs} s)`);
 
 let msg = '';
