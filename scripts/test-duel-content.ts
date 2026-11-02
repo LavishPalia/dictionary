@@ -1,5 +1,8 @@
 // Checks the Duel's puzzle pipeline and published content (scripts/duel, data/duel). Usage: npx tsx scripts/test-duel-content.ts
+import { readFileSync } from 'node:fs';
+import type { Puzzle, Slot } from '../src/duel/engine/types';
 import { textProblem } from './duel/lib/clue-rules';
+import { CELL, FIT, fits, lines } from './duel/lib/fontwidth';
 import { blocklist } from './duel/lib/db';
 import { curated, LENGTHS, pictures, wordPool } from './duel/words';
 
@@ -33,6 +36,20 @@ const poolWords = new Set(pool.map(w => w.word));
   check('every picture word is in the pool', notPool.length === 0, notPool);
   const named = pics.flatMap(p => p.words.filter(w => textProblem(w, p.alt)).map(w => `${w}: ${p.alt}`));
   check('no picture alt names its word', named.length === 0, named);
+}
+
+// ---------- clue fit (Montserrat 700 capitals) ----------
+const p0001 = JSON.parse(readFileSync('data/duel/puzzles/p0001.json', 'utf8')) as Puzzle;
+const modeAt = (p: Puzzle, s: Slot) => (p.slots.filter(o => o.clueCell === s.clueCell).length === 2 ? 'two' : 'one');
+{
+  const misfit = p0001.slots.filter(s => s.clue.text && !fits(s.clue.text, modeAt(p0001, s))).map(s => `${s.answer}: ${s.clue.text} (${modeAt(p0001, s)})`);
+  check('every text clue in p0001 fits its square', misfit.length === 0, misfit);
+  check('"Mark left by a wound" fits a square alone', fits('Mark left by a wound', 'one'));
+  check('"A large metal container used for serving tea" does not fit', !fits('A large metal container used for serving tea', 'one'));
+  check('a word wider than the line gives null', lines('Supercalifragilistic', 8.6, 38) === null);
+  check('"NUMERALS" is too wide for a border square (Montserrat is wide)', !fits('Numerals', 'one'));
+  const x = 'Line of seats in a hall';
+  check(`"${x}" fits alone but not as half of a two-clue square`, fits(x, 'one') && !fits(x, 'two'), lines(x, CELL * FIT.two.size, CELL - 2));
 }
 
 if (failures) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
