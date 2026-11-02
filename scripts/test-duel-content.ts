@@ -126,6 +126,7 @@ const rules = ruleClues();
   check('every pool word with a curated answer gets its curated clue', curated().every(c => !poolWords.has(c.answer) || rules.some(r => r.word === c.answer && r.text === c.clue)));
 }
 // ---------- layout and fill ----------
+const FILL_STEPS = 3000;
 const seeded = (seed: number) => { const s = seedRng(seed, 0); return () => nextU32(s) / 2 ** 32; };
 const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sense: { en: 'x', hi: 'x' } });
 {
@@ -142,14 +143,14 @@ const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sen
   const P = [...Array(9)].map((_, r) => [...Array(7)].map((_, c) => p0001.solution[(r + 1) * 8 + c + 1] === undefined));
   const own = new Map<number, string[]>();
   for (const s of p0001.slots) { const w = s.answer.toLowerCase(); own.set(w.length, [...new Set([...(own.get(w.length) ?? []), w])]); }
-  const g = fill(P, slotsOf(P), indexWords(own), Date.now() + 10000, seeded(1));
+  const g = fill(P, slotsOf(P), indexWords(own), 100000, seeded(1));
   const want = [...Array(9)].map((_, r) => [...Array(7)].map((_, c) => p0001.solution[(r + 1) * 8 + c + 1]?.toLowerCase() ?? '#').join(''));
   check('fill with only p0001\'s words finds p0001\'s grid', g?.map(r => r.join('')).join() === want.join(), g?.map(r => r.join('')));
 
   const words = new Map<number, string[]>();
   for (const w of pool) words.set(w.len, [...(words.get(w.len) ?? []), w.word]);
   const index = indexWords(words);
-  const run = (seed: number) => { const rng = seeded(seed); for (let i = 0; i < 50; i++) { const P = randomPattern(rng)!; const g = fill(P, slotsOf(P), index, Date.now() + 15000, rng); if (g) return { P, g }; } return null; };
+  const run = (seed: number) => { const rng = seeded(seed); for (let i = 0; i < 50; i++) { const P = randomPattern(rng)!; const g = fill(P, slotsOf(P), index, FILL_STEPS, rng); if (g) return { P, g }; } return null; };
   const a = run(3), b = run(3);
   check('the same seed fills the same grid', !!a && a.g.map(r => r.join('')).join() === b?.g.map(r => r.join('')).join());
   if (a) {

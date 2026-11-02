@@ -30,10 +30,12 @@ export function indexWords(words: Map<number, string[]>): FillIndex {
 function popcount(x: number) { x -= (x >>> 1) & 0x55555555; x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; }
 
 /**
- * Returns the filled 9 × 7 grid ('#' = clue square), or null if no fill was found before the deadline.
+ * Returns the filled 9 × 7 grid ('#' = clue square), or null if no fill was found within `steps` word placements
+ * (a step budget, not a clock, so the same seed always gives the same grid on any machine).
  * Every word comes from `index`, no word of 2+ letters repeats, and one-letter slots hold a letter that has a clue.
  */
-export function fill(P: Pattern, slots: LSlot[], index: FillIndex, deadlineMs: number, rng: () => number): string[][] | null {
+export function fill(P: Pattern, slots: LSlot[], index: FillIndex, steps: number, rng: () => number): string[][] | null {
+  let left = steps;
   const cell = (r: number, c: number) => r * LC + c;
   const dom = new Int32Array(LR * LC).fill(ALL);
   const multi = slots.filter(s => s.cells.length > 1);
@@ -92,7 +94,7 @@ export function fill(P: Pattern, slots: LSlot[], index: FillIndex, deadlineMs: n
   };
 
   const solve = (): boolean => {
-    if (Date.now() > deadlineMs) return false;
+    if (left <= 0) return false;
     let best = -1, bestB: Uint32Array | null = null, bestN = Infinity;
     for (let k = 0; k < multi.length; k++) {
       if (placed[k] !== null) continue;
@@ -110,6 +112,7 @@ export function fill(P: Pattern, slots: LSlot[], index: FillIndex, deadlineMs: n
     order.sort((a, b) => a[1] - b[1]);
     const u = used.get(cellsOf[best].length)!;
     for (const [w] of order.slice(0, 40)) {
+      if (--left < 0) return false;
       const saved = dom.slice();
       const word = lex.words[w];
       cellsOf[best].forEach((c, i) => (dom[c] = 1 << (word.charCodeAt(i) - A)));
@@ -118,7 +121,6 @@ export function fill(P: Pattern, slots: LSlot[], index: FillIndex, deadlineMs: n
       if (propagate(touched) && solve()) return true;
       placed[best] = null; u[w >> 5] &= ~(1 << (w & 31));
       dom.set(saved);
-      if (Date.now() > deadlineMs) return false;
     }
     return false;
   };
