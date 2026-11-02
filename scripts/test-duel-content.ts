@@ -1,6 +1,7 @@
 // Checks the Duel's puzzle pipeline and published content (scripts/duel, data/duel). Usage: npx tsx scripts/test-duel-content.ts
 import { readFileSync } from 'node:fs';
 import type { Puzzle, Slot } from '../src/duel/engine/types';
+import { type CheckContext, checkPuzzle, defaultContext, picMath } from './duel/check';
 import { textProblem } from './duel/lib/clue-rules';
 import { CELL, FIT, fits, lines } from './duel/lib/fontwidth';
 import { blocklist } from './duel/lib/db';
@@ -50,6 +51,47 @@ const modeAt = (p: Puzzle, s: Slot) => (p.slots.filter(o => o.clueCell === s.clu
   check('"NUMERALS" is too wide for a border square (Montserrat is wide)', !fits('Numerals', 'one'));
   const x = 'Line of seats in a hall';
   check(`"${x}" fits alone but not as half of a two-clue square`, fits(x, 'one') && !fits(x, 'two'), lines(x, CELL * FIT.two.size, CELL - 2));
+}
+
+// ---------- the checker ----------
+{
+  check('p0001 passes the full checker', checkPuzzle(p0001).length === 0, checkPuzzle(p0001));
+  const C = p0001.cols;
+  const slot = (answer: string) => p0001.slots.findIndex(s => s.answer === answer);
+  const fails = (label: string, rule: RegExp, mutate: (p: Puzzle) => void, ctx?: Partial<CheckContext>) => {
+    const p = JSON.parse(JSON.stringify(p0001)) as Puzzle;
+    mutate(p);
+    const problems = checkPuzzle(p, { ...defaultContext(), ...ctx });
+    check(`checker rejects ${label}`, problems.some(m => rule.test(m)), problems.slice(0, 4));
+  };
+  const toLetter = (p: Puzzle, cell: number) => { p.solution[cell] = 'A'; p.clueCells = p.clueCells.filter(c => c !== cell); };
+  const toClue = (p: Puzzle, cell: number) => { delete p.solution[cell]; p.clueCells.push(cell); };
+  const setClue = (answer: string, text: string) => (p: Puzzle) => { const s = p.slots[slot(answer)]; s.clue = { kind: 'def', text, full: text }; };
+  const innerTwo = p0001.slots.find(s => s.clueCell > 2 * C && s.clueCell % C > 0 && p0001.slots.filter(o => o.clueCell === s.clueCell).length === 2)!;
+
+  fails('a top-border square turned into a letter', /top border \(0,3\)/, p => toLetter(p, 3));
+  fails('a first-row letter turned into a clue square', /first letter row \(1,4\)/, p => toClue(p, 1 * C + 4));
+  fails('a border clue removed', /top border \(0,2\) clues ""/, p => { p.slots = p.slots.filter(s => s.clueCell !== 2); });
+  fails('an inner clue square that clues nothing', /clues "", needs "ad"/, p => { p.slots = p.slots.filter(s => s.clueCell !== innerTwo.clueCell); });
+  fails('a third slot on one clue square', /clues "aad"/, p => { p.slots.push({ ...innerTwo, id: 'a:9:9' }); });
+  fails('an 8-letter across', /8 letters/, p => { p.slots[slot('OVERLAP')].answer = 'OVERLAPS'; });
+  fails('a duplicate answer', /appears twice/, p => { p.slots[slot('TEE')].answer = 'BED'; });
+  fails('a blocked answer', /blocked word/, () => {}, { blocked: new Set(['tee']) });
+  fails('a non-Panna answer', /not a Panna word/, () => {}, { words: new Set([...defaultContext().words].filter(w => w !== 'tee')) });
+  check('the containment rule catches TOUR in "Tourist trip" (Review Focus 1)', textProblem('tour', 'Tourist trip') !== null);
+  check('the containment rule catches NORTH in "North"', textProblem('north', 'North') !== null);
+  check('N may be clued "North" (whole-word rule for short answers)', textProblem('n', 'North') === null);
+  fails('a clue that contains its answer', /contains the answer SLED/, p => { p.slots[slot('SLED')].clue = { kind: 'def', text: 'Sledding ride', full: 'Sledding ride' }; });
+  fails('a two-letter answer as a whole word in its clue', /contains the answer NO/, setClue('NO', 'No way'));
+  fails('"briefly" in a clue', /briefly/, setClue('BED', 'Spot, briefly'));
+  fails('a clue too long for its square', /doesn't fit its square/, setClue('ORCHESTRA', 'A large group of people who play music together'));
+  fails('a clue that fits alone but not in a two-clue square (Review Focus 5)', /half a two-clue square/, p => { const s = p.slots.find(o => o.id === innerTwo.id)!; s.clue = { kind: 'def', text: 'Line of seats in a hall', full: 'Line of seats in a hall' }; });
+  fails('two given letters in one answer', /share an answer/, p => { p.given = [1 * C + 1, 1 * C + 3, p.given[2]]; });
+  fails('one given letter', /1 given letters/, p => { p.given = [p.given[0]]; });
+  fails('a picture key with no SVG (Review Focus 4)', /zzzz has no SVG/, p => { p.slots[slot('SLED')].clue.img = 'zzzz'; });
+  fails('wrong picture maths', /doesn't make per/, p => { p.slots[slot('PER')].clue.math = '+s'; });
+  fails('an empty Hindi sense', /sense needs both en and hi/, p => { p.slots[slot('BED')].sense.hi = ''; });
+  check('picture maths: bird −r = bid, pear + s = pears', picMath('bird', '−r') === 'bid' && picMath('pear', '+s') === 'pears' && picMath('pear', '−z') === null);
 }
 
 if (failures) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
