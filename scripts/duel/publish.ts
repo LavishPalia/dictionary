@@ -89,7 +89,7 @@ export async function publish(o: PublishOptions): Promise<{ published: string[];
   const sheet = join(dir, 'review', `${batch}.csv`), candDir = join(dir, 'candidates', batch);
   if (!existsSync(sheet) || !existsSync(candDir)) throw new Error(`${batch}: no review sheet or candidates in ${dir}`);
 
-  const [head, ...rows] = parseCsv(readFileSync(sheet, 'utf8'));
+  const [head, ...rows] = parseCsv(readFileSync(sheet, 'utf8').replace(/^﻿/, '')); // Excel saves a BOM
   const col = (name: string) => { const i = head.indexOf(name); if (i < 0) throw new Error(`${sheet}: no "${name}" column`); return i; };
   const [P, A, C, B] = ['puzzle', 'answer', 'clue', 'bad'].map(col);
   const badRows = rows.filter(r => (r[B] ?? '').trim());
@@ -122,6 +122,7 @@ export async function publish(o: PublishOptions): Promise<{ published: string[];
     const bytes = JSON.stringify(p, null, 1) + '\n';
     writeFileSync(file, bytes);
     published[key] = { hash: sha256(bytes), batch, from: cand.id };
+    writeJson(publishedFile, sortKeys(published)); // after every file, so a crash never leaves an unlisted puzzle
     newKeys.push(key);
     next++;
   }

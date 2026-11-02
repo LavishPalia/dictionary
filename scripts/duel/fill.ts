@@ -126,5 +126,7 @@ export function fill(P: Pattern, slots: LSlot[], index: FillIndex, steps: number
   };
 
   if (!propagate(multi.map((_, k) => k)) || !solve()) return null;
-  return [...Array(LR)].map((_, r) => [...Array(LC)].map((_, c) => (P[r][c] ? '#' : String.fromCharCode(A + 31 - Math.clz32(dom[cell(r, c)])))));
+  // A cell boxed in both ways is two one-letter answers and may still hold any clued letter: pick one by the seed.
+  const letter = (d: number) => { const ls = [...Array(26).keys()].filter(l => d & (1 << l)); return String.fromCharCode(A + ls[Math.floor(rng() * ls.length)]); };
+  return [...Array(LR)].map((_, r) => [...Array(LC)].map((_, c) => (P[r][c] ? '#' : letter(dom[cell(r, c)]))));
 }

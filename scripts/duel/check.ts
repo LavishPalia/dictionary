@@ -54,8 +54,10 @@ export function checkPuzzle(p: Puzzle, c: CheckContext = defaultContext()): stri
   const seen = new Map<string, string>();
   for (const s of p.slots) {
     const word = s.answer.toLowerCase(), at = `${s.id} ${s.answer}`;
-    const okLength = (s.answer.length >= 1 && s.answer.length <= 7) || (s.dir === 'd' && s.answer.length === 9);
-    if (!okLength) problems.push(`${at}: ${s.answer.length} letters; answers are 1–7 letters, or a 9-letter down`);
+    // A 9-letter down may only run down the first or the last letter column (the plan; CM's grids look like that).
+    const col = s.cells[0] % p.cols;
+    const okLength = (s.answer.length >= 1 && s.answer.length <= 7) || (s.dir === 'd' && s.answer.length === 9 && (col === 1 || col === p.cols - 1));
+    if (!okLength) problems.push(`${at}: ${s.answer.length} letters; answers are 1–7 letters, or a 9-letter down in the first or last column`);
     if (word.length > 1) {
       if (seen.has(word)) problems.push(`${at}: answer appears twice (also ${seen.get(word)})`);
       seen.set(word, s.id);

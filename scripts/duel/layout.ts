@@ -9,7 +9,10 @@ export const ROWS = LR + 1, COLS = LC + 1;
 export type Pattern = boolean[][];
 export interface LSlot { dir: 'a' | 'd'; cells: [number, number][] }
 
-/** A random pattern, or null when the board rules can't be met with this draw. */
+/**
+ * A random pattern, or null when this draw breaks a rule: every middle letter column (2nd to 6th) needs an inner clue
+ * square, since only the first and last columns may hold a 9-letter down.
+ */
 export function randomPattern(rng: () => number): Pattern | null {
   const P: Pattern = [...Array(LR)].map(() => Array<boolean>(LC).fill(false));
   let prev = -1;
@@ -19,7 +22,7 @@ export function randomPattern(rng: () => number): Pattern | null {
     P[r][c] = true;
     prev = c;
   }
-  return P;
+  return [1, 2, 3, 4, 5].every(c => P.some(row => row[c])) ? P : null;
 }
 
 /** Every slot: each clue square (border or inner) clues the run to its right and the run below it. */

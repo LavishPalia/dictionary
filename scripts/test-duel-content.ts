@@ -85,6 +85,7 @@ const modeAt = (p: Puzzle, s: Slot) => (p.slots.filter(o => o.clueCell === s.clu
   fails('a border clue removed', /top border \(0,2\) clues ""/, p => { p.slots = p.slots.filter(s => s.clueCell !== 2); });
   fails('an inner clue square that clues nothing', /clues "", needs "ad"/, p => { p.slots = p.slots.filter(s => s.clueCell !== innerTwo.clueCell); });
   fails('a third slot on one clue square', /clues "aad"/, p => { p.slots.push({ ...innerTwo, id: 'a:9:9' }); });
+  fails('a 9-letter down in a middle column', /9-letter down in the first or last column/, p => { const s = p.slots[slot('ORCHESTRA')]; s.cells = s.cells.map(c => c + 1); });
   fails('an 8-letter across', /8 letters/, p => { p.slots[slot('OVERLAP')].answer = 'OVERLAPS'; });
   fails('a duplicate answer', /appears twice/, p => { p.slots[slot('TEE')].answer = 'BED'; });
   fails('a blocked answer', /blocked word/, () => {}, { blocked: new Set(['tee']) });
@@ -135,12 +136,17 @@ const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sen
 {
   const bad: string[] = [];
   for (let seed = 1; seed <= 20; seed++) {
-    const P = randomPattern(seeded(seed))!;
+    const rng = seeded(seed);
+    let P = randomPattern(rng);
+    while (!P) P = randomPattern(rng);
     const grid = P.map(row => row.map(isClue => (isClue ? '#' : 'a')));
     const problems = boardProblems(toPuzzle(P, grid, dummy, { id: 't', version: 0, given: [] }));
     if (problems.length) bad.push(`seed ${seed}: ${problems[0]}`);
   }
   check('20 random patterns all meet the board rules', bad.length === 0, bad);
+  const nines: string[] = [];
+  for (let seed = 1; seed <= 200; seed++) { const P = randomPattern(seeded(seed)); if (P) for (const sl of slotsOf(P)) if (sl.cells.length === 9 && sl.cells[0][1] !== 0 && sl.cells[0][1] !== 6) nines.push(`seed ${seed}`); }
+  check('layouts put 9-letter downs only in the first or last column', nines.length === 0, nines.slice(0, 3));
 
   // p0001's own layout and words: the fill must find p0001's grid.
   const P = [...Array(9)].map((_, r) => [...Array(7)].map((_, c) => p0001.solution[(r + 1) * 8 + c + 1] === undefined));
@@ -153,7 +159,7 @@ const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sen
   const words = new Map<number, string[]>();
   for (const w of pool) words.set(w.len, [...(words.get(w.len) ?? []), w.word]);
   const index = indexWords(words);
-  const run = (seed: number) => { const rng = seeded(seed); for (let i = 0; i < 50; i++) { const P = randomPattern(rng)!; const g = fill(P, slotsOf(P), index, FILL_STEPS, rng); if (g) return { P, g }; } return null; };
+  const run = (seed: number) => { const rng = seeded(seed); for (let i = 0; i < 200; i++) { const P = randomPattern(rng); if (!P) continue; const g = fill(P, slotsOf(P), index, FILL_STEPS, rng); if (g) return { P, g }; } return null; };
   const a = run(3), b = run(3);
   check('the same seed fills the same grid', !!a && a.g.map(r => r.join('')).join() === b?.g.map(r => r.join('')).join());
   if (a) {
@@ -189,6 +195,7 @@ const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sen
   const schedule: Schedule = existsSync('data/duel/schedule.json') ? JSON.parse(readFileSync('data/duel/schedule.json', 'utf8')) : {};
   const keys = Object.keys(published);
   const bad = keys.flatMap(k => checkPuzzle(JSON.parse(readFileSync(`data/duel/puzzles/${k}.json`, 'utf8'))).map(m => `${k}: ${m}`));
+  if (!keys.length) console.log('  (no puzzles published yet: the next checks are empty)');
   check(`all ${keys.length} published puzzles pass the checker (pictures included)`, bad.length === 0, bad.slice(0, 5));
   const hashBad = keys.filter(k => sha256(readFileSync(`data/duel/puzzles/${k}.json`)) !== published[k].hash);
   check('every published file matches its hash', hashBad.length === 0, hashBad);
