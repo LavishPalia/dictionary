@@ -15,7 +15,7 @@ import { acceptClue, type BankClue, loadBank, readBankFile, ruleClues } from './
 import { textProblem } from './duel/lib/clue-rules';
 import { blocklist, dictionary } from './duel/lib/db';
 import { CELL, FIT, fits, lines } from './duel/lib/fontwidth';
-import { runShorten, type ShortenCall } from './duel/shorten';
+import { type RelVetCall, type RelVetInput, runRelVet, runShorten, type ShortenCall } from './duel/shorten';
 import { curated, LENGTHS, pictures, wordPool } from './duel/words';
 
 let failures = 0;
@@ -189,6 +189,30 @@ const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sen
   for (const d of dirs) rmSync(d, { recursive: true, force: true });
 }
 
+async function fakeRelVetChecks() {
+  // Similar/opposite clues stay out until Gemini keeps them for the stored sense (review: HARD = "solid" got "Catchy").
+  const dir = mkdtempSync(join(tmpdir(), 'duel-rel-'));
+  const file = join(dir, 'bank.jsonl'), log = join(dir, 'log.jsonl');
+  const words = ['cold', 'hard'].map(w => pool.find(p => p.word === w)!);
+  check('before vetting, COLD has no rel clue', !(loadBank(file, pool).get('cold') ?? []).some(c => c.kind === 'rel'));
+  let asked: RelVetInput[] = [];
+  const call: RelVetCall = async batch => {
+    asked = batch;
+    return { model: 'fake', items: batch.map(b => b.word === 'cold' ? { word: 'cold', similar: [], opposite: ['hot', 'chilly-made-up'] } : { word: b.word, similar: [], opposite: [] }) };
+  };
+  await runRelVet({ call, words, file, logFile: log });
+  check('the vetting request shows COLD its candidates, "hot" among the opposites', asked.find(b => b.word === 'cold')?.opposite.includes('hot') === true, asked.find(b => b.word === 'cold'));
+  const bank = loadBank(file, pool);
+  const coldRel = (bank.get('cold') ?? []).filter(c => c.kind === 'rel').map(c => c.full);
+  check('after vetting, COLD keeps only "Opposite of hot"', coldRel.join() === 'Opposite of hot', coldRel);
+  check('a word Gemini made up is never kept', !readFileSync(file, 'utf8').includes('chilly-made-up'));
+  check('HARD, with nothing kept, has no rel clue', !(bank.get('hard') ?? []).some(c => c.kind === 'rel'));
+  asked = [];
+  await runRelVet({ call, words, file, logFile: log });
+  check('a second vetting run asks nothing', asked.length === 0);
+  rmSync(dir, { recursive: true, force: true });
+}
+
 // ---------- published puzzles and the schedule (the real data) ----------
 {
   const published: Published = existsSync('data/duel/published.json') ? JSON.parse(readFileSync('data/duel/published.json', 'utf8')) : {};
@@ -297,6 +321,7 @@ async function fakeGeminiChecks() {
 
 (async () => {
   await fakeGeminiChecks();
+  await fakeRelVetChecks();
   await publishChecks();
   if (failures) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
   console.log('\nall duel content checks passed');

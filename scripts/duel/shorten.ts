@@ -2,10 +2,12 @@
 // stored Panna sense, and says whether the clue fits that sense. Results are cached in data/duel/clue-bank.jsonl, so a
 // word is asked once; a word whose clue breaks a rule or fits another sense is stored as rejected and never asked again.
 // Free tier, Flash Lite only. Stops cleanly on the daily quota; run it again after the reset to resume.
+// A second pass shows Gemini each word's similar/opposite candidates with the stored sense and keeps only those that fit
+// it (loadBank uses no rel clue until then).
 // Usage: npm run duel:clues [-- --max-requests N]
 import { appendFileSync } from 'node:fs';
 import type { Sense } from '../../src/duel/engine/types';
-import { acceptClue, BANK_FILE, type BankClue, type BankLine, readBankFile } from './clues';
+import { acceptClue, BANK_FILE, type BankClue, type BankLine, isRelVet, readBankFile, relOf, ruleClues } from './clues';
 import { dictionary } from './lib/db';
 import { type PoolWord, wordPool } from './words';
 
@@ -53,31 +55,83 @@ export function bankLines(w: PoolWord, item: ShortenItem): BankLine[] {
   return out;
 }
 
-/** Asks Gemini for every pool word not yet in the bank file. Returns the number of requests made. */
-export async function runShorten(opts: { call: ShortenCall; words?: PoolWord[]; file?: string; logFile?: string; maxRequests?: number; quotaError?: new (...a: never[]) => Error }): Promise<number> {
-  const file = opts.file ?? BANK_FILE;
-  const asked = new Set(readBankFile(file).map(l => l.word));
-  const todo = (opts.words ?? wordPool()).filter(w => w.source === 'panna' && !asked.has(w.word));
-  const pos = dictionary().prepare('select pos from entries where rowid = ?');
+export interface RelVetInput { word: string; pos: string; sense: Sense; similar: string[]; opposite: string[] }
+export interface RelVetItem { word: string; similar: string[]; opposite: string[] }
+export type RelVetCall = (batch: RelVetInput[]) => Promise<{ model: string; items: RelVetItem[] }>;
+
+export const REL_PROMPT = `You check similar and opposite words for an English learner's word puzzle.
+For each entry you get a word, its part of speech, the one English definition the puzzle uses, its Hindi meaning, and candidate similar and opposite words.
+Keep a similar word only if, in THIS definition's sense, it means nearly the same and a learner would accept it as a clue for the word.
+Keep an opposite word only if it is the true opposite in THIS definition's sense.
+Drop candidates that belong to another sense of the word, are vague, or are rare. Never add words that are not in the candidate lists.
+Return one object per entry with the word copied exactly as given and the kept candidates.`;
+
+const REL_SCHEMA = {
+  type: 'ARRAY',
+  items: {
+    type: 'OBJECT',
+    properties: { word: { type: 'STRING' }, similar: { type: 'ARRAY', items: { type: 'STRING' } }, opposite: { type: 'ARRAY', items: { type: 'STRING' } } },
+    required: ['word', 'similar', 'opposite'],
+  },
+};
+
+interface RunOpts { file?: string; logFile?: string; maxRequests?: number; quotaError?: new (...a: never[]) => Error; words?: PoolWord[] }
+
+/** Sends `todo` to Gemini in batches and appends the bank lines; stops cleanly on the daily quota and logs the run. */
+async function runBatches<T extends { word: string }, I extends { word: string }>(label: string, todo: T[], o: RunOpts,
+  call: (batch: T[]) => Promise<{ model: string; items: I[] }>, toLines: (w: T, item: I) => BankLine[]): Promise<number> {
+  const file = o.file ?? BANK_FILE;
   let requests = 0, words = 0, model = '';
   try {
-    for (let i = 0; i < todo.length && requests < (opts.maxRequests ?? Infinity); i += BATCH_SIZE) {
+    for (let i = 0; i < todo.length && requests < (o.maxRequests ?? Infinity); i += BATCH_SIZE) {
       const batch = todo.slice(i, i + BATCH_SIZE);
-      const res = await opts.call(batch.map(w => ({ word: w.word, pos: (pos.get(w.sense.entryId) as { pos: string } | undefined)?.pos ?? '', sense: w.sense })));
+      const res = await call(batch);
       requests++; model = res.model;
       const got = new Map(res.items.map(it => [it.word.toLowerCase().trim(), it]));
-      const lines = batch.flatMap(w => (got.has(w.word) ? bankLines(w, got.get(w.word)!) : [])); // omitted words are asked again next run
+      const lines = batch.flatMap(w => (got.has(w.word) ? toLines(w, got.get(w.word)!) : [])); // omitted words are asked again next run
       if (lines.length) appendFileSync(file, lines.map(l => JSON.stringify(l)).join('\n') + '\n');
       words += new Set(lines.map(l => l.word)).size;
-      process.stderr.write(`[duel:clues] ${Math.min(i + BATCH_SIZE, todo.length)}/${todo.length}\n`);
+      process.stderr.write(`[duel:clues] ${label} ${Math.min(i + BATCH_SIZE, todo.length)}/${todo.length}\n`);
     }
   } catch (err) {
-    if (!(opts.quotaError && err instanceof opts.quotaError)) throw err;
+    if (!(o.quotaError && err instanceof o.quotaError)) throw err;
     process.stderr.write(`[duel:clues] daily quota reached; run again after the reset (~12:30 PM IST)\n`);
   } finally {
-    if (requests) appendFileSync(opts.logFile ?? LOG_FILE, JSON.stringify({ at: new Date().toISOString(), model, requests, words }) + '\n');
+    if (requests) appendFileSync(o.logFile ?? LOG_FILE, JSON.stringify({ at: new Date().toISOString(), model, requests, words, pass: label }) + '\n');
   }
   return requests;
+}
+
+const posOf = () => { const q = dictionary().prepare('select pos from entries where rowid = ?'); return (w: PoolWord) => (q.get(w.sense.entryId) as { pos: string } | undefined)?.pos ?? ''; };
+
+/** Asks Gemini for a def (and gap) clue for every pool word not yet in the bank file. Returns the number of requests. */
+export async function runShorten(o: RunOpts & { call: ShortenCall }): Promise<number> {
+  const asked = new Set(readBankFile(o.file ?? BANK_FILE).filter(l => !isRelVet(l)).map(l => l.word));
+  const todo = (o.words ?? wordPool()).filter(w => w.source === 'panna' && !asked.has(w.word));
+  const pos = posOf();
+  return runBatches('defs', todo, o, batch => o.call(batch.map(w => ({ word: w.word, pos: pos(w), sense: w.sense }))), bankLines);
+}
+
+/** Asks Gemini which similar/opposite candidates fit each word's stored sense, for words not yet vetted. */
+export async function runRelVet(o: RunOpts & { call: RelVetCall }): Promise<number> {
+  const pool = o.words ?? wordPool(), asking = new Set(pool.map(w => w.word));
+  const vetted = new Set(readBankFile(o.file ?? BANK_FILE).filter(isRelVet).map(l => l.word));
+  const cands = new Map<string, { similar: string[]; opposite: string[] }>();
+  for (const c of ruleClues()) { // candidates may be any pool word, even when only some words are asked
+    const rel = relOf(c);
+    if (!rel || vetted.has(c.word) || !asking.has(c.word)) continue;
+    const e = cands.get(c.word) ?? { similar: [], opposite: [] };
+    e[rel.kind].push(rel.other);
+    cands.set(c.word, e);
+  }
+  const pos = posOf();
+  const todo = pool.filter(w => cands.has(w.word)).map(w => ({ w, ...cands.get(w.word)!, word: w.word }));
+  return runBatches('rel', todo, o,
+    batch => o.call(batch.map(t => ({ word: t.word, pos: pos(t.w), sense: t.w.sense, similar: t.similar, opposite: t.opposite }))),
+    (t, item) => {
+      const keep = (asked: string[], got: string[]) => asked.filter(x => got.map(g => g.toLowerCase().trim()).includes(x)); // never a word it made up
+      return [{ word: t.word, similar: keep(t.similar, item.similar ?? []), opposite: keep(t.opposite, item.opposite ?? []), by: 'gemini-rel' }];
+    });
 }
 
 if (process.argv[1]?.endsWith('shorten.ts')) {
@@ -87,12 +141,14 @@ if (process.argv[1]?.endsWith('shorten.ts')) {
     const { callGeminiJson, DailyQuotaError } = await import('../lib/gemini');
     const { loadApiKey } = await import('../lib/gloss');
     const key = loadApiKey();
-    const call: ShortenCall = batch => callGeminiJson<ShortenItem>(key, {
-      system: SYSTEM_PROMPT,
-      schema: SCHEMA,
-      contents: [{ role: 'user', parts: [{ text: batch.map(b => `word: ${b.word}\npos: ${b.pos}\ndefinition: ${b.sense.en}\nhindi: ${b.sense.hi}`).join('\n\n') }] }],
-    });
-    const n = await runShorten({ call, maxRequests: max > 0 ? Number(process.argv[max + 1]) : undefined, quotaError: DailyQuotaError });
-    console.log(`${n} request(s) made; bank: ${BANK_FILE}`);
+    const opts = { maxRequests: max > 0 ? Number(process.argv[max + 1]) : undefined, quotaError: DailyQuotaError };
+    const entry = (b: ShortenInput) => `word: ${b.word}\npos: ${b.pos}\ndefinition: ${b.sense.en}\nhindi: ${b.sense.hi}`;
+    const defs = await runShorten({ ...opts, call: batch => callGeminiJson<ShortenItem>(key, { system: SYSTEM_PROMPT, schema: SCHEMA, contents: [{ role: 'user', parts: [{ text: batch.map(entry).join('\n\n') }] }] }) });
+    const left = opts.maxRequests === undefined ? undefined : Math.max(0, opts.maxRequests - defs);
+    const rel = await runRelVet({ ...opts, maxRequests: left, call: batch => callGeminiJson<RelVetItem>(key, {
+      system: REL_PROMPT, schema: REL_SCHEMA,
+      contents: [{ role: 'user', parts: [{ text: batch.map(b => `${entry(b)}\nsimilar candidates: ${b.similar.join(', ') || '(none)'}\nopposite candidates: ${b.opposite.join(', ') || '(none)'}`).join('\n\n') }] }],
+    }) });
+    console.log(`${defs + rel} request(s) made (${defs} defs, ${rel} similar/opposite checks); bank: ${BANK_FILE}`);
   })().catch(err => { console.error(err instanceof Error ? err.message : err); process.exit(1); });
 }

@@ -1,6 +1,8 @@
 // The clue bank: every clue a pool word can get. Rule-built clues (similar/opposite words, pictures, picture maths,
 // the curated short answers) are made here from Panna data on every load; Gemini's short definitions and fill-the-gap
 // phrases are cached in data/duel/clue-bank.jsonl (scripts/duel/shorten.ts). The filler only uses words with a clue.
+// Similar/opposite words come from WordNet's (or Gemini's) senses, not necessarily Panna's stored one (HARD = "solid, firm"
+// but WordNet offers "Difficult"), so a rel clue is only used once Gemini has kept that word for the stored sense.
 import { existsSync, readFileSync } from 'node:fs';
 import type { Clue, Sense } from '../../src/duel/engine/types';
 import { picMath } from './check';
@@ -12,7 +14,17 @@ import { curated, pictures, type PoolWord, wordPool } from './words';
 export interface BankClue { word: string; kind: Clue['kind']; text?: string; img?: string; math?: string; full: string; sense: Sense; by: 'rule' | 'gemini' }
 /** A word Gemini couldn't clue in its stored sense, or whose clue broke a rule; never asked again. */
 export interface BankReject { word: string; rejected: string; by: 'gemini' }
-export type BankLine = BankClue | BankReject;
+/** Which similar/opposite words fit the word's stored sense, as judged by Gemini. */
+export interface BankRelVet { word: string; similar: string[]; opposite: string[]; by: 'gemini-rel' }
+export type BankLine = BankClue | BankReject | BankRelVet;
+export const isClue = (l: BankLine): l is BankClue => 'full' in l;
+export const isRelVet = (l: BankLine): l is BankRelVet => l.by === 'gemini-rel';
+
+/** The word a rel clue is built on, and which list it came from. */
+export function relOf(c: BankClue): { kind: 'similar' | 'opposite'; other: string } | null {
+  const m = /^(Similar to|Opposite of) (.+)$/.exec(c.full);
+  return c.kind === 'rel' && m ? { kind: m[1] === 'Opposite of' ? 'opposite' : 'similar', other: m[2] } : null;
+}
 
 export const BANK_FILE = 'data/duel/clue-bank.jsonl';
 export const REJECTED_FILE = 'data/duel/rejected-clues.jsonl';
@@ -88,9 +100,13 @@ export function readBankFile(file = BANK_FILE): BankLine[] {
 export function loadBank(file = BANK_FILE, pool: PoolWord[] = wordPool()): Map<string, BankClue[]> {
   const bad = new Set(readBankFile(REJECTED_FILE).map(r => `${r.word}|${'full' in r ? r.full : ''}`));
   const inPool = new Set(pool.map(w => w.word));
+  const lines = readBankFile(file);
+  const vetted = new Map(lines.filter(isRelVet).map(v => [v.word, v]));
   const bank = new Map<string, BankClue[]>();
-  for (const c of [...ruleClues(pool), ...readBankFile(file).filter((l): l is BankClue => !('rejected' in l))]) {
+  for (const c of [...ruleClues(pool), ...lines.filter(isClue)]) {
     if (!inPool.has(c.word) || bad.has(`${c.word}|${c.full}`) || acceptClue(c.word, c)) continue;
+    const rel = relOf(c);
+    if (rel && !vetted.get(c.word)?.[rel.kind].includes(rel.other)) continue;
     bank.set(c.word, [...(bank.get(c.word) ?? []), c]);
   }
   return bank;
