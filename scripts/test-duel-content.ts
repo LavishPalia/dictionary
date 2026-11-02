@@ -92,6 +92,8 @@ const modeAt = (p: Puzzle, s: Slot) => (p.slots.filter(o => o.clueCell === s.clu
   fails('a non-Panna answer', /not a Panna word/, () => {}, { words: new Set([...defaultContext().words].filter(w => w !== 'tee')) });
   check('the containment rule catches TOUR in "Tourist trip" (Review Focus 1)', textProblem('tour', 'Tourist trip') !== null);
   check('the containment rule catches NORTH in "North"', textProblem('north', 'North') !== null);
+  check('a clue may not use a word unfit for a family game (SMOKE / "Puff a fag")', /unfit/.test(textProblem('smoke', 'Puff a fag') ?? ''));
+  check('ordinary words like "war" are fine inside a clue (PEACE / "No war")', textProblem('peace', 'No war') === null);
   check('N may be clued "North" (whole-word rule for short answers)', textProblem('n', 'North') === null);
   fails('a clue that contains its answer', /contains the answer SLED/, p => { p.slots[slot('SLED')].clue = { kind: 'def', text: 'Sledding ride', full: 'Sledding ride' }; });
   fails('a two-letter answer as a whole word in its clue', /contains the answer NO/, setClue('NO', 'No way'));
