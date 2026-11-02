@@ -37,6 +37,8 @@ export function acceptClue(word: string, c: BankClue): string | null {
 
 /** Shares a stem of 4+ letters (COLD / COLDER): too close to clue each other. */
 const sameStem = (a: string, b: string) => a.length >= 4 && b.length >= 4 && a.slice(0, 4) === b.slice(0, 4);
+/** The word in a similar/opposite clue must be common, or the clue is harder than the answer (DEFRAUD → "Diddle"). */
+export const REL_MAX_RANK = 10000;
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 /** Clues built from Panna data alone, no Gemini. */
@@ -50,7 +52,8 @@ export function ruleClues(pool: PoolWord[] = wordPool()): BankClue[] {
     join entries e on e.id = r.entry_id join entries t on t.id = r.related_id order by e.normalized, r.kind, r.rank`).all() as { w: string; kind: 'similar' | 'opposite'; o: string; source: string }[];
   for (const l of links) {
     const pw = byWord.get(l.w);
-    if (!pw || pw.source !== 'panna' || !byWord.has(l.o) || sameStem(l.w, l.o) || textProblem(l.o, l.w)) continue;
+    const other = byWord.get(l.o);
+    if (!pw || pw.source !== 'panna' || !other || other.rank > REL_MAX_RANK || sameStem(l.w, l.o) || textProblem(l.o, l.w)) continue;
     if (l.kind === 'opposite' && l.source !== 'wordnet') continue;
     const text = l.kind === 'opposite' ? `Opposite of ${l.o}` : cap(l.o);
     push({ word: l.w, kind: 'rel', text, full: l.kind === 'opposite' ? text : `Similar to ${l.o}`, sense: pw.sense, by: 'rule' });

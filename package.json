@@ -77,6 +77,7 @@
     "test:duel-controller": "tsx scripts/test-duel-controller.ts",
     "test:duel-ui": "node scripts/test-duel-ui-browser.mjs",
     "duel:clues": "tsx scripts/duel/shorten.ts",
+    "duel:make": "tsx scripts/duel/make.ts",
     "duel:perf": "node scripts/duel/perf-phone.mjs"
   },
   "dependencies": {

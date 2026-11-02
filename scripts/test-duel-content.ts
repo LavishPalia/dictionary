@@ -6,6 +6,7 @@ import { nextU32, seedRng } from '../src/duel/engine/rng';
 import type { Puzzle, Slot } from '../src/duel/engine/types';
 import { boardProblems } from './duel/board-rules';
 import { fill, indexWords } from './duel/fill';
+import { make } from './duel/make';
 import { randomPattern, slotsOf, toPuzzle } from './duel/layout';
 import { type CheckContext, checkPuzzle, defaultContext, picMath } from './duel/check';
 import { acceptClue, type BankClue, loadBank, readBankFile, ruleClues } from './duel/clues';
@@ -159,6 +160,25 @@ const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sen
     check('every filled word is a pool word', answers.every(w => poolWords.has(w)), answers.filter(w => !poolWords.has(w)));
     check('no word of 2+ letters repeats', new Set(long).size === long.length);
   }
+}
+
+// ---------- make ----------
+{
+  const bank = loadBank();
+  const dirs = [1, 2].map(() => mkdtempSync(join(tmpdir(), 'duel-make-')));
+  const runs = dirs.map(out => make({ count: 2, seed: 1, out, bank, log: () => {} }));
+  const puzzles = runs[0].files.filter(f => f.endsWith('.json')).map(f => JSON.parse(readFileSync(f, 'utf8')) as Puzzle);
+  check('make writes 2 candidate puzzles', puzzles.length === 2, runs[0].files);
+  const picsLater = { ...defaultContext(), hasPic: (k: string) => defaultContext().pictures.has(k) }; // publish fetches the SVGs
+  const failing = puzzles.flatMap(p => checkPuzzle(p, picsLater).map(m => `${p.id}: ${m}`));
+  check('every candidate passes the checker (picture SVGs come at publish)', failing.length === 0, failing.slice(0, 5));
+  const csvRows = readFileSync(runs[0].files.find(f => f.endsWith('.csv'))!, 'utf8').trim().split('\n');
+  check('the review sheet has a header and one row per answer', csvRows[0] === 'puzzle,slot,answer,kind,clue,sense_en,sense_hi,bad' && csvRows.length === 1 + puzzles.reduce((n, p) => n + p.slots.length, 0), csvRows.length);
+  check('candidates have ids batch-001-c01.. and version 0', puzzles.map(p => `${p.id}.${p.version}`).join() === 'batch-001-c01.0,batch-001-c02.0');
+  check('3 given letters each', puzzles.every(p => p.given.length === 3), puzzles.map(p => p.given));
+  const same = runs[0].files.every((f, i) => readFileSync(f, 'utf8') === readFileSync(runs[1].files[i], 'utf8'));
+  check('the same seed writes byte-identical files', same);
+  for (const d of dirs) rmSync(d, { recursive: true, force: true });
 }
 
 async function fakeGeminiChecks() {

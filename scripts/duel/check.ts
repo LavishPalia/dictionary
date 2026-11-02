@@ -16,6 +16,8 @@ export interface CheckContext {
   /** Picture key → the words it can clue. */
   pictures: Map<string, string[]>;
   picDir: string;
+  /** Whether a picture's SVG is in place; make allows any mapped key, since publish fetches the SVGs. */
+  hasPic: (key: string) => boolean;
 }
 
 let ctx: CheckContext | undefined;
@@ -27,6 +29,7 @@ export function defaultContext(): CheckContext {
     blocked: blocklist(),
     pictures: new Map(pictures().map(p => [p.key, p.words])),
     picDir: 'public/duel/pics',
+    hasPic: key => existsSync(`public/duel/pics/${key}.svg`),
   });
 }
 
@@ -69,7 +72,7 @@ export function checkPuzzle(p: Puzzle, c: CheckContext = defaultContext()): stri
     if (clue.kind === 'pic' || clue.kind === 'picmath') {
       if (!clue.img) problems.push(`${at}: picture clue without a picture key`);
       else {
-        if (!existsSync(`${c.picDir}/${clue.img}.svg`)) problems.push(`${at}: picture ${clue.img} has no SVG in ${c.picDir}`);
+        if (!c.hasPic(clue.img)) problems.push(`${at}: picture ${clue.img} has no SVG in ${c.picDir}`);
         const picWords = c.pictures.get(clue.img);
         if (!picWords) problems.push(`${at}: picture ${clue.img} is not in pictures.json`);
         else if (clue.kind === 'pic' && !picWords.includes(word)) problems.push(`${at}: picture ${clue.img} shows ${picWords.join('/')}, not ${word}`);

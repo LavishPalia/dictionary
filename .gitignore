@@ -32,3 +32,6 @@ data/sources/raw/
 scratch
 .vercel
 .env*
+
+# Duel puzzle candidates (npm run duel:make); the review sheets in data/duel/review are committed
+data/duel/candidates/
