@@ -2,7 +2,11 @@
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { nextU32, seedRng } from '../src/duel/engine/rng';
 import type { Puzzle, Slot } from '../src/duel/engine/types';
+import { boardProblems } from './duel/board-rules';
+import { fill, indexWords } from './duel/fill';
+import { randomPattern, slotsOf, toPuzzle } from './duel/layout';
 import { type CheckContext, checkPuzzle, defaultContext, picMath } from './duel/check';
 import { acceptClue, type BankClue, loadBank, readBankFile, ruleClues } from './duel/clues';
 import { textProblem } from './duel/lib/clue-rules';
@@ -121,6 +125,41 @@ const rules = ruleClues();
   check('every rule-built clue passes acceptClue', ruleBad.length === 0, ruleBad.slice(0, 3));
   check('every pool word with a curated answer gets its curated clue', curated().every(c => !poolWords.has(c.answer) || rules.some(r => r.word === c.answer && r.text === c.clue)));
 }
+// ---------- layout and fill ----------
+const seeded = (seed: number) => { const s = seedRng(seed, 0); return () => nextU32(s) / 2 ** 32; };
+const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sense: { en: 'x', hi: 'x' } });
+{
+  const bad: string[] = [];
+  for (let seed = 1; seed <= 20; seed++) {
+    const P = randomPattern(seeded(seed))!;
+    const grid = P.map(row => row.map(isClue => (isClue ? '#' : 'a')));
+    const problems = boardProblems(toPuzzle(P, grid, dummy, { id: 't', version: 0, given: [] }));
+    if (problems.length) bad.push(`seed ${seed}: ${problems[0]}`);
+  }
+  check('20 random patterns all meet the board rules', bad.length === 0, bad);
+
+  // p0001's own layout and words: the fill must find p0001's grid.
+  const P = [...Array(9)].map((_, r) => [...Array(7)].map((_, c) => p0001.solution[(r + 1) * 8 + c + 1] === undefined));
+  const own = new Map<number, string[]>();
+  for (const s of p0001.slots) { const w = s.answer.toLowerCase(); own.set(w.length, [...new Set([...(own.get(w.length) ?? []), w])]); }
+  const g = fill(P, slotsOf(P), indexWords(own), Date.now() + 10000, seeded(1));
+  const want = [...Array(9)].map((_, r) => [...Array(7)].map((_, c) => p0001.solution[(r + 1) * 8 + c + 1]?.toLowerCase() ?? '#').join(''));
+  check('fill with only p0001\'s words finds p0001\'s grid', g?.map(r => r.join('')).join() === want.join(), g?.map(r => r.join('')));
+
+  const words = new Map<number, string[]>();
+  for (const w of pool) words.set(w.len, [...(words.get(w.len) ?? []), w.word]);
+  const index = indexWords(words);
+  const run = (seed: number) => { const rng = seeded(seed); for (let i = 0; i < 50; i++) { const P = randomPattern(rng)!; const g = fill(P, slotsOf(P), index, Date.now() + 15000, rng); if (g) return { P, g }; } return null; };
+  const a = run(3), b = run(3);
+  check('the same seed fills the same grid', !!a && a.g.map(r => r.join('')).join() === b?.g.map(r => r.join('')).join());
+  if (a) {
+    const answers = slotsOf(a.P).map(s => s.cells.map(([r, c]) => a.g[r][c]).join(''));
+    const long = answers.filter(w => w.length > 1);
+    check('every filled word is a pool word', answers.every(w => poolWords.has(w)), answers.filter(w => !poolWords.has(w)));
+    check('no word of 2+ letters repeats', new Set(long).size === long.length);
+  }
+}
+
 async function fakeGeminiChecks() {
   // Gemini, faked: a clue for the wrong sense is dropped (Review Focus 2); a clue naming the answer is stored as rejected.
   const dir = mkdtempSync(join(tmpdir(), 'duel-bank-'));
