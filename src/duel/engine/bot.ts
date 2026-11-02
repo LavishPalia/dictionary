@@ -74,7 +74,7 @@ export function choose(p: Puzzle, s: GameState, rack: (string | null)[], rng: Ga
   // Answers this turn could finish: a few gaps, each with its letter in the rack.
   const finishable = p.slots
     .map(sl => ({ len: sl.cells.length, gaps: sl.cells.filter(c => !s.filled[c]) }))
-    .filter(x => x.len >= 2 && x.gaps.length >= 1 && x.gaps.length <= want && x.gaps.every(c => byLetter.has(p.solution[c])));
+    .filter(x => x.gaps.length >= 1 && x.gaps.length <= want && x.gaps.every(c => byLetter.has(p.solution[c])));
   const useful = new Set(finishable.flatMap(x => x.gaps));
   const groups = [...byLetter.entries()]
     .map(([letter, g]) => ({ letter, slots: g.slots, cells: g.cells.filter(c => useful.has(c)) }))

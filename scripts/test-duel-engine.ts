@@ -125,12 +125,12 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   const rD2 = apply(p0, arrange({ fill: allCellsBut([65, 66, 67]), you: ['E', 'T', 'A'] }), { t: 'submit', place: [{ cell: 65, rackSlot: 0 }, { cell: 66, rackSlot: 1 }, { cell: 67, rackSlot: 2 }] });
   check('D2: 3 of 3 right at the end: no empty hand', !rD2.events.some(e => e.e === 'emptyHand'), kinds(rD2.events));
 
-  // D3: a one-letter answer gets no word bonus
+  // D3: a one-letter answer is a word too: +1 tile, +1 word (the user, 2 Nov)
   {
     const p1: Puzzle = JSON.parse(JSON.stringify(p0));
     p1.slots.push({ id: 'd:1:3', dir: 'd', cells: [11], answer: 'D', clueCell: 3, clue: { kind: 'abbr', text: 'Roman 500', full: 'Roman 500' }, sense: { en: 'Roman 500', hi: '' } });
     const rD3 = apply(p1, arrange({ you: ['D'] }), { t: 'submit', place: [{ cell: 11, rackSlot: 0 }] });
-    check('D3: a one-letter answer pays only its tile', rD3.state.scores.you === 1 && !rD3.events.some(e => e.e === 'word'), kinds(rD3.events));
+    check('D3: a one-letter answer pays its tile and a 1-point word bonus', rD3.state.scores.you === 2 && words(rD3.events).map(w => `${w.slot}:${w.points}`).join() === 'd:1:3:1', kinds(rD3.events));
   }
 
   // E: whole rack, one wrong → no empty hand

@@ -23,7 +23,7 @@ const CLUE: Record<string, ProtoClue> = {
   g: { k: 'abbr', full: 'Gram', hi: 'ग्राम' }, anymore: { t: 'I DON’T CRY __', full: 'Fill the gap: I don’t cry ___' },
   'a:2:1': { k: 'def', full: 'Sounds like “are”', hi: 'आर (अक्षर)' },
   // down
-  orchestra: 'Concert hall players', v: { k: 'abbr', full: 'Five, in Roman numerals', hi: 'पाँच (रोमन अंक)' },
+  orchestra: 'Concert hall players', v: { k: 'abbr', full: 'Roman five', hi: 'पाँच (रोमन अंक)' },
   ma: { k: 'def', full: 'Mum', hi: 'माँ' }, lean: 'Tilt', eg: { k: 'abbr', full: 'For example', hi: 'उदाहरण के लिए' }, speedy: 'Quick',
   rusted: 'Like old iron', am: { k: 'abbr', full: 'Before noon', hi: 'सुबह (दोपहर से पहले)' }, liter: 'Metric volume unit',
   bro: 'Buddy', asinine: 'Very silly', per: { img: '1f350', x: '−a', full: 'Picture maths: pear minus A' }, lodge: 'Gate cabin',

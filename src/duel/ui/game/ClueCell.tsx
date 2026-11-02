@@ -17,7 +17,7 @@ export function ClueFace({ slot }: { slot: Slot }) {
   );
 }
 
-const clueLabel = (s: Slot) => `Clue, ${s.dir === 'a' ? 'across' : 'down'}: ${s.clue.full}, ${s.cells.length} letters`;
+const clueLabel = (s: Slot) => `Clue, ${s.dir === 'a' ? 'across' : 'down'}: ${s.clue.full}, ${s.cells.length} letter${s.cells.length === 1 ? '' : 's'}`;
 
 /** A clue cell: one clue, two (split top/bottom), or none (plain: a decoration there read as a clue). */
 export const ClueCell = memo(function ClueCell({ id, slots, lit, stage, onTap }: {

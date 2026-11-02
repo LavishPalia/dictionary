@@ -183,6 +183,8 @@ async function main() {
       button: document.querySelector('[data-act="submit"]').textContent.trim(),
       clueBar: Boolean(document.querySelector('.cb, [aria-label="Clue bar"]')),
       font: getComputedStyle(document.querySelector('.duel-rack .duel-tile .lt')).fontFamily,
+      clueFont: getComputedStyle(document.querySelector('.duel-cl .t')).fontFamily,
+      clueCase: getComputedStyle(document.querySelector('.duel-cl .t')).textTransform,
       pic: [...document.querySelectorAll('.duel-board img')].map((i) => i.getAttribute('src')),
     }))()`);
     check('phone: 80 cells on the board', screen.cells === 80, screen.cells);
@@ -191,6 +193,7 @@ async function main() {
     check('phone: the big button says Pass', screen.button === 'Pass', screen.button);
     check('phone: there is no clue bar', !screen.clueBar);
     check('phone: tile letters use Montserrat', /Duel Montserrat/.test(screen.font), screen.font);
+    check('phone: clues use the tile font, in capitals', /Duel Montserrat/.test(screen.clueFont) && screen.clueCase === 'uppercase', [screen.clueFont, screen.clueCase]);
     check('phone: pictures are self-hosted', screen.pic.length === P0.slots.filter((s) => s.clue.img).length && screen.pic.every((s) => s.startsWith('/duel/pics/')), screen.pic);
     const fits = await evaluate(`(() => { const r = document.querySelector('.duel-board').getBoundingClientRect(), a = document.querySelector('.duel-actions').getBoundingClientRect();
       return r.left >= 0 && r.right <= innerWidth && a.bottom <= innerHeight; })()`);

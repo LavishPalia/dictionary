@@ -69,8 +69,8 @@ export function resolvePlacement(p: Puzzle, s: GameState, who: Who, tiles: Place
 
   const placedNow = new Set(right.map(t => t.cell));
   const finished = p.slots
-    // A one-letter answer (a border clue like "Roman 500" = D) is a clue, not a word: no bonus.
-    .filter(sl => sl.cells.length >= 2 && sl.cells.some(c => placedNow.has(c)) && sl.cells.every(c => s.filled[c]))
+    // A one-letter answer ("Roman 500" = D) is a word too: it pays its 1-point bonus (the user, 2 Nov).
+    .filter(sl => sl.cells.some(c => placedNow.has(c)) && sl.cells.every(c => s.filled[c]))
     .sort((a, b) => a.cells.length - b.cells.length || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const sl of finished) {
     events.push({ e: 'word', who, slot: sl.id, points: sl.cells.length });
