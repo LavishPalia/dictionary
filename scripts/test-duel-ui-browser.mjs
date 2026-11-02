@@ -191,7 +191,7 @@ async function main() {
     check('phone: the big button says Pass', screen.button === 'Pass', screen.button);
     check('phone: there is no clue bar', !screen.clueBar);
     check('phone: tile letters use Montserrat', /Duel Montserrat/.test(screen.font), screen.font);
-    check('phone: pictures are self-hosted', screen.pic.length === 3 && screen.pic.every((s) => s.startsWith('/duel/pics/')), screen.pic);
+    check('phone: pictures are self-hosted', screen.pic.length === P0.slots.filter((s) => s.clue.img).length && screen.pic.every((s) => s.startsWith('/duel/pics/')), screen.pic);
     const fits = await evaluate(`(() => { const r = document.querySelector('.duel-board').getBoundingClientRect(), a = document.querySelector('.duel-actions').getBoundingClientRect();
       return r.left >= 0 && r.right <= innerWidth && a.bottom <= innerHeight; })()`);
     check('phone: the board and the buttons fit the screen', fits);

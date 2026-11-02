@@ -1,34 +1,36 @@
-// One-off: writes data/duel/puzzles/p0001.json, the practice puzzle M2 plays on every date, under the
-// board rules the user set on 1 Nov: the first letter row and the first letter column are all letters,
-// and every square in the top and left clue borders gives a clue. A border letter with no word the
-// other way gets a one-letter answer (N = North), as in arrowword apps; it scores no word bonus.
-// No "briefly" in clues: the answer's length already says it is short. Grid found with scratch/duel-ui/fill2.js.
+// One-off: writes data/duel/puzzles/p0001.json, the practice puzzle /play plays on every date until M4.
+// Its shape follows Crossword Master (the user, 2 Nov; the rules are in board-rules.ts): split clue squares
+// inside the grid (across ▶ on top, down ▼ below), every letter crossed both ways, one-letter answers anywhere.
+// No "briefly" in clues: the answer's length already says it is short. Grid found with scratch/duel-ui/fill-cm.js.
+// Senses come from Panna's entry for the word (so the end screen matches the clue); other answers carry their own.
 // Usage: npx tsx scripts/duel/fixture-practice.ts
+import Database from 'better-sqlite3';
 import { writeFileSync } from 'node:fs';
 import { checkPuzzleShape } from '../../src/duel/engine/puzzle';
-import type { Clue, Puzzle, Slot } from '../../src/duel/engine/types';
+import type { Clue, Puzzle, Sense, Slot } from '../../src/duel/engine/types';
+import { boardProblems } from './board-rules';
 
-// The 9 x 7 letter area; the board adds a clue row on top and a clue column on the left.
-const SOL = ['penalty', 'ox#nor#', 'to#tour', 'at##see', 'sit#e#v', 'scar#me', 'i#sober', 'u#twins', 'may#due'];
-const GIVEN = [[2, 3], [5, 5], [8, 2]];
-type ProtoClue = string | { k?: Clue['kind']; t?: string; img?: string; x?: string; full: string };
+// The 9 x 7 letter area; the board adds a clue row on top and a clue column on the left. # = clue square.
+const SOL = ['overlap', 'r#guise', 'cm#stir', 'hasten#', 'e#peril', 'sled#no', 'tee#bed', 'radar#g', 'anymore'];
+const GIVEN = [[1, 5], [4, 4], [7, 1]]; // S of GUISE/ASININE, R of PERIL/LITER, A of RADAR/LEAN
+type ProtoClue = string | { k?: Clue['kind']; t?: string; img?: string; x?: string; full: string; hi?: string };
+// Keyed by answer, or by slot id where an answer repeats (R).
 const CLUE: Record<string, ProtoClue> = {
   // across
-  penalty: 'Spot kick', ox: { img: '1f402', full: 'Picture: a strong farm beast' }, nor: 'Neither’s partner', to: 'Towards',
-  tour: 'Trip around', at: { t: 'LOOK __ ME', full: 'Fill the gap: Look _ _ me' }, see: 'Spot', sit: 'Take a seat', scar: 'Mark left by a wound',
-  me: 'Not you', sober: 'Not drunk', twins: 'Two born together', may: 'Month after April', due: 'Owed',
+  overlap: 'Partly cover', guise: 'False look', cm: { k: 'abbr', full: '100th of a metre', hi: 'सेंटीमीटर' }, stir: 'Mix with a spoon',
+  hasten: 'Hurry', e: { k: 'abbr', full: 'East', hi: 'पूर्व' }, peril: 'Grave danger', sled: { img: '1f6f7', full: 'Picture: a ride over snow' },
+  no: { k: 'def', full: 'Not yes', hi: 'नहीं' }, tee: 'Golf ball peg', bed: 'Place to sleep', radar: 'Radio tracking system',
+  g: { k: 'abbr', full: 'Gram', hi: 'ग्राम' }, anymore: { t: 'I DON’T CRY __', full: 'Fill the gap: I don’t cry ___' },
+  'a:2:1': { k: 'def', full: 'Sounds like “are”', hi: 'आर (अक्षर)' },
   // down
-  potassium: 'Mineral in bananas', exotic: 'From far away', tasty: 'Delicious', ant: { img: '1f41c', full: 'Picture: a tiny worker insect' },
-  row: 'Line of seats', loose: 'Opposite of tight', bid: { img: '1f426', x: '−r', full: 'Picture maths: bird minus R' }, true: 'Opposite of false',
-  menu: 'Food list', reverse: 'Go backwards',
+  orchestra: 'Concert hall players', v: { k: 'abbr', full: 'Five, in Roman numerals', hi: 'पाँच (रोमन अंक)' },
+  ma: { k: 'def', full: 'Mum', hi: 'माँ' }, lean: 'Tilt', eg: { k: 'abbr', full: 'For example', hi: 'उदाहरण के लिए' }, speedy: 'Quick',
+  rusted: 'Like old iron', am: { k: 'abbr', full: 'Before noon', hi: 'सुबह (दोपहर से पहले)' }, liter: 'Metric volume unit',
+  bro: 'Buddy', asinine: 'Very silly', per: { img: '1f350', x: '−a', full: 'Picture maths: pear minus A' }, lodge: 'Gate cabin',
+  'd:9:6': { k: 'def', full: 'Letter after Q', hi: 'आर (अक्षर)' },
 };
-// One-letter answers in the border, keyed by the letter cell (row, col in the letter area).
-const ONE: Record<string, ProtoClue> = {
-  '0,2': { k: 'abbr', full: 'North' },
-  '0,6': { k: 'def', full: 'Sounds like “why”' },
-  '6,0': { t: 'ME, MYSELF & _', full: 'Fill the gap: Me, myself and _' },
-  '7,0': { k: 'def', full: 'Sounds like “you”' },
-};
+// Answers clued from their Panna sense; the rest (letters, abbreviations, MA, NO) carry the clue as their sense.
+const PANNA = new Set(['overlap', 'guise', 'stir', 'hasten', 'peril', 'sled', 'tee', 'bed', 'radar', 'anymore', 'orchestra', 'lean', 'speedy', 'rusted', 'liter', 'bro', 'asinine', 'per', 'lodge']);
 
 const ROWS = 10, COLS = 8;
 const id = (r: number, c: number) => r * COLS + c;
@@ -43,6 +45,18 @@ function clueOf(c: ProtoClue | undefined, what: string): Clue {
   return { kind: c.k ?? 'def', text: c.full, full: c.full };
 }
 
+const db = new Database('data/dictionary.db', { readonly: true });
+function senseOf(word: string, key: string): Sense {
+  if (PANNA.has(word)) {
+    const row = db.prepare('select rowid, definition_en, meaning_hi from entries where normalized = ?').get(word) as { rowid: number; definition_en: string; meaning_hi: string } | undefined;
+    if (!row) throw new Error(`${word} is not a Panna word`);
+    return { en: row.definition_en, hi: row.meaning_hi, entryId: row.rowid };
+  }
+  const c = CLUE[key] ?? CLUE[word];
+  if (typeof c === 'string' || !c?.hi) throw new Error(`no Hindi sense for ${word}`);
+  return { en: c.full, hi: c.hi };
+}
+
 const solution: Record<number, string> = {};
 const clueCells: number[] = [];
 for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
@@ -50,24 +64,27 @@ for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
   if (ch) solution[id(r, c)] = ch.toUpperCase(); else clueCells.push(id(r, c));
 }
 
+// Every clue square clues the run to its right (across) and the run below it (down), where there is one.
 const slots: Slot[] = [];
-const push = (dir: 'a' | 'd', cells: [number, number][], clue: Clue) => {
-  const [r0, c0] = cells[0];
-  const word = cells.map(([r, c]) => sol(r, c)).join('');
-  slots.push({ id: `${dir}:${r0}:${c0}`, dir, cells: cells.map(([r, c]) => id(r, c)), answer: word.toUpperCase(), clueCell: dir === 'a' ? id(r0, c0 - 1) : id(r0 - 1, c0), clue, sense: { en: clue.full, hi: '' } });
-};
-const word = (cells: [number, number][]) => push(cells[0][0] === cells.at(-1)![0] ? 'a' : 'd', cells, clueOf(CLUE[cells.map(([r, c]) => sol(r, c)).join('')], cells.map(([r, c]) => sol(r, c)).join('')));
-for (let r = 1; r < ROWS; r++) { let c = 1; while (c < COLS) { if (!sol(r, c)) { c++; continue; } const s = c; while (c < COLS && sol(r, c)) c++; if (c - s >= 2) word(Array.from({ length: c - s }, (_, i) => [r, s + i] as [number, number])); } }
-for (let c = 1; c < COLS; c++) { let r = 1; while (r < ROWS) { if (!sol(r, c)) { r++; continue; } const s = r; while (r < ROWS && sol(r, c)) r++; if (r - s >= 2) word(Array.from({ length: r - s }, (_, i) => [s + i, c] as [number, number])); } }
-// The border's one-letter answers: a top-row letter with a clue square under it, a left-column letter with one beside it.
-for (let c = 1; c < COLS; c++) if (sol(1, c) && !sol(2, c)) push('d', [[1, c]], clueOf(ONE[`0,${c - 1}`], `top ${c}`));
-for (let r = 1; r < ROWS; r++) if (sol(r, 1) && !sol(r, 2)) push('a', [[r, 1]], clueOf(ONE[`${r - 1},0`], `left ${r}`));
+for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+  if (sol(r, c) || (r === 0 && c === 0)) continue;
+  for (const [dir, dr, dc] of [['a', 0, 1], ['d', 1, 0]] as const) {
+    if ((dir === 'a' && r === 0) || (dir === 'd' && c === 0)) continue; // border squares point into the grid only
+    const cells: [number, number][] = [];
+    for (let rr = r + dr, cc = c + dc; sol(rr, cc); rr += dr, cc += dc) cells.push([rr, cc]);
+    if (!cells.length) continue;
+    const word = cells.map(([rr, cc]) => sol(rr, cc)).join('');
+    const slotId = `${dir}:${cells[0][0]}:${cells[0][1]}`;
+    const key = slotId in CLUE ? slotId : word;
+    slots.push({ id: slotId, dir, cells: cells.map(([rr, cc]) => id(rr, cc)), answer: word.toUpperCase(), clueCell: id(r, c), clue: clueOf(CLUE[key], `${slotId} ${word}`), sense: senseOf(word, key) });
+  }
+}
 
 const puzzle: Puzzle = { id: 'p0001', version: 1, rows: ROWS, cols: COLS, solution, clueCells, given: GIVEN.map(([r, c]) => id(r + 1, c + 1)), slots };
-const problems = checkPuzzleShape(puzzle);
-// The border rule (M3's checker will own it): letters fill the first row and column, and every border square clues something.
-for (let c = 1; c < COLS; c++) if (!sol(1, c) || !slots.some(s => s.clueCell === id(0, c))) problems.push(`top border ${c} clues nothing`);
-for (let r = 1; r < ROWS; r++) if (!sol(r, 1) || !slots.some(s => s.clueCell === id(r, 0))) problems.push(`left border ${r} clues nothing`);
+const problems = [...checkPuzzleShape(puzzle), ...boardProblems(puzzle)];
+for (const [r, c] of GIVEN) for (const [r2, c2] of GIVEN) if (r * 7 + c < r2 * 7 + c2 && slots.some(s => s.cells.includes(id(r + 1, c + 1)) && s.cells.includes(id(r2 + 1, c2 + 1)))) problems.push(`given (${r},${c}) and (${r2},${c2}) share an answer`);
+const unused = Object.keys(CLUE).filter(k => !slots.some(s => s.id === k || s.answer.toLowerCase() === k));
+if (unused.length) problems.push(`clues for no answer: ${unused.join(', ')}`);
 if (problems.length) throw new Error(problems.join('\n'));
 writeFileSync('data/duel/puzzles/p0001.json', JSON.stringify(puzzle, null, 1) + '\n');
-console.log(`p0001: ${slots.length} slots, ${Object.keys(solution).length} letter cells, given ${puzzle.given.map(c => solution[c]).join('')}`);
+console.log(`p0001: ${slots.length} slots, ${Object.keys(solution).length} letter cells, ${clueCells.length - 17} inner clue squares, given ${puzzle.given.map(c => solution[c]).join('')}`);
