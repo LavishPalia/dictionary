@@ -32,3 +32,9 @@ data/sources/raw/
 scratch
 .vercel
 .env*
+
+# Duel puzzle candidates (npm run duel:make); the review sheets in data/duel/review are committed
+data/duel/candidates/
+# Duel puzzles and schedule copied by npm run build:data (scripts/duel/build-copy.ts)
+public/duel/p/
+public/duel/schedule.json

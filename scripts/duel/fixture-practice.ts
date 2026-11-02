@@ -6,9 +6,8 @@
 // Usage: npx tsx scripts/duel/fixture-practice.ts
 import Database from 'better-sqlite3';
 import { writeFileSync } from 'node:fs';
-import { checkPuzzleShape } from '../../src/duel/engine/puzzle';
 import type { Clue, Puzzle, Sense, Slot } from '../../src/duel/engine/types';
-import { boardProblems } from './board-rules';
+import { checkPuzzle } from './check';
 
 // The 9 x 7 letter area; the board adds a clue row on top and a clue column on the left. # = clue square.
 const SOL = ['overlap', 'r#guise', 'cm#stir', 'hasten#', 'e#peril', 'sled#no', 'tee#bed', 'radar#g', 'anymore'];
@@ -81,8 +80,7 @@ for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
 }
 
 const puzzle: Puzzle = { id: 'p0001', version: 1, rows: ROWS, cols: COLS, solution, clueCells, given: GIVEN.map(([r, c]) => id(r + 1, c + 1)), slots };
-const problems = [...checkPuzzleShape(puzzle), ...boardProblems(puzzle)];
-for (const [r, c] of GIVEN) for (const [r2, c2] of GIVEN) if (r * 7 + c < r2 * 7 + c2 && slots.some(s => s.cells.includes(id(r + 1, c + 1)) && s.cells.includes(id(r2 + 1, c2 + 1)))) problems.push(`given (${r},${c}) and (${r2},${c2}) share an answer`);
+const problems = checkPuzzle(puzzle);
 const unused = Object.keys(CLUE).filter(k => !slots.some(s => s.id === k || s.answer.toLowerCase() === k));
 if (unused.length) problems.push(`clues for no answer: ${unused.join(', ')}`);
 if (problems.length) throw new Error(problems.join('\n'));

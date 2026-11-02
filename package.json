@@ -73,8 +73,12 @@
     "test:duel-engine": "tsx scripts/test-duel-engine.ts",
     "test:duel-sim": "tsx scripts/test-duel-sim.ts",
     "duel:bot-tune": "tsx scripts/duel/bot-tune.ts",
+    "test:duel-content": "tsx scripts/test-duel-content.ts",
     "test:duel-controller": "tsx scripts/test-duel-controller.ts",
     "test:duel-ui": "node scripts/test-duel-ui-browser.mjs",
+    "duel:clues": "tsx scripts/duel/shorten.ts",
+    "duel:make": "tsx scripts/duel/make.ts",
+    "duel:publish": "tsx scripts/duel/publish.ts",
     "duel:perf": "node scripts/duel/perf-phone.mjs"
   },
   "dependencies": {

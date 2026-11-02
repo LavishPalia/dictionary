@@ -1,7 +1,7 @@
 // Plays thousands of seeded games between a random player and Professor Quill, and checks that every game
 // ends, keeps the bag invariant, never goes negative, stays under the score cap, and replays identically.
 // Usage: npx tsx scripts/test-duel-sim.ts [games]
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { botTurn } from '../src/duel/engine/bot';
 import { apply, checkInvariant, emptyCells, newGame } from '../src/duel/engine/game';
 import { maxActions, maxScore, replay } from '../src/duel/engine/replay';
@@ -15,6 +15,9 @@ function check(label: string, ok: boolean, detail?: unknown) {
 }
 
 const p0 = JSON.parse(readFileSync('data/duel/puzzles/p0000.json', 'utf8')) as Puzzle;
+// The games are spread over the engine fixture and up to 20 published puzzles (same total count).
+const published = existsSync('data/duel/published.json') ? Object.keys(JSON.parse(readFileSync('data/duel/published.json', 'utf8'))).slice(0, 20) : [];
+const PUZZLES = [p0, ...published.map(k => JSON.parse(readFileSync(`data/duel/puzzles/${k}.json`, 'utf8')) as Puzzle)];
 const GAMES = Number(process.argv[2]) || 10000;
 const CAP = 2000;
 
@@ -85,17 +88,18 @@ let longest = 0;
 let ended = 0, clean = 0, identical = 0, prefixes = 0, prefixOk = 0, quillWrong = 0, quillRuns = 0, emptyTurns = 0;
 const t0 = Date.now();
 for (let seed = 1; seed <= GAMES; seed++) {
-  const g = play(p0, seed);
+  const p = PUZZLES[seed % PUZZLES.length];
+  const g = play(p, seed);
   if (g.s.over) ended++;
   quillWrong += g.quillWrong; quillRuns += g.quillRuns; emptyTurns += g.emptyTurns;
   longest = Math.max(longest, g.actions.length);
   if (!g.problems.length) clean++; else if (!firstProblem) firstProblem = `seed ${seed}: ${g.problems[0]}`;
-  if (JSON.stringify(replay(p0, seed, g.actions)) === JSON.stringify(g.s)) identical++;
+  if (JSON.stringify(replay(p, seed, g.actions)) === JSON.stringify(g.s)) identical++;
   if (seed <= 200) {
     // Review Focus 4: a saved log (JSON round-trip) replays to the exact mid-game state, Quill's reply included.
     const k = 1 + (seed * 7) % g.actions.length;
     prefixes++;
-    if (JSON.stringify(replay(p0, seed, JSON.parse(JSON.stringify(g.actions.slice(0, k))))) === g.after[k]) prefixOk++;
+    if (JSON.stringify(replay(p, seed, JSON.parse(JSON.stringify(g.actions.slice(0, k))))) === g.after[k]) prefixOk++;
   }
 }
 const secs = ((Date.now() - t0) / 1000).toFixed(1);
@@ -106,7 +110,7 @@ check(`${prefixes} saved mid-game logs replay to the exact state`, prefixOk === 
 check(`${GAMES} games: Quill never plays a wrong tile`, quillWrong === 0, { quillWrong });
 check(`${GAMES} games: you never get a turn with an empty rack`, emptyTurns === 0, { emptyTurns });
 check(`some games end with Quill moving several turns in a row`, quillRuns > 0, { quillRuns });
-console.log(`(${secs} s)`);
+console.log(`(${secs} s, ${PUZZLES.length} puzzle(s))`);
 
 let msg = '';
 try { replay(p0, 1, [{ t: 'submit', place: [] }]); } catch (e) { msg = String(e); }
