@@ -1,3 +1,6 @@
 # Pinned lexicon sources are verified by SHA-256 (data/sources/checksums.json): store them byte-for-byte,
 # without line-ending conversion, so checkouts on any platform match the pinned hashes.
 data/sources/** -text
+
+# Published Duel puzzles are hashed byte-for-byte (data/duel/published.json): no line-ending conversion.
+data/duel/puzzles/** -text

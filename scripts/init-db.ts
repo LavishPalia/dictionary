@@ -20,6 +20,7 @@ import { ExampleRow, toExampleDbRows } from './lib/examples';
 import { CORRECTIONS_FILE, applyEntryCorrections, correctExamples, loadCorrections } from './lib/corrections';
 import { GeminiRow, findRelated, mergeGeminiLinks } from './lib/related';
 import { GeneratedGloss, toPhase4Entry } from './lib/phase4';
+import { copyPublished } from './duel/build-copy';
 
 const EXAMPLES_REAL_FILE = path.join(SOURCES_DIR, 'examples.jsonl');
 const RELATED_GEMINI_FILE = path.join(SOURCES_DIR, 'related-gemini.jsonl');
@@ -391,6 +392,8 @@ if (require.main === module) {
     console.log(`✓ Built ${path.relative(process.cwd(), DB_PATH)}: ${report.entries} entries on ${report.pages} pages ` +
       `(${report.editorial} editorial + ${report.closed_class} closed-class + ${report.generated} generated), ` +
       `${report.related} similar/opposite links, ${report.examples} example sentences, data version ${report.data_version}`);
+    const duel = copyPublished();
+    console.log(`✓ Duel: ${Object.keys(duel.files).length} published puzzles, ${Object.keys(duel.dates).length} scheduled dates → public/duel/`);
     if (report.editorial_duplicates_dropped.length) {
       console.log(`  ${report.editorial_duplicates_dropped.length} duplicate editorial headwords kept once: ` +
         report.editorial_duplicates_dropped.join(', '));

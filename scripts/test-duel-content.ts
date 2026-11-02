@@ -1,12 +1,14 @@
 // Checks the Duel's puzzle pipeline and published content (scripts/duel, data/duel). Usage: npx tsx scripts/test-duel-content.ts
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { nextU32, seedRng } from '../src/duel/engine/rng';
 import type { Puzzle, Slot } from '../src/duel/engine/types';
 import { boardProblems } from './duel/board-rules';
+import { type ClientSchedule, copyPublished, type Published, type Schedule, sha256 } from './duel/build-copy';
 import { fill, indexWords } from './duel/fill';
 import { make } from './duel/make';
+import { extendSchedule, MIN_GAP_DAYS, publish } from './duel/publish';
 import { randomPattern, slotsOf, toPuzzle } from './duel/layout';
 import { type CheckContext, checkPuzzle, defaultContext, picMath } from './duel/check';
 import { acceptClue, type BankClue, loadBank, readBankFile, ruleClues } from './duel/clues';
@@ -181,6 +183,82 @@ const dummy = () => ({ clue: { kind: 'def' as const, text: 'X', full: 'X' }, sen
   for (const d of dirs) rmSync(d, { recursive: true, force: true });
 }
 
+// ---------- published puzzles and the schedule (the real data) ----------
+{
+  const published: Published = existsSync('data/duel/published.json') ? JSON.parse(readFileSync('data/duel/published.json', 'utf8')) : {};
+  const schedule: Schedule = existsSync('data/duel/schedule.json') ? JSON.parse(readFileSync('data/duel/schedule.json', 'utf8')) : {};
+  const keys = Object.keys(published);
+  const bad = keys.flatMap(k => checkPuzzle(JSON.parse(readFileSync(`data/duel/puzzles/${k}.json`, 'utf8'))).map(m => `${k}: ${m}`));
+  check(`all ${keys.length} published puzzles pass the checker (pictures included)`, bad.length === 0, bad.slice(0, 5));
+  const hashBad = keys.filter(k => sha256(readFileSync(`data/duel/puzzles/${k}.json`)) !== published[k].hash);
+  check('every published file matches its hash', hashBad.length === 0, hashBad);
+  const ids = keys.map(k => JSON.parse(readFileSync(`data/duel/puzzles/${k}.json`, 'utf8')) as Puzzle).map(p => `p${p.id.slice(1)}.v${p.version}`);
+  check('every published file\'s id and version match its key', ids.join() === keys.join(), ids.filter((x, i) => x !== keys[i]));
+  check('every scheduled puzzle is published', Object.values(schedule).every(k => k in published), Object.values(schedule).filter(k => !(k in published)));
+  check('the schedule obeys the 7-day gap and has no missing dates', scheduleProblems(schedule).length === 0, scheduleProblems(schedule).slice(0, 3));
+  if (existsSync('public/duel/schedule.json')) {
+    const client = JSON.parse(readFileSync('public/duel/schedule.json', 'utf8')) as ClientSchedule;
+    const off = Object.entries(client.files).filter(([k, f]) => !existsSync(`public/duel/p/${f}`) || sha256(readFileSync(`public/duel/p/${f}`)) !== published[k]?.hash);
+    check('the build copy in public/duel matches the published hashes', off.length === 0 && Object.keys(client.files).length === keys.length, off);
+  }
+}
+
+/** Problems with a schedule: a gap in the dates, or one puzzle twice within 7 days. */
+function scheduleProblems(s: Schedule): string[] {
+  const out: string[] = [];
+  const dates = Object.keys(s).sort();
+  const day = (d: string) => Date.parse(`${d}T00:00:00Z`) / 86400000;
+  dates.forEach((d, i) => { if (i && day(d) - day(dates[i - 1]) !== 1) out.push(`no puzzle between ${dates[i - 1]} and ${d}`); });
+  const last = new Map<string, string>();
+  for (const d of dates) { const prev = last.get(s[d]); if (prev && day(d) - day(prev) < MIN_GAP_DAYS) out.push(`${s[d]} on ${prev} and ${d}`); last.set(s[d], d); }
+  return out;
+}
+
+// ---------- publish, in a sandbox ----------
+async function publishChecks() {
+  const dir = mkdtempSync(join(tmpdir(), 'duel-publish-')), pics = join(dir, 'pics'), out = join(dir, 'public');
+  mkdirSync(join(dir, 'puzzles')); mkdirSync(pics);
+  make({ count: 2, seed: 5, out: dir, bank: loadBank(), log: () => {} });
+  const sheet = join(dir, 'review', 'batch-001.csv');
+  const rows = readFileSync(sheet, 'utf8').trim().split('\n');
+  const badAt = rows.findIndex(r => r.startsWith('batch-001-c02,'));
+  rows[badAt] += 'odd clue';
+  writeFileSync(sheet, rows.join('\n') + '\n');
+  const stub = async (keys: string[], d: string) => { for (const k of keys) writeFileSync(join(d, `${k}.svg`), '<svg/>'); return keys; };
+  const opts = { batch: '001', dir, picDir: pics, fetch: stub, from: '2026-09-01', to: '2026-09-10', log: () => {} };
+  const r1 = await publish(opts);
+  check('publish drops the puzzle with a bad row and publishes the other as p0002.v1', r1.dropped.join() === 'batch-001-c02' && r1.published.join() === 'p0002.v1', r1);
+  const rejected = readFileSync(join(dir, 'rejected-clues.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l));
+  check('the bad clue goes to rejected-clues.jsonl', rejected.length === 1 && rejected[0].batch === 'batch-001', rejected);
+  check('without repeats, only one date is scheduled for one puzzle', r1.added === 1 && r1.unscheduled === 9, r1);
+  const snap = () => ['published.json', 'schedule.json', 'rejected-clues.jsonl'].map(f => readFileSync(join(dir, f), 'utf8')).join('|');
+  const before = snap();
+  const r2 = await publish(opts);
+  check('publishing the same batch again changes nothing', snap() === before && r2.published.length === 0, r2);
+
+  const published = JSON.parse(readFileSync(join(dir, 'published.json'), 'utf8')) as Published;
+  const client = copyPublished(dir, out);
+  const f = join(out, 'p', client.files['p0002.v1']);
+  check('the build copy is named <key>.<hash8>.json and matches its hash', existsSync(f) && sha256(readFileSync(f)) === published['p0002.v1'].hash);
+  const file = join(dir, 'puzzles', 'p0002.v1.json');
+  writeFileSync(file, readFileSync(file, 'utf8').replace('"version": 1', '"version": 2')); // one byte changed (Review Focus 3)
+  let threw = '';
+  try { copyPublished(dir, out); } catch (e) { threw = (e as Error).message; }
+  check('a hand-edited published file fails the build copy', /does not match its published hash/.test(threw), threw);
+  rmSync(dir, { recursive: true, force: true });
+
+  // The schedule algorithm on its own.
+  const keys = ['p0002.v1', 'p0003.v1', 'p0004.v1', 'p0005.v1', 'p0006.v1', 'p0007.v1', 'p0008.v1', 'p0009.v1'];
+  const a = extendSchedule({}, keys, '2026-09-01', '2026-09-20', true);
+  check('unique puzzles first, in id order', keys.every((k, i) => a.schedule[`2026-09-0${i + 1}`] === k), a.schedule);
+  check('with repeats allowed, 20 dates from 8 puzzles keep the 7-day gap', a.added === 20 && scheduleProblems(a.schedule).length === 0, scheduleProblems(a.schedule));
+  const b = extendSchedule(a.schedule, keys, '2026-09-01', '2026-09-30', true);
+  check('a later end date only appends', Object.entries(a.schedule).every(([d, k]) => b.schedule[d] === k) && b.added === 10 && scheduleProblems(b.schedule).length === 0);
+  let none = '';
+  try { extendSchedule({}, keys.slice(0, 2), '2026-09-01', '2026-09-05', true); } catch (e) { none = (e as Error).message; }
+  check('repeats that would break the 7-day gap fail loudly', /no puzzle can go on 2026-09-03/.test(none), none);
+}
+
 async function fakeGeminiChecks() {
   // Gemini, faked: a clue for the wrong sense is dropped (Review Focus 2); a clue naming the answer is stored as rejected.
   const dir = mkdtempSync(join(tmpdir(), 'duel-bank-'));
@@ -212,6 +290,7 @@ async function fakeGeminiChecks() {
 
 (async () => {
   await fakeGeminiChecks();
+  await publishChecks();
   if (failures) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
   console.log('\nall duel content checks passed');
 })();
