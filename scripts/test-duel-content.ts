@@ -1,10 +1,14 @@
 // Checks the Duel's puzzle pipeline and published content (scripts/duel, data/duel). Usage: npx tsx scripts/test-duel-content.ts
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Puzzle, Slot } from '../src/duel/engine/types';
 import { type CheckContext, checkPuzzle, defaultContext, picMath } from './duel/check';
+import { acceptClue, type BankClue, loadBank, readBankFile, ruleClues } from './duel/clues';
 import { textProblem } from './duel/lib/clue-rules';
+import { blocklist, dictionary } from './duel/lib/db';
 import { CELL, FIT, fits, lines } from './duel/lib/fontwidth';
-import { blocklist } from './duel/lib/db';
+import { runShorten, type ShortenCall } from './duel/shorten';
 import { curated, LENGTHS, pictures, wordPool } from './duel/words';
 
 let failures = 0;
@@ -94,5 +98,60 @@ const modeAt = (p: Puzzle, s: Slot) => (p.slots.filter(o => o.clueCell === s.clu
   check('picture maths: bird −r = bid, pear + s = pears', picMath('bird', '−r') === 'bid' && picMath('pear', '+s') === 'pears' && picMath('pear', '−z') === null);
 }
 
-if (failures) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
-console.log('\nall duel content checks passed');
+// ---------- the clue bank ----------
+const rules = ruleClues();
+{
+  const sense = { en: 'x', hi: 'x' };
+  const clue = (word: string, text: string): BankClue => ({ word, kind: 'def', text, full: text, sense, by: 'gemini' });
+  check('acceptClue rejects TOUR / "Tourist trip"', acceptClue('tour', clue('tour', 'Tourist trip')) !== null);
+  check('acceptClue rejects ANT / "Ants\' home"', acceptClue('ant', clue('ant', "Ants' home")) !== null);
+  check('acceptClue rejects ANTS / "Ant colony" (a form of the answer)', acceptClue('ants', clue('ants', 'Ant colony')) !== null);
+  check('acceptClue rejects "Spot, briefly"', acceptClue('dot', clue('dot', 'Spot, briefly')) !== null);
+  check('acceptClue rejects a clue too long for a square', acceptClue('urn', clue('urn', 'A large metal container used for serving tea')) !== null);
+  check('acceptClue accepts SCAR / "Mark left by a wound"', acceptClue('scar', clue('scar', 'Mark left by a wound')) === null);
+
+  check('rule-built clues for COLD include "Opposite of hot"', rules.some(c => c.word === 'cold' && c.text === 'Opposite of hot'));
+  const wnOpp = new Set((dictionary().prepare(`select e.normalized || '|' || t.normalized k from related r join entries e on e.id = r.entry_id
+    join entries t on t.id = r.related_id where r.kind = 'opposite' and r.source = 'wordnet'`).all() as { k: string }[]).map(r => r.k));
+  const geminiOpp = rules.filter(c => c.text?.startsWith('Opposite of ') && !wnOpp.has(`${c.word}|${c.text.slice(12)}`));
+  check('no rule-built opposite comes from Gemini data', geminiOpp.length === 0, geminiOpp.slice(0, 3).map(c => `${c.word}: ${c.text}`));
+  const bid = rules.find(c => c.word === 'bid' && c.kind === 'picmath');
+  check('picture maths makes BID from BIRD minus R', bid?.math === '−r' && bid.img === '1f426', bid);
+  const ruleBad = rules.filter(c => acceptClue(c.word, c));
+  check('every rule-built clue passes acceptClue', ruleBad.length === 0, ruleBad.slice(0, 3));
+  check('every pool word with a curated answer gets its curated clue', curated().every(c => !poolWords.has(c.answer) || rules.some(r => r.word === c.answer && r.text === c.clue)));
+}
+async function fakeGeminiChecks() {
+  // Gemini, faked: a clue for the wrong sense is dropped (Review Focus 2); a clue naming the answer is stored as rejected.
+  const dir = mkdtempSync(join(tmpdir(), 'duel-bank-'));
+  const file = join(dir, 'bank.jsonl'), log = join(dir, 'log.jsonl');
+  const words = ['urn', 'tour', 'scar'].map(w => pool.find(p => p.word === w)!).filter(Boolean);
+  let asked: string[] = [];
+  const call: ShortenCall = async batch => {
+    asked = batch.map(b => b.word);
+    return { model: 'fake', items: [
+      { word: 'urn', def: 'Ashes vase', gap: null, fits: false },
+      { word: 'tour', def: 'Tourist trip', gap: 'On _ in Europe', fits: true },
+      { word: 'scar', def: 'Mark left by a wound', gap: 'A _ on his cheek', fits: true },
+    ] };
+  };
+  await runShorten({ call, words, file, logFile: log });
+  const bank = loadBank(file, pool);
+  check('fake Gemini: URN (fits: false) gets no def clue', !(bank.get('urn') ?? []).some(c => c.by === 'gemini'));
+  const lines = readBankFile(file);
+  check('fake Gemini: the TOUR clue naming its answer is stored as rejected', lines.some(l => l.word === 'tour' && 'rejected' in l));
+  check('fake Gemini: TOUR keeps its gap clue', (bank.get('tour') ?? []).some(c => c.kind === 'gap' && c.text === 'ON __ IN EUROPE' && c.full === 'Fill the gap: On ___ in Europe'));
+  check('fake Gemini: SCAR gets its def', (bank.get('scar') ?? []).some(c => c.by === 'gemini' && c.text === 'Mark left by a wound' && c.sense.entryId !== undefined));
+  asked = [];
+  await runShorten({ call, words, file, logFile: log });
+  check('a second run asks Gemini nothing', asked.length === 0, asked);
+  const logLines = readFileSync(log, 'utf8').trim().split('\n');
+  check('the run is logged with model, requests and words', logLines.length === 1 && JSON.parse(logLines[0]).requests === 1 && JSON.parse(logLines[0]).words === 3, logLines);
+  rmSync(dir, { recursive: true, force: true });
+}
+
+(async () => {
+  await fakeGeminiChecks();
+  if (failures) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
+  console.log('\nall duel content checks passed');
+})();
