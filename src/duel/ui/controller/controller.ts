@@ -1,7 +1,7 @@
 // The game controller: the engine state plus the screen's resting state (pending tiles, selection, sheets).
 // Plain TypeScript with no DOM, so it is unit-tested in Node. React reads snapshots; the director plays the
 // motion. A snapshot changes only at rest: never while a director promise is pending.
-import { apply, botTurn, newGame, replay, type Action, type CellId, type GameEvent, type GameState, type Puzzle, type SlotId } from '../../engine';
+import { apply, botTurn, newGame, replay, RULES_ID, type Action, type CellId, type GameEvent, type GameState, type Puzzle, type SlotId } from '../../engine';
 import type { Platform } from '../../platform/types';
 import { nextEmpty, slotsThrough, wordCandidates } from './selectors';
 import type { Director, Pending, SavedGame, Sheet, Snapshot } from './types';
@@ -72,8 +72,9 @@ export class GameController {
     if (!storage.has(this.key)) return null;
     const saved = storage.get<SavedGame>(this.key);
     try {
+      // A save from other rules (or Quill tuned differently) would replay to a different board: start afresh instead.
       if (!saved || typeof saved !== 'object' || saved.puzzleId !== this.p.id || saved.puzzleVersion !== this.p.version
-        || !Number.isInteger(saved.seed) || !Array.isArray(saved.log)) throw new Error('not a save');
+        || saved.rules !== RULES_ID || !Number.isInteger(saved.seed) || !Array.isArray(saved.log)) throw new Error('not a save');
       const state = replay(this.p, saved.seed, saved.log);
       this.startedAt = typeof saved.startedAt === 'string' ? saved.startedAt : this.startedAt;
       return state;
@@ -92,7 +93,7 @@ export class GameController {
   }
 
   private save(state: GameState) {
-    const saved: SavedGame = { puzzleId: this.p.id, puzzleVersion: this.p.version, seed: state.seed, log: state.log, startedAt: this.startedAt };
+    const saved: SavedGame = { puzzleId: this.p.id, puzzleVersion: this.p.version, rules: RULES_ID, seed: state.seed, log: state.log, startedAt: this.startedAt };
     this.platform.storage.set(this.key, saved);
   }
 

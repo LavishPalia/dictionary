@@ -167,10 +167,11 @@ export class Input {
     } else if (!cancelled && d.fromCell !== null && this.stage.overRack(d.tx, d.ty)) {
       const slot = this.stage.rect('rack', d.rackSlot)!;
       await this.layer.anim(g, [{ transform: fromTL }, { transform: onto(slot) }], { duration: T.takeBack, easing: EASE.home });
-      this.ctl.takeBack(d.fromCell);
-      this.platform.sound.play('drop');
+      if (this.ctl.takeBack(d.fromCell)) this.platform.sound.play('drop');
       await nextFrames();
       g.remove();
+      // Refused (Enter submitted the turn mid-flight): the tile stays where the game has it, so show it again.
+      d.el.removeAttribute('data-fx-hidden');
       mark('drag', 'end');
       return;
     }
@@ -206,15 +207,42 @@ export class Input {
     return ok;
   }
 
-  /** A tap on a letter cell: place the lifted tile with a flight, or let the controller handle it. */
+  /** Take back: the pending tile arcs home to its own rack slot, then lands with a small bump (UI-DESIGN §4). */
+  async flyHome(cell: CellId): Promise<boolean> {
+    const snap = this.ctl.snapshot();
+    const t = snap.pending.find(x => x.cell === cell);
+    const src = this.stage.el('cell', cell)?.querySelector<HTMLElement>('.duel-tile.pend');
+    const slot = t && this.stage.rect('rack', t.rackSlot);
+    const letter = t && snap.state.racks.you[t.rackSlot];
+    if (snap.busy || !t || !src || !slot || !letter) return this.ctl.tapCell(cell);
+    const from = src.getBoundingClientRect();
+    const g = this.layer.tile(letter, from, 'lifted');
+    src.setAttribute('data-fx-hidden', '');
+    const frames = this.motion.reduced
+      ? [{ transform: `translate3d(${slot.left}px,${slot.top}px,0) scale(${slot.width / from.width})` }]
+      : arcFrames({ x: from.left, y: from.top }, { x: slot.left, y: slot.top }, 40, { s0: 1.06, s1: slot.width / from.width });
+    await this.layer.anim(g, frames, { duration: T.takeBack, easing: EASE.home });
+    const ok = this.ctl.takeBack(cell);
+    if (ok) this.platform.sound.play('drop');
+    await nextFrames();
+    g.remove();
+    src.removeAttribute('data-fx-hidden');
+    const home = ok ? this.stage.el('rack', t.rackSlot)?.querySelector('.duel-tile') : null;
+    if (home && !this.motion.reduced) home.animate([{ transform: 'scale(1.08)' }, { transform: 'scale(.97)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: T.settle, easing: EASE.spring });
+    return ok;
+  }
+
+  /** A tap on a letter cell: place the lifted tile with a flight, send a pending tile home, or let the controller handle it. */
   tapCell(cell: CellId) {
-    const { lifted } = this.ctl.snapshot();
-    if (lifted !== null && this.ctl.canPlace(cell)) { this.ctl.closeZoom(); void this.flyPlace(lifted, cell); }
+    const snap = this.ctl.snapshot();
+    if (snap.lifted !== null && this.ctl.canPlace(cell)) { this.ctl.closeZoom(); void this.flyPlace(snap.lifted, cell); }
+    else if (snap.lifted === null && !snap.busy && snap.pending.some(t => t.cell === cell)) { this.ctl.closeZoom(); void this.flyHome(cell); }
     else this.ctl.tapCell(cell);
   }
 
   // ── Keyboard (desktop) ──
   private key(e: KeyboardEvent) {
+    this.platform.sound.unlock(); // a key press counts as a user activation: keyboard players get sound too
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const snap = this.ctl.snapshot();
     if (snap.busy || snap.sheet || snap.state.over) return;
