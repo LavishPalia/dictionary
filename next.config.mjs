@@ -28,6 +28,9 @@ const nextConfig = {
   reactStrictMode: true,
   // Panna never uses next/image; turning the optimiser off removes the /_next/image endpoint.
   images: { unoptimized: true },
+  // Which Vercel deploy this is ('production', 'preview', or '' locally), for the Duel's pre-launch hiding
+  // (src/duel/platform/web/entry.ts), without relying on Vercel exposing its system variables to the browser.
+  env: { NEXT_PUBLIC_DUEL_ENV: process.env.VERCEL_ENV ?? '' },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },

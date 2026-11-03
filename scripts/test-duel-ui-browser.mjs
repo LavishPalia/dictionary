@@ -188,9 +188,9 @@ async function main() {
       else void send('Fetch.continueRequest', { requestId });
     });
     const route = async (mode) => {
-      routing = mode;
-      if (mode) await send('Fetch.enable', { patterns: [{ urlPattern: '*/duel/*' }] });
-      else await send('Fetch.disable');
+      // Turning routing off disables Fetch first, so no request is paused while nothing answers it.
+      if (mode) { routing = mode; await send('Fetch.enable', { patterns: [{ urlPattern: '*/duel/*' }] }); }
+      else { await send('Fetch.disable'); routing = null; }
     };
 
     // ── Phone: the screen ──

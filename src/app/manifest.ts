@@ -25,7 +25,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { name: 'Speak a word', short_name: 'Speak', url: '/?voice=1', icons: [{ src: '/icons/shortcut-voice-96.png', sizes: '96x96', type: 'image/png' }] },
       { name: 'Review', short_name: 'Review', url: '/?open=review', icons: [{ src: '/icons/shortcut-review-96.png', sizes: '96x96', type: 'image/png' }] },
       // Panna Duel: production gets it at launch (src/duel/platform/web/entry.ts).
-      ...(DUEL_LAUNCHED || process.env.VERCEL_ENV !== 'production'
+      ...(DUEL_LAUNCHED || process.env.NEXT_PUBLIC_DUEL_ENV !== 'production'
         ? [{ name: 'Panna Duel', short_name: 'Play', url: '/play', icons: [{ src: '/icons/shortcut-play-96.png', sizes: '96x96', type: 'image/png' }] }]
         : []),
     ],

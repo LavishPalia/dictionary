@@ -16,7 +16,7 @@ const istDay = (offset = 0) => new Date(Date.now() + IST_MS + offset * 86400000)
 const TODAY = istDay(), YESTERDAY = istDay(-1), TWO_AGO = istDay(-2);
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const dayMonth = (d) => `${Number(d.slice(8))} ${MONTHS[Number(d.slice(5, 7)) - 1]}`;
-// p0000 stands in for today's and two earlier days' puzzles.
+// p0000 stands in for today's and two earlier days' puzzles. (A run across IST midnight, 18:30 UTC, can fail the dates.)
 const FIXTURE = { dates: { [TWO_AGO]: 'p0000.v1', [YESTERDAY]: 'p0000.v1', [TODAY]: 'p0000.v1' }, files: { 'p0000.v1': 'p0000.v1.test0000.json' } };
 
 let failures = 0;
@@ -83,7 +83,7 @@ async function main() {
     /** Today with the given storage (cleared first); the Duel card is awaited unless none is expected. */
     const today = async (store = {}, { card = true } = {}) => {
       await send('Page.navigate', { url: `${BASE}/icon.svg` });
-      await sleep(150);
+      await waitFor(`location.pathname === '/icon.svg' && document.readyState === 'complete'`);
       await evaluate(`localStorage.clear(); ${Object.entries(store).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(JSON.stringify(v))});`).join(' ')} true`);
       await send('Page.navigate', { url: `${BASE}/` });
       await waitFor(`Boolean(document.querySelector('#today-screen'))`, 20000);
@@ -141,6 +141,9 @@ async function main() {
     await today({ [`panna_duel_game:${TODAY}`]: save('p0000', 38, 41, true) });
     text = await cardText();
     check('phone: lost today → Replay', text.includes('Quill won 41 to 38') && (await button())?.text === 'Replay', text);
+    await today({ [`panna_duel_game:${TODAY}`]: save('p0000', 40, 40, true) });
+    text = await cardText();
+    check('phone: a tie → "A tie at 40" and Replay', text.includes('A tie at 40') && (await button())?.text === 'Replay', text);
     await today();
     check("phone: a scheduled day → today's puzzle", (await cardText()).includes('Today’s puzzle is ready') && (await button())?.text === 'Play today’s duel');
     await route(false);

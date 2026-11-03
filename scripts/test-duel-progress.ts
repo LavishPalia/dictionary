@@ -79,7 +79,17 @@ td = todayDuel(T, SCHED, mem({ [G]: save('p0004', 55, 41, true), panna_duel_resu
 check('card: won today → won, next is the latest open day', td.state === 'won' && td.you === 55 && td.next === '2026-11-02', td);
 check('card: the streak counts today and yesterday', td.streak === 2, td.streak);
 td = todayDuel(T, SCHED, mem({ [G]: save('p0004', 38, 41, true), panna_duel_results: [r(T, 38, 41)] }));
-check('card: lost → lost 38 to 41', td.state === 'lost' && td.you === 38 && td.quill === 41, td);
+check('card: lost → over 38 to 41', td.state === 'over' && td.you === 38 && td.quill === 41, td);
+td = todayDuel(T, SCHED, mem({ [G]: save('p0004', 40, 40, true) }));
+check('card: a tie is over, not won', td.state === 'over' && td.you === 40, td);
+td = todayDuel(T, SCHED, mem({ [G]: save('p0004', 3, 2), panna_duel_results: [r(T, 55, 41)] }));
+check('card: replaying a won day keeps the win', td.state === 'won' && td.you === 55 && td.replaying, td);
+td = todayDuel(T, SCHED, mem({ [G]: save('p0004', 50, 40, true) }));
+check('card: a won save without its result row still counts as won', td.state === 'won' && td.you === 50, td);
+td = todayDuel(T, { ...SCHED, dates: { ...SCHED.dates, [T]: 'p0004.v2' } }, mem({ [G]: save('p0004', 24, 19) }));
+check('card: a save of an older version → new', td.state === 'new', td);
+td = todayDuel('2026-11-05', SCHED, mem({ panna_duel_results: [r('2026-11-03', 50, 40)] }));
+check('card: no puzzle today but an open past daily → next is that day', td.state === 'new' && td.practice && td.next === '2026-11-04', td);
 td = todayDuel(T, SCHED, mem({ [G]: save('p0001', 24, 19) }));
 check("card: a practice save on a day that now has its daily → new", td.state === 'new' && !td.practice, td);
 td = todayDuel(T, { dates: {}, files: {} }, mem());

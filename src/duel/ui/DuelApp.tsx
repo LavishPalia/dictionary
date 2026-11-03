@@ -91,6 +91,7 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
 
   return (
     <main className="duel">
+      {!route && <div className="duel-game" aria-busy="true" />}
       {route && 'date' in route && <Game key={route.date} date={route.date} platform={platform} />}
     </main>
   );
