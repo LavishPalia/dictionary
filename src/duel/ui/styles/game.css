@@ -229,6 +229,11 @@
   font: 18px var(--font-fell-sc); letter-spacing: .4px; position: relative; }
 .duel .bigbtn.pri { background: linear-gradient(#8b2b22, #5b1f19); color: var(--onb); border: 1.5px solid var(--brass); box-shadow: 0 3px 0 #2e0e0a; }
 
+/* the puzzle couldn't load (offline, or a bad file): the saved game is left as it was */
+.duel-load-error { align-self: center; width: min(320px, calc(100% - 32px)); text-align: center; font-size: 17px; color: var(--ink); }
+.duel-load-error p { margin: 0 0 8px; }
+.duel-load-error a { display: inline-block; margin-top: 14px; padding: 10px; color: var(--binding); }
+
 /* ── the effects layer (outside the React tree) ── */
 .duel-fx { --cell: 40px; position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; contain: strict; }
 .duel-fx > * { position: absolute; left: 0; top: 0; }

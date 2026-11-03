@@ -4,6 +4,8 @@ import type { Action, CellId, GameEvent, GameState, SlotId, Who } from '../../en
 /** A game in progress on the device. The state is rebuilt from it with replay() on Continue. */
 export interface SavedGame {
   puzzleId: string; puzzleVersion: number; seed: number; log: Action[]; startedAt: string;
+  /** The scores and end after Quill's reply, for Panna's Today card (which doesn't replay the game). */
+  score?: { you: number; quill: number }; over?: boolean;
 }
 
 export type Sheet = null | { k: 'swap' } | { k: 'help'; want: 'hint' | 'word' } | { k: 'reveal'; slot: SlotId };

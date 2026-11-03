@@ -11,6 +11,7 @@ const BASE = 'http://localhost:3000';
 const USER_DATA = path.join(process.cwd(), 'scratch', `panna-duel-edge-${process.pid}-${Date.now()}`);
 const P0 = JSON.parse(fs.readFileSync('data/duel/puzzles/p0001.json', 'utf8'));
 const GAME = '/play/game/2026-11-01';
+const FIXTURE_SCHEDULE = { dates: { '2026-10-30': 'p0000.v1', '2026-10-31': 'p0000.v1' }, files: { 'p0000.v1': 'p0000.v1.test0000.json' } };
 const AXE = fs.readFileSync(path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
 let checks = 0;
 let failures = 0;
@@ -169,6 +170,29 @@ async function main() {
       check(`${label}: axe finds no serious or critical problems`, Array.isArray(out) && out.length === 0, out);
     };
 
+    /**
+     * Serves a stand-in schedule (p0000 on 30 and 31 Oct) or fails the schedule request, through CDP's Fetch domain,
+     * so dated puzzles are tested without publishing anything. route(null) goes back to the real files.
+     */
+    let routing = null;
+    socket.addEventListener('message', (event) => {
+      const m = JSON.parse(event.data);
+      if (m.method !== 'Fetch.requestPaused' || !routing) return;
+      const { requestId, request } = m.params;
+      const b64 = (x) => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64');
+      const ok = (body) => send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: b64(body) });
+      if (request.url.includes('/duel/schedule.json')) {
+        if (routing === 'fail') void send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' });
+        else void ok(FIXTURE_SCHEDULE);
+      } else if (request.url.includes('/duel/p/p0000.v1.test0000.json')) void ok(fs.readFileSync('data/duel/puzzles/p0000.json', 'utf8'));
+      else void send('Fetch.continueRequest', { requestId });
+    });
+    const route = async (mode) => {
+      routing = mode;
+      if (mode) await send('Fetch.enable', { patterns: [{ urlPattern: '*/duel/*' }] });
+      else await send('Fetch.disable');
+    };
+
     // ── Phone: the screen ──
     await setSize(phone);
     await reduce(true);
@@ -176,6 +200,25 @@ async function main() {
     check('phone: /play redirects to /play/game/<today>', /^\/play\/game\/\d{4}-\d{2}-\d{2}$/.test(await evaluate('location.pathname')), await evaluate('location.pathname'));
     check('phone: a future date goes to today', await open('/play/game/2099-01-01?seed=7') && !(await evaluate('location.pathname')).includes('2099'));
     check('phone: the game opens', await open(`${GAME}?seed=7`, { clear: true }));
+    check('phone: an unscheduled date plays the labelled practice puzzle', await evaluate(`window.__duel.puzzle.id === 'p0001'
+      && document.querySelector('.duel-top .ttl b').textContent === 'Practice duel'`), await evaluate(`document.querySelector('.duel-top .ttl')?.textContent`));
+
+    // ── Phone: the dated schedule (a stand-in schedule served through CDP) ──
+    await route('fixture');
+    check('schedule: a scheduled date plays its puzzle', await open('/play/game/2026-10-31?seed=7', { clear: true })
+      && await evaluate(`window.__duel.puzzle.id === 'p0000' && document.querySelector('.duel-top .ttl b').textContent === 'Daily Duel'`));
+    await evaluate(`localStorage.setItem('panna_duel_results', JSON.stringify([{ date: '2026-10-31', puzzle: 'p0000.v1', you: 50, quill: 40, at: '2026-10-31T10:00:00Z' }])); true`);
+    await open('/play?seed=7');
+    check('schedule: /play opens the latest open scheduled day when today has none', (await evaluate('location.pathname')) === '/play/game/2026-10-30', await evaluate('location.pathname'));
+    const before = await evaluate(`localStorage.getItem('panna_duel_game:2026-10-30')`);
+    await route('fail');
+    await send('Page.navigate', { url: `${BASE}/play/game/2026-10-30?seed=7` });
+    check('schedule: a failed load shows an error with Try again', await waitFor(`Boolean(document.querySelector('.duel-load-error[role="alert"]')) && [...document.querySelectorAll('.duel-load-error button')].some((b) => b.textContent === 'Try again')`));
+    check('schedule: a failed load leaves the save untouched', before !== null && (await evaluate(`localStorage.getItem('panna_duel_game:2026-10-30')`)) === before);
+    await route('fixture');
+    await evaluate(`document.querySelector('.duel-load-error button').click(); true`);
+    check('schedule: Try again loads the game', await waitFor(`Boolean(window.__duel && window.__duel.puzzle.id === 'p0000' && document.querySelector('.duel-board [data-cell]'))`));
+    await route(null);
     const screen = await evaluate(`(() => ({
       cells: document.querySelectorAll('.duel-board [data-cell]').length,
       given: ${JSON.stringify(P0.given)}.map((c) => document.querySelector('.duel-board [data-cell="' + c + '"]').textContent.trim()),

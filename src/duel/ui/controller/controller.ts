@@ -3,6 +3,7 @@
 // motion. A snapshot changes only at rest: never while a director promise is pending.
 import { apply, botTurn, newGame, replay, type Action, type CellId, type GameEvent, type GameState, type Puzzle, type SlotId } from '../../engine';
 import type { Platform } from '../../platform/types';
+import { gameKey, readResults, RESULTS_KEY, type DuelResult } from '../../progress';
 import { nextEmpty, slotsThrough, wordCandidates } from './selectors';
 import type { Director, Pending, SavedGame, Sheet, Snapshot } from './types';
 
@@ -44,8 +45,12 @@ export class GameController {
   private lastTap: CellId | null = null;
   private readonly key: string;
 
-  constructor(private p: Puzzle, date: string, private platform: Platform, private director: Director, opts: { seed?: number } = {}) {
-    this.key = `panna_duel_game:${date}`;
+  private readonly practice: boolean;
+
+  /** `practice`: the date has no daily puzzle, so a finished game wins nothing. */
+  constructor(private p: Puzzle, private date: string, private platform: Platform, private director: Director, opts: { seed?: number; practice?: boolean } = {}) {
+    this.key = gameKey(date);
+    this.practice = opts.practice ?? false;
     const state = this.restore() ?? this.fresh(opts.seed ?? randomSeed());
     this.snap = this.rest(state);
   }
@@ -91,9 +96,23 @@ export class GameController {
     return state;
   }
 
-  private save(state: GameState) {
-    const saved: SavedGame = { puzzleId: this.p.id, puzzleVersion: this.p.version, seed: state.seed, log: state.log, startedAt: this.startedAt };
+  /** `end` is the state after Quill's reply, when it differs from the one whose log is saved. */
+  private save(state: GameState, end: GameState = state) {
+    const saved: SavedGame = {
+      puzzleId: this.p.id, puzzleVersion: this.p.version, seed: state.seed, log: state.log, startedAt: this.startedAt,
+      score: { ...end.scores }, over: end.over,
+    };
     this.platform.storage.set(this.key, saved);
+  }
+
+  /** A finished daily game joins the results once, as it ends (a reload or Play again adds nothing). */
+  private record(end: GameState) {
+    if (this.practice) return;
+    const { storage } = this.platform;
+    const result: DuelResult = {
+      date: this.date, puzzle: `${this.p.id}.v${this.p.version}`, you: end.scores.you, quill: end.scores.quill, at: new Date().toISOString(),
+    };
+    storage.set(RESULTS_KEY, [...readResults(storage.get(RESULTS_KEY)), result]);
   }
 
   /** Play again: a new deal of the same puzzle. */
@@ -285,11 +304,12 @@ export class GameController {
   private async turn(a: Action) {
     let you: { state: GameState; events: GameEvent[] };
     try { you = apply(this.p, this.snap.state, a); } catch { this.director.toast('That move isn’t allowed.'); return; }
-    this.save(you.state);
     // Quill's reply: one turn, or several in a row once your rack is empty (a player with no tiles gets no turn).
     const quill: { state: GameState; events: GameEvent[] }[] = [];
     for (let s = you.state; !s.over && s.turn === 'quill'; s = quill[quill.length - 1].state) quill.push(botTurn(this.p, s));
     const end = quill[quill.length - 1] ?? you;
+    this.save(you.state, end.state);
+    if (end.state.over && !this.snap.state.over) this.record(end.state);
 
     this.lastTap = null;
     this.publish({ busy: true, lastQuill: [], lifted: null, zoom: null, wordMode: false, sheet: null });
