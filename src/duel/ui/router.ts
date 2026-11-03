@@ -3,12 +3,9 @@
 
 export type Route = { screen: 'game'; date: string } | { redirect: string };
 
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+import { istToday } from '../progress';
 
-/** Today's date (YYYY-MM-DD) in India: the Duel's day starts at 00:00 IST. */
-export function istToday(now: Date): string {
-  return new Date(now.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
-}
+export { istToday };
 
 /** A real calendar date, written YYYY-MM-DD (so 2026-02-30 is not one). */
 function isDate(s: string): boolean {
