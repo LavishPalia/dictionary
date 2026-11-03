@@ -217,7 +217,7 @@ async function main() {
     await waitFor(`window.__duel.snapshot().pending.length === 0`, 2000);
     await sleep(100);
     check('phone: tapping a pending tile arcs it home', home === s.state.racks.you[first.rackSlot]
-      && await evaluate(`Boolean(document.querySelector('[data-rack="${first.rackSlot}"] .duel-tile')) && !document.querySelector('.duel-fx .fx-tile') && !document.querySelector('[data-fx-hidden]')`), home);
+      && await evaluate(`Boolean(document.querySelector('[data-rack="${first.rackSlot}"] .duel-tile')) && !document.querySelector('.duel-fx .fx-tile') && !document.querySelector('[data-fx-hidden], [data-fx-homing]')`), home);
     // a clue zoom stays until the next tap
     const clue = P0.slots[0];
     await tap(`[data-slot="${clue.id}"]`);
@@ -405,7 +405,7 @@ async function main() {
       check('phone: after a size change, a drop lands on the cell under it', s.pending.length === 1 && s.pending[0].cell === t0.cell, s.pending);
       await setSize(phone);
       await sleep(300);
-      // Enter while the tile flies home submits the turn, so the take-back is refused: no tile may stay hidden.
+      // The tile is back in the rack the moment it leaves the board: Enter during its flight home passes, never submits it.
       await evaluate(`document.activeElement?.blur(), true`);
       const rackbar = await center('.duel-rackbar');
       await drag(`.duel-board [data-cell="${t0.cell}"] .duel-tile`, { x: rackbar.x, y: rackbar.y + 30 }, { end: false });
@@ -414,8 +414,8 @@ async function main() {
       await idle();
       await sleep(300);
       s = await snap();
-      check('phone: Enter during a flight home submits, and every tile still shows', s.state.log.at(-1)?.t === 'submit'
-        && await evaluate(`!document.querySelector('[data-fx-hidden]') && !document.querySelector('.duel-fx .fx-tile')`), s.state.log.at(-1));
+      check('phone: Enter during a flight home passes, and the tile is home', s.state.log.at(-1)?.t === 'pass'
+        && await evaluate(`Boolean(document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile')) && !document.querySelector('[data-fx-hidden], [data-fx-homing]') && !document.querySelector('.duel-fx .fx-tile')`), s.state.log.at(-1));
     }
 
     // a drag during a sequence does nothing

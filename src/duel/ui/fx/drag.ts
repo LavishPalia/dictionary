@@ -166,12 +166,14 @@ export class Input {
       }
     } else if (!cancelled && d.fromCell !== null && this.stage.overRack(d.tx, d.ty)) {
       const slot = this.stage.rect('rack', d.rackSlot)!;
-      await this.layer.anim(g, [{ transform: fromTL }, { transform: onto(slot) }], { duration: T.takeBack, easing: EASE.home });
-      if (this.ctl.takeBack(d.fromCell)) this.platform.sound.play('drop');
-      await nextFrames();
-      g.remove();
-      // Refused (Enter submitted the turn mid-flight): the tile stays where the game has it, so show it again.
-      d.el.removeAttribute('data-fx-hidden');
+      // Taken back before the flight, so an Enter meanwhile can't submit it (the rack slot is masked until it lands).
+      if (this.ctl.takeBack(d.fromCell)) {
+        await this.homeFlight(g, d.rackSlot, [{ transform: fromTL }, { transform: onto(slot) }]);
+      } else {
+        // Refused: the turn was submitted during the drag, and the director now owns the tile's visibility.
+        g.remove();
+        if (!this.ctl.snapshot().busy) d.el.removeAttribute('data-fx-hidden');
+      }
       mark('drag', 'end');
       return;
     }
@@ -207,7 +209,10 @@ export class Input {
     return ok;
   }
 
-  /** Take back: the pending tile arcs home to its own rack slot, then lands with a small bump (UI-DESIGN §4). */
+  /**
+   * Take back: the pending tile arcs home to its own rack slot, then lands with a small bump (UI-DESIGN §4).
+   * It is taken back at once, so Enter, Backspace or a second tap during the flight see it in the rack.
+   */
   async flyHome(cell: CellId): Promise<boolean> {
     const snap = this.ctl.snapshot();
     const t = snap.pending.find(x => x.cell === cell);
@@ -217,19 +222,25 @@ export class Input {
     if (snap.busy || !t || !src || !slot || !letter) return this.ctl.tapCell(cell);
     const from = src.getBoundingClientRect();
     const g = this.layer.tile(letter, from, 'lifted');
-    src.setAttribute('data-fx-hidden', '');
+    if (!this.ctl.takeBack(cell)) { g.remove(); return false; }
     const frames = this.motion.reduced
       ? [{ transform: `translate3d(${slot.left}px,${slot.top}px,0) scale(${slot.width / from.width})` }]
       : arcFrames({ x: from.left, y: from.top }, { x: slot.left, y: slot.top }, 40, { s0: 1.06, s1: slot.width / from.width });
+    await this.homeFlight(g, t.rackSlot, frames);
+    return true;
+  }
+
+  /** Flies a clone into a rack slot whose tile is already back (masked until the clone lands), then bumps it. */
+  private async homeFlight(g: HTMLElement, rackSlot: number, frames: Keyframe[]) {
+    const slotEl = this.stage.el('rack', rackSlot);
+    slotEl?.setAttribute('data-fx-homing', '');
     await this.layer.anim(g, frames, { duration: T.takeBack, easing: EASE.home });
-    const ok = this.ctl.takeBack(cell);
-    if (ok) this.platform.sound.play('drop');
+    this.platform.sound.play('drop');
+    slotEl?.removeAttribute('data-fx-homing');
     await nextFrames();
     g.remove();
-    src.removeAttribute('data-fx-hidden');
-    const home = ok ? this.stage.el('rack', t.rackSlot)?.querySelector('.duel-tile') : null;
+    const home = slotEl?.querySelector('.duel-tile');
     if (home && !this.motion.reduced) home.animate([{ transform: 'scale(1.08)' }, { transform: 'scale(.97)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: T.settle, easing: EASE.spring });
-    return ok;
   }
 
   /** A tap on a letter cell: place the lifted tile with a flight, send a pending tile home, or let the controller handle it. */
