@@ -13,7 +13,7 @@ export REPORTS_FILE=$PWD/scratch/reports-test.jsonl
 export NEXT_PUBLIC_REPORTS=1
 
 # Parts of about 6.5 minutes each on a GitHub runner (seconds in brackets, from a CI log, 2026-10-31).
-PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:saved test:word"  # 139 82 70 55 23 19
+PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:duel-entry-ui test:saved test:word"  # 139 82 70 55 23 19
 PART_2="test:duel-ui test:learn-ui test:reach-ui test:history-ui test:goto-ui test:review-ui test:book-fit-ui test:backup-ui
   test:duel-sim test:duel-purity test:duel-engine test:duel-controller test:duel-content test:duel-progress test:duel-schedule"  # duel-ui ~230 locally; 116 78 69 44 27 25 24 35 5 2 3
 PART_3="test:tour-ui test:quiz test:search test:motion test:related-ui test:report-ui test:saved-search-ui

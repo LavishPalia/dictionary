@@ -24,3 +24,14 @@
 /* "2 words looked up today · 1 not saved ›": opens Saved → History. */
 .today-lookups { align-self: flex-start; display: inline-flex; align-items: center; min-height: var(--tap); margin: -6px 2px; text-align: left; font: 15px var(--font-fell); }
 .today-actions { display: flex; gap: var(--space-2); margin-top: 12px; }
+
+/* Panna Duel: four little Press tiles spelling DUEL beside today's state. */
+.today-duel-row { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.today-duel-tiles { display: grid; grid-template-columns: repeat(2, 26px); gap: 3px; flex: none; }
+.today-duel-tiles span {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 5px;
+  background: linear-gradient(160deg, #e3c48f, #c49a5c); box-shadow: inset 0 -2px 0 rgba(90, 58, 24, .35);
+  font: 15px var(--font-fell-sc); color: #3a2614;
+}
+.today-duel .today-big { margin-top: 0; }
+.today-duel-btn { margin-top: 12px; }

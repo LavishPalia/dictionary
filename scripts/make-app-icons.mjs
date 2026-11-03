@@ -3,7 +3,7 @@
 //   icon-192.png, icon-512.png   the icon as drawn (rounded corners, transparent outside)
 //   maskable-512.png             full-bleed red with the letter inside the central 80% safe zone (Android crops it)
 //   src/app/apple-icon.png       180×180 full-bleed (iOS rounds the corners itself)
-//   shortcut-*-96.png            96×96 icons for the manifest's shortcuts (Speak a word, Review)
+//   shortcut-*-96.png            96×96 icons for the manifest's shortcuts (Speak a word, Review, Panna Duel)
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -32,6 +32,8 @@ const ICONS = [
   { file: 'shortcut-voice-96.png', size: 96, svg: shortcut('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5M9 20.5h6"/>') },
   // "Review": stacked review cards with a tick.
   { file: 'shortcut-review-96.png', size: 96, svg: shortcut('<rect x="4" y="6" width="13" height="15" rx="2"/><path d="M8 3h10a2 2 0 0 1 2 2v12"/><path d="M7.5 13.5l2.5 2.5 4-4.5"/>') },
+  // "Panna Duel": four letter tiles, as on the Play tab.
+  { file: 'shortcut-play-96.png', size: 96, svg: shortcut('<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.5"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.5"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.5"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.5"/>') },
 ];
 
 async function main() {

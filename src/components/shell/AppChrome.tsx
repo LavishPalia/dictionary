@@ -2,12 +2,14 @@
 
 import type { ReactNode } from 'react';
 import { Button, IconButton } from '@/components/ui';
-import { BookIcon, CardsIcon, MoreIcon, StarIcon, SunIcon } from '@/components/ui/icons';
+import { BookIcon, CardsIcon, MoreIcon, PlayIcon, StarIcon, SunIcon } from '@/components/ui/icons';
 
 // Top bar. Desktop: wordmark, search, Saved, ⋯. Phones: search and ⋯ only (Saved lives in the bottom bar).
 // Which layout shows is decided in CSS at the same 1024px breakpoint the book uses.
-export function AppHeader({ search, savedCount, onOpenToday, onOpenSaved, onOpenReview, section, dueCount, onOpenMenu, menuOpen }: {
+export function AppHeader({ search, savedCount, onOpenToday, onOpenSaved, onOpenReview, section, dueCount, onOpenMenu, menuOpen, showPlay }: {
   search: ReactNode;
+  /** The way into Panna Duel (a page of its own at /play), hidden on production until launch. */
+  showPlay: boolean;
   onOpenToday: () => void;
   savedCount: number;
   onOpenSaved: () => void;
@@ -33,6 +35,11 @@ export function AppHeader({ search, savedCount, onOpenToday, onOpenSaved, onOpen
       <Button variant="desk" id="open-review-btn" className="app-desktop-only" onClick={onOpenReview} aria-pressed={section === 'review'}>
         <CardsIcon /> Review<DueCount count={dueCount} />
       </Button>
+      {showPlay && (
+        <a className="ui-btn ui-btn--desk app-desktop-only" id="open-play-btn" href="/play">
+          <PlayIcon /> Play
+        </a>
+      )}
       <IconButton id="menu-btn" aria-label="Reading settings and more" aria-haspopup="dialog" aria-expanded={menuOpen} onClick={onOpenMenu}>
         <MoreIcon />
       </IconButton>
@@ -53,8 +60,9 @@ function DueCount({ count }: { count: number }) {
 
 export type Section = 'today' | 'book' | 'saved' | 'review' | 'learn';
 
-export function BottomNav({ active, savedCount, dueCount, onToday, onBook, onSaved, onReview }: {
+export function BottomNav({ active, savedCount, dueCount, onToday, onBook, onSaved, onReview, showPlay }: {
   active: Section;
+  showPlay: boolean;
   onToday: () => void;
   savedCount: number;
   dueCount: number;
@@ -76,6 +84,7 @@ export function BottomNav({ active, savedCount, dueCount, onToday, onBook, onSav
       <button type="button" id="nav-review-btn" aria-current={active === 'review' ? 'page' : undefined} onClick={onReview}>
         <CardsIcon />Review<DueCount count={dueCount} />
       </button>
+      {showPlay && <a id="nav-play-btn" href="/play"><PlayIcon />Play</a>}
     </nav>
   );
 }

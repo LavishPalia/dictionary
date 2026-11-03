@@ -219,6 +219,7 @@ async function main() {
     await evaluate(`document.querySelector('.duel-load-error button').click(); true`);
     check('schedule: Try again loads the game', await waitFor(`Boolean(window.__duel && window.__duel.puzzle.id === 'p0000' && document.querySelector('.duel-board [data-cell]'))`));
     await route(null);
+    await open(`${GAME}?seed=7`, { clear: true });
     const screen = await evaluate(`(() => ({
       cells: document.querySelectorAll('.duel-board [data-cell]').length,
       given: ${JSON.stringify(P0.given)}.map((c) => document.querySelector('.duel-board [data-cell="' + c + '"]').textContent.trim()),
