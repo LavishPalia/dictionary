@@ -1,0 +1,726 @@
+{
+ "id": "p0129",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "R",
+  "10": "E",
+  "11": "D",
+  "12": "O",
+  "13": "U",
+  "14": "B",
+  "15": "T",
+  "17": "E",
+  "18": "A",
+  "19": "R",
+  "21": "T",
+  "22": "E",
+  "23": "A",
+  "25": "C",
+  "26": "R",
+  "27": "Y",
+  "28": "P",
+  "29": "T",
+  "31": "C",
+  "33": "O",
+  "34": "N",
+  "36": "R",
+  "37": "E",
+  "38": "S",
+  "39": "T",
+  "41": "R",
+  "42": "E",
+  "43": "M",
+  "44": "O",
+  "45": "R",
+  "46": "A",
+  "49": "D",
+  "50": "R",
+  "51": "A",
+  "52": "W",
+  "54": "M",
+  "55": "G",
+  "57": "I",
+  "59": "N",
+  "60": "E",
+  "61": "V",
+  "62": "E",
+  "63": "R",
+  "65": "N",
+  "66": "O",
+  "67": "I",
+  "68": "S",
+  "69": "E",
+  "71": "A",
+  "73": "G",
+  "74": "H",
+  "75": "A",
+  "76": "S",
+  "77": "T",
+  "78": "L",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  20,
+  24,
+  30,
+  32,
+  35,
+  40,
+  47,
+  48,
+  53,
+  56,
+  58,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  9,
+  44,
+  79
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "RECORDING",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Audio file",
+    "full": "Audio file"
+   },
+   "sense": {
+    "en": "a signal or file that encodes audio or video data.",
+    "hi": "रिकॉर्डिंग",
+    "entryId": 18003
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42,
+    50
+   ],
+   "answer": "EARNER",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Wage worker",
+    "full": "Wage worker"
+   },
+   "sense": {
+    "en": "a person who works to get money.",
+    "hi": "कमाने वाला, आय अर्जनकर्ता",
+    "entryId": 7065
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27
+   ],
+   "answer": "DRY",
+   "clueCell": 3,
+   "clue": {
+    "kind": "rel",
+    "text": "Dried",
+    "full": "Similar to dried"
+   },
+   "sense": {
+    "en": "free from liquid or moisture.",
+    "hi": "सूखा, शुष्क",
+    "entryId": 6939
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12
+   ],
+   "answer": "O",
+   "clueCell": 4,
+   "clue": {
+    "kind": "abbr",
+    "text": "Oxygen symbol",
+    "full": "Oxygen symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of oxygen",
+    "hi": "ऑक्सीजन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45
+   ],
+   "answer": "UTTER",
+   "clueCell": 5,
+   "clue": {
+    "kind": "rel",
+    "text": "Express",
+    "full": "Similar to express"
+   },
+   "sense": {
+    "en": "to articulate; either verbally or with a cry, shout, or noise.",
+    "hi": "बोलना, कहना",
+    "entryId": 23833
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22
+   ],
+   "answer": "BE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39
+   ],
+   "answer": "TACT",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Social skill",
+    "full": "Social skill"
+   },
+   "sense": {
+    "en": "the ability to speak or act without offending others.",
+    "hi": "सलीका, व्यवहार-कुशलता",
+    "entryId": 21896
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "REDOUBT",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "INTO THE __",
+    "full": "Fill the gap: Into the ___"
+   },
+   "sense": {
+    "en": "an entrenched stronghold or refuge.",
+    "hi": "गढ़, सुरक्षित स्थान",
+    "entryId": 18060
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19
+   ],
+   "answer": "EAR",
+   "clueCell": 16,
+   "clue": {
+    "kind": "picmath",
+    "img": "1f350",
+    "math": "−p",
+    "full": "Picture maths: a green fruit, round at the bottom, minus P"
+   },
+   "sense": {
+    "en": "the sense organ for hearing and equilibrium.",
+    "hi": "कान",
+    "entryId": 7054
+   }
+  },
+  {
+   "id": "a:2:5",
+   "dir": "a",
+   "cells": [
+    21,
+    22,
+    23
+   ],
+   "answer": "TEA",
+   "clueCell": 20,
+   "clue": {
+    "kind": "pic",
+    "img": "1f375",
+    "full": "Picture: a hot drink in a cup"
+   },
+   "sense": {
+    "en": "a hot drink made by infusing dried, crushed tea leaves in boiling water.",
+    "hi": "चाय",
+    "entryId": 22049
+   }
+  },
+  {
+   "id": "d:3:4",
+   "dir": "d",
+   "cells": [
+    28,
+    36,
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "PROWESS",
+   "clueCell": 20,
+   "clue": {
+    "kind": "def",
+    "text": "Great skill",
+    "full": "Great skill"
+   },
+   "sense": {
+    "en": "great skill or expertise in a particular activity or field.",
+    "hi": "कौशल, निपुणता",
+    "entryId": 17364
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29
+   ],
+   "answer": "CRYPT",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Church vault",
+    "full": "Church vault"
+   },
+   "sense": {
+    "en": "an underground room or vault beneath a church, used as a burial place.",
+    "hi": "तहखाना, मकबरा",
+    "entryId": 5362
+   }
+  },
+  {
+   "id": "a:3:7",
+   "dir": "a",
+   "cells": [
+    31
+   ],
+   "answer": "C",
+   "clueCell": 30,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after B",
+    "full": "Letter after B"
+   },
+   "sense": {
+    "en": "the letter C",
+    "hi": "सी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:4:6",
+   "dir": "d",
+   "cells": [
+    38,
+    46,
+    54,
+    62
+   ],
+   "answer": "SAME",
+   "clueCell": 30,
+   "clue": {
+    "kind": "def",
+    "text": "Identical",
+    "full": "Identical"
+   },
+   "sense": {
+    "en": "identical; not different.",
+    "hi": "वही, समान, एक जैसा",
+    "entryId": 19051
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34
+   ],
+   "answer": "ON",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Atop",
+    "full": "Atop"
+   },
+   "sense": {
+    "en": "physically in contact with and supported by a surface.",
+    "hi": "पर, ऊपर",
+    "entryId": 15274
+   }
+  },
+  {
+   "id": "a:4:4",
+   "dir": "a",
+   "cells": [
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "REST",
+   "clueCell": 35,
+   "clue": {
+    "kind": "def",
+    "text": "Relax",
+    "full": "Relax"
+   },
+   "sense": {
+    "en": "freedom from activity, work, or strain.",
+    "hi": "आराम",
+    "entryId": 18491
+   }
+  },
+  {
+   "id": "d:5:3",
+   "dir": "d",
+   "cells": [
+    43,
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "MANIA",
+   "clueCell": 35,
+   "clue": {
+    "kind": "def",
+    "text": "Wild craze",
+    "full": "Wild craze"
+   },
+   "sense": {
+    "en": "an intense and irrational desire or passion for something.",
+    "hi": "जुनून, सनक",
+    "entryId": 13518
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45,
+    46
+   ],
+   "answer": "REMORA",
+   "clueCell": 40,
+   "clue": {
+    "kind": "gap",
+    "text": "A TINY __.",
+    "full": "Fill the gap: A tiny ___."
+   },
+   "sense": {
+    "en": "a marine fish that attaches itself to larger sea animals using a disk on its head.",
+    "hi": "चूसक मछली",
+    "entryId": 18282
+   }
+  },
+  {
+   "id": "d:6:7",
+   "dir": "d",
+   "cells": [
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "GRAY",
+   "clueCell": 47,
+   "clue": {
+    "kind": "rel",
+    "text": "Grey",
+    "full": "Similar to grey"
+   },
+   "sense": {
+    "en": "of a color intermediate between black and white.",
+    "hi": "स्लेटी, धूसर",
+    "entryId": 9811
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52
+   ],
+   "answer": "DRAW",
+   "clueCell": 48,
+   "clue": {
+    "kind": "rel",
+    "text": "Design",
+    "full": "Similar to design"
+   },
+   "sense": {
+    "en": "to make a picture or lines on a surface using a pen or pencil.",
+    "hi": "चित्र बनाना, खींचना",
+    "entryId": 6848
+   }
+  },
+  {
+   "id": "a:6:6",
+   "dir": "a",
+   "cells": [
+    54,
+    55
+   ],
+   "answer": "MG",
+   "clueCell": 53,
+   "clue": {
+    "kind": "abbr",
+    "text": "Milligram",
+    "full": "Milligram"
+   },
+   "sense": {
+    "en": "milligram (unit)",
+    "hi": "मिलीग्राम"
+   }
+  },
+  {
+   "id": "d:7:5",
+   "dir": "d",
+   "cells": [
+    61,
+    69,
+    77
+   ],
+   "answer": "VET",
+   "clueCell": 53,
+   "clue": {
+    "kind": "def",
+    "text": "Animal doctor",
+    "full": "Animal doctor"
+   },
+   "sense": {
+    "en": "a doctor who treats sick or injured animals.",
+    "hi": "पशु चिकित्सक, वेट",
+    "entryId": 24025
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57
+   ],
+   "answer": "I",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after H",
+    "full": "Letter after H"
+   },
+   "sense": {
+    "en": "the letter I",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:7:3",
+   "dir": "a",
+   "cells": [
+    59,
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "NEVER",
+   "clueCell": 58,
+   "clue": {
+    "kind": "gap",
+    "text": "I WILL __ DO IT",
+    "full": "Fill the gap: I will ___ do it"
+   },
+   "sense": {
+    "en": "at no time; not ever.",
+    "hi": "कभी नहीं",
+    "entryId": 14823
+   }
+  },
+  {
+   "id": "d:8:2",
+   "dir": "d",
+   "cells": [
+    66,
+    74
+   ],
+   "answer": "OH",
+   "clueCell": 58,
+   "clue": {
+    "kind": "gap",
+    "text": "__ REALLY",
+    "full": "Fill the gap: ___ really"
+   },
+   "sense": {
+    "en": "expressing surprise, anger, or another emotion.",
+    "hi": "ओह, अरे",
+    "entryId": 15238
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "NOISE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Loud sound",
+    "full": "Loud sound"
+   },
+   "sense": {
+    "en": "sound of any kind, especially a loud or unpleasant one.",
+    "hi": "शोर, आवाज़",
+    "entryId": 14931
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "A",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "First letter",
+    "full": "First letter"
+   },
+   "sense": {
+    "en": "the letter A",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "L",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after K",
+    "full": "Letter after K"
+   },
+   "sense": {
+    "en": "the letter L",
+    "hi": "एल (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "GHASTLY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "rel",
+    "text": "Grim",
+    "full": "Similar to grim"
+   },
+   "sense": {
+    "en": "causing great horror or fear.",
+    "hi": "भयानक, डरावना",
+    "entryId": 9441
+   }
+  }
+ ]
+}

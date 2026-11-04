@@ -1,0 +1,725 @@
+{
+ "id": "p0005",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "C",
+  "10": "L",
+  "11": "O",
+  "12": "T",
+  "13": "H",
+  "14": "E",
+  "15": "S",
+  "17": "H",
+  "19": "P",
+  "20": "R",
+  "21": "I",
+  "22": "M",
+  "23": "E",
+  "25": "A",
+  "26": "R",
+  "27": "E",
+  "28": "A",
+  "30": "B",
+  "31": "E",
+  "33": "P",
+  "34": "I",
+  "35": "N",
+  "36": "C",
+  "37": "E",
+  "38": "R",
+  "41": "E",
+  "42": "D",
+  "44": "T",
+  "45": "R",
+  "46": "A",
+  "47": "P",
+  "49": "R",
+  "50": "E",
+  "51": "P",
+  "53": "A",
+  "54": "C",
+  "55": "E",
+  "57": "O",
+  "59": "L",
+  "60": "A",
+  "61": "S",
+  "62": "E",
+  "63": "R",
+  "65": "N",
+  "66": "O",
+  "67": "O",
+  "68": "S",
+  "69": "E",
+  "71": "I",
+  "73": "E",
+  "74": "N",
+  "75": "T",
+  "76": "H",
+  "77": "R",
+  "78": "A",
+  "79": "L"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  18,
+  24,
+  29,
+  32,
+  39,
+  40,
+  43,
+  48,
+  52,
+  56,
+  58,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  9,
+  37,
+  62
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "CHAPERONE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Adult guard",
+    "full": "Adult guard"
+   },
+   "sense": {
+    "en": "an adult who supervises young people at social events.",
+    "hi": "रक्षक, अभिभावक",
+    "entryId": 3608
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10
+   ],
+   "answer": "L",
+   "clueCell": 2,
+   "clue": {
+    "kind": "abbr",
+    "text": "Litre",
+    "full": "Litre"
+   },
+   "sense": {
+    "en": "litre (unit)",
+    "hi": "लीटर"
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35
+   ],
+   "answer": "OPEN",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Not shut",
+    "full": "Not shut"
+   },
+   "sense": {
+    "en": "allowing access, passage, or a view through an empty space.",
+    "hi": "खुला, अनावृत",
+    "entryId": 15304
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44
+   ],
+   "answer": "TRACT",
+   "clueCell": 4,
+   "clue": {
+    "kind": "rel",
+    "text": "Parcel",
+    "full": "Similar to parcel"
+   },
+   "sense": {
+    "en": "an extended area of land.",
+    "hi": "खंड, भूभाग",
+    "entryId": 22708
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21
+   ],
+   "answer": "HI",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Casual hello",
+    "full": "Casual hello"
+   },
+   "sense": {
+    "en": "(informal) hello.",
+    "hi": "नमस्ते, हाय",
+    "entryId": 10521
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54,
+    62
+   ],
+   "answer": "EMBRACE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Warm hug",
+    "full": "Warm hug"
+   },
+   "sense": {
+    "en": "to hold someone closely in your arms with affection.",
+    "hi": "गले लगाना",
+    "entryId": 7338
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31
+   ],
+   "answer": "SEE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Perceive by eye",
+    "full": "Perceive by eye"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "CLOTHES",
+   "clueCell": 8,
+   "clue": {
+    "kind": "rel",
+    "text": "Outfit",
+    "full": "Similar to outfit"
+   },
+   "sense": {
+    "en": "clothing in general.",
+    "hi": "कपड़े, वस्त्र",
+    "entryId": 4067
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17
+   ],
+   "answer": "H",
+   "clueCell": 16,
+   "clue": {
+    "kind": "abbr",
+    "text": "Hour",
+    "full": "Hour"
+   },
+   "sense": {
+    "en": "hour (unit)",
+    "hi": "घंटा"
+   }
+  },
+  {
+   "id": "a:2:3",
+   "dir": "a",
+   "cells": [
+    19,
+    20,
+    21,
+    22,
+    23
+   ],
+   "answer": "PRIME",
+   "clueCell": 18,
+   "clue": {
+    "kind": "def",
+    "text": "Top rank",
+    "full": "Top rank"
+   },
+   "sense": {
+    "en": "of primary importance, quality, or value.",
+    "hi": "मुख्य, प्रधान",
+    "entryId": 17107
+   }
+  },
+  {
+   "id": "d:3:2",
+   "dir": "d",
+   "cells": [
+    26,
+    34,
+    42,
+    50
+   ],
+   "answer": "RIDE",
+   "clueCell": 18,
+   "clue": {
+    "kind": "rel",
+    "text": "Travel",
+    "full": "Similar to travel"
+   },
+   "sense": {
+    "en": "to travel in a vehicle or on an animal.",
+    "hi": "सवारी करना",
+    "entryId": 18667
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28
+   ],
+   "answer": "AREA",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Region",
+    "full": "Region"
+   },
+   "sense": {
+    "en": "a particular geographical region or space.",
+    "hi": "क्षेत्र, इलाका",
+    "entryId": 1127
+   }
+  },
+  {
+   "id": "a:3:6",
+   "dir": "a",
+   "cells": [
+    30,
+    31
+   ],
+   "answer": "BE",
+   "clueCell": 29,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ OR NOT",
+    "full": "Fill the gap: To ___ or not"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:4:5",
+   "dir": "d",
+   "cells": [
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "ERASER",
+   "clueCell": 29,
+   "clue": {
+    "kind": "def",
+    "text": "Rubber tool",
+    "full": "Rubber tool"
+   },
+   "sense": {
+    "en": "a rubber or tool used for removing pencil or ink marks.",
+    "hi": "इरेज़र, रबर, मिटाने वाला",
+    "entryId": 7656
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37,
+    38
+   ],
+   "answer": "PINCER",
+   "clueCell": 32,
+   "clue": {
+    "kind": "gap",
+    "text": "GRAB IT WITH A __",
+    "full": "Fill the gap: Grab it with a ___"
+   },
+   "sense": {
+    "en": "a tool used for gripping or pulling objects.",
+    "hi": "पक्कड़, चिमटी",
+    "entryId": 16429
+   }
+  },
+  {
+   "id": "d:5:7",
+   "dir": "d",
+   "cells": [
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "PERIL",
+   "clueCell": 39,
+   "clue": {
+    "kind": "def",
+    "text": "Great danger",
+    "full": "Great danger"
+   },
+   "sense": {
+    "en": "serious and immediate danger.",
+    "hi": "खतरा, संकट",
+    "entryId": 16155
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "ED",
+   "clueCell": 40,
+   "clue": {
+    "kind": "abbr",
+    "text": "Editor",
+    "full": "Editor"
+   },
+   "sense": {
+    "en": "editor",
+    "hi": "संपादक"
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "TRAP",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Catch",
+    "full": "Catch"
+   },
+   "sense": {
+    "en": "to catch an animal or person using a device or trick.",
+    "hi": "फंसाना, जाल में पकड़ना",
+    "entryId": 22805
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "PLOT",
+   "clueCell": 43,
+   "clue": {
+    "kind": "gap",
+    "text": "THE FILM HAS A __",
+    "full": "Fill the gap: The film has a ___"
+   },
+   "sense": {
+    "en": "the story that is told in a novel, play, or movie.",
+    "hi": "कथानक, कहानी का सार",
+    "entryId": 16607
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51
+   ],
+   "answer": "REP",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Sales agent",
+    "full": "Sales agent"
+   },
+   "sense": {
+    "en": "an informal abbreviation of representative.",
+    "hi": "प्रतिनिधि",
+    "entryId": 18322
+   }
+  },
+  {
+   "id": "a:6:5",
+   "dir": "a",
+   "cells": [
+    53,
+    54,
+    55
+   ],
+   "answer": "ACE",
+   "clueCell": 52,
+   "clue": {
+    "kind": "def",
+    "text": "Top expert",
+    "full": "Top expert"
+   },
+   "sense": {
+    "en": "someone who is exceptionally skilled in a particular area.",
+    "hi": "माहिर, उस्ताद",
+    "entryId": 169
+   }
+  },
+  {
+   "id": "d:7:4",
+   "dir": "d",
+   "cells": [
+    60,
+    68,
+    76
+   ],
+   "answer": "ASH",
+   "clueCell": 52,
+   "clue": {
+    "kind": "rel",
+    "text": "Dust",
+    "full": "Similar to dust"
+   },
+   "sense": {
+    "en": "the powdery grey residue left after something burns.",
+    "hi": "राख",
+    "entryId": 1238
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57
+   ],
+   "answer": "O",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after N",
+    "full": "Letter after N"
+   },
+   "sense": {
+    "en": "the letter O",
+    "hi": "ओ (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:7:3",
+   "dir": "a",
+   "cells": [
+    59,
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "LASER",
+   "clueCell": 58,
+   "clue": {
+    "kind": "rel",
+    "text": "Beam",
+    "full": "Similar to beam"
+   },
+   "sense": {
+    "en": "an optical device that produces an intense beam of light.",
+    "hi": "लेजर",
+    "entryId": 12661
+   }
+  },
+  {
+   "id": "d:8:2",
+   "dir": "d",
+   "cells": [
+    66,
+    74
+   ],
+   "answer": "ON",
+   "clueCell": 58,
+   "clue": {
+    "kind": "def",
+    "text": "Atop",
+    "full": "Atop"
+   },
+   "sense": {
+    "en": "physically in contact with and supported by a surface.",
+    "hi": "पर, ऊपर",
+    "entryId": 15274
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "NOOSE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Rope loop",
+    "full": "Rope loop"
+   },
+   "sense": {
+    "en": "a loop in a rope that tightens as the rope is pulled.",
+    "hi": "फाँसी का फंदा, फंदा",
+    "entryId": 14972
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "I",
+   "clueCell": 70,
+   "clue": {
+    "kind": "abbr",
+    "text": "Iodine symbol",
+    "full": "Iodine symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of iodine",
+    "hi": "आयोडीन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "A",
+   "clueCell": 70,
+   "clue": {
+    "kind": "abbr",
+    "text": "Ampere",
+    "full": "Ampere"
+   },
+   "sense": {
+    "en": "ampere (unit)",
+    "hi": "एम्पियर"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ENTHRAL",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Charm",
+    "full": "Charm"
+   },
+   "sense": {
+    "en": "to hold spellbound and deeply fascinate someone.",
+    "hi": "मंत्रमुग्ध करना",
+    "entryId": 7547
+   }
+  }
+ ]
+}

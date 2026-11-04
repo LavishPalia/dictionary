@@ -1,0 +1,725 @@
+{
+ "id": "p0057",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "T",
+  "10": "H",
+  "11": "E",
+  "12": "R",
+  "13": "E",
+  "14": "B",
+  "15": "Y",
+  "17": "R",
+  "18": "E",
+  "19": "L",
+  "20": "I",
+  "21": "V",
+  "22": "E",
+  "25": "A",
+  "26": "R",
+  "27": "I",
+  "28": "S",
+  "29": "E",
+  "31": "S",
+  "33": "N",
+  "35": "X",
+  "36": "E",
+  "37": "N",
+  "38": "O",
+  "39": "N",
+  "41": "S",
+  "42": "T",
+  "43": "I",
+  "44": "R",
+  "46": "V",
+  "47": "I",
+  "49": "P",
+  "50": "E",
+  "51": "R",
+  "53": "S",
+  "54": "E",
+  "55": "C",
+  "57": "O",
+  "58": "N",
+  "60": "O",
+  "61": "I",
+  "62": "N",
+  "63": "K",
+  "65": "R",
+  "66": "O",
+  "67": "M",
+  "68": "A",
+  "69": "N",
+  "71": "E",
+  "73": "T",
+  "74": "R",
+  "75": "E",
+  "76": "K",
+  "77": "K",
+  "78": "E",
+  "79": "R"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  23,
+  24,
+  30,
+  32,
+  34,
+  40,
+  45,
+  48,
+  52,
+  56,
+  59,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  25,
+  39,
+  77
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "TRANSPORT",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Moving goods",
+    "full": "Moving goods"
+   },
+   "sense": {
+    "en": "the commercial enterprise of moving goods and materials.",
+    "hi": "परिवहन, ढोना",
+    "entryId": 22798
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26
+   ],
+   "answer": "HER",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Of that female",
+    "full": "Of that female"
+   },
+   "sense": {
+    "en": "belonging to or referring to a female person.",
+    "hi": "उसका, उसकी, उसे",
+    "entryId": 10465
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51
+   ],
+   "answer": "ELIXIR",
+   "clueCell": 3,
+   "clue": {
+    "kind": "gap",
+    "text": "DRINK THE __",
+    "full": "Fill the gap: Drink the ___"
+   },
+   "sense": {
+    "en": "a substance believed to cure all ills.",
+    "hi": "अमृत, रामबाण दवा",
+    "entryId": 7278
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44
+   ],
+   "answer": "RISER",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Step part",
+    "full": "Step part"
+   },
+   "sense": {
+    "en": "the vertical part of a stair step.",
+    "hi": "सीढ़ी का खड़ा भाग",
+    "entryId": 18729
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37
+   ],
+   "answer": "EVEN",
+   "clueCell": 5,
+   "clue": {
+    "kind": "gap",
+    "text": "__ YOU CAN DO IT",
+    "full": "Fill the gap: ___ you can do it"
+   },
+   "sense": {
+    "en": "used to emphasize something surprising.",
+    "hi": "भी, तक, यहाँ तक कि",
+    "entryId": 7778
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22
+   ],
+   "answer": "BE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15
+   ],
+   "answer": "Y",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after X",
+    "full": "Letter after X"
+   },
+   "sense": {
+    "en": "the letter Y",
+    "hi": "वाई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "THEREBY",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "By that means",
+    "full": "By that means"
+   },
+   "sense": {
+    "en": "by that means or because of that.",
+    "hi": "उससे, इस प्रकार",
+    "entryId": 22292
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+   ],
+   "answer": "RELIVE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Think back",
+    "full": "Think back"
+   },
+   "sense": {
+    "en": "to experience an emotion or event again in your mind.",
+    "hi": "दोहराना, याद करना",
+    "entryId": 18246
+   }
+  },
+  {
+   "id": "d:3:7",
+   "dir": "d",
+   "cells": [
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "SNICKER",
+   "clueCell": 23,
+   "clue": {
+    "kind": "gap",
+    "text": "HEAR A __",
+    "full": "Fill the gap: Hear a ___"
+   },
+   "sense": {
+    "en": "a quiet, partly suppressed laugh.",
+    "hi": "दबी हंसी, दिल्लगी",
+    "entryId": 20371
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29
+   ],
+   "answer": "ARISE",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Come to view",
+    "full": "Come to view"
+   },
+   "sense": {
+    "en": "to come into being or become noticeable.",
+    "hi": "पैदा होना, उठना",
+    "entryId": 1142
+   }
+  },
+  {
+   "id": "a:3:7",
+   "dir": "a",
+   "cells": [
+    31
+   ],
+   "answer": "S",
+   "clueCell": 30,
+   "clue": {
+    "kind": "abbr",
+    "text": "Second (time)",
+    "full": "Second (time)"
+   },
+   "sense": {
+    "en": "second (time) (unit)",
+    "hi": "सेकंड"
+   }
+  },
+  {
+   "id": "d:4:6",
+   "dir": "d",
+   "cells": [
+    38,
+    46,
+    54,
+    62
+   ],
+   "answer": "OVEN",
+   "clueCell": 30,
+   "clue": {
+    "kind": "rel",
+    "text": "Stove",
+    "full": "Similar to stove"
+   },
+   "sense": {
+    "en": "kitchen appliance used for baking or roasting.",
+    "hi": "ओवन, तंदूर",
+    "entryId": 15531
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33
+   ],
+   "answer": "N",
+   "clueCell": 32,
+   "clue": {
+    "kind": "abbr",
+    "text": "North",
+    "full": "North"
+   },
+   "sense": {
+    "en": "north (compass point)",
+    "hi": "उत्तर"
+   }
+  },
+  {
+   "id": "a:4:3",
+   "dir": "a",
+   "cells": [
+    35,
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "XENON",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "Rare gas",
+    "full": "Rare gas"
+   },
+   "sense": {
+    "en": "the chemical element of atomic number 54, a noble gas.",
+    "hi": "ज़ीनॉन गैस",
+    "entryId": 24878
+   }
+  },
+  {
+   "id": "d:5:2",
+   "dir": "d",
+   "cells": [
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "TENOR",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "High male voice",
+    "full": "High male voice"
+   },
+   "sense": {
+    "en": "the highest of ordinary adult male singing voices.",
+    "hi": "टेनोर, पुरुष स्वर",
+    "entryId": 22179
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44
+   ],
+   "answer": "STIR",
+   "clueCell": 40,
+   "clue": {
+    "kind": "rel",
+    "text": "Blend",
+    "full": "Similar to blend"
+   },
+   "sense": {
+    "en": "to move a spoon or other implement around in a liquid to mix it.",
+    "hi": "हिलाना, घोलना",
+    "entryId": 21160
+   }
+  },
+  {
+   "id": "a:5:6",
+   "dir": "a",
+   "cells": [
+    46,
+    47
+   ],
+   "answer": "VI",
+   "clueCell": 45,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman six",
+    "full": "Roman six"
+   },
+   "sense": {
+    "en": "six in Roman numerals",
+    "hi": "छह (रोमन अंक)"
+   }
+  },
+  {
+   "id": "d:6:5",
+   "dir": "d",
+   "cells": [
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "SINK",
+   "clueCell": 45,
+   "clue": {
+    "kind": "def",
+    "text": "Go down",
+    "full": "Go down"
+   },
+   "sense": {
+    "en": "to fall or descend to a lower place or level.",
+    "hi": "डूबना, धंसना",
+    "entryId": 20067
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51
+   ],
+   "answer": "PER",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "For each",
+    "full": "For each"
+   },
+   "sense": {
+    "en": "for each.",
+    "hi": "प्रति",
+    "entryId": 16120
+   }
+  },
+  {
+   "id": "a:6:5",
+   "dir": "a",
+   "cells": [
+    53,
+    54,
+    55
+   ],
+   "answer": "SEC",
+   "clueCell": 52,
+   "clue": {
+    "kind": "def",
+    "text": "Short time",
+    "full": "Short time"
+   },
+   "sense": {
+    "en": "one sixtieth of a minute; a unit of time.",
+    "hi": "सेकंड",
+    "entryId": 19458
+   }
+  },
+  {
+   "id": "d:7:4",
+   "dir": "d",
+   "cells": [
+    60,
+    68,
+    76
+   ],
+   "answer": "OAK",
+   "clueCell": 52,
+   "clue": {
+    "kind": "gap",
+    "text": "BIG __ TREE",
+    "full": "Fill the gap: Big ___ tree"
+   },
+   "sense": {
+    "en": "a large tree that bears acorns and produces hard durable wood.",
+    "hi": "शाहबलूत का वृक्ष",
+    "entryId": 15099
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58
+   ],
+   "answer": "ON",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Atop",
+    "full": "Atop"
+   },
+   "sense": {
+    "en": "physically in contact with and supported by a surface.",
+    "hi": "पर, ऊपर",
+    "entryId": 15274
+   }
+  },
+  {
+   "id": "a:7:4",
+   "dir": "a",
+   "cells": [
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "OINK",
+   "clueCell": 59,
+   "clue": {
+    "kind": "rel",
+    "text": "Squeal",
+    "full": "Similar to squeal"
+   },
+   "sense": {
+    "en": "to make the sound characteristic of a pig.",
+    "hi": "घुरघुराना (सुअर की आवाज)",
+    "entryId": 15245
+   }
+  },
+  {
+   "id": "d:8:3",
+   "dir": "d",
+   "cells": [
+    67,
+    75
+   ],
+   "answer": "ME",
+   "clueCell": 59,
+   "clue": {
+    "kind": "def",
+    "text": "Myself",
+    "full": "Myself"
+   },
+   "sense": {
+    "en": "referring to the speaker as the object of a verb or preposition.",
+    "hi": "मुझे, मुझको",
+    "entryId": 13745
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "ROMAN",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Ancient Italy style",
+    "full": "Ancient Italy style"
+   },
+   "sense": {
+    "en": "relating to or characteristic of ancient Rome or its people.",
+    "hi": "रोमन",
+    "entryId": 18795
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "E",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after D",
+    "full": "Letter after D"
+   },
+   "sense": {
+    "en": "the letter E",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "E",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after D",
+    "full": "Letter after D"
+   },
+   "sense": {
+    "en": "the letter E",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "TREKKER",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Hiker",
+    "full": "Hiker"
+   },
+   "sense": {
+    "en": "a traveler who makes a long arduous journey on foot.",
+    "hi": "पैदलयात्री, ट्रैकर",
+    "entryId": 22848
+   }
+  }
+ ]
+}

@@ -1,0 +1,741 @@
+{
+ "id": "p0149",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "M",
+  "10": "I",
+  "11": "N",
+  "12": "I",
+  "13": "B",
+  "14": "A",
+  "15": "R",
+  "17": "U",
+  "18": "N",
+  "19": "I",
+  "20": "T",
+  "22": "M",
+  "23": "E",
+  "25": "S",
+  "26": "T",
+  "28": "S",
+  "29": "P",
+  "30": "I",
+  "31": "N",
+  "33": "K",
+  "34": "E",
+  "35": "Y",
+  "37": "O",
+  "38": "N",
+  "39": "E",
+  "41": "E",
+  "42": "G",
+  "44": "B",
+  "45": "L",
+  "46": "O",
+  "47": "W",
+  "49": "T",
+  "50": "E",
+  "51": "P",
+  "52": "E",
+  "53": "E",
+  "55": "A",
+  "57": "E",
+  "58": "R",
+  "59": "A",
+  "61": "C",
+  "62": "A",
+  "63": "B",
+  "65": "E",
+  "67": "S",
+  "68": "N",
+  "69": "A",
+  "70": "R",
+  "71": "L",
+  "73": "R",
+  "74": "O",
+  "75": "S",
+  "76": "E",
+  "77": "T",
+  "78": "T",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  27,
+  32,
+  36,
+  40,
+  43,
+  48,
+  54,
+  56,
+  60,
+  64,
+  66,
+  72
+ ],
+ "given": [
+  9,
+  47,
+  77
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "MUSKETEER",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "AN OLD __",
+    "full": "Fill the gap: An old ___"
+   },
+   "sense": {
+    "en": "a soldier armed with a musket in the past.",
+    "hi": "बंदूक़ची",
+    "entryId": 14577
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42,
+    50,
+    58
+   ],
+   "answer": "INTEGER",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Whole number",
+    "full": "Whole number"
+   },
+   "sense": {
+    "en": "a whole number that can be positive, negative, or zero.",
+    "hi": "पूर्णांक",
+    "entryId": 11838
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19
+   ],
+   "answer": "NI",
+   "clueCell": 3,
+   "clue": {
+    "kind": "abbr",
+    "text": "Nickel symbol",
+    "full": "Nickel symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of nickel",
+    "hi": "निकल (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28
+   ],
+   "answer": "ITS",
+   "clueCell": 4,
+   "clue": {
+    "kind": "gap",
+    "text": "DOG WAGGED __ TAIL",
+    "full": "Fill the gap: Dog wagged ___ tail"
+   },
+   "sense": {
+    "en": "belonging to or associated with a thing or animal.",
+    "hi": "इसका, उसका",
+    "entryId": 12128
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "B",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after A",
+    "full": "Letter after A"
+   },
+   "sense": {
+    "en": "the letter B",
+    "hi": "बी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46
+   ],
+   "answer": "AMINO",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Acid type",
+    "full": "Acid type"
+   },
+   "sense": {
+    "en": "the chemical radical -nh2.",
+    "hi": "अमीनो",
+    "entryId": 729
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "RENEWABLE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Infinite",
+    "full": "Infinite"
+   },
+   "sense": {
+    "en": "capable of being replaced naturally or replenished.",
+    "hi": "नवीकरणीय",
+    "entryId": 18305
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "MINIBAR",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "DRINKS IN THE __",
+    "full": "Fill the gap: Drinks in the ___"
+   },
+   "sense": {
+    "en": "a small refrigerator in a hotel room containing drinks.",
+    "hi": "मिनीबार",
+    "entryId": 14090
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "UNIT",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Element",
+    "full": "Similar to element"
+   },
+   "sense": {
+    "en": "an individual thing or person regarded as single and complete.",
+    "hi": "इकाई, घटक",
+    "entryId": 23495
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "ME",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Myself",
+    "full": "Myself"
+   },
+   "sense": {
+    "en": "referring to the speaker as the object of a verb or preposition.",
+    "hi": "मुझे, मुझको",
+    "entryId": 13745
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "POLECAT",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Stinky beast",
+    "full": "Stinky beast"
+   },
+   "sense": {
+    "en": "a mammal known for its foul-smelling spray.",
+    "hi": "बदबूदार जानवर, स्कंक",
+    "entryId": 16679
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26
+   ],
+   "answer": "ST",
+   "clueCell": 24,
+   "clue": {
+    "kind": "abbr",
+    "text": "Street",
+    "full": "Street"
+   },
+   "sense": {
+    "en": "street",
+    "hi": "सड़क, गली"
+   }
+  },
+  {
+   "id": "a:3:4",
+   "dir": "a",
+   "cells": [
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "SPIN",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Turn around",
+    "full": "Turn around"
+   },
+   "sense": {
+    "en": "to turn around and around quickly.",
+    "hi": "घूमना, चक्कर खाना",
+    "entryId": 20752
+   }
+  },
+  {
+   "id": "d:4:3",
+   "dir": "d",
+   "cells": [
+    35
+   ],
+   "answer": "Y",
+   "clueCell": 27,
+   "clue": {
+    "kind": "abbr",
+    "text": "Year",
+    "full": "Year"
+   },
+   "sense": {
+    "en": "year (unit)",
+    "hi": "वर्ष"
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35
+   ],
+   "answer": "KEY",
+   "clueCell": 32,
+   "clue": {
+    "kind": "gap",
+    "text": "DOOR __",
+    "full": "Fill the gap: Door ___"
+   },
+   "sense": {
+    "en": "a small piece of shaped metal with incisions cut to fit a lock.",
+    "hi": "चाबी, कुंजी",
+    "entryId": 12392
+   }
+  },
+  {
+   "id": "a:4:5",
+   "dir": "a",
+   "cells": [
+    37,
+    38,
+    39
+   ],
+   "answer": "ONE",
+   "clueCell": 36,
+   "clue": {
+    "kind": "picmath",
+    "img": "1f9b4",
+    "math": "−b",
+    "full": "Picture maths: a white part of a skeleton, minus B"
+   },
+   "sense": {
+    "en": "the number 1; a single person or thing.",
+    "hi": "एक",
+    "entryId": 15279
+   }
+  },
+  {
+   "id": "d:5:4",
+   "dir": "d",
+   "cells": [
+    44,
+    52
+   ],
+   "answer": "BE",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "EG",
+   "clueCell": 40,
+   "clue": {
+    "kind": "abbr",
+    "text": "For example",
+    "full": "For example"
+   },
+   "sense": {
+    "en": "for example",
+    "hi": "उदाहरण के लिए"
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "BLOW",
+   "clueCell": 43,
+   "clue": {
+    "kind": "rel",
+    "text": "Exhale",
+    "full": "Similar to exhale"
+   },
+   "sense": {
+    "en": "to expel air from the mouth.",
+    "hi": "फूंकना",
+    "entryId": 2352
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "PASS",
+   "clueCell": 43,
+   "clue": {
+    "kind": "rel",
+    "text": "Cross",
+    "full": "Similar to cross"
+   },
+   "sense": {
+    "en": "to move past someone or something.",
+    "hi": "गुजरना, पार करना",
+    "entryId": 15908
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52,
+    53
+   ],
+   "answer": "TEPEE",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Cone tent",
+    "full": "Cone tent"
+   },
+   "sense": {
+    "en": "a portable cone-shaped tent used by some native american peoples.",
+    "hi": "शंकुधारी तंबू",
+    "entryId": 22191
+   }
+  },
+  {
+   "id": "a:6:7",
+   "dir": "a",
+   "cells": [
+    55
+   ],
+   "answer": "A",
+   "clueCell": 54,
+   "clue": {
+    "kind": "abbr",
+    "text": "Ampere",
+    "full": "Ampere"
+   },
+   "sense": {
+    "en": "ampere (unit)",
+    "hi": "एम्पियर"
+   }
+  },
+  {
+   "id": "d:7:6",
+   "dir": "d",
+   "cells": [
+    62,
+    70,
+    78
+   ],
+   "answer": "ART",
+   "clueCell": 54,
+   "clue": {
+    "kind": "rel",
+    "text": "Craft",
+    "full": "Similar to craft"
+   },
+   "sense": {
+    "en": "the expression or application of human creative skill and imagination.",
+    "hi": "कला",
+    "entryId": 1198
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59
+   ],
+   "answer": "ERA",
+   "clueCell": 56,
+   "clue": {
+    "kind": "rel",
+    "text": "Period",
+    "full": "Similar to period"
+   },
+   "sense": {
+    "en": "a period marked by distinctive character or reckoned from a fixed point.",
+    "hi": "युग, काल",
+    "entryId": 7652
+   }
+  },
+  {
+   "id": "a:7:5",
+   "dir": "a",
+   "cells": [
+    61,
+    62,
+    63
+   ],
+   "answer": "CAB",
+   "clueCell": 60,
+   "clue": {
+    "kind": "pic",
+    "img": "1f695",
+    "full": "Picture: a yellow hired car"
+   },
+   "sense": {
+    "en": "a car driven by a person whose job is to take passengers for money.",
+    "hi": "टैक्सी, कैब",
+    "entryId": 3045
+   }
+  },
+  {
+   "id": "d:8:4",
+   "dir": "d",
+   "cells": [
+    68,
+    76
+   ],
+   "answer": "NE",
+   "clueCell": 60,
+   "clue": {
+    "kind": "abbr",
+    "text": "Neon symbol",
+    "full": "Neon symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of neon",
+    "hi": "नियॉन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65
+   ],
+   "answer": "E",
+   "clueCell": 64,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Echo",
+    "full": "Radio code Echo"
+   },
+   "sense": {
+    "en": "the letter E (radio alphabet: Echo)",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:8:3",
+   "dir": "a",
+   "cells": [
+    67,
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "SNARL",
+   "clueCell": 66,
+   "clue": {
+    "kind": "def",
+    "text": "Twist up",
+    "full": "Twist up"
+   },
+   "sense": {
+    "en": "to twist or tangle into a confusing mass.",
+    "hi": "उलझाना",
+    "entryId": 20360
+   }
+  },
+  {
+   "id": "d:9:2",
+   "dir": "d",
+   "cells": [
+    74
+   ],
+   "answer": "O",
+   "clueCell": 66,
+   "clue": {
+    "kind": "abbr",
+    "text": "Oxygen symbol",
+    "full": "Oxygen symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of oxygen",
+    "hi": "ऑक्सीजन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ROSETTE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Rose badge",
+    "full": "Rose badge"
+   },
+   "sense": {
+    "en": "an ornament or pattern resembling a rose worn as a badge.",
+    "hi": "गुलाब के आकार का बिल्ला",
+    "entryId": 18825
+   }
+  }
+ ]
+}

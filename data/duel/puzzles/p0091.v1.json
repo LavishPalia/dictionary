@@ -1,0 +1,707 @@
+{
+ "id": "p0091",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "D",
+  "10": "I",
+  "11": "S",
+  "12": "T",
+  "13": "U",
+  "14": "R",
+  "15": "B",
+  "17": "Y",
+  "19": "C",
+  "20": "A",
+  "21": "N",
+  "22": "O",
+  "23": "E",
+  "25": "S",
+  "26": "P",
+  "27": "I",
+  "28": "R",
+  "29": "I",
+  "30": "T",
+  "33": "P",
+  "34": "I",
+  "35": "E",
+  "37": "T",
+  "38": "A",
+  "39": "D",
+  "41": "L",
+  "42": "E",
+  "43": "N",
+  "44": "D",
+  "46": "T",
+  "47": "O",
+  "49": "A",
+  "50": "R",
+  "51": "C",
+  "52": "A",
+  "53": "N",
+  "54": "E",
+  "57": "S",
+  "58": "C",
+  "59": "E",
+  "60": "N",
+  "61": "E",
+  "63": "S",
+  "65": "I",
+  "66": "E",
+  "68": "C",
+  "69": "A",
+  "70": "V",
+  "71": "E",
+  "73": "A",
+  "74": "D",
+  "75": "V",
+  "76": "E",
+  "77": "R",
+  "78": "S",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  18,
+  24,
+  31,
+  32,
+  36,
+  40,
+  45,
+  48,
+  55,
+  56,
+  62,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  51,
+  74
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "DYSPLASIA",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "HIP __",
+    "full": "Fill the gap: Hip ___"
+   },
+   "sense": {
+    "en": "abnormal development of cells or tissues in the body.",
+    "hi": "असामान्य विकास, डिसप्लेसिया",
+    "entryId": 7047
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10
+   ],
+   "answer": "I",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after H",
+    "full": "Letter after H"
+   },
+   "sense": {
+    "en": "the letter I",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51,
+    59
+   ],
+   "answer": "SCIENCE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "gap",
+    "text": "I LIKE __",
+    "full": "Fill the gap: I like ___"
+   },
+   "sense": {
+    "en": "the systematic study of the structure and behavior of the physical and natural world.",
+    "hi": "विज्ञान",
+    "entryId": 19283
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28
+   ],
+   "answer": "TAR",
+   "clueCell": 4,
+   "clue": {
+    "kind": "picmath",
+    "img": "2b50",
+    "math": "−s",
+    "full": "Picture maths: a yellow five-pointed shape, minus S"
+   },
+   "sense": {
+    "en": "a dark sticky thick liquid obtained from coal or wood.",
+    "hi": "कोलतरा, राल",
+    "entryId": 21995
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37
+   ],
+   "answer": "UNIT",
+   "clueCell": 5,
+   "clue": {
+    "kind": "rel",
+    "text": "Module",
+    "full": "Similar to module"
+   },
+   "sense": {
+    "en": "an individual thing or person regarded as single and complete.",
+    "hi": "इकाई, घटक",
+    "entryId": 23495
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54
+   ],
+   "answer": "ROTATE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Spin round",
+    "full": "Spin round"
+   },
+   "sense": {
+    "en": "to turn on or around an axis or center.",
+    "hi": "घूमना, चक्कर काटना",
+    "entryId": 18830
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "BE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "DISTURB",
+   "clueCell": 8,
+   "clue": {
+    "kind": "rel",
+    "text": "Upset",
+    "full": "Similar to upset"
+   },
+   "sense": {
+    "en": "to move deeply or trouble someone's peace.",
+    "hi": "परेशान करना, खलल डालना",
+    "entryId": 6606
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17
+   ],
+   "answer": "Y",
+   "clueCell": 16,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Yankee",
+    "full": "Radio code Yankee"
+   },
+   "sense": {
+    "en": "the letter Y (radio alphabet: Yankee)",
+    "hi": "वाई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:2:3",
+   "dir": "a",
+   "cells": [
+    19,
+    20,
+    21,
+    22,
+    23
+   ],
+   "answer": "CANOE",
+   "clueCell": 18,
+   "clue": {
+    "kind": "def",
+    "text": "Light boat",
+    "full": "Light boat"
+   },
+   "sense": {
+    "en": "small and light boat; pointed at both ends; propelled with a paddle.",
+    "hi": "कैनू, डोंगी",
+    "entryId": 3203
+   }
+  },
+  {
+   "id": "d:3:2",
+   "dir": "d",
+   "cells": [
+    26,
+    34,
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "PIERCED",
+   "clueCell": 18,
+   "clue": {
+    "kind": "gap",
+    "text": "__ EARS",
+    "full": "Fill the gap: ___ ears"
+   },
+   "sense": {
+    "en": "having a hole made through something.",
+    "hi": "छिदा हुआ",
+    "entryId": 16385
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "SPIRIT",
+   "clueCell": 24,
+   "clue": {
+    "kind": "rel",
+    "text": "Soul",
+    "full": "Similar to soul"
+   },
+   "sense": {
+    "en": "the vital principle or animating force within living things.",
+    "hi": "आत्मा, रूह",
+    "entryId": 20767
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47
+   ],
+   "answer": "DO",
+   "clueCell": 31,
+   "clue": {
+    "kind": "def",
+    "text": "First sol-fa note",
+    "full": "First sol-fa note"
+   },
+   "sense": {
+    "en": "the musical note DO",
+    "hi": "सा (सरगम)"
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35
+   ],
+   "answer": "PIE",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Baked pastry",
+    "full": "Baked pastry"
+   },
+   "sense": {
+    "en": "dish baked in pastry-lined pan often with a pastry top.",
+    "hi": "पाई",
+    "entryId": 16380
+   }
+  },
+  {
+   "id": "a:4:5",
+   "dir": "a",
+   "cells": [
+    37,
+    38,
+    39
+   ],
+   "answer": "TAD",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "Bit",
+    "full": "Bit"
+   },
+   "sense": {
+    "en": "a slight amount or degree of difference.",
+    "hi": "थोड़ा, ज़रा सा",
+    "entryId": 21905
+   }
+  },
+  {
+   "id": "d:5:4",
+   "dir": "d",
+   "cells": [
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "DANCE",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "Move to music",
+    "full": "Move to music"
+   },
+   "sense": {
+    "en": "to move the body in time to music.",
+    "hi": "नाचना",
+    "entryId": 5567
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44
+   ],
+   "answer": "LEND",
+   "clueCell": 40,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of borrow",
+    "full": "Opposite of borrow"
+   },
+   "sense": {
+    "en": "to grant the use of something on the understanding that it shall be returned.",
+    "hi": "उधार देना",
+    "entryId": 12844
+   }
+  },
+  {
+   "id": "a:5:6",
+   "dir": "a",
+   "cells": [
+    46,
+    47
+   ],
+   "answer": "TO",
+   "clueCell": 45,
+   "clue": {
+    "kind": "gap",
+    "text": "GO __ TOWN",
+    "full": "Fill the gap: Go ___ town"
+   },
+   "sense": {
+    "en": "expressing motion in the direction of a particular location.",
+    "hi": "को, की ओर, तक",
+    "entryId": 22539
+   }
+  },
+  {
+   "id": "d:6:5",
+   "dir": "d",
+   "cells": [
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "NEAR",
+   "clueCell": 45,
+   "clue": {
+    "kind": "def",
+    "text": "Close",
+    "full": "Close"
+   },
+   "sense": {
+    "en": "at or to a short distance away; nearby.",
+    "hi": "निकट, समीप",
+    "entryId": 14719
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52,
+    53,
+    54
+   ],
+   "answer": "ARCANE",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Secret and deep",
+    "full": "Secret and deep"
+   },
+   "sense": {
+    "en": "understood by few; mysterious or secret.",
+    "hi": "रहस्यमयी, गुप्त",
+    "entryId": 1092
+   }
+  },
+  {
+   "id": "d:7:7",
+   "dir": "d",
+   "cells": [
+    63,
+    71,
+    79
+   ],
+   "answer": "SEE",
+   "clueCell": 55,
+   "clue": {
+    "kind": "def",
+    "text": "Perceive by eye",
+    "full": "Perceive by eye"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60,
+    61
+   ],
+   "answer": "SCENE",
+   "clueCell": 56,
+   "clue": {
+    "kind": "rel",
+    "text": "Setting",
+    "full": "Similar to setting"
+   },
+   "sense": {
+    "en": "the place where an incident in real life or fiction occurs or occurred.",
+    "hi": "दृश्य, नज़ारा",
+    "entryId": 19227
+   }
+  },
+  {
+   "id": "a:7:7",
+   "dir": "a",
+   "cells": [
+    63
+   ],
+   "answer": "S",
+   "clueCell": 62,
+   "clue": {
+    "kind": "abbr",
+    "text": "Second (time)",
+    "full": "Second (time)"
+   },
+   "sense": {
+    "en": "second (time) (unit)",
+    "hi": "सेकंड"
+   }
+  },
+  {
+   "id": "d:8:6",
+   "dir": "d",
+   "cells": [
+    70,
+    78
+   ],
+   "answer": "VS",
+   "clueCell": 62,
+   "clue": {
+    "kind": "abbr",
+    "text": "Against",
+    "full": "Against"
+   },
+   "sense": {
+    "en": "against",
+    "hi": "बनाम"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "IE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "abbr",
+    "text": "That is",
+    "full": "That is"
+   },
+   "sense": {
+    "en": "that is",
+    "hi": "अर्थात"
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "CAVE",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Rock den",
+    "full": "Rock den"
+   },
+   "sense": {
+    "en": "a geological formation consisting of an underground enclosure.",
+    "hi": "गुफा",
+    "entryId": 3456
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "V",
+   "clueCell": 67,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman five",
+    "full": "Roman five"
+   },
+   "sense": {
+    "en": "five in Roman numerals",
+    "hi": "पाँच (रोमन अंक)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ADVERSE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Bad effect",
+    "full": "Bad effect"
+   },
+   "sense": {
+    "en": "preventing success or development; harmful or unfavorable.",
+    "hi": "प्रतिकूल, विपरीत, हानिकारक",
+    "entryId": 354
+   }
+  }
+ ]
+}

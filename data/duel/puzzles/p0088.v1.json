@@ -1,0 +1,724 @@
+{
+ "id": "p0088",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "A",
+  "10": "S",
+  "11": "U",
+  "12": "N",
+  "13": "D",
+  "14": "E",
+  "15": "R",
+  "17": "M",
+  "18": "E",
+  "19": "M",
+  "20": "O",
+  "21": "I",
+  "22": "R",
+  "25": "B",
+  "26": "E",
+  "28": "M",
+  "29": "E",
+  "30": "E",
+  "31": "T",
+  "33": "U",
+  "35": "M",
+  "36": "A",
+  "37": "T",
+  "38": "C",
+  "39": "H",
+  "41": "L",
+  "42": "O",
+  "43": "U",
+  "44": "D",
+  "46": "T",
+  "47": "I",
+  "49": "A",
+  "50": "C",
+  "51": "T",
+  "53": "F",
+  "54": "O",
+  "55": "R",
+  "57": "N",
+  "58": "E",
+  "59": "A",
+  "60": "T",
+  "62": "R",
+  "63": "D",
+  "65": "C",
+  "66": "A",
+  "67": "N",
+  "68": "O",
+  "69": "N",
+  "71": "L",
+  "73": "E",
+  "74": "N",
+  "75": "T",
+  "76": "R",
+  "77": "O",
+  "78": "P",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  23,
+  24,
+  27,
+  32,
+  34,
+  40,
+  45,
+  48,
+  52,
+  56,
+  61,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  9,
+  35,
+  79
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "AMBULANCE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "CALL AN __",
+    "full": "Fill the gap: Call an ___"
+   },
+   "sense": {
+    "en": "a vehicle equipped for taking sick or injured people to hospital.",
+    "hi": "एम्बुलेंस",
+    "entryId": 710
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26
+   ],
+   "answer": "SEE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Perceive by eye",
+    "full": "Perceive by eye"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19
+   ],
+   "answer": "UM",
+   "clueCell": 3,
+   "clue": {
+    "kind": "gap",
+    "text": "__ I DO NOT KNOW",
+    "full": "Fill the gap: ___ I do not know"
+   },
+   "sense": {
+    "en": "expressing hesitation.",
+    "hi": "अं, उम्म",
+    "entryId": 23151
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44
+   ],
+   "answer": "NOMAD",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Roam soul",
+    "full": "Roam soul"
+   },
+   "sense": {
+    "en": "a person who moves from place to place rather than living in one home.",
+    "hi": "खानाबदोश, घुमक्कड़",
+    "entryId": 14935
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37
+   ],
+   "answer": "DIET",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Food routine",
+    "full": "Food routine"
+   },
+   "sense": {
+    "en": "the usual food and drink consumed by a person or animal.",
+    "hi": "खानपान, खुराक, डाइट",
+    "entryId": 6208
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54,
+    62
+   ],
+   "answer": "ERECTOR",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Builder",
+    "full": "Builder"
+   },
+   "sense": {
+    "en": "a person or machine that builds or assembles something.",
+    "hi": "निर्माता, बनाने वाला",
+    "entryId": 7661
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15
+   ],
+   "answer": "R",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after Q",
+    "full": "Letter after Q"
+   },
+   "sense": {
+    "en": "the letter R",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "ASUNDER",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Into pieces",
+    "full": "Into pieces"
+   },
+   "sense": {
+    "en": "into separate parts or pieces.",
+    "hi": "अलग-अलग, टुकड़ों में",
+    "entryId": 1345
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+   ],
+   "answer": "MEMOIR",
+   "clueCell": 16,
+   "clue": {
+    "kind": "gap",
+    "text": "WROTE A __",
+    "full": "Fill the gap: Wrote a ___"
+   },
+   "sense": {
+    "en": "a written account of one's personal life and experiences.",
+    "hi": "संस्मरण, आत्मकथा",
+    "entryId": 13848
+   }
+  },
+  {
+   "id": "d:3:7",
+   "dir": "d",
+   "cells": [
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "THIRDLY",
+   "clueCell": 23,
+   "clue": {
+    "kind": "def",
+    "text": "In the third place",
+    "full": "In the third place"
+   },
+   "sense": {
+    "en": "used to introduce the third point or reason in a series.",
+    "hi": "तीसरे स्थान पर, तीसरे",
+    "entryId": 22334
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26
+   ],
+   "answer": "BE",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:3:4",
+   "dir": "a",
+   "cells": [
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "MEET",
+   "clueCell": 27,
+   "clue": {
+    "kind": "rel",
+    "text": "Unite",
+    "full": "Similar to unite"
+   },
+   "sense": {
+    "en": "to come together or encounter someone.",
+    "hi": "मिलना, भेंट करना",
+    "entryId": 13817
+   }
+  },
+  {
+   "id": "d:4:3",
+   "dir": "d",
+   "cells": [
+    35,
+    43,
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "MUTANT",
+   "clueCell": 27,
+   "clue": {
+    "kind": "gap",
+    "text": "A STRANGE __",
+    "full": "Fill the gap: A strange ___"
+   },
+   "sense": {
+    "en": "an organism that has characteristics resulting from mutation.",
+    "hi": "उत्परिवर्ती, म्यूटेंट",
+    "entryId": 14590
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33
+   ],
+   "answer": "U",
+   "clueCell": 32,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Uniform",
+    "full": "Radio code Uniform"
+   },
+   "sense": {
+    "en": "the letter U (radio alphabet: Uniform)",
+    "hi": "यू (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:4:3",
+   "dir": "a",
+   "cells": [
+    35,
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "MATCH",
+   "clueCell": 34,
+   "clue": {
+    "kind": "rel",
+    "text": "Game",
+    "full": "Similar to game"
+   },
+   "sense": {
+    "en": "a short, thin piece of wood or cardboard tipped with an ignitable substance.",
+    "hi": "दियासलाई, मुकाबला",
+    "entryId": 13684
+   }
+  },
+  {
+   "id": "d:5:2",
+   "dir": "d",
+   "cells": [
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "OCEAN",
+   "clueCell": 34,
+   "clue": {
+    "kind": "rel",
+    "text": "Sea",
+    "full": "Similar to sea"
+   },
+   "sense": {
+    "en": "a large body of water constituting a principal part of the hydrosphere.",
+    "hi": "महासागर, समुद्र",
+    "entryId": 15184
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44
+   ],
+   "answer": "LOUD",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Noisy",
+    "full": "Noisy"
+   },
+   "sense": {
+    "en": "making a very strong sound.",
+    "hi": "ज़ोर से, ऊँचा",
+    "entryId": 13222
+   }
+  },
+  {
+   "id": "a:5:6",
+   "dir": "a",
+   "cells": [
+    46,
+    47
+   ],
+   "answer": "TI",
+   "clueCell": 45,
+   "clue": {
+    "kind": "abbr",
+    "text": "Titanium symbol",
+    "full": "Titanium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of titanium",
+    "hi": "टाइटेनियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:6:5",
+   "dir": "d",
+   "cells": [
+    53
+   ],
+   "answer": "F",
+   "clueCell": 45,
+   "clue": {
+    "kind": "abbr",
+    "text": "Fluorine symbol",
+    "full": "Fluorine symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of fluorine",
+    "hi": "फ़्लोरीन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51
+   ],
+   "answer": "ACT",
+   "clueCell": 48,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of refrain",
+    "full": "Opposite of refrain"
+   },
+   "sense": {
+    "en": "to behave in a certain manner or show a certain behavior.",
+    "hi": "व्यवहार करना, पेश आना",
+    "entryId": 219
+   }
+  },
+  {
+   "id": "a:6:5",
+   "dir": "a",
+   "cells": [
+    53,
+    54,
+    55
+   ],
+   "answer": "FOR",
+   "clueCell": 52,
+   "clue": {
+    "kind": "def",
+    "text": "Intended as",
+    "full": "Intended as"
+   },
+   "sense": {
+    "en": "affecting, with regard to, or being the purpose of.",
+    "hi": "के लिए, वास्ते",
+    "entryId": 8830
+   }
+  },
+  {
+   "id": "d:7:4",
+   "dir": "d",
+   "cells": [
+    60,
+    68,
+    76
+   ],
+   "answer": "TOR",
+   "clueCell": 52,
+   "clue": {
+    "kind": "def",
+    "text": "Rock pile",
+    "full": "Rock pile"
+   },
+   "sense": {
+    "en": "a prominent rock or pile of rocks on a hill.",
+    "hi": "पहाड़ी चट्टान",
+    "entryId": 22626
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60
+   ],
+   "answer": "NEAT",
+   "clueCell": 56,
+   "clue": {
+    "kind": "rel",
+    "text": "Clean",
+    "full": "Similar to clean"
+   },
+   "sense": {
+    "en": "clean or organized.",
+    "hi": "साफ-सुथरा, सुथरा",
+    "entryId": 14723
+   }
+  },
+  {
+   "id": "a:7:6",
+   "dir": "a",
+   "cells": [
+    62,
+    63
+   ],
+   "answer": "RD",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Road",
+    "full": "Road"
+   },
+   "sense": {
+    "en": "road",
+    "hi": "सड़क"
+   }
+  },
+  {
+   "id": "d:8:5",
+   "dir": "d",
+   "cells": [
+    69,
+    77
+   ],
+   "answer": "NO",
+   "clueCell": 61,
+   "clue": {
+    "kind": "def",
+    "text": "Not any",
+    "full": "Not any"
+   },
+   "sense": {
+    "en": "not any; used to give a negative reply.",
+    "hi": "नहीं, कोई नहीं",
+    "entryId": 14917
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "CANON",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Basic rule",
+    "full": "Basic rule"
+   },
+   "sense": {
+    "en": "a general law, rule, or principle by which something is judged.",
+    "hi": "नियम, सिद्धांत",
+    "entryId": 3205
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "L",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “el”",
+    "full": "Sounds like “el”"
+   },
+   "sense": {
+    "en": "the letter L, which sounds like “el”",
+    "hi": "एल (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "P",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “pea”",
+    "full": "Sounds like “pea”"
+   },
+   "sense": {
+    "en": "the letter P, which sounds like “pea”",
+    "hi": "पी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ENTROPY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Mess level",
+    "full": "Mess level"
+   },
+   "sense": {
+    "en": "a thermodynamic measure of disorder or randomness in a system.",
+    "hi": "एंट्रॉपी, अव्यवस्था",
+    "entryId": 7576
+   }
+  }
+ ]
+}

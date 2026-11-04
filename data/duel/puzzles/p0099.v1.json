@@ -1,0 +1,724 @@
+{
+ "id": "p0099",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "S",
+  "10": "U",
+  "11": "B",
+  "12": "J",
+  "13": "E",
+  "14": "C",
+  "15": "T",
+  "17": "K",
+  "18": "N",
+  "19": "E",
+  "20": "E",
+  "22": "H",
+  "23": "R",
+  "25": "E",
+  "26": "D",
+  "28": "T",
+  "29": "H",
+  "30": "A",
+  "31": "I",
+  "33": "P",
+  "34": "O",
+  "35": "P",
+  "37": "A",
+  "38": "L",
+  "39": "E",
+  "41": "T",
+  "43": "R",
+  "44": "A",
+  "45": "B",
+  "46": "I",
+  "47": "D",
+  "49": "I",
+  "50": "R",
+  "51": "O",
+  "52": "N",
+  "53": "I",
+  "54": "C",
+  "57": "C",
+  "58": "U",
+  "59": "T",
+  "61": "T",
+  "62": "E",
+  "63": "A",
+  "65": "A",
+  "66": "L",
+  "67": "O",
+  "68": "H",
+  "69": "A",
+  "71": "N",
+  "73": "L",
+  "74": "E",
+  "75": "N",
+  "76": "G",
+  "77": "T",
+  "78": "H",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  27,
+  32,
+  36,
+  40,
+  42,
+  48,
+  55,
+  56,
+  60,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  9,
+  53,
+  75
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "SKEPTICAL",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "REMAIN __",
+    "full": "Fill the gap: Remain ___"
+   },
+   "sense": {
+    "en": "having doubts or not easily convinced.",
+    "hi": "संदेही, शक्की",
+    "entryId": 20119
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34
+   ],
+   "answer": "UNDO",
+   "clueCell": 2,
+   "clue": {
+    "kind": "rel",
+    "text": "Cancel",
+    "full": "Similar to cancel"
+   },
+   "sense": {
+    "en": "to cancel, annul, or reverse an action or its effect.",
+    "hi": "पूर्ववत् करना, पलटना",
+    "entryId": 23363
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19
+   ],
+   "answer": "BE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28
+   ],
+   "answer": "JET",
+   "clueCell": 4,
+   "clue": {
+    "kind": "rel",
+    "text": "Plane",
+    "full": "Similar to plane"
+   },
+   "sense": {
+    "en": "an airplane powered by one or more jet engines.",
+    "hi": "जेट विमान, जेट",
+    "entryId": 12201
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "E",
+   "clueCell": 5,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Echo",
+    "full": "Radio code Echo"
+   },
+   "sense": {
+    "en": "the letter E (radio alphabet: Echo)",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54,
+    62
+   ],
+   "answer": "CHALICE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "gap",
+    "text": "HE HELD THE __.",
+    "full": "Fill the gap: He held the ___."
+   },
+   "sense": {
+    "en": "a large cup or goblet, typically used for drinking wine.",
+    "hi": "प्याला, जाम",
+    "entryId": 3566
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47
+   ],
+   "answer": "TRIED",
+   "clueCell": 7,
+   "clue": {
+    "kind": "rel",
+    "text": "Proven",
+    "full": "Similar to proven"
+   },
+   "sense": {
+    "en": "tested and proved to be reliable or effective.",
+    "hi": "परखा हुआ, विश्वसनीय",
+    "entryId": 22891
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "SUBJECT",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Talk topic",
+    "full": "Talk topic"
+   },
+   "sense": {
+    "en": "the subject matter of a conversation or discussion.",
+    "hi": "विषय, टॉपिक",
+    "entryId": 21406
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "KNEE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "gap",
+    "text": "HURT MY __",
+    "full": "Fill the gap: Hurt my ___"
+   },
+   "sense": {
+    "en": "the joint connecting the upper and lower parts of the human leg.",
+    "hi": "घुटना",
+    "entryId": 12486
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "HR",
+   "clueCell": 21,
+   "clue": {
+    "kind": "abbr",
+    "text": "Hour",
+    "full": "Hour"
+   },
+   "sense": {
+    "en": "hour (unit)",
+    "hi": "घंटा"
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "HABITAT",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Natural home",
+    "full": "Natural home"
+   },
+   "sense": {
+    "en": "the natural home or environment of an animal or plant.",
+    "hi": "आवास, प्राकृतिक वास",
+    "entryId": 10059
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26
+   ],
+   "answer": "ED",
+   "clueCell": 24,
+   "clue": {
+    "kind": "abbr",
+    "text": "Editor",
+    "full": "Editor"
+   },
+   "sense": {
+    "en": "editor",
+    "hi": "संपादक"
+   }
+  },
+  {
+   "id": "a:3:4",
+   "dir": "a",
+   "cells": [
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "THAI",
+   "clueCell": 27,
+   "clue": {
+    "kind": "rel",
+    "text": "Siamese",
+    "full": "Similar to siamese"
+   },
+   "sense": {
+    "en": "of or relating to thailand or its people.",
+    "hi": "थाई",
+    "entryId": 22250
+   }
+  },
+  {
+   "id": "d:4:3",
+   "dir": "d",
+   "cells": [
+    35,
+    43,
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "PROTON",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Tiny atom part",
+    "full": "Tiny atom part"
+   },
+   "sense": {
+    "en": "a tiny particle with a positive electric charge, found in an atom.",
+    "hi": "प्रोटॉन",
+    "entryId": 17336
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35
+   ],
+   "answer": "POP",
+   "clueCell": 32,
+   "clue": {
+    "kind": "rel",
+    "text": "Crack",
+    "full": "Similar to crack"
+   },
+   "sense": {
+    "en": "to make a sharp explosive noise.",
+    "hi": "चटकना, आवाज़ करना",
+    "entryId": 16751
+   }
+  },
+  {
+   "id": "a:4:5",
+   "dir": "a",
+   "cells": [
+    37,
+    38,
+    39
+   ],
+   "answer": "ALE",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "Malty brew",
+    "full": "Malty brew"
+   },
+   "sense": {
+    "en": "a general name for beer made with a top fermenting yeast.",
+    "hi": "बीयर",
+    "entryId": 571
+   }
+  },
+  {
+   "id": "d:5:4",
+   "dir": "d",
+   "cells": [
+    44,
+    52
+   ],
+   "answer": "AN",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "One unspecific",
+    "full": "One unspecific"
+   },
+   "sense": {
+    "en": "used before a vowel sound to denote a single unspecific thing.",
+    "hi": "एक, कोई",
+    "entryId": 774
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41
+   ],
+   "answer": "T",
+   "clueCell": 40,
+   "clue": {
+    "kind": "abbr",
+    "text": "Tonne",
+    "full": "Tonne"
+   },
+   "sense": {
+    "en": "tonne (unit)",
+    "hi": "टन"
+   }
+  },
+  {
+   "id": "a:5:3",
+   "dir": "a",
+   "cells": [
+    43,
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "RABID",
+   "clueCell": 42,
+   "clue": {
+    "kind": "def",
+    "text": "Fanatical",
+    "full": "Fanatical"
+   },
+   "sense": {
+    "en": "having extreme or fanatical views on a subject.",
+    "hi": "कट्टर, जुनूनी",
+    "entryId": 17666
+   }
+  },
+  {
+   "id": "d:6:2",
+   "dir": "d",
+   "cells": [
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "RULE",
+   "clueCell": 42,
+   "clue": {
+    "kind": "def",
+    "text": "Guideline",
+    "full": "Guideline"
+   },
+   "sense": {
+    "en": "a statement telling people what they must or must not do.",
+    "hi": "नियम, कानून",
+    "entryId": 18906
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52,
+    53,
+    54
+   ],
+   "answer": "IRONIC",
+   "clueCell": 48,
+   "clue": {
+    "kind": "gap",
+    "text": "HOW __",
+    "full": "Fill the gap: How ___"
+   },
+   "sense": {
+    "en": "characterized by a difference between what is expected and what actually happens.",
+    "hi": "विडंबनापूर्ण, व्यंग्यात्मक",
+    "entryId": 12061
+   }
+  },
+  {
+   "id": "d:7:7",
+   "dir": "d",
+   "cells": [
+    63,
+    71,
+    79
+   ],
+   "answer": "ANY",
+   "clueCell": 55,
+   "clue": {
+    "kind": "def",
+    "text": "Some",
+    "full": "Some"
+   },
+   "sense": {
+    "en": "one or some of a thing, no matter which.",
+    "hi": "कोई, कुछ भी",
+    "entryId": 958
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59
+   ],
+   "answer": "CUT",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Slice",
+    "full": "Slice"
+   },
+   "sense": {
+    "en": "to separate an object with a sharp instrument.",
+    "hi": "काटना",
+    "entryId": 5479
+   }
+  },
+  {
+   "id": "a:7:5",
+   "dir": "a",
+   "cells": [
+    61,
+    62,
+    63
+   ],
+   "answer": "TEA",
+   "clueCell": 60,
+   "clue": {
+    "kind": "def",
+    "text": "Hot brew",
+    "full": "Hot brew"
+   },
+   "sense": {
+    "en": "a hot drink made by infusing dried, crushed tea leaves in boiling water.",
+    "hi": "चाय",
+    "entryId": 22049
+   }
+  },
+  {
+   "id": "d:8:4",
+   "dir": "d",
+   "cells": [
+    68,
+    76
+   ],
+   "answer": "HG",
+   "clueCell": 60,
+   "clue": {
+    "kind": "abbr",
+    "text": "Mercury symbol",
+    "full": "Mercury symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of mercury",
+    "hi": "पारा (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "ALOHA",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Island hello",
+    "full": "Island hello"
+   },
+   "sense": {
+    "en": "a hawaiian greeting meaning hello or goodbye.",
+    "hi": "नमस्ते, अलविदा",
+    "entryId": 638
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "N",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after M",
+    "full": "Letter after M"
+   },
+   "sense": {
+    "en": "the letter N",
+    "hi": "एन (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "H",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after G",
+    "full": "Letter after G"
+   },
+   "sense": {
+    "en": "the letter H",
+    "hi": "एच (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "LENGTHY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Very long",
+    "full": "Very long"
+   },
+   "sense": {
+    "en": "lasting for a long time.",
+    "hi": "लंबा, दीर्घ",
+    "entryId": 12850
+   }
+  }
+ ]
+}

@@ -1,0 +1,725 @@
+{
+ "id": "p0112",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "T",
+  "10": "O",
+  "11": "P",
+  "12": "S",
+  "13": "O",
+  "14": "I",
+  "15": "L",
+  "17": "R",
+  "18": "U",
+  "19": "S",
+  "20": "E",
+  "22": "T",
+  "23": "O",
+  "25": "A",
+  "26": "R",
+  "28": "L",
+  "29": "A",
+  "30": "S",
+  "31": "T",
+  "33": "P",
+  "34": "S",
+  "35": "A",
+  "36": "L",
+  "37": "M",
+  "39": "T",
+  "41": "P",
+  "43": "H",
+  "44": "E",
+  "45": "N",
+  "46": "C",
+  "47": "E",
+  "49": "I",
+  "50": "F",
+  "52": "R",
+  "53": "E",
+  "54": "A",
+  "55": "R",
+  "57": "N",
+  "58": "O",
+  "59": "T",
+  "61": "S",
+  "62": "P",
+  "63": "Y",
+  "65": "G",
+  "66": "O",
+  "67": "O",
+  "68": "N",
+  "69": "I",
+  "70": "E",
+  "73": "S",
+  "74": "T",
+  "75": "E",
+  "76": "W",
+  "77": "A",
+  "78": "R",
+  "79": "D"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  27,
+  32,
+  38,
+  40,
+  42,
+  48,
+  51,
+  56,
+  60,
+  64,
+  71,
+  72
+ ],
+ "given": [
+  9,
+  45,
+  70
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "TRAPPINGS",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "ALL THE __",
+    "full": "Fill the gap: All the ___"
+   },
+   "sense": {
+    "en": "the outward signs, features, or objects associated with something.",
+    "hi": "सामान, बाह्य चिह्न",
+    "entryId": 22810
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34
+   ],
+   "answer": "OURS",
+   "clueCell": 2,
+   "clue": {
+    "kind": "gap",
+    "text": "THIS CAR IS __",
+    "full": "Fill the gap: This car is ___"
+   },
+   "sense": {
+    "en": "that which belongs to the speaker and others.",
+    "hi": "हमारा, हमारी",
+    "entryId": 15443
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19
+   ],
+   "answer": "PS",
+   "clueCell": 3,
+   "clue": {
+    "kind": "abbr",
+    "text": "After the letter",
+    "full": "After the letter"
+   },
+   "sense": {
+    "en": "after the letter",
+    "hi": "पुनश्च"
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44,
+    52
+   ],
+   "answer": "SELLER",
+   "clueCell": 4,
+   "clue": {
+    "kind": "rel",
+    "text": "Vendor",
+    "full": "Similar to vendor"
+   },
+   "sense": {
+    "en": "someone who exchanges goods or services for money.",
+    "hi": "विक्रेता, बेचने वाला",
+    "entryId": 19539
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "O",
+   "clueCell": 5,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Oscar",
+    "full": "Radio code Oscar"
+   },
+   "sense": {
+    "en": "the letter O (radio alphabet: Oscar)",
+    "hi": "ओ (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30
+   ],
+   "answer": "ITS",
+   "clueCell": 6,
+   "clue": {
+    "kind": "gap",
+    "text": "DOG WAGGED __ TAIL",
+    "full": "Fill the gap: Dog wagged ___ tail"
+   },
+   "sense": {
+    "en": "belonging to or associated with a thing or animal.",
+    "hi": "इसका, उसका",
+    "entryId": 12128
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63
+   ],
+   "answer": "LOTTERY",
+   "clueCell": 7,
+   "clue": {
+    "kind": "rel",
+    "text": "Raffle",
+    "full": "Similar to raffle"
+   },
+   "sense": {
+    "en": "a game in which players buy numbered tickets and prizes are distributed by a random drawing.",
+    "hi": "लॉटरी, जुआ",
+    "entryId": 13219
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "TOPSOIL",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Upper dirt",
+    "full": "Upper dirt"
+   },
+   "sense": {
+    "en": "the upper layer of soil that is rich in organic matter and nutrients.",
+    "hi": "ऊपरी मिट्टी, उपरी सतह",
+    "entryId": 22624
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "RUSE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Smart trick",
+    "full": "Smart trick"
+   },
+   "sense": {
+    "en": "a clever trick intended to deceive someone.",
+    "hi": "चाल, धोखा",
+    "entryId": 18936
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "TO",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Toward",
+    "full": "Toward"
+   },
+   "sense": {
+    "en": "expressing motion in the direction of a particular location.",
+    "hi": "को, की ओर, तक",
+    "entryId": 22539
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "AMNESIA",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Memory loss",
+    "full": "Memory loss"
+   },
+   "sense": {
+    "en": "partial or total loss of memory.",
+    "hi": "याददाश्त जाना, भूलने की बीमारी",
+    "entryId": 737
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26
+   ],
+   "answer": "AR",
+   "clueCell": 24,
+   "clue": {
+    "kind": "abbr",
+    "text": "Argon symbol",
+    "full": "Argon symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of argon",
+    "hi": "आर्गन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:3:4",
+   "dir": "a",
+   "cells": [
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "LAST",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Final one",
+    "full": "Final one"
+   },
+   "sense": {
+    "en": "coming after all others; final; most recent.",
+    "hi": "अंतिम, आखिरी, पिछला",
+    "entryId": 12668
+   }
+  },
+  {
+   "id": "d:4:3",
+   "dir": "d",
+   "cells": [
+    35,
+    43
+   ],
+   "answer": "AH",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Joy cry",
+    "full": "Joy cry"
+   },
+   "sense": {
+    "en": "expressing surprise, pleasure, or realization.",
+    "hi": "आह, अच्छा",
+    "entryId": 496
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "answer": "PSALM",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Holy hymn",
+    "full": "Holy hymn"
+   },
+   "sense": {
+    "en": "a sacred song used to praise the deity.",
+    "hi": "भजन",
+    "entryId": 17379
+   }
+  },
+  {
+   "id": "a:4:7",
+   "dir": "a",
+   "cells": [
+    39
+   ],
+   "answer": "T",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “tea”",
+    "full": "Sounds like “tea”"
+   },
+   "sense": {
+    "en": "the letter T, which sounds like “tea”",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:5:6",
+   "dir": "d",
+   "cells": [
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "CAPER",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Fun leap",
+    "full": "Fun leap"
+   },
+   "sense": {
+    "en": "a playful leap or jump, or a crime especially a robbery.",
+    "hi": "शरारत, अपराध",
+    "entryId": 3227
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41
+   ],
+   "answer": "P",
+   "clueCell": 40,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Papa",
+    "full": "Radio code Papa"
+   },
+   "sense": {
+    "en": "the letter P (radio alphabet: Papa)",
+    "hi": "पी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:5:3",
+   "dir": "a",
+   "cells": [
+    43,
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "HENCE",
+   "clueCell": 42,
+   "clue": {
+    "kind": "rel",
+    "text": "Thus",
+    "full": "Similar to thus"
+   },
+   "sense": {
+    "en": "as a consequence; for this reason.",
+    "hi": "अतः, इसलिए",
+    "entryId": 10456
+   }
+  },
+  {
+   "id": "d:6:2",
+   "dir": "d",
+   "cells": [
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "FOOT",
+   "clueCell": 42,
+   "clue": {
+    "kind": "pic",
+    "img": "1f9b6",
+    "full": "Picture: you stand on it"
+   },
+   "sense": {
+    "en": "the part of the leg of a human being below the ankle.",
+    "hi": "पैर, पाँव",
+    "entryId": 8806
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50
+   ],
+   "answer": "IF",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "In case that",
+    "full": "In case that"
+   },
+   "sense": {
+    "en": "introducing a conditional clause.",
+    "hi": "यदि, अगर",
+    "entryId": 11102
+   }
+  },
+  {
+   "id": "a:6:4",
+   "dir": "a",
+   "cells": [
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "REAR",
+   "clueCell": 51,
+   "clue": {
+    "kind": "rel",
+    "text": "Back",
+    "full": "Similar to back"
+   },
+   "sense": {
+    "en": "the back part of something.",
+    "hi": "पिछला भाग, पीछे",
+    "entryId": 17892
+   }
+  },
+  {
+   "id": "d:7:3",
+   "dir": "d",
+   "cells": [
+    59,
+    67,
+    75
+   ],
+   "answer": "TOE",
+   "clueCell": 51,
+   "clue": {
+    "kind": "def",
+    "text": "Foot digit",
+    "full": "Foot digit"
+   },
+   "sense": {
+    "en": "one of the small digits at the end of the foot.",
+    "hi": "पैर की अंगुली",
+    "entryId": 22554
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59
+   ],
+   "answer": "NOT",
+   "clueCell": 56,
+   "clue": {
+    "kind": "picmath",
+    "img": "1faa2",
+    "math": "−k",
+    "full": "Picture maths: a tied rope, minus K"
+   },
+   "sense": {
+    "en": "used to make a word or sentence negative.",
+    "hi": "नहीं, न, मत",
+    "entryId": 15001
+   }
+  },
+  {
+   "id": "a:7:5",
+   "dir": "a",
+   "cells": [
+    61,
+    62,
+    63
+   ],
+   "answer": "SPY",
+   "clueCell": 60,
+   "clue": {
+    "kind": "rel",
+    "text": "Agent",
+    "full": "Similar to agent"
+   },
+   "sense": {
+    "en": "a secret agent hired to obtain information about enemies or competitors.",
+    "hi": "जासूस",
+    "entryId": 20885
+   }
+  },
+  {
+   "id": "d:8:4",
+   "dir": "d",
+   "cells": [
+    68,
+    76
+   ],
+   "answer": "NW",
+   "clueCell": 60,
+   "clue": {
+    "kind": "abbr",
+    "text": "North west",
+    "full": "North west"
+   },
+   "sense": {
+    "en": "north west (compass point)",
+    "hi": "उत्तर-पश्चिम"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+   ],
+   "answer": "GOONIE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Sea bird",
+    "full": "Sea bird"
+   },
+   "sense": {
+    "en": "a large sea bird of the albatross family.",
+    "hi": "अल्बाट्रॉस",
+    "entryId": 9674
+   }
+  },
+  {
+   "id": "d:9:7",
+   "dir": "d",
+   "cells": [
+    79
+   ],
+   "answer": "D",
+   "clueCell": 71,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Delta",
+    "full": "Radio code Delta"
+   },
+   "sense": {
+    "en": "the letter D (radio alphabet: Delta)",
+    "hi": "डी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "STEWARD",
+   "clueCell": 72,
+   "clue": {
+    "kind": "gap",
+    "text": "ASK THE __",
+    "full": "Fill the gap: Ask the ___"
+   },
+   "sense": {
+    "en": "an attendant on an airplane or ship who serves passengers.",
+    "hi": "स्टुअर्ड, विमान परिचारक",
+    "entryId": 21118
+   }
+  }
+ ]
+}

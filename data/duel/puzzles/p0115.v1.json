@@ -1,0 +1,723 @@
+{
+ "id": "p0115",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "P",
+  "10": "L",
+  "11": "A",
+  "12": "S",
+  "13": "T",
+  "14": "E",
+  "15": "R",
+  "17": "R",
+  "18": "E",
+  "19": "C",
+  "20": "T",
+  "21": "O",
+  "22": "R",
+  "25": "E",
+  "26": "A",
+  "27": "R",
+  "29": "D",
+  "30": "A",
+  "31": "D",
+  "33": "S",
+  "34": "P",
+  "35": "E",
+  "36": "E",
+  "37": "D",
+  "39": "E",
+  "41": "C",
+  "43": "S",
+  "44": "A",
+  "45": "L",
+  "46": "S",
+  "47": "A",
+  "49": "R",
+  "50": "A",
+  "52": "R",
+  "53": "E",
+  "54": "E",
+  "55": "L",
+  "57": "I",
+  "58": "R",
+  "59": "O",
+  "60": "N",
+  "62": "M",
+  "63": "I",
+  "65": "B",
+  "66": "E",
+  "68": "E",
+  "69": "V",
+  "70": "E",
+  "71": "N",
+  "73": "E",
+  "74": "A",
+  "75": "R",
+  "76": "R",
+  "77": "I",
+  "78": "N",
+  "79": "G"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  23,
+  24,
+  28,
+  32,
+  38,
+  40,
+  42,
+  48,
+  51,
+  56,
+  61,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  55,
+  76
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "PRESCRIBE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Order medicine",
+    "full": "Order medicine"
+   },
+   "sense": {
+    "en": "to advise and authorize the use of a medicine or treatment for a patient.",
+    "hi": "दवा लिखना, नुस्खा लिखना",
+    "entryId": 17031
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34
+   ],
+   "answer": "LEAP",
+   "clueCell": 2,
+   "clue": {
+    "kind": "rel",
+    "text": "Jump",
+    "full": "Similar to jump"
+   },
+   "sense": {
+    "en": "to move forward by jumping high or far.",
+    "hi": "छलांग लगाना, कूदना",
+    "entryId": 12765
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43
+   ],
+   "answer": "ACRES",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Land area",
+    "full": "Land area"
+   },
+   "sense": {
+    "en": "extensive landed property retained by the owner.",
+    "hi": "एकड़, जमीन, जायदाद",
+    "entryId": 207
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20
+   ],
+   "answer": "ST",
+   "clueCell": 4,
+   "clue": {
+    "kind": "abbr",
+    "text": "Street",
+    "full": "Street"
+   },
+   "sense": {
+    "en": "street",
+    "hi": "सड़क, गली"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45,
+    53
+   ],
+   "answer": "TODDLE",
+   "clueCell": 5,
+   "clue": {
+    "kind": "gap",
+    "text": "WATCH HER __",
+    "full": "Fill the gap: Watch her ___"
+   },
+   "sense": {
+    "en": "to walk with short, unsteady steps like a young child.",
+    "hi": "लड़खड़ाकर चलना",
+    "entryId": 22551
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30
+   ],
+   "answer": "ERA",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Time period",
+    "full": "Time period"
+   },
+   "sense": {
+    "en": "a period marked by distinctive character or reckoned from a fixed point.",
+    "hi": "युग, काल",
+    "entryId": 7652
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15
+   ],
+   "answer": "R",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “are”",
+    "full": "Sounds like “are”"
+   },
+   "sense": {
+    "en": "the letter R, which sounds like “are”",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "PLASTER",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "APPLY __",
+    "full": "Fill the gap: Apply ___"
+   },
+   "sense": {
+    "en": "a mixture used to cover walls and ceilings to make them smooth.",
+    "hi": "प्लास्टर, गच",
+    "entryId": 16538
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+   ],
+   "answer": "RECTOR",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Parish priest",
+    "full": "Parish priest"
+   },
+   "sense": {
+    "en": "a member of the clergy who is in charge of a parish.",
+    "hi": "पादरी, रेक्टर",
+    "entryId": 18022
+   }
+  },
+  {
+   "id": "d:3:7",
+   "dir": "d",
+   "cells": [
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "DEALING",
+   "clueCell": 23,
+   "clue": {
+    "kind": "gap",
+    "text": "FAIR __ IS KEY",
+    "full": "Fill the gap: Fair ___ is key"
+   },
+   "sense": {
+    "en": "the way in which one behaves or treats others.",
+    "hi": "व्यवहार, लेन-देन",
+    "entryId": 5653
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27
+   ],
+   "answer": "EAR",
+   "clueCell": 24,
+   "clue": {
+    "kind": "picmath",
+    "img": "1f350",
+    "math": "−p",
+    "full": "Picture maths: a green fruit, round at the bottom, minus P"
+   },
+   "sense": {
+    "en": "the sense organ for hearing and equilibrium.",
+    "hi": "कान",
+    "entryId": 7054
+   }
+  },
+  {
+   "id": "a:3:5",
+   "dir": "a",
+   "cells": [
+    29,
+    30,
+    31
+   ],
+   "answer": "DAD",
+   "clueCell": 28,
+   "clue": {
+    "kind": "rel",
+    "text": "Papa",
+    "full": "Similar to papa"
+   },
+   "sense": {
+    "en": "one's father; an informal term for a male parent.",
+    "hi": "पिता, बापू",
+    "entryId": 5532
+   }
+  },
+  {
+   "id": "d:4:4",
+   "dir": "d",
+   "cells": [
+    36,
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "EARNER",
+   "clueCell": 28,
+   "clue": {
+    "kind": "gap",
+    "text": "SHE IS A TOP __",
+    "full": "Fill the gap: She is a top ___"
+   },
+   "sense": {
+    "en": "a person who works to get money.",
+    "hi": "कमाने वाला, आय अर्जनकर्ता",
+    "entryId": 7065
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "answer": "SPEED",
+   "clueCell": 32,
+   "clue": {
+    "kind": "rel",
+    "text": "Tempo",
+    "full": "Similar to tempo"
+   },
+   "sense": {
+    "en": "the rate at which something moves or happens.",
+    "hi": "स्पीड, गति, रफ़्तार",
+    "entryId": 20714
+   }
+  },
+  {
+   "id": "a:4:7",
+   "dir": "a",
+   "cells": [
+    39
+   ],
+   "answer": "E",
+   "clueCell": 38,
+   "clue": {
+    "kind": "abbr",
+    "text": "East",
+    "full": "East"
+   },
+   "sense": {
+    "en": "east (compass point)",
+    "hi": "पूर्व"
+   }
+  },
+  {
+   "id": "d:5:6",
+   "dir": "d",
+   "cells": [
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "SEMEN",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Male fluid",
+    "full": "Male fluid"
+   },
+   "sense": {
+    "en": "the thick white fluid containing spermatozoa produced by males.",
+    "hi": "वीर्य",
+    "entryId": 19546
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41
+   ],
+   "answer": "C",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Note before D",
+    "full": "Note before D"
+   },
+   "sense": {
+    "en": "the musical note C",
+    "hi": "सा (स्वर सी)"
+   }
+  },
+  {
+   "id": "a:5:3",
+   "dir": "a",
+   "cells": [
+    43,
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "SALSA",
+   "clueCell": 42,
+   "clue": {
+    "kind": "def",
+    "text": "Spicy dip",
+    "full": "Spicy dip"
+   },
+   "sense": {
+    "en": "a spicy sauce of tomatoes and onions to accompany food.",
+    "hi": "सालसा चटनी",
+    "entryId": 19032
+   }
+  },
+  {
+   "id": "d:6:2",
+   "dir": "d",
+   "cells": [
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "AREA",
+   "clueCell": 42,
+   "clue": {
+    "kind": "rel",
+    "text": "Region",
+    "full": "Similar to region"
+   },
+   "sense": {
+    "en": "a particular geographical region or space.",
+    "hi": "क्षेत्र, इलाका",
+    "entryId": 1127
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50
+   ],
+   "answer": "RA",
+   "clueCell": 48,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radium symbol",
+    "full": "Radium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of radium",
+    "hi": "रेडियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:6:4",
+   "dir": "a",
+   "cells": [
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "REEL",
+   "clueCell": 51,
+   "clue": {
+    "kind": "rel",
+    "text": "Coil",
+    "full": "Similar to coil"
+   },
+   "sense": {
+    "en": "winder consisting of a revolving spool with a handle.",
+    "hi": "रील, चरखी",
+    "entryId": 18072
+   }
+  },
+  {
+   "id": "d:7:3",
+   "dir": "d",
+   "cells": [
+    59
+   ],
+   "answer": "O",
+   "clueCell": 51,
+   "clue": {
+    "kind": "abbr",
+    "text": "Oxygen symbol",
+    "full": "Oxygen symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of oxygen",
+    "hi": "ऑक्सीजन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60
+   ],
+   "answer": "IRON",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Hard grey metal",
+    "full": "Hard grey metal"
+   },
+   "sense": {
+    "en": "a strong, hard magnetic silvery-grey metal.",
+    "hi": "लोहा",
+    "entryId": 12059
+   }
+  },
+  {
+   "id": "a:7:6",
+   "dir": "a",
+   "cells": [
+    62,
+    63
+   ],
+   "answer": "MI",
+   "clueCell": 61,
+   "clue": {
+    "kind": "def",
+    "text": "Note after re",
+    "full": "Note after re"
+   },
+   "sense": {
+    "en": "the musical note MI",
+    "hi": "ग (सरगम)"
+   }
+  },
+  {
+   "id": "d:8:5",
+   "dir": "d",
+   "cells": [
+    69,
+    77
+   ],
+   "answer": "VI",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman six",
+    "full": "Roman six"
+   },
+   "sense": {
+    "en": "six in Roman numerals",
+    "hi": "छह (रोमन अंक)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "BE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "EVEN",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Used to stress",
+    "full": "Used to stress"
+   },
+   "sense": {
+    "en": "used to emphasize something surprising.",
+    "hi": "भी, तक, यहाँ तक कि",
+    "entryId": 7778
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "R",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “are”",
+    "full": "Sounds like “are”"
+   },
+   "sense": {
+    "en": "the letter R, which sounds like “are”",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "EARRING",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Ear jewelry",
+    "full": "Ear jewelry"
+   },
+   "sense": {
+    "en": "a piece of jewelry worn on the ear.",
+    "hi": "कान की बाली, झुमका",
+    "entryId": 7071
+   }
+  }
+ ]
+}

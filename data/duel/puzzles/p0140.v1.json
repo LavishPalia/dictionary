@@ -1,0 +1,742 @@
+{
+ "id": "p0140",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "P",
+  "10": "R",
+  "11": "O",
+  "12": "B",
+  "13": "L",
+  "14": "E",
+  "15": "M",
+  "17": "L",
+  "18": "A",
+  "19": "C",
+  "20": "E",
+  "22": "D",
+  "23": "O",
+  "25": "A",
+  "26": "G",
+  "27": "E",
+  "29": "T",
+  "30": "I",
+  "31": "N",
+  "33": "Y",
+  "35": "A",
+  "36": "O",
+  "37": "R",
+  "38": "T",
+  "39": "A",
+  "41": "M",
+  "42": "A",
+  "43": "N",
+  "44": "I",
+  "45": "A",
+  "47": "S",
+  "49": "A",
+  "50": "S",
+  "52": "L",
+  "53": "I",
+  "54": "S",
+  "55": "T",
+  "57": "K",
+  "58": "I",
+  "59": "D",
+  "61": "T",
+  "62": "O",
+  "63": "E",
+  "65": "E",
+  "66": "D",
+  "68": "P",
+  "69": "O",
+  "70": "U",
+  "71": "R",
+  "73": "R",
+  "74": "E",
+  "75": "M",
+  "76": "A",
+  "77": "R",
+  "78": "R",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  28,
+  32,
+  34,
+  40,
+  46,
+  48,
+  51,
+  56,
+  60,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  55,
+  77
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "PLAYMAKER",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "HE IS THE __.",
+    "full": "Fill the gap: He is the ___."
+   },
+   "sense": {
+    "en": "a player in a team sport who leads attacks or maneuvers.",
+    "hi": "प्लेमेकर",
+    "entryId": 16570
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26
+   ],
+   "answer": "RAG",
+   "clueCell": 2,
+   "clue": {
+    "kind": "rel",
+    "text": "Cloth",
+    "full": "Similar to cloth"
+   },
+   "sense": {
+    "en": "a small piece of cloth or paper.",
+    "hi": "चिथड़ा, चीर, टुकड़ा",
+    "entryId": 17714
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43
+   ],
+   "answer": "OCEAN",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Huge sea",
+    "full": "Huge sea"
+   },
+   "sense": {
+    "en": "a large body of water constituting a principal part of the hydrosphere.",
+    "hi": "महासागर, समुद्र",
+    "entryId": 15184
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20
+   ],
+   "answer": "BE",
+   "clueCell": 4,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ OR NOT",
+    "full": "Fill the gap: To ___ or not"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "L",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “el”",
+    "full": "Sounds like “el”"
+   },
+   "sense": {
+    "en": "the letter L, which sounds like “el”",
+    "hi": "एल (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38
+   ],
+   "answer": "EDIT",
+   "clueCell": 6,
+   "clue": {
+    "kind": "gap",
+    "text": "__ THE BOOK",
+    "full": "Fill the gap: ___ the book"
+   },
+   "sense": {
+    "en": "prepare written material for publication by correcting or condensing.",
+    "hi": "संपादन करना",
+    "entryId": 7146
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "MONASTERY",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Monks home",
+    "full": "Monks home"
+   },
+   "sense": {
+    "en": "a building where a community of monks lives and worships.",
+    "hi": "मठ, विहार",
+    "entryId": 14316
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "PROBLEM",
+   "clueCell": 8,
+   "clue": {
+    "kind": "rel",
+    "text": "Dilemma",
+    "full": "Similar to dilemma"
+   },
+   "sense": {
+    "en": "a state of difficulty that needs to be resolved.",
+    "hi": "समस्या, दिक्कत",
+    "entryId": 17154
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "LACE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Shoe string",
+    "full": "Shoe string"
+   },
+   "sense": {
+    "en": "a string used to fasten shoes or clothing.",
+    "hi": "जूते का फीता, डोरी",
+    "entryId": 12547
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "DO",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Perform",
+    "full": "Perform"
+   },
+   "sense": {
+    "en": "perform an action; used to form questions and negatives.",
+    "hi": "करना",
+    "entryId": 6655
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "TRAITOR",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Betrayer",
+    "full": "Betrayer"
+   },
+   "sense": {
+    "en": "someone who betrays his country by committing treason.",
+    "hi": "गद्दार, देशद्रोही",
+    "entryId": 22737
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27
+   ],
+   "answer": "AGE",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Years lived",
+    "full": "Years lived"
+   },
+   "sense": {
+    "en": "how long something has existed.",
+    "hi": "उम्र, आयु",
+    "entryId": 446
+   }
+  },
+  {
+   "id": "a:3:5",
+   "dir": "a",
+   "cells": [
+    29,
+    30,
+    31
+   ],
+   "answer": "TIN",
+   "clueCell": 28,
+   "clue": {
+    "kind": "gap",
+    "text": "OPEN THE __",
+    "full": "Fill the gap: Open the ___"
+   },
+   "sense": {
+    "en": "a metal container used for storing food or baking.",
+    "hi": "टिन का डिब्बा",
+    "entryId": 22492
+   }
+  },
+  {
+   "id": "d:4:4",
+   "dir": "d",
+   "cells": [
+    36,
+    44,
+    52
+   ],
+   "answer": "OIL",
+   "clueCell": 28,
+   "clue": {
+    "kind": "def",
+    "text": "Cooking liquid",
+    "full": "Cooking liquid"
+   },
+   "sense": {
+    "en": "a viscous liquid derived from petroleum or plants.",
+    "hi": "तेल, तैल",
+    "entryId": 15240
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33
+   ],
+   "answer": "Y",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after X",
+    "full": "Letter after X"
+   },
+   "sense": {
+    "en": "the letter Y",
+    "hi": "वाई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:4:3",
+   "dir": "a",
+   "cells": [
+    35,
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "AORTA",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "Main artery",
+    "full": "Main artery"
+   },
+   "sense": {
+    "en": "the large trunk artery that carries blood from the heart.",
+    "hi": "महाधमनी",
+    "entryId": 968
+   }
+  },
+  {
+   "id": "d:5:2",
+   "dir": "d",
+   "cells": [
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "ASIDE",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "To one side",
+    "full": "To one side"
+   },
+   "sense": {
+    "en": "to one side; out of the main path.",
+    "hi": "एक तरफ, अलग",
+    "entryId": 1248
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "answer": "MANIA",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Wild craze",
+    "full": "Wild craze"
+   },
+   "sense": {
+    "en": "an intense and irrational desire or passion for something.",
+    "hi": "जुनून, सनक",
+    "entryId": 13518
+   }
+  },
+  {
+   "id": "a:5:7",
+   "dir": "a",
+   "cells": [
+    47
+   ],
+   "answer": "S",
+   "clueCell": 46,
+   "clue": {
+    "kind": "abbr",
+    "text": "Sulfur symbol",
+    "full": "Sulfur symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of sulfur",
+    "hi": "गंधक (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:6:6",
+   "dir": "d",
+   "cells": [
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "SOUR",
+   "clueCell": 46,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of sweet",
+    "full": "Opposite of sweet"
+   },
+   "sense": {
+    "en": "having a sharp biting taste like lemon or vinegar.",
+    "hi": "खट्टा",
+    "entryId": 20593
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50
+   ],
+   "answer": "AS",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "In the role of",
+    "full": "In the role of"
+   },
+   "sense": {
+    "en": "in the role of; to the same degree; while.",
+    "hi": "जैसे, के रूप में, जब",
+    "entryId": 1226
+   }
+  },
+  {
+   "id": "a:6:4",
+   "dir": "a",
+   "cells": [
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "LIST",
+   "clueCell": 51,
+   "clue": {
+    "kind": "def",
+    "text": "Item set",
+    "full": "Item set"
+   },
+   "sense": {
+    "en": "a database containing an ordered array of items or names.",
+    "hi": "सूची",
+    "entryId": 13048
+   }
+  },
+  {
+   "id": "d:7:3",
+   "dir": "d",
+   "cells": [
+    59
+   ],
+   "answer": "D",
+   "clueCell": 51,
+   "clue": {
+    "kind": "def",
+    "text": "Note after C",
+    "full": "Note after C"
+   },
+   "sense": {
+    "en": "the musical note D",
+    "hi": "रे (स्वर डी)"
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59
+   ],
+   "answer": "KID",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Young child",
+    "full": "Young child"
+   },
+   "sense": {
+    "en": "a young person or child.",
+    "hi": "बच्चा, बालक",
+    "entryId": 12413
+   }
+  },
+  {
+   "id": "a:7:5",
+   "dir": "a",
+   "cells": [
+    61,
+    62,
+    63
+   ],
+   "answer": "TOE",
+   "clueCell": 60,
+   "clue": {
+    "kind": "def",
+    "text": "Foot digit",
+    "full": "Foot digit"
+   },
+   "sense": {
+    "en": "one of the small digits at the end of the foot.",
+    "hi": "पैर की अंगुली",
+    "entryId": 22554
+   }
+  },
+  {
+   "id": "d:8:4",
+   "dir": "d",
+   "cells": [
+    68,
+    76
+   ],
+   "answer": "PA",
+   "clueCell": 60,
+   "clue": {
+    "kind": "abbr",
+    "text": "Dad",
+    "full": "Dad"
+   },
+   "sense": {
+    "en": "dad",
+    "hi": "पिता"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "ED",
+   "clueCell": 64,
+   "clue": {
+    "kind": "abbr",
+    "text": "Editor",
+    "full": "Editor"
+   },
+   "sense": {
+    "en": "editor",
+    "hi": "संपादक"
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "POUR",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Flow liquid",
+    "full": "Flow liquid"
+   },
+   "sense": {
+    "en": "to cause a liquid to flow from a container.",
+    "hi": "डालना, उड़ेलना",
+    "entryId": 16878
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "M",
+   "clueCell": 67,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Mike",
+    "full": "Radio code Mike"
+   },
+   "sense": {
+    "en": "the letter M (radio alphabet: Mike)",
+    "hi": "एम (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "REMARRY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Wed again",
+    "full": "Wed again"
+   },
+   "sense": {
+    "en": "to marry again, not for the first time.",
+    "hi": "दूसरा विवाह करना",
+    "entryId": 18264
+   }
+  }
+ ]
+}

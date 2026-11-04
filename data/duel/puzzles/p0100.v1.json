@@ -1,0 +1,740 @@
+{
+ "id": "p0100",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "H",
+  "10": "I",
+  "11": "B",
+  "12": "A",
+  "13": "C",
+  "14": "H",
+  "15": "I",
+  "17": "E",
+  "18": "N",
+  "19": "E",
+  "20": "M",
+  "21": "A",
+  "23": "N",
+  "25": "R",
+  "26": "E",
+  "27": "D",
+  "29": "S",
+  "30": "E",
+  "31": "C",
+  "33": "M",
+  "34": "P",
+  "36": "W",
+  "37": "I",
+  "38": "P",
+  "39": "E",
+  "41": "I",
+  "42": "T",
+  "43": "S",
+  "45": "N",
+  "46": "A",
+  "47": "N",
+  "49": "T",
+  "51": "A",
+  "52": "B",
+  "53": "O",
+  "54": "U",
+  "55": "T",
+  "57": "A",
+  "58": "B",
+  "59": "L",
+  "60": "E",
+  "62": "L",
+  "63": "I",
+  "65": "G",
+  "66": "A",
+  "67": "S",
+  "69": "R",
+  "70": "E",
+  "71": "V",
+  "73": "E",
+  "74": "M",
+  "75": "A",
+  "76": "N",
+  "77": "A",
+  "78": "T",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  22,
+  24,
+  28,
+  32,
+  35,
+  40,
+  44,
+  48,
+  50,
+  56,
+  61,
+  64,
+  68,
+  72
+ ],
+ "given": [
+  9,
+  55,
+  78
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "HERMITAGE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Lone home",
+    "full": "Lone home"
+   },
+   "sense": {
+    "en": "the secluded home or dwelling of a hermit.",
+    "hi": "कुटीर, आश्रम, तपस्वी निवास",
+    "entryId": 10491
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42
+   ],
+   "answer": "INEPT",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "No skill",
+    "full": "No skill"
+   },
+   "sense": {
+    "en": "having or showing no skill; clumsy.",
+    "hi": "अकुशल, अनाड़ी",
+    "entryId": 11535
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27
+   ],
+   "answer": "BED",
+   "clueCell": 3,
+   "clue": {
+    "kind": "pic",
+    "img": "1f6cf",
+    "full": "Picture: a place to sleep"
+   },
+   "sense": {
+    "en": "a piece of furniture that provides a place to sleep.",
+    "hi": "बिस्तर, पलंग",
+    "entryId": 1911
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20
+   ],
+   "answer": "AM",
+   "clueCell": 4,
+   "clue": {
+    "kind": "abbr",
+    "text": "Before noon",
+    "full": "Before noon"
+   },
+   "sense": {
+    "en": "before noon",
+    "hi": "सुबह (दोपहर से पहले)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45,
+    53
+   ],
+   "answer": "CASINO",
+   "clueCell": 5,
+   "clue": {
+    "kind": "gap",
+    "text": "VISIT A __",
+    "full": "Fill the gap: Visit a ___"
+   },
+   "sense": {
+    "en": "a public building for gambling and entertainment.",
+    "hi": "कैसीनो, जुआघर",
+    "entryId": 3371
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14
+   ],
+   "answer": "H",
+   "clueCell": 6,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Hotel",
+    "full": "Radio code Hotel"
+   },
+   "sense": {
+    "en": "the letter H (radio alphabet: Hotel)",
+    "hi": "एच (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "INCENTIVE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "gap",
+    "text": "CASH IS AN __",
+    "full": "Fill the gap: Cash is an ___"
+   },
+   "sense": {
+    "en": "something that encourages you to do something.",
+    "hi": "प्रोत्साहन, प्रेरणा",
+    "entryId": 11360
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "HIBACHI",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Small grill",
+    "full": "Small grill"
+   },
+   "sense": {
+    "en": "a portable brazier that burns charcoal and has a grill for cooking.",
+    "hi": "अंगीठी",
+    "entryId": 10523
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20,
+    21
+   ],
+   "answer": "ENEMA",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Bowel shot",
+    "full": "Bowel shot"
+   },
+   "sense": {
+    "en": "an injection of fluid into the rectum to clear the bowels.",
+    "hi": "एनिमा",
+    "entryId": 7456
+   }
+  },
+  {
+   "id": "a:2:7",
+   "dir": "a",
+   "cells": [
+    23
+   ],
+   "answer": "N",
+   "clueCell": 22,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after M",
+    "full": "Letter after M"
+   },
+   "sense": {
+    "en": "the letter N",
+    "hi": "एन (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:3:6",
+   "dir": "d",
+   "cells": [
+    30,
+    38,
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "EPAULET",
+   "clueCell": 22,
+   "clue": {
+    "kind": "def",
+    "text": "Uniform badge",
+    "full": "Uniform badge"
+   },
+   "sense": {
+    "en": "an ornamental shoulder piece worn on a military uniform.",
+    "hi": "कंधे का बिल्ला, एपॉलेट",
+    "entryId": 7598
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27
+   ],
+   "answer": "RED",
+   "clueCell": 24,
+   "clue": {
+    "kind": "rel",
+    "text": "Scarlet",
+    "full": "Similar to scarlet"
+   },
+   "sense": {
+    "en": "resembling the color of blood or rubies.",
+    "hi": "लाल",
+    "entryId": 18033
+   }
+  },
+  {
+   "id": "a:3:5",
+   "dir": "a",
+   "cells": [
+    29,
+    30,
+    31
+   ],
+   "answer": "SEC",
+   "clueCell": 28,
+   "clue": {
+    "kind": "def",
+    "text": "Short time",
+    "full": "Short time"
+   },
+   "sense": {
+    "en": "one sixtieth of a minute; a unit of time.",
+    "hi": "सेकंड",
+    "entryId": 19458
+   }
+  },
+  {
+   "id": "d:4:4",
+   "dir": "d",
+   "cells": [
+    36
+   ],
+   "answer": "W",
+   "clueCell": 28,
+   "clue": {
+    "kind": "abbr",
+    "text": "Watt",
+    "full": "Watt"
+   },
+   "sense": {
+    "en": "watt (unit)",
+    "hi": "वाट"
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34
+   ],
+   "answer": "MP",
+   "clueCell": 32,
+   "clue": {
+    "kind": "abbr",
+    "text": "Lok Sabha member",
+    "full": "Lok Sabha member"
+   },
+   "sense": {
+    "en": "lok sabha member",
+    "hi": "सांसद"
+   }
+  },
+  {
+   "id": "a:4:4",
+   "dir": "a",
+   "cells": [
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "WIPE",
+   "clueCell": 35,
+   "clue": {
+    "kind": "gap",
+    "text": "__ THE FLOOR",
+    "full": "Fill the gap: ___ the floor"
+   },
+   "sense": {
+    "en": "to rub with a circular motion to clean or dry.",
+    "hi": "पोछना",
+    "entryId": 24672
+   }
+  },
+  {
+   "id": "d:5:3",
+   "dir": "d",
+   "cells": [
+    43,
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "SALSA",
+   "clueCell": 35,
+   "clue": {
+    "kind": "def",
+    "text": "Spicy dip",
+    "full": "Spicy dip"
+   },
+   "sense": {
+    "en": "a spicy sauce of tomatoes and onions to accompany food.",
+    "hi": "सालसा चटनी",
+    "entryId": 19032
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43
+   ],
+   "answer": "ITS",
+   "clueCell": 40,
+   "clue": {
+    "kind": "gap",
+    "text": "DOG WAGGED __ TAIL",
+    "full": "Fill the gap: Dog wagged ___ tail"
+   },
+   "sense": {
+    "en": "belonging to or associated with a thing or animal.",
+    "hi": "इसका, उसका",
+    "entryId": 12128
+   }
+  },
+  {
+   "id": "a:5:5",
+   "dir": "a",
+   "cells": [
+    45,
+    46,
+    47
+   ],
+   "answer": "NAN",
+   "clueCell": 44,
+   "clue": {
+    "kind": "def",
+    "text": "Grandma",
+    "full": "Grandma"
+   },
+   "sense": {
+    "en": "the mother of your father or mother.",
+    "hi": "नानी, दादी",
+    "entryId": 14651
+   }
+  },
+  {
+   "id": "d:6:4",
+   "dir": "d",
+   "cells": [
+    52,
+    60
+   ],
+   "answer": "BE",
+   "clueCell": 44,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49
+   ],
+   "answer": "T",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “tea”",
+    "full": "Sounds like “tea”"
+   },
+   "sense": {
+    "en": "the letter T, which sounds like “tea”",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:6:3",
+   "dir": "a",
+   "cells": [
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "ABOUT",
+   "clueCell": 50,
+   "clue": {
+    "kind": "rel",
+    "text": "Roughly",
+    "full": "Similar to roughly"
+   },
+   "sense": {
+    "en": "on the subject of; concerning; approximately.",
+    "hi": "के बारे में, लगभग",
+    "entryId": 53
+   }
+  },
+  {
+   "id": "d:7:2",
+   "dir": "d",
+   "cells": [
+    58,
+    66,
+    74
+   ],
+   "answer": "BAM",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Loud hit",
+    "full": "Loud hit"
+   },
+   "sense": {
+    "en": "a sudden very loud noise.",
+    "hi": "धमाका, ज़ोर की आवाज़",
+    "entryId": 1676
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60
+   ],
+   "answer": "ABLE",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Can do",
+    "full": "Can do"
+   },
+   "sense": {
+    "en": "having the necessary means, skill or authority to do something.",
+    "hi": "सक्षम, योग्य",
+    "entryId": 33
+   }
+  },
+  {
+   "id": "a:7:6",
+   "dir": "a",
+   "cells": [
+    62,
+    63
+   ],
+   "answer": "LI",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Lithium symbol",
+    "full": "Lithium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of lithium",
+    "hi": "लिथियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:8:5",
+   "dir": "d",
+   "cells": [
+    69,
+    77
+   ],
+   "answer": "RA",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radium symbol",
+    "full": "Radium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of radium",
+    "hi": "रेडियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67
+   ],
+   "answer": "GAS",
+   "clueCell": 64,
+   "clue": {
+    "kind": "rel",
+    "text": "Petrol",
+    "full": "Similar to petrol"
+   },
+   "sense": {
+    "en": "a volatile flammable mixture used as fuel in engines.",
+    "hi": "पेट्रोल, गैस",
+    "entryId": 9295
+   }
+  },
+  {
+   "id": "a:8:5",
+   "dir": "a",
+   "cells": [
+    69,
+    70,
+    71
+   ],
+   "answer": "REV",
+   "clueCell": 68,
+   "clue": {
+    "kind": "def",
+    "text": "Engine turn",
+    "full": "Engine turn"
+   },
+   "sense": {
+    "en": "rate of revolution of a motor per minute.",
+    "hi": "चक्कर प्रति मिनट",
+    "entryId": 18576
+   }
+  },
+  {
+   "id": "d:9:4",
+   "dir": "d",
+   "cells": [
+    76
+   ],
+   "answer": "N",
+   "clueCell": 68,
+   "clue": {
+    "kind": "abbr",
+    "text": "Nitrogen symbol",
+    "full": "Nitrogen symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of nitrogen",
+    "hi": "नाइट्रोजन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "EMANATE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Flow out",
+    "full": "Flow out"
+   },
+   "sense": {
+    "en": "to come out or flow from a source.",
+    "hi": "निकलना, उत्पन्न होना",
+    "entryId": 7300
+   }
+  }
+ ]
+}
