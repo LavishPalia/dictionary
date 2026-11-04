@@ -65,7 +65,7 @@ async function main() {
     await send('Page.enable');
     await send('Runtime.enable');
 
-    // A stand-in schedule through CDP's Fetch domain; route(false) goes back to the real (empty) one.
+    // A stand-in schedule through CDP's Fetch domain: the fixture, or with route(false) an empty one (no puzzle today).
     let routing = false;
     socket.addEventListener('message', (event) => {
       const m = JSON.parse(event.data);
@@ -73,11 +73,12 @@ async function main() {
       const { requestId, request } = m.params;
       const b64 = (x) => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64');
       const ok = (body) => send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: b64(body) });
-      if (routing && request.url.includes('/duel/schedule.json')) void ok(FIXTURE);
+      if (request.url.includes('/duel/schedule.json')) void ok(routing ? FIXTURE : { dates: {}, files: {} });
       else if (routing && request.url.includes('/duel/p/p0000.v1.test0000.json')) void ok(fs.readFileSync('data/duel/puzzles/p0000.json', 'utf8'));
       else void send('Fetch.continueRequest', { requestId });
     });
-    const route = async (on) => { routing = on; await send(on ? 'Fetch.enable' : 'Fetch.disable', on ? { patterns: [{ urlPattern: '*/duel/*' }] } : {}); };
+    const route = (on) => { routing = on; };
+    await send('Fetch.enable', { patterns: [{ urlPattern: '*/duel/*' }] });
 
     const setSize = (s) => send('Emulation.setDeviceMetricsOverride', { width: s.width, height: s.height, deviceScaleFactor: 1, mobile: s.mobile });
     /** Today with the given storage (cleared first); the Duel card is awaited unless none is expected. */
@@ -136,7 +137,7 @@ async function main() {
     rules = await evaluate(`JSON.parse(localStorage.getItem('panna_duel_game:${TODAY}')).rules`);
     check('phone: the save names its rules', typeof rules === 'string' && rules.length > 0, rules);
 
-    await route(true);
+    route(true);
     await today({ [`panna_duel_game:${TODAY}`]: save('p0000', 55, 41, true), panna_duel_results: [{ date: TODAY, puzzle: 'p0000.v1', you: 55, quill: 41, at: 'x' }] });
     text = await cardText();
     check('phone: won today → "Won 55 to 41 ★" and the latest open day', text.includes('Won 55 to 41 ★') && (await button())?.text === `Play ${dayMonth(YESTERDAY)}`
@@ -151,7 +152,7 @@ async function main() {
     check('phone: a save from other rules → a new game, not Continue', (await button())?.text === 'Play today’s duel', await button());
     await today();
     check("phone: a scheduled day → today's puzzle", (await cardText()).includes('Today’s puzzle is ready') && (await button())?.text === 'Play today’s duel');
-    await route(false);
+    route(false);
 
     // ── Desktop ──
     await setSize({ width: 1280, height: 800, mobile: false });
