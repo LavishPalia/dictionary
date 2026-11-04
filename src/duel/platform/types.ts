@@ -15,7 +15,7 @@ export type SoundName = 'lift' | 'drop' | 'chip' | 'coin' | 'word' | 'wrong' | '
 export interface Sound {
   /** `step` raises a chip's note by that many semitones. */
   play(name: SoundName, step?: number): void;
-  /** Browsers only start audio after a touch: called on the first pointerdown. */
+  /** Browsers only start audio after a user activation: called on every pointerup and key press (cheap, idempotent). */
   unlock(): void;
   enabled: boolean;
 }

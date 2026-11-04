@@ -3,7 +3,10 @@ import type { Action, CellId, GameEvent, GameState, SlotId, Who } from '../../en
 
 /** A game in progress on the device. The state is rebuilt from it with replay() on Continue. */
 export interface SavedGame {
-  puzzleId: string; puzzleVersion: number; seed: number; log: Action[]; startedAt: string;
+  puzzleId: string; puzzleVersion: number;
+  /** The engine's RULES_ID when the game started; a save from other rules starts afresh. */
+  rules: string;
+  seed: number; log: Action[]; startedAt: string;
 }
 
 export type Sheet = null | { k: 'swap' } | { k: 'help'; want: 'hint' | 'word' } | { k: 'reveal'; slot: SlotId };

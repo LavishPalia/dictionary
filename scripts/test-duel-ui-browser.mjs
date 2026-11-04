@@ -212,7 +212,11 @@ async function main() {
     check('phone: the rack keeps a gap where the tile was', await evaluate(`!document.querySelector('[data-rack="${first.rackSlot}"] .duel-tile')`));
     check('phone: the button now says Submit', /Submit/.test(await evaluate(`document.querySelector('[data-act="submit"]').textContent`)));
     await tap(`.duel-board [data-cell="${first.cell}"]`);
-    check('phone: tapping a pending tile sends it home', (await snap()).pending.length === 0);
+    await sleep(30);
+    const home = await evaluate(`[...document.querySelectorAll('.duel-fx .fx-tile')].map((e) => e.textContent).join('|')`);
+    // the tile is taken back at once, so wait for its flight home to end
+    const settled = await waitFor(`window.__duel.snapshot().pending.length === 0 && Boolean(document.querySelector('[data-rack="${first.rackSlot}"] .duel-tile')) && !document.querySelector('.duel-fx .fx-tile') && !document.querySelector('[data-fx-hidden], [data-fx-homing]')`, 2000);
+    check('phone: tapping a pending tile arcs it home', home === s.state.racks.you[first.rackSlot] && settled, home);
     // a clue zoom stays until the next tap
     const clue = P0.slots[0];
     await tap(`[data-slot="${clue.id}"]`);
@@ -400,6 +404,16 @@ async function main() {
       check('phone: after a size change, a drop lands on the cell under it', s.pending.length === 1 && s.pending[0].cell === t0.cell, s.pending);
       await setSize(phone);
       await sleep(300);
+      // The tile is back in the rack the moment it leaves the board: Enter during its flight home passes, never submits it.
+      await evaluate(`document.activeElement?.blur(), true`);
+      const rackbar = await center('.duel-rackbar');
+      await drag(`.duel-board [data-cell="${t0.cell}"] .duel-tile`, { x: rackbar.x, y: rackbar.y + 30 }, { end: false });
+      await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await key('Enter');
+      await idle();
+      const landed = await waitFor(`Boolean(document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile')) && !document.querySelector('[data-fx-hidden], [data-fx-homing]') && !document.querySelector('.duel-fx .fx-tile')`, 2000);
+      s = await snap();
+      check('phone: Enter during a flight home passes, and the tile is home', s.state.log.at(-1)?.t === 'pass' && landed, s.state.log.at(-1));
     }
 
     // a drag during a sequence does nothing
@@ -545,7 +559,8 @@ async function main() {
       await tapTurn(correctPlacements(s.state, 1));
     }
     s = await snap();
-    check('swap: with an empty bag, Swap is off', s.state.over || await evaluate(`document.querySelector('[data-act="swap"]').disabled && document.querySelector('[data-act="swap"]').getAttribute('aria-label') === 'Swap: the bag is empty'`));
+    // One tile a turn empties the bag long before the board fills, so a game over here means the check didn't run.
+    check('swap: with an empty bag, Swap is off', !s.state.over && s.state.bag.length === 0 && await evaluate(`document.querySelector('[data-act="swap"]').disabled && document.querySelector('[data-act="swap"]').getAttribute('aria-label') === 'Swap: the bag is empty'`), { over: s.state.over, bag: s.state.bag.length });
 
     // the ?quill= playtest flag is gone
     await open(`${GAME}?seed=7&quill=b`, { clear: true });

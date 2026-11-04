@@ -1,8 +1,23 @@
 // Rebuilding a game from its seed and the player's actions. Continue uses it on the device,
 // and the server uses it to check a reported score.
-import { botTurn } from './bot';
+import { BOT, botTurn } from './bot';
 import { apply, newGame } from './game';
 import type { Action, GameState, Puzzle } from './types';
+
+/** The rules a game is played under. Bump it when a change to the engine would replay an old log differently. */
+export const RULES_VERSION = 1;
+
+/**
+ * Names the exact rules a log replays under: RULES_VERSION plus a hash of Quill's tuning, which also changes
+ * how a log plays out. A save or a reported game carries it, so a log is never replayed under other rules.
+ */
+export const RULES_ID = `${RULES_VERSION}.${fnv1a(JSON.stringify(BOT))}`;
+
+function fnv1a(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
 
 /** Replays a game: each player action, then Quill's turns (several in a row once your rack is empty) until it is yours again. */
 export function replay(p: Puzzle, seed: number, actions: Action[]): GameState {

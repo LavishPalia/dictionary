@@ -168,6 +168,8 @@ function throws(fn: () => unknown) { try { fn(); return false; } catch { return 
   check('swap events: swapped, passed, turn', kinds(rS.events) === 'swapped,passed,turn', kinds(rS.events));
   check('swap is reproducible', JSON.stringify(apply(p0, s, { t: 'swap', rackSlots: [0, 1] }).state) === JSON.stringify(rS.state));
   check('swap draws new tiles before the old ones go back', rS.state.racks.you[0] === s.bag[0] && rS.state.racks.you[1] === s.bag[1]);
+  const sw = rS.events.find(e => e.e === 'swapped');
+  check('swapped names the new letters', sw?.e === 'swapped' && sw.letters.join() === [s.bag[0], s.bag[1]].join(), sw);
   check('swap leaves the other slots alone', rS.state.racks.you.slice(2).join() === s.racks.you.slice(2).join());
   check('swap counts as a pass for the streak', rS.state.passStreak === 1);
 

@@ -78,7 +78,7 @@ export type GameEvent =
   | { e: 'returned'; who: Who; rackSlots: number[] }
   | { e: 'refill'; who: Who; rackSlots: number[]; letters: string[] }
   | { e: 'botPlaced'; tiles: { cell: CellId; letter: string; rackSlot: number }[] }
-  | { e: 'swapped'; rackSlots: number[] }
+  | { e: 'swapped'; rackSlots: number[]; letters: string[] }
   | { e: 'passed'; who: Who; streak: number }
   | { e: 'ghosts'; slot: SlotId; cells: CellId[] }
   | { e: 'turn'; who: Who }

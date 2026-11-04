@@ -69,7 +69,6 @@ export function GameScreen({ p, date, ctl, stage, layer, motion, platform }: {
 
   // The clue zoom stays until the next tap anywhere; a tap on a clue moves or closes it itself.
   const onPointerDown = (e: React.PointerEvent) => {
-    platform.sound.unlock();
     const t = e.target as HTMLElement;
     if (!t.closest('.duel-cl')) ctl.closeZoom();
     // Word mode ends with a tap anywhere but a clue or the Word button (UI-DESIGN §3.3).
@@ -79,7 +78,10 @@ export function GameScreen({ p, date, ctl, stage, layer, motion, platform }: {
   // While a sheet is open, everything behind it is out of reach (focus, taps, screen readers).
   const behind = snap.sheet !== null;
   return (
-    <div className={`duel-game${snap.busy ? ' busy' : ''}`} ref={root} onPointerDownCapture={onPointerDown}>
+    // Browsers start audio only on a "user activation": on touch that is the finger lifting (pointerup), not
+    // pointerdown, so the sound unlocks here (keys unlock in Input).
+    <div className={`duel-game${snap.busy ? ' busy' : ''}`} ref={root} onPointerDownCapture={onPointerDown}
+      onPointerUpCapture={() => platform.sound.unlock()}>
       <div className="duel-main" inert={behind}>
       <header className="duel-top">
         <a className="ib" href={platform.exitHref} aria-label="Back to Panna">
