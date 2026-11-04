@@ -256,7 +256,7 @@ export class Input {
     this.platform.sound.unlock(); // a key press counts as a user activation: keyboard players get sound too
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const snap = this.ctl.snapshot();
-    if (snap.busy || snap.sheet || snap.state.over) return;
+    if (snap.busy || snap.sheet || snap.state.over || document.getElementById('duel-coach')) return;
     const active = document.activeElement as HTMLElement | null;
     if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
     const onBoard = !!active?.closest('.duel-board');

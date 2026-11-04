@@ -60,7 +60,7 @@ export function HowToPlay({ nav, back }: { nav: Nav; back: () => void }) {
       <section className="page-card how-page">
         <h2><span>6</span>Daily puzzles</h2>
         <p>There’s a new puzzle every day, the same for everyone. Win it to star the day; lost days stay open to replay. Win every day of a month to earn its seal.</p>
-        <a className="bigbtn" id="how-guide" href="/play?guide=1" onClick={(e) => { e.preventDefault(); nav('/play?guide=1'); }}>Replay the first-game guide</a>
+        <a className="bigbtn" id="how-guide" href="/play/game/today?guide=1" onClick={(e) => { e.preventDefault(); nav('/play/game/today?guide=1'); }}>Replay the first-game guide</a>
       </section>
     </div>
   );

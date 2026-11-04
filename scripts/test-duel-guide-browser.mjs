@@ -71,5 +71,81 @@ await run('Duel settings and guide', async (t) => {
   const w = await evaluate(`document.querySelector('#duel-settings .page-card').getBoundingClientRect().width`);
   check('desktop: settings sit in the centred column', w <= 560 && w > 300, w);
   await setSize(PHONE);
+
+  // ── The coached first game ──
+  const coaching = () => waitFor(`Boolean(document.querySelector('#duel-coach'))`, 20000);
+  const title = () => text('#duel-coach .coach-k');
+  await open(`/play/game/${TODAY}?seed=7`);
+  await waitFor(`Boolean(window.__duel)`, 20000);
+  check('coach: test runs (?seed=) skip it', !(await exists('#duel-coach')));
+  await open(`/play/game/${TODAY}`);
+  check('coach: a first game starts with it', await coaching());
+  check('coach: four dots', (await evaluate(`document.querySelectorAll('#duel-coach .coach-dots i').length`)) === 4);
+  check('coach: step 1 is the tiles', (await title()) === 'Your tiles', await title());
+  check('coach: English and Hindi', (await text('#duel-coach .coach-en')).includes('Drag one onto a square') && (await evaluate(`document.querySelector('#duel-coach .coach-hi').lang`)) === 'hi');
+  const lit = (sel) => evaluate(`(() => { const s = document.querySelector('#duel-coach .coach-spot').getBoundingClientRect(), r = document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect(); return s.left <= r.left + 1 && s.right >= r.right - 1 && s.top <= r.top + 1 && s.bottom >= r.bottom - 1; })()`);
+  check('coach: the spotlight is on the rack', await lit('.duel-rack'));
+  check('coach: the game is out of reach', await evaluate(`document.querySelector('.duel-main').inert`));
+  await axe('coach');
+  await click('#duel-coach [data-coach="next"]');
+  check('coach: step 2 is the clues, with no clue bar', (await title()) === 'The clues' && (await text('#duel-coach .coach-en')).includes('Tap a clue to read it in full.') && await lit('.duel-clue'), await text('#duel-coach .coach-en'));
+  await click('#duel-coach [data-coach="next"]');
+  check('coach: step 3 is Submit', (await title()) === 'Submit' && await lit('[data-act="submit"]'));
+  await click('#duel-coach [data-coach="next"]');
+  check('coach: step 4 is the duel', (await title()) === 'The duel' && (await text('#duel-coach [data-coach="next"]')) === 'Let’s play');
+  await click('#duel-coach [data-coach="next"]');
+  check('coach: it ends, and the game plays', !(await exists('#duel-coach')) && !(await evaluate(`document.querySelector('.duel-main').inert`)));
+  await go(`/play/game/${TODAY}`);
+  await waitFor(`Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  check('coach: never again after that', !(await exists('#duel-coach')));
+
+  await open(`/play/game/${TODAY}`);
+  await coaching();
+  await click('#duel-coach [data-coach="skip"]');
+  await go(`/play/game/${TODAY}`);
+  await waitFor(`Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  check('coach: Skip counts as seen', !(await exists('#duel-coach')));
+
+  // Replay from How to play, with the game kept.
+  await open(`/play/game/${TODAY}?seed=7`, seenCoach);
+  await waitFor(`Boolean(window.__duel)`, 20000);
+  const kept = await evaluate(`localStorage.getItem('panna_duel_game:${TODAY}')`);
+  await go('/play/how');
+  await waitFor(`Boolean(document.querySelector('#how-guide'))`, 20000);
+  await click('#how-guide');
+  check('coach: How to play replays it', await coaching());
+  check('coach: the replay opens today\'s game', (await evaluate('location.pathname')) === `/play/game/${TODAY}`);
+  check('coach: the replay leaves the save', (await evaluate(`localStorage.getItem('panna_duel_game:${TODAY}')`)) === kept);
+  await click('#duel-coach [data-coach="skip"]');
+  check('coach: guide is off the address after', await waitFor(`!location.search.includes('guide')`));
+
+  // Settings offers it too.
+  await go('/play/settings');
+  await settings();
+  check('settings: a row replays the guide', await exists('#duel-settings a[href*="guide=1"]'));
+
+  // A later tip: a pass brings the Hint tip, once.
+  await open(`/play/game/${TODAY}?seed=7&guide=1`, seenCoach);
+  await coaching();
+  await click('#duel-coach [data-coach="skip"]');
+  await click('[data-act="submit"]');
+  check('tip: a pass brings the Hint tip', await waitFor(`document.querySelector('.coach-tip')?.textContent.includes('Hint')`, 30000));
+  await click('.coach-tip button');
+  check('tip: Got it closes it', !(await exists('.coach-tip')));
+  check('tip: and it is kept', await evaluate(`JSON.parse(localStorage.getItem('panna_duel_guide')).tips.includes('hint')`));
+  // The Calendar tip on the home, after a finished game.
+  await open('/play', { ...seenCoach, panna_duel_results: [{ date: TODAY, puzzle: 'p0000.v1', you: 3, quill: 9, at: 'x' }] });
+  check('tip: the Calendar tip on the home', await waitFor(`document.querySelector('.coach-tip')?.textContent.includes('calendar')`, 20000));
+  await axe('home with a tip');
+
+  // Panna's Guided tours lists it.
+  await open('/');
+  await waitFor(`Boolean(document.querySelector('#menu-btn'))`, 20000);
+  await sleep(1500); // hydration
+  await click('#menu-btn');
+  await waitFor(`Boolean(document.querySelector('#guided-tours-btn'))`, 3000);
+  await sleep(400);
+  await click('#guided-tours-btn');
+  check('tours: Guided tours lists Panna Duel', await waitFor(`Boolean(document.querySelector('#tours-sheet a[href*="guide=1"]'))`, 5000));
   void send;
 });

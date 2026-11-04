@@ -37,6 +37,9 @@ export function Settings({ platform, nav, back }: { platform: Platform; nav: Nav
         <a className="set-row" href="/play/how" onClick={go('/play/how')}>
           <span><b>How to play</b><small>Rules, scoring and the help tools</small></span><i aria-hidden="true">›</i>
         </a>
+        <a className="set-row" href="/play/game/today?guide=1" onClick={go('/play/game/today?guide=1')}>
+          <span><b>Replay the first-game guide</b><small>The tips from your first duel</small></span><i aria-hidden="true">›</i>
+        </a>
         <div className="set-row">
           <span><b>Picture credits</b><small>Clue pictures: Twemoji, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer" target="_blank">CC BY 4.0</a></small></span>
         </div>

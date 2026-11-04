@@ -28,17 +28,25 @@ export function nextEmpty(p: Puzzle, s: GameState, pending: Pending[], slot: Slo
 
 export type WordReason = 'revealed' | 'wrong' | 'quill';
 
-/** The cells you played a wrong tile in, found by replaying the game. */
-function wrongCells(p: Puzzle, s: GameState): Set<CellId> {
-  const out = new Set<CellId>();
+/** Replays your turns: each action with whether it played a right tile, and where it played wrong ones. */
+function yourTurns(p: Puzzle, s: GameState): { action: GameState['log'][number]; right: boolean; wrong: CellId[] }[] {
+  const out: { action: GameState['log'][number]; right: boolean; wrong: CellId[] }[] = [];
   let state = newGame(p, s.seed);
-  for (const a of s.log) {
-    const you = apply(p, state, a);
-    for (const e of you.events) if (e.e === 'judged') for (const t of e.tiles) if (!t.ok) out.add(t.cell);
+  for (const action of s.log) {
+    const you = apply(p, state, action);
+    const tiles = you.events.flatMap(e => (e.e === 'judged' ? e.tiles : []));
+    out.push({ action, right: tiles.some(t => t.ok), wrong: tiles.filter(t => !t.ok).map(t => t.cell) });
     state = you.state;
     while (!state.over && state.turn === 'quill') state = botTurn(p, state).state;
   }
   return out;
+}
+
+/** What the later tips (src/duel/ui/guide/tips.ts) look at. A dry turn ended your turn with no right tile. */
+export function turnStats(p: Puzzle, s: GameState): { wrongOrPass: number; dryTurns: number; passes: number } {
+  const turns = yourTurns(p, s), ended = turns.filter(t => t.action.t === 'submit' || t.action.t === 'pass' || t.action.t === 'swap');
+  const passes = ended.filter(t => t.action.t === 'pass').length;
+  return { wrongOrPass: passes + turns.filter(t => t.wrong.length > 0).length, dryTurns: ended.filter(t => !t.right).length, passes };
 }
 
 /**
@@ -46,7 +54,7 @@ function wrongCells(p: Puzzle, s: GameState): Set<CellId> {
  * in that order. An answer used twice in a puzzle is listed once.
  */
 export function wordReview(p: Puzzle, s: GameState): { worth: { slot: Slot; reason: WordReason }[]; rest: Slot[] } {
-  const wrong = wrongCells(p, s), seen = new Set<string>();
+  const wrong = new Set(yourTurns(p, s).flatMap(t => t.wrong)), seen = new Set<string>();
   const reasonOf = (sl: Slot): WordReason | null => {
     if (s.ghosts.includes(sl.id)) return 'revealed';
     if (sl.cells.some(c => wrong.has(c))) return 'wrong';

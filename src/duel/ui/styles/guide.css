@@ -32,3 +32,27 @@ html[data-light="evening"] .how-score td.minus { color: #5e1a13; }
 .duel-board-legend .duel-cell { width: var(--cell); height: var(--cell); box-shadow: 0 0 0 1px #c9ccd1; }
 .duel-board-legend .duel-cell.ghost .lt { color: rgba(94, 74, 51, .42); }
 .how-page .bigbtn { margin-top: 8px; border: 1.5px solid var(--crimson); color: var(--crimson); }
+
+/* the coached first game */
+.coach { position: fixed; inset: 0; z-index: 80; touch-action: none; }
+.coach-spot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 200vmax rgba(15, 9, 5, .62); transition: all .25s var(--out); }
+.coach-hand { position: fixed; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, .9); box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+  animation: coach-drag 1.8s var(--out) infinite; }
+@keyframes coach-drag { 0% { opacity: 0; transform: none; } 15% { opacity: 1; } 70% { opacity: 1; transform: translate(60px, -180px); } 100% { opacity: 0; transform: translate(60px, -180px); } }
+.coach-tipbox { position: fixed; left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 24px)); padding: 12px 14px; border-radius: 14px;
+  background: #f6ecd0; color: #2a1e14; font: 16px var(--font-fell); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); }
+.coach-k { font: 18px var(--font-fell-sc); color: #5b1f19; }
+.coach-en, .coach-hi { margin: 2px 0 0; }
+.coach-hi { font: 14.5px var(--font-deva); color: #5e4a33; }
+.coach-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.coach-dots { flex: 1; display: flex; gap: 5px; }
+.coach-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(94, 74, 51, .3); }
+.coach-dots i.on { background: #5b1f19; }
+.coach-row button { min-height: 44px; padding: 0 12px; }
+.coach-row .next { border-radius: 10px; background: #5b1f19; color: #f4e6c5; font: 16px var(--font-fell-sc); }
+.coach-tip { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 8px;
+  width: min(360px, calc(100% - 24px)); padding: 8px 10px 8px 14px; border-radius: 14px; background: #f6ecd0; color: #2a1e14; font: 15px var(--font-fell);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35); animation: duel-fade-in .2s ease-out; }
+.coach-tip > div { flex: 1; }
+.coach-tip button { flex: none; min-height: 44px; padding: 0 10px; color: #5b1f19; font: 15px var(--font-fell-sc); }
+@media (prefers-reduced-motion: reduce) { .coach-hand { display: none; } .coach-spot { transition: none; } }

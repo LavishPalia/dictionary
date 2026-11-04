@@ -64,7 +64,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
     );
   }
   if (!game) return <div className="duel-game" aria-busy="true" />;
-  return <GameScreen p={game.p} date={date} practice={game.practice} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} nav={nav} />;
+  return <GameScreen p={game.p} date={date} practice={game.practice} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} nav={nav} guide={flags.guide} tips={!flags.test || flags.guide} />;
 }
 
 let moves = 0;
@@ -72,7 +72,7 @@ let moves = 0;
 /** Moves within the Duel; the address's test flags stay on it. */
 function nav(path: string) {
   const u = new URL(path, location.href);
-  new URLSearchParams(location.search).forEach((v, k) => { if (k !== 'fresh' && !u.searchParams.has(k)) u.searchParams.set(k, v); });
+  new URLSearchParams(location.search).forEach((v, k) => { if (k !== 'fresh' && k !== 'guide' && !u.searchParams.has(k)) u.searchParams.set(k, v); });
   history.pushState(null, '', u.pathname + u.search);
   moves++;
   dispatchEvent(new PopStateEvent('popstate'));

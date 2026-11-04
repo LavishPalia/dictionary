@@ -14,6 +14,8 @@ export interface Flags {
   test: boolean;
   /** Start a new deal of this day; taken off the address once used, so a reload doesn't restart. */
   fresh: boolean;
+  /** Show the coached first game again. A fixed seed (a test) otherwise skips the guide's tips. */
+  guide: boolean;
 }
 
 export function readFlags(search: string): Flags {
@@ -28,5 +30,6 @@ export function readFlags(search: string): Flags {
     perf: q.get('perf') === '1',
     test: seed !== undefined,
     fresh: q.get('fresh') === '1',
+    guide: q.get('guide') === '1',
   };
 }

@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { emptyCells, replay, RULES_ID, type CellId, type Puzzle } from '../src/duel/engine';
 import type { Platform } from '../src/duel/platform/types';
 import { webHelp } from '../src/duel/platform/web/help';
-import { wordReview } from '../src/duel/ui/controller/selectors';
+import { turnStats, wordReview } from '../src/duel/ui/controller/selectors';
+import { nextTip } from '../src/duel/ui/guide/tips';
 import { endCopy } from '../src/duel/ui/end/copy';
 import { GameController } from '../src/duel/ui/controller/controller';
 import { NullDirector } from '../src/duel/ui/controller/null-director';
@@ -298,6 +299,22 @@ async function controllerChecks() {
     check('words: every answer appears once', new Set(all).size === all.length && new Set(p0.slots.map(s => s.answer)).size === all.length, all.length);
     const worthFirst = rev.worth.map(w => w.reason);
     check('words: revealed, then wrong, then Quill', [...worthFirst].sort((a, b) => 'rwq'.indexOf(a[0]) - 'rwq'.indexOf(b[0])).join() === worthFirst.join(), worthFirst);
+  }
+  // One-time tips
+  {
+    const none = { wrongOrPass: 0, dryTurns: 0, passes: 0, finished: 0 };
+    check('tips: none at the start', nextTip(new Set(), none) === null);
+    check('tips: Hint after the first wrong tile or pass', nextTip(new Set(), { ...none, wrongOrPass: 1 }) === 'hint');
+    check('tips: Word after two turns without a right tile', nextTip(new Set(['hint']), { ...none, wrongOrPass: 2, dryTurns: 2 }) === 'word');
+    check('tips: Swap after a second pass', nextTip(new Set(['hint', 'word']), { ...none, wrongOrPass: 2, dryTurns: 2, passes: 2 }) === 'swap');
+    check('tips: Calendar after the first finished game', nextTip(new Set(), { ...none, finished: 1 }) === 'calendar');
+    check('tips: each only once', nextTip(new Set(['hint', 'word', 'swap', 'calendar']), { wrongOrPass: 9, dryTurns: 9, passes: 9, finished: 9 }) === null);
+    const pt = memoryPlatform(), ct = new GameController(p0, DATE, pt, new NullDirector(), { seed: 55 });
+    await ct.pass();
+    check('tips: a pass counts as a dry turn', JSON.stringify(turnStats(p0, ct.snapshot().state)) === '{"wrongOrPass":1,"dryTurns":1,"passes":1}', turnStats(p0, ct.snapshot().state));
+    for (const t of correctPlacements(ct)) ct.place(t.rackSlot, t.cell);
+    await ct.submit();
+    check('tips: a right tile is no dry turn', turnStats(p0, ct.snapshot().state).dryTurns === 1, turnStats(p0, ct.snapshot().state));
   }
   check('end copy: a win', JSON.stringify(endCopy({ you: 55, quill: 41, practice: false, isToday: true })) === JSON.stringify({ kind: 'win', title: 'You win!', line: 'Professor Quill tips his hat.' }));
   check('end copy: a loss today', endCopy({ you: 41, quill: 45, practice: false, isToday: true }).line === 'Professor Quill wins by 4. Replay to earn today’s star.');

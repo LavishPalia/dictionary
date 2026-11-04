@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CellId } from '../../engine';
 import type { Puzzle } from '../../engine';
 import type { Platform } from '../../platform/types';
@@ -7,6 +7,9 @@ import { Input } from '../fx/drag';
 import type { FxLayer, Motion } from '../fx/layer';
 import type { Stage } from '../fx/stage';
 import { longDate, type Nav } from '../dates';
+import { turnStats } from '../controller/selectors';
+import { CoachLayer, LaterTip } from '../guide/CoachLayer';
+import { GUIDE_KEY, nextTip, readGuide } from '../guide/tips';
 import { ActionRow } from './ActionRow';
 import { Board } from './Board';
 import { ClueZoom } from './ClueZoom';
@@ -45,13 +48,27 @@ function useFit(root: React.RefObject<HTMLDivElement | null>, area: React.RefObj
 }
 
 /** The game screen (UI-DESIGN §3.3 as changed by §0), phone first; desktop shows the same column, centred. */
-export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platform, nav }: {
-  p: Puzzle; date: string; practice: boolean; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion; platform: Platform; nav: Nav;
+export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platform, nav, guide, tips }: {
+  p: Puzzle; date: string; practice: boolean; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion; platform: Platform; nav: Nav; guide: boolean; tips: boolean;
 }) {
   const snap = useSnapshot(ctl);
   // A game already finished when the screen opens shows its end at once, with no arrival.
   const finishedAtOpen = useRef(snap.state.over);
   if (!snap.state.over) finishedAtOpen.current = false;
+  const [seen, setSeen] = useState(() => readGuide(platform.storage.get(GUIDE_KEY)));
+  const [coach, setCoach] = useState(() => guide || (tips && !seen.coach));
+  const endCoach = () => {
+    const next = { ...seen, coach: true };
+    setSeen(next);
+    platform.storage.set(GUIDE_KEY, next);
+    setCoach(false);
+    const q = new URLSearchParams(location.search);
+    if (q.has('guide')) { q.delete('guide'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '')); }
+  };
+  const logLength = snap.state.log.length;
+  const tip = useMemo(() => (tips && !snap.state.over ? nextTip(new Set(seen.tips), { ...turnStats(p, snap.state), finished: 0 }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tips, p, logLength, seen.tips, snap.state.over]);
   const root = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLDivElement>(null);
   const input = useRef<Input | null>(null);
@@ -73,7 +90,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   };
 
   // While a sheet is open, everything behind it is out of reach (focus, taps, screen readers).
-  const behind = snap.sheet !== null || (snap.state.over && !snap.busy);
+  const behind = snap.sheet !== null || coach || (snap.state.over && !snap.busy);
   return (
     // Browsers start audio only on a "user activation": on touch that is the finger lifting (pointerup), not
     // pointerdown, so the sound unlocks here (keys unlock in Input).
@@ -103,6 +120,10 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
       {snap.sheet?.k === 'help' && <HelpSheet balance={snap.balance} want={snap.sheet.want} onClose={() => ctl.closeSheet()} />}
       {snap.sheet?.k === 'reveal' && <WordConfirm p={p} slot={snap.sheet.slot} ctl={ctl} />}
       {snap.state.over && !snap.busy && <EndScreen p={p} date={date} practice={practice} snap={snap} ctl={ctl} platform={platform} layer={layer} instant={finishedAtOpen.current} nav={nav} />}
+      {coach && <CoachLayer onDone={endCoach} />}
+      {tip && !coach && !snap.busy && (
+        <LaterTip id={tip} onDismiss={() => { const next = { ...seen, tips: [...seen.tips, tip] }; setSeen(next); platform.storage.set(GUIDE_KEY, next); }} />
+      )}
       <div className="duel-rotate" role="status">
         <p>Turn your phone upright to play.</p>
       </div>

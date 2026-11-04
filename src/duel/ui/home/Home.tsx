@@ -4,7 +4,10 @@ import type { Platform, ClientSchedule } from '../../platform/types';
 import { duelAction, duelLine, duelSubLine, matchingSave, todayDuel } from '../../platform/web/entry';
 import { bestFor, calendarMonth, gameKey, istToday, monthRange, readResults, RESULTS_KEY, streak, wonDays, type DayCoin } from '../../progress';
 import { addMonths, dayMonth, longDate, monthName, type Nav } from '../dates';
+import { readFlags } from '../flags';
 import { HelpSheet } from '../game/HelpSheet';
+import { LaterTip } from '../guide/CoachLayer';
+import { GUIDE_KEY, nextTip, readGuide } from '../guide/tips';
 import { Sheet } from '../game/Sheet';
 import { Calendar, MonthSeal } from './Calendar';
 import { DaySheet } from './DaySheet';
@@ -104,6 +107,11 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
     return () => { live = false; };
   }, [schedule, heroDay, puzzles]);
 
+  // One time, after the first finished game (UI-DESIGN §3.6). A fixed seed (a test) leaves the guide out.
+  const [guide, setGuide] = useState(() => readGuide(storage.get(GUIDE_KEY)));
+  const showCalendarTip = !readFlags(location.search).test && nextTip(new Set(guide.tips.concat('hint', 'word', 'swap')), { wrongOrPass: 0, dryTurns: 0, passes: 0, finished: results.length }) === 'calendar';
+  const dismissTip = () => { const next = { ...guide, tips: [...guide.tips, 'calendar' as const] }; setGuide(next); storage.set(GUIDE_KEY, next); };
+
   const balance = platform.help.balance();
   const range = monthRange(scheduled, today);
   const cal = calendarMonth(month, scheduled, results, inProgress, today);
@@ -172,6 +180,7 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
       )}
 
       {toast && <div className="page-toast" role="status">{toast}</div>}
+      {duel && !sheet && showCalendarTip && <LaterTip id="calendar" onDismiss={dismissTip} />}
 
       {sheet?.k === 'help' && <HelpSheet balance={balance} want={null} closeLabel="Close" onClose={() => setSheet(null)} />}
       {sheet?.k === 'day' && (
