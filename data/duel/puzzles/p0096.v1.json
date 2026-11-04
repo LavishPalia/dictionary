@@ -1,0 +1,725 @@
+{
+ "id": "p0096",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "P",
+  "10": "R",
+  "11": "E",
+  "12": "T",
+  "13": "E",
+  "14": "E",
+  "15": "N",
+  "17": "R",
+  "18": "U",
+  "19": "N",
+  "20": "E",
+  "22": "D",
+  "23": "O",
+  "25": "E",
+  "26": "G",
+  "27": "G",
+  "28": "N",
+  "29": "O",
+  "30": "G",
+  "33": "S",
+  "35": "R",
+  "36": "U",
+  "37": "L",
+  "38": "E",
+  "39": "R",
+  "41": "C",
+  "42": "H",
+  "43": "O",
+  "44": "R",
+  "45": "D",
+  "47": "E",
+  "49": "R",
+  "50": "O",
+  "51": "S",
+  "52": "E",
+  "54": "B",
+  "55": "C",
+  "57": "I",
+  "58": "T",
+  "59": "S",
+  "61": "S",
+  "62": "E",
+  "63": "A",
+  "65": "B",
+  "66": "E",
+  "68": "M",
+  "69": "E",
+  "70": "A",
+  "71": "N",
+  "73": "E",
+  "74": "L",
+  "75": "E",
+  "76": "M",
+  "77": "E",
+  "78": "N",
+  "79": "T"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  31,
+  32,
+  34,
+  40,
+  46,
+  48,
+  53,
+  56,
+  60,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  35,
+  79
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "PRESCRIBE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Order medicine",
+    "full": "Order medicine"
+   },
+   "sense": {
+    "en": "to advise and authorize the use of a medicine or treatment for a patient.",
+    "hi": "दवा लिखना, नुस्खा लिखना",
+    "entryId": 17031
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26
+   ],
+   "answer": "RUG",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Floor mat",
+    "full": "Floor mat"
+   },
+   "sense": {
+    "en": "a floor covering consisting of a piece of thick heavy fabric.",
+    "hi": "कालीन, गलीचा",
+    "entryId": 18900
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51,
+    59
+   ],
+   "answer": "ENGROSS",
+   "clueCell": 3,
+   "clue": {
+    "kind": "gap",
+    "text": "BOOKS CAN __ YOU",
+    "full": "Fill the gap: Books can ___ you"
+   },
+   "sense": {
+    "en": "to consume all of one's attention or time.",
+    "hi": "मन मोह लेना, तल्लीन करना",
+    "entryId": 7486
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44,
+    52
+   ],
+   "answer": "TENURE",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Term in office",
+    "full": "Term in office"
+   },
+   "sense": {
+    "en": "the term during which some position is held.",
+    "hi": "कार्यकाल",
+    "entryId": 22189
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "E",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after D",
+    "full": "Letter after D"
+   },
+   "sense": {
+    "en": "the letter E",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38
+   ],
+   "answer": "EDGE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "rel",
+    "text": "Rim",
+    "full": "Similar to rim"
+   },
+   "sense": {
+    "en": "the outside limit of an object, area, or surface.",
+    "hi": "किनारा, धार",
+    "entryId": 7137
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "NO",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Not any",
+    "full": "Not any"
+   },
+   "sense": {
+    "en": "not any; used to give a negative reply.",
+    "hi": "नहीं, कोई नहीं",
+    "entryId": 14917
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "PRETEEN",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "A __ CHILD",
+    "full": "Fill the gap: A ___ child"
+   },
+   "sense": {
+    "en": "relating to children between the ages of nine and twelve.",
+    "hi": "किशोर पूर्व",
+    "entryId": 17066
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "RUNE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Old letter",
+    "full": "Old letter"
+   },
+   "sense": {
+    "en": "a letter from an ancient alphabet used in Northern Europe.",
+    "hi": "प्राचीन वर्ण, रून",
+    "entryId": 18924
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "DO",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Perform",
+    "full": "Perform"
+   },
+   "sense": {
+    "en": "perform an action; used to form questions and negatives.",
+    "hi": "करना",
+    "entryId": 6655
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45
+   ],
+   "answer": "OLD",
+   "clueCell": 21,
+   "clue": {
+    "kind": "rel",
+    "text": "Elderly",
+    "full": "Similar to elderly"
+   },
+   "sense": {
+    "en": "having lived for a long time; of long standing.",
+    "hi": "पुराना, वृद्ध",
+    "entryId": 15250
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "EGGNOG",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Xmas drink",
+    "full": "Xmas drink"
+   },
+   "sense": {
+    "en": "a drink made of milk, eggs, sugar, and often alcohol.",
+    "hi": "एगनॉग",
+    "entryId": 7186
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "RECANT",
+   "clueCell": 31,
+   "clue": {
+    "kind": "def",
+    "text": "Take back words",
+    "full": "Take back words"
+   },
+   "sense": {
+    "en": "to publicly take back a statement or belief.",
+    "hi": "वापस लेना, खंडन करना",
+    "entryId": 17927
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33
+   ],
+   "answer": "S",
+   "clueCell": 32,
+   "clue": {
+    "kind": "abbr",
+    "text": "Second (time)",
+    "full": "Second (time)"
+   },
+   "sense": {
+    "en": "second (time) (unit)",
+    "hi": "सेकंड"
+   }
+  },
+  {
+   "id": "a:4:3",
+   "dir": "a",
+   "cells": [
+    35,
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "RULER",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "Line drawer",
+    "full": "Line drawer"
+   },
+   "sense": {
+    "en": "a straight strip used for measuring lengths or drawing lines.",
+    "hi": "फुट, पैमाना",
+    "entryId": 18907
+   }
+  },
+  {
+   "id": "d:5:2",
+   "dir": "d",
+   "cells": [
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "HOTEL",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "Inn for guests",
+    "full": "Inn for guests"
+   },
+   "sense": {
+    "en": "an establishment providing accommodation, meals, and other services for travelers.",
+    "hi": "होटल",
+    "entryId": 10819
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "answer": "CHORD",
+   "clueCell": 40,
+   "clue": {
+    "kind": "gap",
+    "text": "PLAY A __",
+    "full": "Fill the gap: Play a ___"
+   },
+   "sense": {
+    "en": "a combination of musical notes sounded together.",
+    "hi": "सुरों का मेल, स्वर",
+    "entryId": 3818
+   }
+  },
+  {
+   "id": "a:5:7",
+   "dir": "a",
+   "cells": [
+    47
+   ],
+   "answer": "E",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after D",
+    "full": "Letter after D"
+   },
+   "sense": {
+    "en": "the letter E",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:6:6",
+   "dir": "d",
+   "cells": [
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "BEAN",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Edible seed",
+    "full": "Edible seed"
+   },
+   "sense": {
+    "en": "any of various edible seeds of plants used for food.",
+    "hi": "बीन, सेम, फली",
+    "entryId": 1875
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52
+   ],
+   "answer": "ROSE",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Thorny bush",
+    "full": "Thorny bush"
+   },
+   "sense": {
+    "en": "any of many shrubs that bear roses.",
+    "hi": "गुलाब",
+    "entryId": 18823
+   }
+  },
+  {
+   "id": "a:6:6",
+   "dir": "a",
+   "cells": [
+    54,
+    55
+   ],
+   "answer": "BC",
+   "clueCell": 53,
+   "clue": {
+    "kind": "abbr",
+    "text": "Before Christ",
+    "full": "Before Christ"
+   },
+   "sense": {
+    "en": "before christ",
+    "hi": "ईसा पूर्व"
+   }
+  },
+  {
+   "id": "d:7:5",
+   "dir": "d",
+   "cells": [
+    61,
+    69,
+    77
+   ],
+   "answer": "SEE",
+   "clueCell": 53,
+   "clue": {
+    "kind": "rel",
+    "text": "Notice",
+    "full": "Similar to notice"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59
+   ],
+   "answer": "ITS",
+   "clueCell": 56,
+   "clue": {
+    "kind": "gap",
+    "text": "DOG WAGGED __ TAIL",
+    "full": "Fill the gap: Dog wagged ___ tail"
+   },
+   "sense": {
+    "en": "belonging to or associated with a thing or animal.",
+    "hi": "इसका, उसका",
+    "entryId": 12128
+   }
+  },
+  {
+   "id": "a:7:5",
+   "dir": "a",
+   "cells": [
+    61,
+    62,
+    63
+   ],
+   "answer": "SEA",
+   "clueCell": 60,
+   "clue": {
+    "kind": "def",
+    "text": "Salt water",
+    "full": "Salt water"
+   },
+   "sense": {
+    "en": "the expanse of salt water that covers most of the earth's surface.",
+    "hi": "सागर, समुद्र",
+    "entryId": 19414
+   }
+  },
+  {
+   "id": "d:8:4",
+   "dir": "d",
+   "cells": [
+    68,
+    76
+   ],
+   "answer": "MM",
+   "clueCell": 60,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman 2000",
+    "full": "Roman 2000"
+   },
+   "sense": {
+    "en": "2000 in Roman numerals",
+    "hi": "दो हज़ार (रोमन अंक)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "BE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "MEAN",
+   "clueCell": 67,
+   "clue": {
+    "kind": "rel",
+    "text": "Signify",
+    "full": "Similar to signify"
+   },
+   "sense": {
+    "en": "to intend to convey or express a particular idea.",
+    "hi": "मतलब होना, आशय होना",
+    "entryId": 13754
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "E",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after D",
+    "full": "Letter after D"
+   },
+   "sense": {
+    "en": "the letter E",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ELEMENT",
+   "clueCell": 72,
+   "clue": {
+    "kind": "rel",
+    "text": "Piece",
+    "full": "Similar to piece"
+   },
+   "sense": {
+    "en": "an essential or characteristic part of something abstract.",
+    "hi": "तत्व, मूल अंग",
+    "entryId": 7259
+   }
+  }
+ ]
+}

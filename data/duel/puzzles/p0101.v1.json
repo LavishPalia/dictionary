@@ -1,0 +1,722 @@
+{
+ "id": "p0101",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "P",
+  "10": "L",
+  "11": "A",
+  "12": "Y",
+  "13": "F",
+  "14": "U",
+  "15": "L",
+  "17": "R",
+  "18": "I",
+  "19": "C",
+  "20": "E",
+  "22": "T",
+  "23": "I",
+  "25": "E",
+  "26": "V",
+  "27": "O",
+  "28": "L",
+  "29": "V",
+  "30": "E",
+  "33": "S",
+  "34": "E",
+  "35": "L",
+  "36": "L",
+  "38": "R",
+  "39": "E",
+  "41": "C",
+  "42": "R",
+  "43": "Y",
+  "45": "R",
+  "46": "U",
+  "47": "N",
+  "49": "R",
+  "51": "T",
+  "52": "R",
+  "53": "U",
+  "54": "S",
+  "55": "T",
+  "57": "I",
+  "58": "D",
+  "59": "E",
+  "60": "A",
+  "61": "L",
+  "63": "A",
+  "65": "B",
+  "66": "E",
+  "68": "S",
+  "69": "E",
+  "70": "M",
+  "71": "I",
+  "73": "E",
+  "74": "N",
+  "75": "T",
+  "76": "H",
+  "77": "R",
+  "78": "A",
+  "79": "L"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  31,
+  32,
+  37,
+  40,
+  44,
+  48,
+  50,
+  56,
+  62,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  51,
+  79
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "PRESCRIBE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Order medicine",
+    "full": "Order medicine"
+   },
+   "sense": {
+    "en": "to advise and authorize the use of a medicine or treatment for a patient.",
+    "hi": "दवा लिखना, नुस्खा लिखना",
+    "entryId": 17031
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42
+   ],
+   "answer": "LIVER",
+   "clueCell": 2,
+   "clue": {
+    "kind": "gap",
+    "text": "HEALTHY __",
+    "full": "Fill the gap: Healthy ___"
+   },
+   "sense": {
+    "en": "a large glandular organ in the upper right abdomen.",
+    "hi": "जिगर, यकृत",
+    "entryId": 13083
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51,
+    59
+   ],
+   "answer": "ACOLYTE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Priest helper",
+    "full": "Priest helper"
+   },
+   "sense": {
+    "en": "an assistant to a priest during a religious service.",
+    "hi": "सहयोगी, सहायक",
+    "entryId": 191
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36
+   ],
+   "answer": "YELL",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Shout",
+    "full": "Shout"
+   },
+   "sense": {
+    "en": "to utter a sudden loud cry.",
+    "hi": "चिल्लाना",
+    "entryId": 24916
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "F",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Note after E",
+    "full": "Note after E"
+   },
+   "sense": {
+    "en": "the musical note F",
+    "hi": "म (स्वर एफ़)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54
+   ],
+   "answer": "UTERUS",
+   "clueCell": 6,
+   "clue": {
+    "kind": "rel",
+    "text": "Womb",
+    "full": "Similar to womb"
+   },
+   "sense": {
+    "en": "a hollow muscular organ in the pelvic cavity of females.",
+    "hi": "बच्चेदानी, गर्भाशय",
+    "entryId": 23826
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "LI",
+   "clueCell": 7,
+   "clue": {
+    "kind": "abbr",
+    "text": "Lithium symbol",
+    "full": "Lithium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of lithium",
+    "hi": "लिथियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "PLAYFUL",
+   "clueCell": 8,
+   "clue": {
+    "kind": "rel",
+    "text": "Frisky",
+    "full": "Similar to frisky"
+   },
+   "sense": {
+    "en": "fond of games and amusement; lighthearted.",
+    "hi": "चंचल, खेलकूद वाला",
+    "entryId": 16563
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "RICE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "pic",
+    "img": "1f35a",
+    "full": "Picture: a bowl of white grains"
+   },
+   "sense": {
+    "en": "grains used as food either unpolished or polished.",
+    "hi": "चावल, भात",
+    "entryId": 18652
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "TI",
+   "clueCell": 21,
+   "clue": {
+    "kind": "abbr",
+    "text": "Titanium symbol",
+    "full": "Titanium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of titanium",
+    "hi": "टाइटेनियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29
+   ],
+   "answer": "V",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Victory sign",
+    "full": "Victory sign"
+   },
+   "sense": {
+    "en": "victory sign",
+    "hi": "वी (जीत का निशान)"
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "EVOLVE",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Grow slowly",
+    "full": "Grow slowly"
+   },
+   "sense": {
+    "en": "to develop gradually over time.",
+    "hi": "विकसित होना",
+    "entryId": 7812
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "ENTAIL",
+   "clueCell": 31,
+   "clue": {
+    "kind": "rel",
+    "text": "Imply",
+    "full": "Similar to imply"
+   },
+   "sense": {
+    "en": "to involve something as a necessary part or result.",
+    "hi": "शामिल करना, आवश्यक बनाना",
+    "entryId": 7536
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36
+   ],
+   "answer": "SELL",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Trade for cash",
+    "full": "Trade for cash"
+   },
+   "sense": {
+    "en": "to exchange or deliver something for money.",
+    "hi": "बेचना",
+    "entryId": 19538
+   }
+  },
+  {
+   "id": "a:4:6",
+   "dir": "a",
+   "cells": [
+    38,
+    39
+   ],
+   "answer": "RE",
+   "clueCell": 37,
+   "clue": {
+    "kind": "def",
+    "text": "Note after do",
+    "full": "Note after do"
+   },
+   "sense": {
+    "en": "the musical note RE",
+    "hi": "रे (सरगम)"
+   }
+  },
+  {
+   "id": "d:5:5",
+   "dir": "d",
+   "cells": [
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "RULER",
+   "clueCell": 37,
+   "clue": {
+    "kind": "def",
+    "text": "Line drawer",
+    "full": "Line drawer"
+   },
+   "sense": {
+    "en": "a straight strip used for measuring lengths or drawing lines.",
+    "hi": "फुट, पैमाना",
+    "entryId": 18907
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43
+   ],
+   "answer": "CRY",
+   "clueCell": 40,
+   "clue": {
+    "kind": "gap",
+    "text": "TRY NOT __",
+    "full": "Fill the gap: Try not ___"
+   },
+   "sense": {
+    "en": "to shed tears because of sadness or pain.",
+    "hi": "रोना",
+    "entryId": 5356
+   }
+  },
+  {
+   "id": "a:5:5",
+   "dir": "a",
+   "cells": [
+    45,
+    46,
+    47
+   ],
+   "answer": "RUN",
+   "clueCell": 44,
+   "clue": {
+    "kind": "def",
+    "text": "Move fast",
+    "full": "Move fast"
+   },
+   "sense": {
+    "en": "to move fast by using one's feet, with one foot off the ground.",
+    "hi": "दौड़ना",
+    "entryId": 18920
+   }
+  },
+  {
+   "id": "d:6:4",
+   "dir": "d",
+   "cells": [
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "RASH",
+   "clueCell": 44,
+   "clue": {
+    "kind": "def",
+    "text": "Skin spots",
+    "full": "Skin spots"
+   },
+   "sense": {
+    "en": "any red eruption of the skin.",
+    "hi": "चकत्ते, रैश",
+    "entryId": 17800
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49
+   ],
+   "answer": "R",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after Q",
+    "full": "Letter after Q"
+   },
+   "sense": {
+    "en": "the letter R",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:6:3",
+   "dir": "a",
+   "cells": [
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "TRUST",
+   "clueCell": 50,
+   "clue": {
+    "kind": "rel",
+    "text": "Rely",
+    "full": "Similar to rely"
+   },
+   "sense": {
+    "en": "to have confidence or faith in.",
+    "hi": "भरोसा करना, विश्वास करना",
+    "entryId": 22974
+   }
+  },
+  {
+   "id": "d:7:2",
+   "dir": "d",
+   "cells": [
+    58,
+    66,
+    74
+   ],
+   "answer": "DEN",
+   "clueCell": 50,
+   "clue": {
+    "kind": "rel",
+    "text": "Lair",
+    "full": "Similar to lair"
+   },
+   "sense": {
+    "en": "the home or lair of a wild animal.",
+    "hi": "मांद, गुफा",
+    "entryId": 5927
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60,
+    61
+   ],
+   "answer": "IDEAL",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Most fit",
+    "full": "Most fit"
+   },
+   "sense": {
+    "en": "satisfying one's conception of what is perfect; most suitable.",
+    "hi": "आदर्श, उत्तम",
+    "entryId": 11070
+   }
+  },
+  {
+   "id": "a:7:7",
+   "dir": "a",
+   "cells": [
+    63
+   ],
+   "answer": "A",
+   "clueCell": 62,
+   "clue": {
+    "kind": "def",
+    "text": "First letter",
+    "full": "First letter"
+   },
+   "sense": {
+    "en": "the letter A",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:8:6",
+   "dir": "d",
+   "cells": [
+    70,
+    78
+   ],
+   "answer": "MA",
+   "clueCell": 62,
+   "clue": {
+    "kind": "abbr",
+    "text": "Mum",
+    "full": "Mum"
+   },
+   "sense": {
+    "en": "mum",
+    "hi": "माँ"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "BE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "SEMI",
+   "clueCell": 67,
+   "clue": {
+    "kind": "gap",
+    "text": "DRIVE A __",
+    "full": "Fill the gap: Drive a ___"
+   },
+   "sense": {
+    "en": "a truck consisting of a tractor and trailer together.",
+    "hi": "बड़ा ट्रक, ट्रेलर",
+    "entryId": 19548
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "T",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “tea”",
+    "full": "Sounds like “tea”"
+   },
+   "sense": {
+    "en": "the letter T, which sounds like “tea”",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ENTHRAL",
+   "clueCell": 72,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ FANS",
+    "full": "Fill the gap: To ___ fans"
+   },
+   "sense": {
+    "en": "to hold spellbound and deeply fascinate someone.",
+    "hi": "मंत्रमुग्ध करना",
+    "entryId": 7547
+   }
+  }
+ ]
+}

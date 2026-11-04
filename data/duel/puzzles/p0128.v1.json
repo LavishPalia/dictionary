@@ -1,0 +1,723 @@
+{
+ "id": "p0128",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "A",
+  "10": "B",
+  "11": "S",
+  "12": "O",
+  "13": "L",
+  "14": "V",
+  "15": "E",
+  "17": "S",
+  "18": "E",
+  "19": "E",
+  "21": "O",
+  "22": "I",
+  "23": "L",
+  "25": "T",
+  "27": "T",
+  "28": "R",
+  "29": "U",
+  "30": "N",
+  "31": "K",
+  "33": "R",
+  "34": "E",
+  "35": "T",
+  "36": "E",
+  "37": "S",
+  "38": "T",
+  "41": "O",
+  "43": "L",
+  "44": "O",
+  "45": "Y",
+  "46": "A",
+  "47": "L",
+  "49": "D",
+  "50": "E",
+  "51": "E",
+  "52": "R",
+  "54": "G",
+  "55": "O",
+  "57": "O",
+  "58": "X",
+  "60": "D",
+  "61": "E",
+  "62": "E",
+  "63": "D",
+  "65": "M",
+  "66": "A",
+  "67": "K",
+  "68": "E",
+  "69": "R",
+  "71": "G",
+  "73": "E",
+  "74": "M",
+  "75": "B",
+  "76": "R",
+  "77": "A",
+  "78": "C",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  20,
+  24,
+  26,
+  32,
+  39,
+  40,
+  42,
+  48,
+  53,
+  56,
+  59,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  9,
+  38,
+  79
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "ASTRODOME",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Glass roof",
+    "full": "Glass roof"
+   },
+   "sense": {
+    "en": "a clear dome on an aircraft for viewing stars to navigate.",
+    "hi": "आकाशीय गुंबद",
+    "entryId": 1334
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18
+   ],
+   "answer": "BE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ OR NOT",
+    "full": "Fill the gap: To ___ or not"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51
+   ],
+   "answer": "SETTLE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "rel",
+    "text": "Resolve",
+    "full": "Similar to resolve"
+   },
+   "sense": {
+    "en": "to resolve a problem or dispute.",
+    "hi": "तय करना, सुलझाना",
+    "entryId": 19658
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12
+   ],
+   "answer": "O",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Ring shape",
+    "full": "Ring shape"
+   },
+   "sense": {
+    "en": "ring shape",
+    "hi": "ओ (गोल आकार)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45
+   ],
+   "answer": "LOUSY",
+   "clueCell": 5,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of good",
+    "full": "Opposite of good"
+   },
+   "sense": {
+    "en": "very bad or poor in quality.",
+    "hi": "घटिया, खराब",
+    "entryId": 13228
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54,
+    62
+   ],
+   "answer": "VINTAGE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Classic old",
+    "full": "Classic old"
+   },
+   "sense": {
+    "en": "denoting something from the past of high quality and classic character.",
+    "hi": "पुरातन, विंटेज, उत्कृष्ट कालखंड का",
+    "entryId": 24100
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31
+   ],
+   "answer": "ELK",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Big deer",
+    "full": "Big deer"
+   },
+   "sense": {
+    "en": "a large deer found in northern forests.",
+    "hi": "एक प्रकार का बड़ा हिरण",
+    "entryId": 7280
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "ABSOLVE",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "I __ YOU.",
+    "full": "Fill the gap: I ___ you."
+   },
+   "sense": {
+    "en": "to declare someone free from guilt or responsibility.",
+    "hi": "मुक्त करना, दोषमुक्त करना",
+    "entryId": 77
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19
+   ],
+   "answer": "SEE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Observe",
+    "full": "Similar to observe"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "a:2:5",
+   "dir": "a",
+   "cells": [
+    21,
+    22,
+    23
+   ],
+   "answer": "OIL",
+   "clueCell": 20,
+   "clue": {
+    "kind": "gap",
+    "text": "ADD SOME __",
+    "full": "Fill the gap: Add some ___"
+   },
+   "sense": {
+    "en": "a viscous liquid derived from petroleum or plants.",
+    "hi": "तेल, तैल",
+    "entryId": 15240
+   }
+  },
+  {
+   "id": "d:3:4",
+   "dir": "d",
+   "cells": [
+    28,
+    36,
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "REORDER",
+   "clueCell": 20,
+   "clue": {
+    "kind": "def",
+    "text": "Buy again",
+    "full": "Buy again"
+   },
+   "sense": {
+    "en": "an additional order for goods previously bought.",
+    "hi": "पुनः ऑर्डर, दोबारा मंगाना",
+    "entryId": 18319
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25
+   ],
+   "answer": "T",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “tea”",
+    "full": "Sounds like “tea”"
+   },
+   "sense": {
+    "en": "the letter T, which sounds like “tea”",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:3:3",
+   "dir": "a",
+   "cells": [
+    27,
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "TRUNK",
+   "clueCell": 26,
+   "clue": {
+    "kind": "rel",
+    "text": "Stem",
+    "full": "Similar to stem"
+   },
+   "sense": {
+    "en": "the main woody stem of a tree.",
+    "hi": "तना, पेड़ का तना",
+    "entryId": 22972
+   }
+  },
+  {
+   "id": "d:4:2",
+   "dir": "d",
+   "cells": [
+    34
+   ],
+   "answer": "E",
+   "clueCell": 26,
+   "clue": {
+    "kind": "def",
+    "text": "Vitamin in nuts",
+    "full": "Vitamin in nuts"
+   },
+   "sense": {
+    "en": "vitamin in nuts",
+    "hi": "ई (विटामिन)"
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37,
+    38
+   ],
+   "answer": "RETEST",
+   "clueCell": 32,
+   "clue": {
+    "kind": "gap",
+    "text": "WE NEED TO __ THE BLOOD",
+    "full": "Fill the gap: We need to ___ the blood"
+   },
+   "sense": {
+    "en": "to perform an examination or check again.",
+    "hi": "पुनः परीक्षण करना",
+    "entryId": 18534
+   }
+  },
+  {
+   "id": "d:5:7",
+   "dir": "d",
+   "cells": [
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "LODGE",
+   "clueCell": 39,
+   "clue": {
+    "kind": "def",
+    "text": "Small inn",
+    "full": "Small inn"
+   },
+   "sense": {
+    "en": "a small house at the gates of a park or large estate.",
+    "hi": "लॉज, विश्रामगृह",
+    "entryId": 13136
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41
+   ],
+   "answer": "O",
+   "clueCell": 40,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Oscar",
+    "full": "Radio code Oscar"
+   },
+   "sense": {
+    "en": "the letter O (radio alphabet: Oscar)",
+    "hi": "ओ (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:5:3",
+   "dir": "a",
+   "cells": [
+    43,
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "LOYAL",
+   "clueCell": 42,
+   "clue": {
+    "kind": "def",
+    "text": "Faithful",
+    "full": "Faithful"
+   },
+   "sense": {
+    "en": "steadfast in allegiance or duty.",
+    "hi": "वफादार, निष्ठावान",
+    "entryId": 13256
+   }
+  },
+  {
+   "id": "d:6:2",
+   "dir": "d",
+   "cells": [
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "EXAM",
+   "clueCell": 42,
+   "clue": {
+    "kind": "def",
+    "text": "Test",
+    "full": "Test"
+   },
+   "sense": {
+    "en": "a formal test of a person's knowledge or proficiency.",
+    "hi": "परीक्षा, इम्तिहान",
+    "entryId": 7825
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52
+   ],
+   "answer": "DEER",
+   "clueCell": 48,
+   "clue": {
+    "kind": "pic",
+    "img": "1f98c",
+    "full": "Picture: an animal with antlers"
+   },
+   "sense": {
+    "en": "a hooved grazing animal, the males of which usually have antlers.",
+    "hi": "हिरण",
+    "entryId": 5772
+   }
+  },
+  {
+   "id": "a:6:6",
+   "dir": "a",
+   "cells": [
+    54,
+    55
+   ],
+   "answer": "GO",
+   "clueCell": 53,
+   "clue": {
+    "kind": "def",
+    "text": "Travel",
+    "full": "Travel"
+   },
+   "sense": {
+    "en": "to move or travel from one place to another.",
+    "hi": "जाना",
+    "entryId": 9601
+   }
+  },
+  {
+   "id": "d:7:5",
+   "dir": "d",
+   "cells": [
+    61,
+    69,
+    77
+   ],
+   "answer": "ERA",
+   "clueCell": 53,
+   "clue": {
+    "kind": "def",
+    "text": "Time period",
+    "full": "Time period"
+   },
+   "sense": {
+    "en": "a period marked by distinctive character or reckoned from a fixed point.",
+    "hi": "युग, काल",
+    "entryId": 7652
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58
+   ],
+   "answer": "OX",
+   "clueCell": 56,
+   "clue": {
+    "kind": "pic",
+    "img": "1f402",
+    "full": "Picture: a brown farm beast with horns"
+   },
+   "sense": {
+    "en": "bull",
+    "hi": "बैल"
+   }
+  },
+  {
+   "id": "a:7:4",
+   "dir": "a",
+   "cells": [
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "DEED",
+   "clueCell": 59,
+   "clue": {
+    "kind": "def",
+    "text": "Action",
+    "full": "Action"
+   },
+   "sense": {
+    "en": "an action that is performed intentionally or consciously.",
+    "hi": "कर्म, कार्य",
+    "entryId": 5767
+   }
+  },
+  {
+   "id": "d:8:3",
+   "dir": "d",
+   "cells": [
+    67,
+    75
+   ],
+   "answer": "KB",
+   "clueCell": 59,
+   "clue": {
+    "kind": "abbr",
+    "text": "Kilobyte",
+    "full": "Kilobyte"
+   },
+   "sense": {
+    "en": "kilobyte (unit)",
+    "hi": "किलोबाइट"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "MAKER",
+   "clueCell": 64,
+   "clue": {
+    "kind": "rel",
+    "text": "Builder",
+    "full": "Similar to builder"
+   },
+   "sense": {
+    "en": "a person or thing that makes or produces something.",
+    "hi": "निर्माता, रचयिता",
+    "entryId": 13438
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "G",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Note after F",
+    "full": "Note after F"
+   },
+   "sense": {
+    "en": "the musical note G",
+    "hi": "प (स्वर जी)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "C",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “sea”",
+    "full": "Sounds like “sea”"
+   },
+   "sense": {
+    "en": "the letter C, which sounds like “sea”",
+    "hi": "सी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "EMBRACE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Warm hug",
+    "full": "Warm hug"
+   },
+   "sense": {
+    "en": "to hold someone closely in your arms with affection.",
+    "hi": "गले लगाना",
+    "entryId": 7338
+   }
+  }
+ ]
+}

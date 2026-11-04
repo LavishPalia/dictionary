@@ -1,0 +1,723 @@
+{
+ "id": "p0059",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "S",
+  "10": "H",
+  "11": "U",
+  "12": "T",
+  "13": "T",
+  "14": "E",
+  "15": "R",
+  "17": "P",
+  "18": "O",
+  "19": "P",
+  "20": "E",
+  "22": "N",
+  "23": "A",
+  "25": "A",
+  "26": "B",
+  "27": "S",
+  "28": "E",
+  "29": "N",
+  "30": "T",
+  "33": "R",
+  "34": "O",
+  "35": "T",
+  "37": "E",
+  "38": "R",
+  "39": "A",
+  "41": "E",
+  "43": "A",
+  "44": "L",
+  "45": "T",
+  "46": "A",
+  "47": "R",
+  "49": "R",
+  "50": "I",
+  "51": "T",
+  "52": "E",
+  "54": "P",
+  "55": "T",
+  "57": "I",
+  "58": "D",
+  "59": "E",
+  "60": "A",
+  "61": "L",
+  "63": "E",
+  "65": "B",
+  "66": "E",
+  "68": "R",
+  "69": "E",
+  "70": "A",
+  "71": "R",
+  "73": "S",
+  "74": "A",
+  "75": "I",
+  "76": "N",
+  "77": "T",
+  "78": "L",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  31,
+  32,
+  36,
+  40,
+  42,
+  48,
+  53,
+  56,
+  62,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  43,
+  76
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "SPARERIBS",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Pork ribs",
+    "full": "Pork ribs"
+   },
+   "sense": {
+    "en": "the rib section of pork, typically cooked with sauce.",
+    "hi": "सूअर की पसलियां",
+    "entryId": 20646
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34
+   ],
+   "answer": "HOBO",
+   "clueCell": 2,
+   "clue": {
+    "kind": "rel",
+    "text": "Tramp",
+    "full": "Similar to tramp"
+   },
+   "sense": {
+    "en": "a homeless wanderer or vagrant.",
+    "hi": "घुमक्कड़, आवारा",
+    "entryId": 10632
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51,
+    59
+   ],
+   "answer": "UPSTATE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "North in a state",
+    "full": "North in a state"
+   },
+   "sense": {
+    "en": "in or toward the northern parts of a state.",
+    "hi": "राज्य के उत्तरी भाग में",
+    "entryId": 23778
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28
+   ],
+   "answer": "TEE",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Golf ball peg",
+    "full": "Golf ball peg"
+   },
+   "sense": {
+    "en": "a short peg put into the ground to hold a golf ball.",
+    "hi": "टी",
+    "entryId": 22092
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "T",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after S",
+    "full": "Letter after S"
+   },
+   "sense": {
+    "en": "the letter T",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54
+   ],
+   "answer": "ENTRAP",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Catch in trap",
+    "full": "Catch in trap"
+   },
+   "sense": {
+    "en": "to catch in a trap or trick into a compromising position.",
+    "hi": "फंसाना, जाल में डालना",
+    "entryId": 7569
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "RA",
+   "clueCell": 7,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radium symbol",
+    "full": "Radium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of radium",
+    "hi": "रेडियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "SHUTTER",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "CLOSE THE __",
+    "full": "Fill the gap: Close the ___"
+   },
+   "sense": {
+    "en": "each of a pair of hinged panels fixed inside or outside a window.",
+    "hi": "खिड़की का पल्ला, शटर",
+    "entryId": 19932
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "POPE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "gap",
+    "text": "THE __ LIVES IN ROME",
+    "full": "Fill the gap: The ___ lives in Rome"
+   },
+   "sense": {
+    "en": "the bishop of rome and supreme leader of the catholic church.",
+    "hi": "पोप",
+    "entryId": 16753
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "NA",
+   "clueCell": 21,
+   "clue": {
+    "kind": "abbr",
+    "text": "Sodium symbol",
+    "full": "Sodium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of sodium",
+    "hi": "सोडियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45
+   ],
+   "answer": "NET",
+   "clueCell": 21,
+   "clue": {
+    "kind": "rel",
+    "text": "Web",
+    "full": "Similar to web"
+   },
+   "sense": {
+    "en": "a piece of open-meshed material used for catching fish.",
+    "hi": "जाल, जालिका",
+    "entryId": 14795
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "ABSENT",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Not here",
+    "full": "Not here"
+   },
+   "sense": {
+    "en": "not being in a specified place.",
+    "hi": "अनुपस्थित, गैरहाज़िर",
+    "entryId": 70
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "ARTERY",
+   "clueCell": 31,
+   "clue": {
+    "kind": "def",
+    "text": "Blood pipe",
+    "full": "Blood pipe"
+   },
+   "sense": {
+    "en": "a blood vessel that carries blood from the heart to the body.",
+    "hi": "धमनी",
+    "entryId": 1201
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35
+   ],
+   "answer": "ROT",
+   "clueCell": 32,
+   "clue": {
+    "kind": "rel",
+    "text": "Spoil",
+    "full": "Similar to spoil"
+   },
+   "sense": {
+    "en": "to break down or decompose naturally.",
+    "hi": "सड़ना, गलना",
+    "entryId": 18828
+   }
+  },
+  {
+   "id": "a:4:5",
+   "dir": "a",
+   "cells": [
+    37,
+    38,
+    39
+   ],
+   "answer": "ERA",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "Time period",
+    "full": "Time period"
+   },
+   "sense": {
+    "en": "a period marked by distinctive character or reckoned from a fixed point.",
+    "hi": "युग, काल",
+    "entryId": 7652
+   }
+  },
+  {
+   "id": "d:5:4",
+   "dir": "d",
+   "cells": [
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "LEARN",
+   "clueCell": 36,
+   "clue": {
+    "kind": "gap",
+    "text": "I WANT TO __",
+    "full": "Fill the gap: I want to ___"
+   },
+   "sense": {
+    "en": "gain or acquire knowledge of or skill in something by study or experience.",
+    "hi": "सीखना, अध्ययन करना",
+    "entryId": 12768
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41
+   ],
+   "answer": "E",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Note after D",
+    "full": "Note after D"
+   },
+   "sense": {
+    "en": "the musical note E",
+    "hi": "ग (स्वर ई)"
+   }
+  },
+  {
+   "id": "a:5:3",
+   "dir": "a",
+   "cells": [
+    43,
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "ALTAR",
+   "clueCell": 42,
+   "clue": {
+    "kind": "def",
+    "text": "Holy table",
+    "full": "Holy table"
+   },
+   "sense": {
+    "en": "a raised structure on which gifts or sacrifices to a god are made.",
+    "hi": "वेदी, पूजा की वेदी",
+    "entryId": 659
+   }
+  },
+  {
+   "id": "d:6:2",
+   "dir": "d",
+   "cells": [
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "IDEA",
+   "clueCell": 42,
+   "clue": {
+    "kind": "def",
+    "text": "A thought",
+    "full": "A thought"
+   },
+   "sense": {
+    "en": "a thought or suggestion as to a possible course of action.",
+    "hi": "विचार, युक्ति",
+    "entryId": 11069
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52
+   ],
+   "answer": "RITE",
+   "clueCell": 48,
+   "clue": {
+    "kind": "gap",
+    "text": "SACRED __",
+    "full": "Fill the gap: Sacred ___"
+   },
+   "sense": {
+    "en": "an established ceremony prescribed by a religion.",
+    "hi": "संस्कार, रीति, प्रथा",
+    "entryId": 18735
+   }
+  },
+  {
+   "id": "a:6:6",
+   "dir": "a",
+   "cells": [
+    54,
+    55
+   ],
+   "answer": "PT",
+   "clueCell": 53,
+   "clue": {
+    "kind": "abbr",
+    "text": "Pint",
+    "full": "Pint"
+   },
+   "sense": {
+    "en": "pint",
+    "hi": "पिंट"
+   }
+  },
+  {
+   "id": "d:7:5",
+   "dir": "d",
+   "cells": [
+    61,
+    69,
+    77
+   ],
+   "answer": "LET",
+   "clueCell": 53,
+   "clue": {
+    "kind": "rel",
+    "text": "Permit",
+    "full": "Similar to permit"
+   },
+   "sense": {
+    "en": "to allow or permit someone to do something.",
+    "hi": "देना, अनुमति देना",
+    "entryId": 12870
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60,
+    61
+   ],
+   "answer": "IDEAL",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Most fit",
+    "full": "Most fit"
+   },
+   "sense": {
+    "en": "satisfying one's conception of what is perfect; most suitable.",
+    "hi": "आदर्श, उत्तम",
+    "entryId": 11070
+   }
+  },
+  {
+   "id": "a:7:7",
+   "dir": "a",
+   "cells": [
+    63
+   ],
+   "answer": "E",
+   "clueCell": 62,
+   "clue": {
+    "kind": "def",
+    "text": "Note after D",
+    "full": "Note after D"
+   },
+   "sense": {
+    "en": "the musical note E",
+    "hi": "ग (स्वर ई)"
+   }
+  },
+  {
+   "id": "d:8:6",
+   "dir": "d",
+   "cells": [
+    70,
+    78
+   ],
+   "answer": "AL",
+   "clueCell": 62,
+   "clue": {
+    "kind": "abbr",
+    "text": "Aluminium symbol",
+    "full": "Aluminium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of aluminium",
+    "hi": "एल्यूमिनियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "BE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "REAR",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Back part",
+    "full": "Back part"
+   },
+   "sense": {
+    "en": "the back part of something.",
+    "hi": "पिछला भाग, पीछे",
+    "entryId": 17892
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "I",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “eye”",
+    "full": "Sounds like “eye”"
+   },
+   "sense": {
+    "en": "the letter I, which sounds like “eye”",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "SAINTLY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of evil",
+    "full": "Opposite of evil"
+   },
+   "sense": {
+    "en": "having the holy or virtuous qualities of a saint.",
+    "hi": "संत जैसा, पवित्र",
+    "entryId": 19005
+   }
+  }
+ ]
+}

@@ -1,0 +1,725 @@
+{
+ "id": "p0036",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "P",
+  "10": "R",
+  "11": "A",
+  "12": "I",
+  "13": "R",
+  "14": "I",
+  "15": "E",
+  "17": "R",
+  "18": "I",
+  "19": "P",
+  "21": "A",
+  "22": "N",
+  "23": "D",
+  "25": "E",
+  "26": "S",
+  "27": "P",
+  "28": "R",
+  "29": "I",
+  "30": "T",
+  "33": "S",
+  "34": "E",
+  "35": "E",
+  "37": "D",
+  "38": "O",
+  "39": "G",
+  "41": "C",
+  "42": "R",
+  "43": "A",
+  "44": "T",
+  "45": "E",
+  "47": "E",
+  "49": "R",
+  "51": "S",
+  "52": "I",
+  "53": "R",
+  "54": "E",
+  "55": "N",
+  "57": "I",
+  "58": "D",
+  "59": "E",
+  "60": "A",
+  "62": "P",
+  "63": "T",
+  "65": "B",
+  "66": "E",
+  "68": "R",
+  "69": "A",
+  "70": "I",
+  "71": "L",
+  "73": "E",
+  "74": "N",
+  "75": "H",
+  "76": "A",
+  "77": "N",
+  "78": "C",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  20,
+  24,
+  31,
+  32,
+  36,
+  40,
+  46,
+  48,
+  50,
+  56,
+  61,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  55,
+  76
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "PRESCRIBE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Order medicine",
+    "full": "Order medicine"
+   },
+   "sense": {
+    "en": "to advise and authorize the use of a medicine or treatment for a patient.",
+    "hi": "दवा लिखना, नुस्खा लिखना",
+    "entryId": 17031
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42
+   ],
+   "answer": "RISER",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Step part",
+    "full": "Step part"
+   },
+   "sense": {
+    "en": "the vertical part of a stair step.",
+    "hi": "सीढ़ी का खड़ा भाग",
+    "entryId": 18729
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51,
+    59
+   ],
+   "answer": "APPEASE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "gap",
+    "text": "TRY TO __ HIM",
+    "full": "Fill the gap: Try to ___ him"
+   },
+   "sense": {
+    "en": "to satisfy someone by acceding to their demands.",
+    "hi": "शांत करना, मनाना",
+    "entryId": 1012
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12
+   ],
+   "answer": "I",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “eye”",
+    "full": "Sounds like “eye”"
+   },
+   "sense": {
+    "en": "the letter I, which sounds like “eye”",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45,
+    53
+   ],
+   "answer": "RAIDER",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Plunder thief",
+    "full": "Plunder thief"
+   },
+   "sense": {
+    "en": "someone who takes spoils or plunder.",
+    "hi": "धावा बोलने वाला, लुटेरा",
+    "entryId": 17724
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38
+   ],
+   "answer": "INTO",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Going inside",
+    "full": "Going inside"
+   },
+   "sense": {
+    "en": "expressing movement or action with the result that something enters.",
+    "hi": "में, के भीतर",
+    "entryId": 11954
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "ED",
+   "clueCell": 7,
+   "clue": {
+    "kind": "abbr",
+    "text": "Editor",
+    "full": "Editor"
+   },
+   "sense": {
+    "en": "editor",
+    "hi": "संपादक"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "PRAIRIE",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Open grass",
+    "full": "Open grass"
+   },
+   "sense": {
+    "en": "a large open area of grassland.",
+    "hi": "घास का मैदान, घासस्थल",
+    "entryId": 16906
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19
+   ],
+   "answer": "RIP",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Tear",
+    "full": "Similar to tear"
+   },
+   "sense": {
+    "en": "to tear or be torn violently.",
+    "hi": "फाड़ना, चीरना",
+    "entryId": 18719
+   }
+  },
+  {
+   "id": "a:2:5",
+   "dir": "a",
+   "cells": [
+    21,
+    22,
+    23
+   ],
+   "answer": "AND",
+   "clueCell": 20,
+   "clue": {
+    "kind": "picmath",
+    "img": "270b",
+    "math": "−h",
+    "full": "Picture maths: an open raised one with five fingers, minus H"
+   },
+   "sense": {
+    "en": "used to connect words of the same part of speech, clauses, or sentences.",
+    "hi": "और, तथा",
+    "entryId": 812
+   }
+  },
+  {
+   "id": "d:3:4",
+   "dir": "d",
+   "cells": [
+    28
+   ],
+   "answer": "R",
+   "clueCell": 20,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after Q",
+    "full": "Letter after Q"
+   },
+   "sense": {
+    "en": "the letter R",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "ESPRIT",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Mental spark",
+    "full": "Mental spark"
+   },
+   "sense": {
+    "en": "liveliness of mind or spirit.",
+    "hi": "उत्साह,जोश",
+    "entryId": 7711
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "GENTLE",
+   "clueCell": 31,
+   "clue": {
+    "kind": "rel",
+    "text": "Mild",
+    "full": "Similar to mild"
+   },
+   "sense": {
+    "en": "having or showing a mild, kind, or tender temperament.",
+    "hi": "सज्जन, कोमल, नम्र",
+    "entryId": 9393
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35
+   ],
+   "answer": "SEE",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Perceive by eye",
+    "full": "Perceive by eye"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "a:4:5",
+   "dir": "a",
+   "cells": [
+    37,
+    38,
+    39
+   ],
+   "answer": "DOG",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "Barking pet",
+    "full": "Barking pet"
+   },
+   "sense": {
+    "en": "a domesticated carnivorous mammal that typically barks.",
+    "hi": "कुत्ता",
+    "entryId": 6681
+   }
+  },
+  {
+   "id": "d:5:4",
+   "dir": "d",
+   "cells": [
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "TIARA",
+   "clueCell": 36,
+   "clue": {
+    "kind": "def",
+    "text": "Jeweled crown",
+    "full": "Jeweled crown"
+   },
+   "sense": {
+    "en": "a jeweled headdress worn by women on formal occasions.",
+    "hi": "ताज, मुकुट",
+    "entryId": 22433
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "answer": "CRATE",
+   "clueCell": 40,
+   "clue": {
+    "kind": "rel",
+    "text": "Carton",
+    "full": "Similar to carton"
+   },
+   "sense": {
+    "en": "a rugged box usually made of wood, used for shipping.",
+    "hi": "लकड़ी का बक्सा, क्रेट",
+    "entryId": 5174
+   }
+  },
+  {
+   "id": "a:5:7",
+   "dir": "a",
+   "cells": [
+    47
+   ],
+   "answer": "E",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Vitamin in nuts",
+    "full": "Vitamin in nuts"
+   },
+   "sense": {
+    "en": "vitamin in nuts",
+    "hi": "ई (विटामिन)"
+   }
+  },
+  {
+   "id": "d:6:6",
+   "dir": "d",
+   "cells": [
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "EPIC",
+   "clueCell": 46,
+   "clue": {
+    "kind": "rel",
+    "text": "Heroic",
+    "full": "Similar to heroic"
+   },
+   "sense": {
+    "en": "very imposing or impressive, surpassing the ordinary in scale.",
+    "hi": "महाकाव्य जैसा, विशाल",
+    "entryId": 7602
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49
+   ],
+   "answer": "R",
+   "clueCell": 48,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Romeo",
+    "full": "Radio code Romeo"
+   },
+   "sense": {
+    "en": "the letter R (radio alphabet: Romeo)",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:6:3",
+   "dir": "a",
+   "cells": [
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "SIREN",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Alarm sounder",
+    "full": "Alarm sounder"
+   },
+   "sense": {
+    "en": "a device that makes a loud warning noise.",
+    "hi": "साइरन",
+    "entryId": 20078
+   }
+  },
+  {
+   "id": "d:7:2",
+   "dir": "d",
+   "cells": [
+    58,
+    66,
+    74
+   ],
+   "answer": "DEN",
+   "clueCell": 50,
+   "clue": {
+    "kind": "gap",
+    "text": "BEAR IN A __",
+    "full": "Fill the gap: Bear in a ___"
+   },
+   "sense": {
+    "en": "the home or lair of a wild animal.",
+    "hi": "मांद, गुफा",
+    "entryId": 5927
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60
+   ],
+   "answer": "IDEA",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "A thought",
+    "full": "A thought"
+   },
+   "sense": {
+    "en": "a thought or suggestion as to a possible course of action.",
+    "hi": "विचार, युक्ति",
+    "entryId": 11069
+   }
+  },
+  {
+   "id": "a:7:6",
+   "dir": "a",
+   "cells": [
+    62,
+    63
+   ],
+   "answer": "PT",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Platinum symbol",
+    "full": "Platinum symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of platinum",
+    "hi": "प्लैटिनम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:8:5",
+   "dir": "d",
+   "cells": [
+    69,
+    77
+   ],
+   "answer": "AN",
+   "clueCell": 61,
+   "clue": {
+    "kind": "gap",
+    "text": "EAT __ APPLE",
+    "full": "Fill the gap: Eat ___ apple"
+   },
+   "sense": {
+    "en": "used before a vowel sound to denote a single unspecific thing.",
+    "hi": "एक, कोई",
+    "entryId": 774
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "BE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "RAIL",
+   "clueCell": 67,
+   "clue": {
+    "kind": "rel",
+    "text": "Track",
+    "full": "Similar to track"
+   },
+   "sense": {
+    "en": "a bar or series of bars fixed on upright posts as a barrier; a railway.",
+    "hi": "कटघरा, रेल की पटरी",
+    "entryId": 17726
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "H",
+   "clueCell": 67,
+   "clue": {
+    "kind": "abbr",
+    "text": "Hydrogen symbol",
+    "full": "Hydrogen symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of hydrogen",
+    "hi": "हाइड्रोजन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ENHANCE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "gap",
+    "text": "__ THE VIEW",
+    "full": "Fill the gap: ___ the view"
+   },
+   "sense": {
+    "en": "to increase or improve the quality or value.",
+    "hi": "बढ़ाना, निखारना",
+    "entryId": 7489
+   }
+  }
+ ]
+}

@@ -1,0 +1,723 @@
+{
+ "id": "p0137",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "S",
+  "10": "U",
+  "11": "S",
+  "12": "P",
+  "13": "E",
+  "14": "C",
+  "15": "T",
+  "17": "U",
+  "18": "S",
+  "19": "E",
+  "20": "R",
+  "22": "L",
+  "23": "I",
+  "25": "B",
+  "26": "U",
+  "27": "R",
+  "28": "E",
+  "29": "A",
+  "30": "U",
+  "33": "S",
+  "34": "A",
+  "35": "I",
+  "36": "D",
+  "38": "B",
+  "39": "E",
+  "41": "C",
+  "42": "L",
+  "43": "E",
+  "44": "A",
+  "45": "R",
+  "47": "U",
+  "49": "R",
+  "51": "S",
+  "52": "T",
+  "53": "O",
+  "54": "O",
+  "55": "L",
+  "57": "I",
+  "58": "T",
+  "60": "E",
+  "61": "U",
+  "62": "R",
+  "63": "O",
+  "65": "B",
+  "66": "E",
+  "67": "D",
+  "69": "G",
+  "70": "A",
+  "71": "G",
+  "73": "E",
+  "74": "A",
+  "75": "R",
+  "76": "T",
+  "77": "H",
+  "78": "L",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  31,
+  32,
+  37,
+  40,
+  46,
+  48,
+  50,
+  56,
+  59,
+  64,
+  68,
+  72
+ ],
+ "given": [
+  9,
+  52,
+  79
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "SUBSCRIBE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Support idea",
+    "full": "Support idea"
+   },
+   "sense": {
+    "en": "to agree with or support an idea or opinion.",
+    "hi": "सहमति जताना, समर्थन करना",
+    "entryId": 21430
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42
+   ],
+   "answer": "USUAL",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Normal",
+    "full": "Normal"
+   },
+   "sense": {
+    "en": "occurring or encountered frequently in accordance with regular practice.",
+    "hi": "सामान्य, आम",
+    "entryId": 23819
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43,
+    51
+   ],
+   "answer": "SERIES",
+   "clueCell": 3,
+   "clue": {
+    "kind": "rel",
+    "text": "Chain",
+    "full": "Similar to chain"
+   },
+   "sense": {
+    "en": "similar things placed in order or happening one after another.",
+    "hi": "सिरीज़, श्रृंखला",
+    "entryId": 19630
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44,
+    52,
+    60
+   ],
+   "answer": "PREDATE",
+   "clueCell": 4,
+   "clue": {
+    "kind": "rel",
+    "text": "Precede",
+    "full": "Similar to precede"
+   },
+   "sense": {
+    "en": "to be earlier in time or go back further.",
+    "hi": "पहले होना",
+    "entryId": 16949
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "E",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after D",
+    "full": "Letter after D"
+   },
+   "sense": {
+    "en": "the letter E",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38
+   ],
+   "answer": "CLUB",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Group of people",
+    "full": "Group of people"
+   },
+   "sense": {
+    "en": "an organization of people with a common interest or purpose.",
+    "hi": "क्लब, सभा",
+    "entryId": 4085
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "TI",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Note before do",
+    "full": "Note before do"
+   },
+   "sense": {
+    "en": "the musical note TI",
+    "hi": "नि (सरगम)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "SUSPECT",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Doubted person",
+    "full": "Doubted person"
+   },
+   "sense": {
+    "en": "someone who is under suspicion.",
+    "hi": "संदेही, मुल्जिम",
+    "entryId": 21713
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "USER",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Client",
+    "full": "Client"
+   },
+   "sense": {
+    "en": "a person who makes use of a thing or service.",
+    "hi": "उपयोगकर्ता, प्रयोक्ता",
+    "entryId": 23817
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "LI",
+   "clueCell": 21,
+   "clue": {
+    "kind": "abbr",
+    "text": "Lithium symbol",
+    "full": "Lithium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of lithium",
+    "hi": "लिथियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29
+   ],
+   "answer": "A",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "First letter",
+    "full": "First letter"
+   },
+   "sense": {
+    "en": "the letter A",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "BUREAU",
+   "clueCell": 24,
+   "clue": {
+    "kind": "rel",
+    "text": "Agency",
+    "full": "Similar to agency"
+   },
+   "sense": {
+    "en": "a government department or office.",
+    "hi": "ब्यूरो, कार्यालय, विभाग",
+    "entryId": 2949
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "EULOGY",
+   "clueCell": 31,
+   "clue": {
+    "kind": "def",
+    "text": "Praise for dead",
+    "full": "Praise for dead"
+   },
+   "sense": {
+    "en": "a speech or writing in praise of someone who has recently died.",
+    "hi": "प्रशंसा, गुणगान",
+    "entryId": 7756
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36
+   ],
+   "answer": "SAID",
+   "clueCell": 32,
+   "clue": {
+    "kind": "rel",
+    "text": "Same",
+    "full": "Similar to same"
+   },
+   "sense": {
+    "en": "being the one previously mentioned or spoken of.",
+    "hi": "उक्त, पूर्वोक्त",
+    "entryId": 18997
+   }
+  },
+  {
+   "id": "a:4:6",
+   "dir": "a",
+   "cells": [
+    38,
+    39
+   ],
+   "answer": "BE",
+   "clueCell": 37,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:5:5",
+   "dir": "d",
+   "cells": [
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "ROUGH",
+   "clueCell": 37,
+   "clue": {
+    "kind": "def",
+    "text": "Not smooth",
+    "full": "Not smooth"
+   },
+   "sense": {
+    "en": "having or caused by an irregular surface.",
+    "hi": "खुरदरा, ऊबड़-खाबड़",
+    "entryId": 18847
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "answer": "CLEAR",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "See through",
+    "full": "See through"
+   },
+   "sense": {
+    "en": "easy to perceive, understand, or interpret; transparent.",
+    "hi": "स्पष्ट, साफ़",
+    "entryId": 3982
+   }
+  },
+  {
+   "id": "a:5:7",
+   "dir": "a",
+   "cells": [
+    47
+   ],
+   "answer": "U",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Bend shape",
+    "full": "Bend shape"
+   },
+   "sense": {
+    "en": "bend shape",
+    "hi": "यू (मोड़ का आकार)"
+   }
+  },
+  {
+   "id": "d:6:6",
+   "dir": "d",
+   "cells": [
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "ORAL",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Spoken word",
+    "full": "Spoken word"
+   },
+   "sense": {
+    "en": "of or relating to the mouth.",
+    "hi": "मौखिक, मुख का",
+    "entryId": 15355
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49
+   ],
+   "answer": "R",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “are”",
+    "full": "Sounds like “are”"
+   },
+   "sense": {
+    "en": "the letter R, which sounds like “are”",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:6:3",
+   "dir": "a",
+   "cells": [
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "STOOL",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Seat",
+    "full": "Seat"
+   },
+   "sense": {
+    "en": "a simple seat without a back or arms.",
+    "hi": "स्टूल, चारपाई",
+    "entryId": 21188
+   }
+  },
+  {
+   "id": "d:7:2",
+   "dir": "d",
+   "cells": [
+    58,
+    66,
+    74
+   ],
+   "answer": "TEA",
+   "clueCell": 50,
+   "clue": {
+    "kind": "gap",
+    "text": "DRINK SOME __",
+    "full": "Fill the gap: Drink some ___"
+   },
+   "sense": {
+    "en": "a hot drink made by infusing dried, crushed tea leaves in boiling water.",
+    "hi": "चाय",
+    "entryId": 22049
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58
+   ],
+   "answer": "IT",
+   "clueCell": 56,
+   "clue": {
+    "kind": "gap",
+    "text": "JUST DO __",
+    "full": "Fill the gap: Just do ___"
+   },
+   "sense": {
+    "en": "used to refer to an object, animal, or situation.",
+    "hi": "यह, वह",
+    "entryId": 12118
+   }
+  },
+  {
+   "id": "a:7:4",
+   "dir": "a",
+   "cells": [
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "EURO",
+   "clueCell": 59,
+   "clue": {
+    "kind": "def",
+    "text": "EU coin",
+    "full": "EU coin"
+   },
+   "sense": {
+    "en": "the official currency of many european union countries.",
+    "hi": "यूरो",
+    "entryId": 7762
+   }
+  },
+  {
+   "id": "d:8:3",
+   "dir": "d",
+   "cells": [
+    67,
+    75
+   ],
+   "answer": "DR",
+   "clueCell": 59,
+   "clue": {
+    "kind": "abbr",
+    "text": "Doctor",
+    "full": "Doctor"
+   },
+   "sense": {
+    "en": "doctor",
+    "hi": "डॉक्टर"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67
+   ],
+   "answer": "BED",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Place to sleep",
+    "full": "Place to sleep"
+   },
+   "sense": {
+    "en": "a piece of furniture that provides a place to sleep.",
+    "hi": "बिस्तर, पलंग",
+    "entryId": 1911
+   }
+  },
+  {
+   "id": "a:8:5",
+   "dir": "a",
+   "cells": [
+    69,
+    70,
+    71
+   ],
+   "answer": "GAG",
+   "clueCell": 68,
+   "clue": {
+    "kind": "rel",
+    "text": "Restraint",
+    "full": "Similar to restraint"
+   },
+   "sense": {
+    "en": "something put in or over the mouth to stop someone from speaking.",
+    "hi": "मुँह बंद करने की पट्टी",
+    "entryId": 9212
+   }
+  },
+  {
+   "id": "d:9:4",
+   "dir": "d",
+   "cells": [
+    76
+   ],
+   "answer": "T",
+   "clueCell": 68,
+   "clue": {
+    "kind": "abbr",
+    "text": "Tonne",
+    "full": "Tonne"
+   },
+   "sense": {
+    "en": "tonne (unit)",
+    "hi": "टन"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "EARTHLY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "gap",
+    "text": "NO __ IDEA",
+    "full": "Fill the gap: No ___ idea"
+   },
+   "sense": {
+    "en": "relating to or characteristic of this earth, as opposed to heaven.",
+    "hi": "सांसारिक, पार्थिव",
+    "entryId": 7076
+   }
+  }
+ ]
+}

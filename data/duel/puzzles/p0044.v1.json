@@ -1,0 +1,738 @@
+{
+ "id": "p0044",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "A",
+  "10": "S",
+  "11": "C",
+  "12": "R",
+  "13": "I",
+  "14": "B",
+  "15": "E",
+  "17": "S",
+  "18": "P",
+  "19": "A",
+  "21": "T",
+  "22": "E",
+  "23": "N",
+  "25": "P",
+  "26": "A",
+  "27": "N",
+  "28": "T",
+  "29": "S",
+  "31": "D",
+  "33": "A",
+  "34": "C",
+  "36": "R",
+  "37": "E",
+  "38": "D",
+  "39": "O",
+  "41": "R",
+  "42": "E",
+  "43": "G",
+  "44": "A",
+  "45": "L",
+  "47": "C",
+  "49": "A",
+  "51": "L",
+  "52": "I",
+  "53": "F",
+  "54": "E",
+  "55": "R",
+  "57": "G",
+  "58": "O",
+  "59": "A",
+  "60": "L",
+  "62": "V",
+  "63": "I",
+  "65": "U",
+  "67": "R",
+  "68": "E",
+  "69": "S",
+  "70": "I",
+  "71": "N",
+  "73": "S",
+  "74": "T",
+  "75": "E",
+  "76": "R",
+  "77": "I",
+  "78": "L",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  20,
+  24,
+  30,
+  32,
+  35,
+  40,
+  46,
+  48,
+  50,
+  56,
+  61,
+  64,
+  66,
+  72
+ ],
+ "given": [
+  15,
+  41,
+  76
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "ASPARAGUS",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Green shoot veg",
+    "full": "Green shoot veg"
+   },
+   "sense": {
+    "en": "a vegetable consisting of green or white young shoots.",
+    "hi": "शतावरी",
+    "entryId": 1255
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42
+   ],
+   "answer": "SPACE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Empty area",
+    "full": "Empty area"
+   },
+   "sense": {
+    "en": "an empty area available for a particular purpose.",
+    "hi": "जगह, स्थान",
+    "entryId": 20622
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27
+   ],
+   "answer": "CAN",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Are able",
+    "full": "Are able"
+   },
+   "sense": {
+    "en": "be able to; have the capability to.",
+    "hi": "सकना",
+    "entryId": 3162
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12
+   ],
+   "answer": "R",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “are”",
+    "full": "Sounds like “are”"
+   },
+   "sense": {
+    "en": "the letter R, which sounds like “are”",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45,
+    53
+   ],
+   "answer": "ITSELF",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "The thing",
+    "full": "The thing"
+   },
+   "sense": {
+    "en": "used to refer to an object or animal as the object.",
+    "hi": "स्वयं, खुद",
+    "entryId": 12129
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22
+   ],
+   "answer": "BE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "ENDOCRINE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "gap",
+    "text": "THE __ SYSTEM",
+    "full": "Fill the gap: The ___ system"
+   },
+   "sense": {
+    "en": "relating to glands that secrete hormones directly into the bloodstream.",
+    "hi": "अंतःस्रावी",
+    "entryId": 7446
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "ASCRIBE",
+   "clueCell": 8,
+   "clue": {
+    "kind": "rel",
+    "text": "Assign",
+    "full": "Similar to assign"
+   },
+   "sense": {
+    "en": "to attribute or credit to a cause or source.",
+    "hi": "श्रेय देना, आरोपित करना",
+    "entryId": 1236
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19
+   ],
+   "answer": "SPA",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Fitness club",
+    "full": "Fitness club"
+   },
+   "sense": {
+    "en": "a place of business with equipment and facilities for exercising and improving physical fitness.",
+    "hi": "स्पा, हेल्थ क्लब",
+    "entryId": 20621
+   }
+  },
+  {
+   "id": "a:2:5",
+   "dir": "a",
+   "cells": [
+    21,
+    22,
+    23
+   ],
+   "answer": "TEN",
+   "clueCell": 20,
+   "clue": {
+    "kind": "gap",
+    "text": "COUNT TO __",
+    "full": "Fill the gap: Count to ___"
+   },
+   "sense": {
+    "en": "the number 10, one more than nine.",
+    "hi": "दस",
+    "entryId": 22160
+   }
+  },
+  {
+   "id": "d:3:4",
+   "dir": "d",
+   "cells": [
+    28,
+    36,
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "TRAILER",
+   "clueCell": 20,
+   "clue": {
+    "kind": "def",
+    "text": "Movie preview",
+    "full": "Movie preview"
+   },
+   "sense": {
+    "en": "an advertisement consisting of short scenes from a motion picture.",
+    "hi": "ट्रेलर, झलक",
+    "entryId": 22727
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29
+   ],
+   "answer": "PANTS",
+   "clueCell": 24,
+   "clue": {
+    "kind": "gap",
+    "text": "PUT ON __",
+    "full": "Fill the gap: Put on ___"
+   },
+   "sense": {
+    "en": "an outer garment covering the body from the waist to the ankles.",
+    "hi": "पैंट, पतलून",
+    "entryId": 15789
+   }
+  },
+  {
+   "id": "a:3:7",
+   "dir": "a",
+   "cells": [
+    31
+   ],
+   "answer": "D",
+   "clueCell": 30,
+   "clue": {
+    "kind": "def",
+    "text": "Sunshine vitamin",
+    "full": "Sunshine vitamin"
+   },
+   "sense": {
+    "en": "sunshine vitamin",
+    "hi": "डी (विटामिन)"
+   }
+  },
+  {
+   "id": "d:4:6",
+   "dir": "d",
+   "cells": [
+    38
+   ],
+   "answer": "D",
+   "clueCell": 30,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after C",
+    "full": "Letter after C"
+   },
+   "sense": {
+    "en": "the letter D",
+    "hi": "डी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34
+   ],
+   "answer": "AC",
+   "clueCell": 32,
+   "clue": {
+    "kind": "abbr",
+    "text": "Air cooler",
+    "full": "Air cooler"
+   },
+   "sense": {
+    "en": "air cooler",
+    "hi": "एसी"
+   }
+  },
+  {
+   "id": "a:4:4",
+   "dir": "a",
+   "cells": [
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "REDO",
+   "clueCell": 35,
+   "clue": {
+    "kind": "def",
+    "text": "Do anew",
+    "full": "Do anew"
+   },
+   "sense": {
+    "en": "to do something again or make it anew.",
+    "hi": "फिर से करना, दोबारा बनाना",
+    "entryId": 18058
+   }
+  },
+  {
+   "id": "d:5:3",
+   "dir": "d",
+   "cells": [
+    43,
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "GLARE",
+   "clueCell": 35,
+   "clue": {
+    "kind": "gap",
+    "text": "SUN __ IN EYES",
+    "full": "Fill the gap: Sun ___ in eyes"
+   },
+   "sense": {
+    "en": "a light within the field of vision that is very bright.",
+    "hi": "चमक, चौंध",
+    "entryId": 9520
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "answer": "REGAL",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Royal style",
+    "full": "Royal style"
+   },
+   "sense": {
+    "en": "befitting or resembling a royal ruler.",
+    "hi": "शाही, राजसी",
+    "entryId": 18134
+   }
+  },
+  {
+   "id": "a:5:7",
+   "dir": "a",
+   "cells": [
+    47
+   ],
+   "answer": "C",
+   "clueCell": 46,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman hundred",
+    "full": "Roman hundred"
+   },
+   "sense": {
+    "en": "hundred in Roman numerals",
+    "hi": "सौ (रोमन अंक)"
+   }
+  },
+  {
+   "id": "d:6:6",
+   "dir": "d",
+   "cells": [
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "EVIL",
+   "clueCell": 46,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of good",
+    "full": "Opposite of good"
+   },
+   "sense": {
+    "en": "morally bad or wrong.",
+    "hi": "बुरा, दुष्ट, पाप",
+    "entryId": 7803
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49
+   ],
+   "answer": "A",
+   "clueCell": 48,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Alfa",
+    "full": "Radio code Alfa"
+   },
+   "sense": {
+    "en": "the letter A (radio alphabet: Alfa)",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:6:3",
+   "dir": "a",
+   "cells": [
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "LIFER",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Cell inmate",
+    "full": "Cell inmate"
+   },
+   "sense": {
+    "en": "a prisoner serving a sentence of life in jail.",
+    "hi": "आजीवन कारावास का कैदी",
+    "entryId": 12946
+   }
+  },
+  {
+   "id": "d:7:2",
+   "dir": "d",
+   "cells": [
+    58
+   ],
+   "answer": "O",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “owe”",
+    "full": "Sounds like “owe”"
+   },
+   "sense": {
+    "en": "the letter O, which sounds like “owe”",
+    "hi": "ओ (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60
+   ],
+   "answer": "GOAL",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Aim or target",
+    "full": "Aim or target"
+   },
+   "sense": {
+    "en": "the state of affairs that a plan is intended to achieve.",
+    "hi": "लक्ष्य, उद्देश्य",
+    "entryId": 9603
+   }
+  },
+  {
+   "id": "a:7:6",
+   "dir": "a",
+   "cells": [
+    62,
+    63
+   ],
+   "answer": "VI",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman six",
+    "full": "Roman six"
+   },
+   "sense": {
+    "en": "six in Roman numerals",
+    "hi": "छह (रोमन अंक)"
+   }
+  },
+  {
+   "id": "d:8:5",
+   "dir": "d",
+   "cells": [
+    69,
+    77
+   ],
+   "answer": "SI",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Silicon symbol",
+    "full": "Silicon symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of silicon",
+    "hi": "सिलिकॉन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65
+   ],
+   "answer": "U",
+   "clueCell": 64,
+   "clue": {
+    "kind": "abbr",
+    "text": "Uranium symbol",
+    "full": "Uranium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of uranium",
+    "hi": "यूरेनियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:3",
+   "dir": "a",
+   "cells": [
+    67,
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "RESIN",
+   "clueCell": 66,
+   "clue": {
+    "kind": "def",
+    "text": "Tree gum",
+    "full": "Tree gum"
+   },
+   "sense": {
+    "en": "a sticky substance that comes from trees.",
+    "hi": "राल, गोंद",
+    "entryId": 18451
+   }
+  },
+  {
+   "id": "d:9:2",
+   "dir": "d",
+   "cells": [
+    74
+   ],
+   "answer": "T",
+   "clueCell": 66,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “tea”",
+    "full": "Sounds like “tea”"
+   },
+   "sense": {
+    "en": "the letter T, which sounds like “tea”",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "STERILE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of fertile",
+    "full": "Opposite of fertile"
+   },
+   "sense": {
+    "en": "completely free from bacteria and other microorganisms.",
+    "hi": "कीटाणुमुक्त, निर्जमीकृत",
+    "entryId": 21106
+   }
+  }
+ ]
+}

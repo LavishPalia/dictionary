@@ -1,0 +1,741 @@
+{
+ "id": "p0042",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "C",
+  "10": "E",
+  "11": "R",
+  "12": "A",
+  "13": "M",
+  "14": "I",
+  "15": "C",
+  "17": "E",
+  "18": "X",
+  "19": "A",
+  "20": "M",
+  "22": "D",
+  "23": "O",
+  "25": "L",
+  "26": "I",
+  "28": "P",
+  "29": "A",
+  "30": "I",
+  "31": "N",
+  "33": "E",
+  "34": "L",
+  "35": "K",
+  "37": "R",
+  "38": "O",
+  "39": "T",
+  "41": "B",
+  "42": "E",
+  "44": "M",
+  "45": "A",
+  "46": "T",
+  "47": "E",
+  "49": "R",
+  "51": "C",
+  "52": "A",
+  "53": "B",
+  "54": "I",
+  "55": "N",
+  "57": "A",
+  "58": "H",
+  "59": "O",
+  "60": "Y",
+  "62": "C",
+  "63": "D",
+  "65": "T",
+  "66": "U",
+  "67": "R",
+  "68": "B",
+  "69": "O",
+  "71": "E",
+  "73": "E",
+  "74": "M",
+  "75": "P",
+  "76": "E",
+  "77": "R",
+  "78": "O",
+  "79": "R"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  27,
+  32,
+  36,
+  40,
+  43,
+  48,
+  50,
+  56,
+  61,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  9,
+  55,
+  75
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "CELEBRATE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "rel",
+    "text": "Rejoice",
+    "full": "Similar to rejoice"
+   },
+   "sense": {
+    "en": "to have a celebration for a special event or holiday.",
+    "hi": "मनाना, जश्न मनाना",
+    "entryId": 3477
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42
+   ],
+   "answer": "EXILE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "gap",
+    "text": "LIFE IN __",
+    "full": "Fill the gap: Life in ___"
+   },
+   "sense": {
+    "en": "the state of being barred from one's native country, typically for political reasons.",
+    "hi": "देशवास, निर्वासन",
+    "entryId": 7913
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19
+   ],
+   "answer": "RA",
+   "clueCell": 3,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radium symbol",
+    "full": "Radium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of radium",
+    "hi": "रेडियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28
+   ],
+   "answer": "AMP",
+   "clueCell": 4,
+   "clue": {
+    "kind": "gap",
+    "text": "DRAWS ONE __",
+    "full": "Fill the gap: Draws one ___"
+   },
+   "sense": {
+    "en": "a unit of measurement for electric current.",
+    "hi": "एम्पियर",
+    "entryId": 749
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "M",
+   "clueCell": 5,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Mike",
+    "full": "Radio code Mike"
+   },
+   "sense": {
+    "en": "the letter M (radio alphabet: Mike)",
+    "hi": "एम (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54,
+    62
+   ],
+   "answer": "IDIOTIC",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Very silly",
+    "full": "Very silly"
+   },
+   "sense": {
+    "en": "so unreasonable as to invite derision.",
+    "hi": "मूर्खतापूर्ण, बेवकूफी भरा",
+    "entryId": 11090
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "CONTENDER",
+   "clueCell": 7,
+   "clue": {
+    "kind": "rel",
+    "text": "Rival",
+    "full": "Similar to rival"
+   },
+   "sense": {
+    "en": "a person who competes for a prize or position.",
+    "hi": "प्रतियोगी, दावेदार",
+    "entryId": 4757
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "CERAMIC",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Baked clay",
+    "full": "Baked clay"
+   },
+   "sense": {
+    "en": "made of baked clay.",
+    "hi": "मिट्टी का",
+    "entryId": 3528
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "EXAM",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Test",
+    "full": "Similar to test"
+   },
+   "sense": {
+    "en": "a formal test of a person's knowledge or proficiency.",
+    "hi": "परीक्षा, इम्तिहान",
+    "entryId": 7825
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "DO",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Perform",
+    "full": "Perform"
+   },
+   "sense": {
+    "en": "perform an action; used to form questions and negatives.",
+    "hi": "करना",
+    "entryId": 6655
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53
+   ],
+   "answer": "ARAB",
+   "clueCell": 21,
+   "clue": {
+    "kind": "gap",
+    "text": "AN __ TRADER",
+    "full": "Fill the gap: An ___ trader"
+   },
+   "sense": {
+    "en": "a member of a Semitic people originally from the Arabian peninsula.",
+    "hi": "अरब",
+    "entryId": 1078
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26
+   ],
+   "answer": "LI",
+   "clueCell": 24,
+   "clue": {
+    "kind": "abbr",
+    "text": "Lithium symbol",
+    "full": "Lithium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of lithium",
+    "hi": "लिथियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:3:4",
+   "dir": "a",
+   "cells": [
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "PAIN",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Aches",
+    "full": "Aches"
+   },
+   "sense": {
+    "en": "highly unpleasant physical sensation caused by illness or injury.",
+    "hi": "पीड़ा, दर्द",
+    "entryId": 15702
+   }
+  },
+  {
+   "id": "d:4:3",
+   "dir": "d",
+   "cells": [
+    35
+   ],
+   "answer": "K",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “Kay”",
+    "full": "Sounds like “Kay”"
+   },
+   "sense": {
+    "en": "the letter K, which sounds like “Kay”",
+    "hi": "के (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35
+   ],
+   "answer": "ELK",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Big deer",
+    "full": "Big deer"
+   },
+   "sense": {
+    "en": "a large deer found in northern forests.",
+    "hi": "एक प्रकार का बड़ा हिरण",
+    "entryId": 7280
+   }
+  },
+  {
+   "id": "a:4:5",
+   "dir": "a",
+   "cells": [
+    37,
+    38,
+    39
+   ],
+   "answer": "ROT",
+   "clueCell": 36,
+   "clue": {
+    "kind": "rel",
+    "text": "Spoil",
+    "full": "Similar to spoil"
+   },
+   "sense": {
+    "en": "to break down or decompose naturally.",
+    "hi": "सड़ना, गलना",
+    "entryId": 18828
+   }
+  },
+  {
+   "id": "d:5:4",
+   "dir": "d",
+   "cells": [
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "MAYBE",
+   "clueCell": 36,
+   "clue": {
+    "kind": "rel",
+    "text": "Perhaps",
+    "full": "Similar to perhaps"
+   },
+   "sense": {
+    "en": "perhaps; possibly.",
+    "hi": "शायद, हो सकता है",
+    "entryId": 13733
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "BE",
+   "clueCell": 40,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ OR NOT",
+    "full": "Fill the gap: To ___ or not"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "MATE",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Pal",
+    "full": "Pal"
+   },
+   "sense": {
+    "en": "a fellow member of a team or group.",
+    "hi": "साथी, यार",
+    "entryId": 13692
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "CORP",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Big firm",
+    "full": "Big firm"
+   },
+   "sense": {
+    "en": "a large company or business group.",
+    "hi": "कंपनी, निगम",
+    "entryId": 4950
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49
+   ],
+   "answer": "R",
+   "clueCell": 48,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Romeo",
+    "full": "Radio code Romeo"
+   },
+   "sense": {
+    "en": "the letter R (radio alphabet: Romeo)",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:6:3",
+   "dir": "a",
+   "cells": [
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "CABIN",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Wood hut",
+    "full": "Wood hut"
+   },
+   "sense": {
+    "en": "a small wooden shelter or house in a wild area.",
+    "hi": "झोपड़ी, कुटिया",
+    "entryId": 3060
+   }
+  },
+  {
+   "id": "d:7:2",
+   "dir": "d",
+   "cells": [
+    58,
+    66,
+    74
+   ],
+   "answer": "HUM",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Sing softly",
+    "full": "Sing softly"
+   },
+   "sense": {
+    "en": "to sing a melody with closed lips.",
+    "hi": "गुनगुनाना",
+    "entryId": 10890
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60
+   ],
+   "answer": "AHOY",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Sailor shout",
+    "full": "Sailor shout"
+   },
+   "sense": {
+    "en": "a greeting used by sailors to attract attention.",
+    "hi": "अहोय, सुनो",
+    "entryId": 499
+   }
+  },
+  {
+   "id": "a:7:6",
+   "dir": "a",
+   "cells": [
+    62,
+    63
+   ],
+   "answer": "CD",
+   "clueCell": 61,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman 400",
+    "full": "Roman 400"
+   },
+   "sense": {
+    "en": "400 in Roman numerals",
+    "hi": "चार सौ (रोमन अंक)"
+   }
+  },
+  {
+   "id": "d:8:5",
+   "dir": "d",
+   "cells": [
+    69,
+    77
+   ],
+   "answer": "OR",
+   "clueCell": 61,
+   "clue": {
+    "kind": "def",
+    "text": "Else",
+    "full": "Else"
+   },
+   "sense": {
+    "en": "used to link alternatives.",
+    "hi": "या, अथवा",
+    "entryId": 15353
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "TURBO",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Power booster",
+    "full": "Power booster"
+   },
+   "sense": {
+    "en": "relating to a mechanism that increases engine power.",
+    "hi": "तेज़, शक्तिशाली",
+    "entryId": 23029
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "E",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Note after D",
+    "full": "Note after D"
+   },
+   "sense": {
+    "en": "the musical note E",
+    "hi": "ग (स्वर ई)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "O",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after N",
+    "full": "Letter after N"
+   },
+   "sense": {
+    "en": "the letter O",
+    "hi": "ओ (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "EMPEROR",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "King",
+    "full": "King"
+   },
+   "sense": {
+    "en": "the male ruler of an empire.",
+    "hi": "सम्राट, बादशाह",
+    "entryId": 7373
+   }
+  }
+ ]
+}

@@ -1,0 +1,723 @@
+{
+ "id": "p0043",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "A",
+  "10": "N",
+  "11": "T",
+  "12": "A",
+  "13": "C",
+  "14": "I",
+  "15": "D",
+  "17": "D",
+  "18": "O",
+  "19": "O",
+  "20": "R",
+  "22": "T",
+  "23": "O",
+  "25": "M",
+  "26": "I",
+  "27": "N",
+  "28": "O",
+  "29": "R",
+  "30": "S",
+  "33": "I",
+  "34": "S",
+  "35": "S",
+  "36": "U",
+  "37": "E",
+  "39": "T",
+  "41": "S",
+  "42": "E",
+  "44": "S",
+  "45": "U",
+  "46": "C",
+  "47": "H",
+  "49": "S",
+  "51": "M",
+  "52": "A",
+  "53": "N",
+  "54": "O",
+  "55": "R",
+  "57": "I",
+  "58": "T",
+  "60": "L",
+  "61": "I",
+  "62": "L",
+  "63": "O",
+  "65": "O",
+  "66": "W",
+  "67": "N",
+  "69": "T",
+  "70": "O",
+  "71": "N",
+  "73": "N",
+  "74": "O",
+  "75": "W",
+  "76": "H",
+  "77": "E",
+  "78": "R",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  31,
+  32,
+  38,
+  40,
+  43,
+  48,
+  50,
+  56,
+  59,
+  64,
+  68,
+  72
+ ],
+ "given": [
+  9,
+  45,
+  79
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "ADMISSION",
+   "clueCell": 1,
+   "clue": {
+    "kind": "rel",
+    "text": "Access",
+    "full": "Similar to access"
+   },
+   "sense": {
+    "en": "the act of admitting someone to enter.",
+    "hi": "प्रवेश, दाखिला",
+    "entryId": 307
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42
+   ],
+   "answer": "NOISE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Loud sound",
+    "full": "Loud sound"
+   },
+   "sense": {
+    "en": "sound of any kind, especially a loud or unpleasant one.",
+    "hi": "शोर, आवाज़",
+    "entryId": 14931
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35
+   ],
+   "answer": "TONS",
+   "clueCell": 3,
+   "clue": {
+    "kind": "rel",
+    "text": "Heap",
+    "full": "Similar to heap"
+   },
+   "sense": {
+    "en": "a large number or amount of something.",
+    "hi": "ढेर सारा, बहुत सा",
+    "entryId": 22594
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44,
+    52,
+    60
+   ],
+   "answer": "AROUSAL",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Exciting feeling",
+    "full": "Exciting feeling"
+   },
+   "sense": {
+    "en": "the process of exciting or awakening emotions.",
+    "hi": "उत्तेजना, जगाना",
+    "entryId": 1170
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "C",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Note before D",
+    "full": "Note before D"
+   },
+   "sense": {
+    "en": "the musical note C",
+    "hi": "सा (स्वर सी)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30
+   ],
+   "answer": "ITS",
+   "clueCell": 6,
+   "clue": {
+    "kind": "gap",
+    "text": "DOG WAGGED __ TAIL",
+    "full": "Fill the gap: Dog wagged ___ tail"
+   },
+   "sense": {
+    "en": "belonging to or associated with a thing or animal.",
+    "hi": "इसका, उसका",
+    "entryId": 12128
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "DO",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Perform",
+    "full": "Perform"
+   },
+   "sense": {
+    "en": "perform an action; used to form questions and negatives.",
+    "hi": "करना",
+    "entryId": 6655
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "ANTACID",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Acid cure",
+    "full": "Acid cure"
+   },
+   "sense": {
+    "en": "a substance used to reduce stomach acid.",
+    "hi": "एसिडिटी की दवा, एंटासिड",
+    "entryId": 901
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "DOOR",
+   "clueCell": 16,
+   "clue": {
+    "kind": "pic",
+    "img": "1f6aa",
+    "full": "Picture: you open it to go in"
+   },
+   "sense": {
+    "en": "a swinging or sliding barrier that will close an entrance.",
+    "hi": "दरवाजा",
+    "entryId": 6733
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "TO",
+   "clueCell": 21,
+   "clue": {
+    "kind": "gap",
+    "text": "GO __ TOWN",
+    "full": "Fill the gap: Go ___ town"
+   },
+   "sense": {
+    "en": "expressing motion in the direction of a particular location.",
+    "hi": "को, की ओर, तक",
+    "entryId": 22539
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "REUNITE",
+   "clueCell": 21,
+   "clue": {
+    "kind": "gap",
+    "text": "FRIENDS WILL __",
+    "full": "Fill the gap: Friends will ___"
+   },
+   "sense": {
+    "en": "to come together again after being separated.",
+    "hi": "फिर मिलना, एकजुट होना",
+    "entryId": 18574
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "MINORS",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Under age kids",
+    "full": "Under age kids"
+   },
+   "sense": {
+    "en": "people who are not yet legal adults.",
+    "hi": "नाबालिग",
+    "entryId": 14110
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "THRONE",
+   "clueCell": 31,
+   "clue": {
+    "kind": "rel",
+    "text": "Chair",
+    "full": "Similar to chair"
+   },
+   "sense": {
+    "en": "a special chair used by a monarch during ceremonies.",
+    "hi": "सिंहासन",
+    "entryId": 22393
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "answer": "ISSUE",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Problem",
+    "full": "Problem"
+   },
+   "sense": {
+    "en": "an important topic or problem for debate or discussion.",
+    "hi": "मुद्दा, विवाद",
+    "entryId": 12116
+   }
+  },
+  {
+   "id": "a:4:7",
+   "dir": "a",
+   "cells": [
+    39
+   ],
+   "answer": "T",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after S",
+    "full": "Letter after S"
+   },
+   "sense": {
+    "en": "the letter T",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:5:6",
+   "dir": "d",
+   "cells": [
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "COLOR",
+   "clueCell": 38,
+   "clue": {
+    "kind": "rel",
+    "text": "Shade",
+    "full": "Similar to shade"
+   },
+   "sense": {
+    "en": "a visual attribute of things that results from the light they emit or transmit or reflect.",
+    "hi": "रंग, वर्ण",
+    "entryId": 4259
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "SE",
+   "clueCell": 40,
+   "clue": {
+    "kind": "abbr",
+    "text": "South east",
+    "full": "South east"
+   },
+   "sense": {
+    "en": "south east (compass point)",
+    "hi": "दक्षिण-पूर्व"
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "SUCH",
+   "clueCell": 43,
+   "clue": {
+    "kind": "gap",
+    "text": "IT IS __ FUN",
+    "full": "Fill the gap: It is ___ fun"
+   },
+   "sense": {
+    "en": "of the type already mentioned; to so high a degree.",
+    "hi": "ऐसा, ऐसे, इतना",
+    "entryId": 21489
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51
+   ],
+   "answer": "M",
+   "clueCell": 43,
+   "clue": {
+    "kind": "abbr",
+    "text": "Metre",
+    "full": "Metre"
+   },
+   "sense": {
+    "en": "metre (unit)",
+    "hi": "मीटर"
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49
+   ],
+   "answer": "S",
+   "clueCell": 48,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Sierra",
+    "full": "Radio code Sierra"
+   },
+   "sense": {
+    "en": "the letter S (radio alphabet: Sierra)",
+    "hi": "एस (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:6:3",
+   "dir": "a",
+   "cells": [
+    51,
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "MANOR",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Big house",
+    "full": "Big house"
+   },
+   "sense": {
+    "en": "a large country house with lands belonging to a wealthy person.",
+    "hi": "बड़ी हवेली, जागीर",
+    "entryId": 13550
+   }
+  },
+  {
+   "id": "d:7:2",
+   "dir": "d",
+   "cells": [
+    58,
+    66,
+    74
+   ],
+   "answer": "TWO",
+   "clueCell": 50,
+   "clue": {
+    "kind": "def",
+    "text": "Number 2",
+    "full": "Number 2"
+   },
+   "sense": {
+    "en": "the number 2, one more than one.",
+    "hi": "दो",
+    "entryId": 23107
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58
+   ],
+   "answer": "IT",
+   "clueCell": 56,
+   "clue": {
+    "kind": "abbr",
+    "text": "Tech field",
+    "full": "Tech field"
+   },
+   "sense": {
+    "en": "tech field",
+    "hi": "सूचना प्रौद्योगिकी"
+   }
+  },
+  {
+   "id": "a:7:4",
+   "dir": "a",
+   "cells": [
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "LILO",
+   "clueCell": 59,
+   "clue": {
+    "kind": "def",
+    "text": "Air bed",
+    "full": "Air bed"
+   },
+   "sense": {
+    "en": "a type of inflatable air mattress used for sleeping on or floating in water.",
+    "hi": "हवा का गद्दा",
+    "entryId": 12981
+   }
+  },
+  {
+   "id": "d:8:3",
+   "dir": "d",
+   "cells": [
+    67,
+    75
+   ],
+   "answer": "NW",
+   "clueCell": 59,
+   "clue": {
+    "kind": "abbr",
+    "text": "North west",
+    "full": "North west"
+   },
+   "sense": {
+    "en": "north west (compass point)",
+    "hi": "उत्तर-पश्चिम"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67
+   ],
+   "answer": "OWN",
+   "clueCell": 64,
+   "clue": {
+    "kind": "rel",
+    "text": "Possess",
+    "full": "Similar to possess"
+   },
+   "sense": {
+    "en": "belonging to oneself; (v.) to possess.",
+    "hi": "अपना, निजी; मालिक होना",
+    "entryId": 15647
+   }
+  },
+  {
+   "id": "a:8:5",
+   "dir": "a",
+   "cells": [
+    69,
+    70,
+    71
+   ],
+   "answer": "TON",
+   "clueCell": 68,
+   "clue": {
+    "kind": "def",
+    "text": "Heavy unit",
+    "full": "Heavy unit"
+   },
+   "sense": {
+    "en": "a heavy unit of weight equal to 2,000 pounds.",
+    "hi": "टन",
+    "entryId": 22585
+   }
+  },
+  {
+   "id": "d:9:4",
+   "dir": "d",
+   "cells": [
+    76
+   ],
+   "answer": "H",
+   "clueCell": 68,
+   "clue": {
+    "kind": "abbr",
+    "text": "Hydrogen symbol",
+    "full": "Hydrogen symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of hydrogen",
+    "hi": "हाइड्रोजन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "NOWHERE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "No place",
+    "full": "No place"
+   },
+   "sense": {
+    "en": "not anywhere; in or at or to no place.",
+    "hi": "कहीं नहीं",
+    "entryId": 15041
+   }
+  }
+ ]
+}

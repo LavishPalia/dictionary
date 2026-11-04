@@ -5,8 +5,8 @@ import type { SavedGame } from '../../ui/controller/types';
 import { gameKey, playDate, readResults, RESULTS_KEY, SEEN_KEY, streak, wonDays } from '../../progress';
 import type { ClientSchedule, Storage } from '../types';
 
-/** Flip at launch: until then production shows the way in only on devices that have opened /play. */
-export const DUEL_LAUNCHED = false;
+/** Launched 5 Nov 2026. While false, production shows the way in only on devices that have opened /play. */
+export const DUEL_LAUNCHED = true;
 const PRODUCTION_HOST = 'panna-ashen.vercel.app';
 /** The puzzle a date without a daily puzzle plays (src/duel/platform/web/puzzles.ts). */
 const PRACTICE_KEY = 'p0001.v1';

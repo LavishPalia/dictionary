@@ -69,7 +69,8 @@ async function main() {
     await send('Emulation.setCPUThrottlingRate', { rate: THROTTLE });
     await send('Page.navigate', { url: `${URL_BASE}/icon.svg` });
     await sleep(800);
-    await evaluate('localStorage.clear(); true');
+    // Duel saves only: on a deployed site this is the phone's own Panna, with its saved words and review progress.
+    await evaluate(`Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => localStorage.removeItem(k)); true`);
     await send('Page.navigate', { url: `${URL_BASE}/play/game/2026-11-01?seed=7&perf=1&tier=${TIER}` });
     if (!(await waitFor(`Boolean(window.__duel && document.querySelector('.duel-board [data-cell]'))`, 30000))) throw new Error('The game did not load');
     await sleep(1500);

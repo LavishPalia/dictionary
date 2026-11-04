@@ -1,0 +1,723 @@
+{
+ "id": "p0002",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "C",
+  "10": "A",
+  "11": "P",
+  "12": "A",
+  "13": "B",
+  "14": "L",
+  "15": "E",
+  "17": "A",
+  "18": "L",
+  "19": "O",
+  "20": "N",
+  "21": "E",
+  "23": "X",
+  "25": "P",
+  "26": "L",
+  "27": "O",
+  "28": "T",
+  "30": "I",
+  "31": "T",
+  "33": "T",
+  "34": "U",
+  "35": "L",
+  "36": "I",
+  "37": "P",
+  "39": "R",
+  "41": "I",
+  "42": "D",
+  "44": "C",
+  "45": "A",
+  "46": "S",
+  "47": "E",
+  "49": "V",
+  "50": "E",
+  "51": "T",
+  "53": "R",
+  "54": "I",
+  "55": "M",
+  "57": "A",
+  "59": "A",
+  "60": "D",
+  "61": "O",
+  "62": "R",
+  "63": "E",
+  "65": "T",
+  "66": "A",
+  "67": "M",
+  "68": "A",
+  "69": "L",
+  "70": "E",
+  "73": "E",
+  "74": "L",
+  "75": "E",
+  "76": "M",
+  "77": "E",
+  "78": "N",
+  "79": "T"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  22,
+  24,
+  29,
+  32,
+  38,
+  40,
+  43,
+  48,
+  52,
+  56,
+  58,
+  64,
+  71,
+  72
+ ],
+ "given": [
+  9,
+  47,
+  70
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "CAPTIVATE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Charm greatly",
+    "full": "Charm greatly"
+   },
+   "sense": {
+    "en": "to hold the attention of someone by being very interesting.",
+    "hi": "मोह लेना, मंत्रमुग्ध करना",
+    "entryId": 3248
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42,
+    50
+   ],
+   "answer": "ALLUDE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "gap",
+    "text": "DO NOT __ TO IT",
+    "full": "Fill the gap: Do not ___ to it"
+   },
+   "sense": {
+    "en": "to mention someone or something indirectly.",
+    "hi": "संकेत करना, इशारा करना",
+    "entryId": 626
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35
+   ],
+   "answer": "POOL",
+   "clueCell": 3,
+   "clue": {
+    "kind": "rel",
+    "text": "Puddle",
+    "full": "Similar to puddle"
+   },
+   "sense": {
+    "en": "a small area of water, often made for swimming.",
+    "hi": "पूल, तालाब",
+    "entryId": 16744
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44
+   ],
+   "answer": "ANTIC",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Silly act",
+    "full": "Silly act"
+   },
+   "sense": {
+    "en": "a funny or silly act meant to entertain others.",
+    "hi": "शरारत, तमाशा",
+    "entryId": 926
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21
+   ],
+   "answer": "BE",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14
+   ],
+   "answer": "L",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “el”",
+    "full": "Sounds like “el”"
+   },
+   "sense": {
+    "en": "the letter L, which sounds like “el”",
+    "hi": "एल (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63
+   ],
+   "answer": "EXTREME",
+   "clueCell": 7,
+   "clue": {
+    "kind": "rel",
+    "text": "Intense",
+    "full": "Similar to intense"
+   },
+   "sense": {
+    "en": "reaching a very high or great degree.",
+    "hi": "अत्यधिक, तीव्र",
+    "entryId": 8055
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "CAPABLE",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "HE IS __",
+    "full": "Fill the gap: He is ___"
+   },
+   "sense": {
+    "en": "having the ability or capacity to do something.",
+    "hi": "योग्य, सक्षम",
+    "entryId": 3224
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20,
+    21
+   ],
+   "answer": "ALONE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "By oneself",
+    "full": "By oneself"
+   },
+   "sense": {
+    "en": "lacking companions or companionship.",
+    "hi": "अकेला",
+    "entryId": 639
+   }
+  },
+  {
+   "id": "a:2:7",
+   "dir": "a",
+   "cells": [
+    23
+   ],
+   "answer": "X",
+   "clueCell": 22,
+   "clue": {
+    "kind": "def",
+    "text": "Treasure map spot",
+    "full": "Treasure map spot"
+   },
+   "sense": {
+    "en": "treasure map spot",
+    "hi": "एक्स (निशान)"
+   }
+  },
+  {
+   "id": "d:3:6",
+   "dir": "d",
+   "cells": [
+    30
+   ],
+   "answer": "I",
+   "clueCell": 22,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after H",
+    "full": "Letter after H"
+   },
+   "sense": {
+    "en": "the letter I",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28
+   ],
+   "answer": "PLOT",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Story line",
+    "full": "Story line"
+   },
+   "sense": {
+    "en": "the story that is told in a novel, play, or movie.",
+    "hi": "कथानक, कहानी का सार",
+    "entryId": 16607
+   }
+  },
+  {
+   "id": "a:3:6",
+   "dir": "a",
+   "cells": [
+    30,
+    31
+   ],
+   "answer": "IT",
+   "clueCell": 29,
+   "clue": {
+    "kind": "def",
+    "text": "That thing",
+    "full": "That thing"
+   },
+   "sense": {
+    "en": "used to refer to an object, animal, or situation.",
+    "hi": "यह, वह",
+    "entryId": 12118
+   }
+  },
+  {
+   "id": "d:4:5",
+   "dir": "d",
+   "cells": [
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "PAROLE",
+   "clueCell": 29,
+   "clue": {
+    "kind": "gap",
+    "text": "OUT ON __",
+    "full": "Fill the gap: Out on ___"
+   },
+   "sense": {
+    "en": "a conditional release from imprisonment.",
+    "hi": "पैरोल, जमानत",
+    "entryId": 15881
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "answer": "TULIP",
+   "clueCell": 32,
+   "clue": {
+    "kind": "pic",
+    "img": "1f337",
+    "full": "Picture: a pink cup-shaped flower"
+   },
+   "sense": {
+    "en": "a bulbous spring-flowering plant with bold showy cup-shaped flowers.",
+    "hi": "ट्यूलिप, कंद-फूल",
+    "entryId": 23006
+   }
+  },
+  {
+   "id": "a:4:7",
+   "dir": "a",
+   "cells": [
+    39
+   ],
+   "answer": "R",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after Q",
+    "full": "Letter after Q"
+   },
+   "sense": {
+    "en": "the letter R",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:5:6",
+   "dir": "d",
+   "cells": [
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "SIREN",
+   "clueCell": 38,
+   "clue": {
+    "kind": "rel",
+    "text": "Bell",
+    "full": "Similar to bell"
+   },
+   "sense": {
+    "en": "a device that makes a loud warning noise.",
+    "hi": "साइरन",
+    "entryId": 20078
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "ID",
+   "clueCell": 40,
+   "clue": {
+    "kind": "abbr",
+    "text": "Identity card",
+    "full": "Identity card"
+   },
+   "sense": {
+    "en": "identity card",
+    "hi": "पहचान पत्र"
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "CASE",
+   "clueCell": 43,
+   "clue": {
+    "kind": "rel",
+    "text": "Example",
+    "full": "Similar to example"
+   },
+   "sense": {
+    "en": "an instance or occurrence of something.",
+    "hi": "मामला, स्थिति",
+    "entryId": 3363
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "TAME",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Make gentle",
+    "full": "Make gentle"
+   },
+   "sense": {
+    "en": "to make a wild animal gentle and obedient to humans.",
+    "hi": "पालतू बनाना, वश में करना",
+    "entryId": 21955
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51
+   ],
+   "answer": "VET",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Animal doctor",
+    "full": "Animal doctor"
+   },
+   "sense": {
+    "en": "a doctor who treats sick or injured animals.",
+    "hi": "पशु चिकित्सक, वेट",
+    "entryId": 24025
+   }
+  },
+  {
+   "id": "a:6:5",
+   "dir": "a",
+   "cells": [
+    53,
+    54,
+    55
+   ],
+   "answer": "RIM",
+   "clueCell": 52,
+   "clue": {
+    "kind": "def",
+    "text": "Outer edge",
+    "full": "Outer edge"
+   },
+   "sense": {
+    "en": "the outer edge of a circular object.",
+    "hi": "किनारा, रिम",
+    "entryId": 18705
+   }
+  },
+  {
+   "id": "d:7:4",
+   "dir": "d",
+   "cells": [
+    60,
+    68,
+    76
+   ],
+   "answer": "DAM",
+   "clueCell": 52,
+   "clue": {
+    "kind": "rel",
+    "text": "Barrier",
+    "full": "Similar to barrier"
+   },
+   "sense": {
+    "en": "a barrier constructed to contain the flow of water.",
+    "hi": "बांध",
+    "entryId": 5551
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57
+   ],
+   "answer": "A",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "First letter",
+    "full": "First letter"
+   },
+   "sense": {
+    "en": "the letter A",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:7:3",
+   "dir": "a",
+   "cells": [
+    59,
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "ADORE",
+   "clueCell": 58,
+   "clue": {
+    "kind": "def",
+    "text": "Love dearly",
+    "full": "Love dearly"
+   },
+   "sense": {
+    "en": "to love deeply and respect with great reverence.",
+    "hi": "अत्यधिक प्रेम करना, पूजना",
+    "entryId": 324
+   }
+  },
+  {
+   "id": "d:8:2",
+   "dir": "d",
+   "cells": [
+    66,
+    74
+   ],
+   "answer": "AL",
+   "clueCell": 58,
+   "clue": {
+    "kind": "abbr",
+    "text": "Aluminium symbol",
+    "full": "Aluminium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of aluminium",
+    "hi": "एल्यूमिनियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+   ],
+   "answer": "TAMALE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "gap",
+    "text": "HOT __",
+    "full": "Fill the gap: Hot ___"
+   },
+   "sense": {
+    "en": "a mexican food of meat wrapped in corn dough and steamed.",
+    "hi": "तमाले, मेक्सिकन व्यंजन",
+    "entryId": 21953
+   }
+  },
+  {
+   "id": "d:9:7",
+   "dir": "d",
+   "cells": [
+    79
+   ],
+   "answer": "T",
+   "clueCell": 71,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “tea”",
+    "full": "Sounds like “tea”"
+   },
+   "sense": {
+    "en": "the letter T, which sounds like “tea”",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ELEMENT",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Key part",
+    "full": "Key part"
+   },
+   "sense": {
+    "en": "an essential or characteristic part of something abstract.",
+    "hi": "तत्व, मूल अंग",
+    "entryId": 7259
+   }
+  }
+ ]
+}

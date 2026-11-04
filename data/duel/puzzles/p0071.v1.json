@@ -1,0 +1,740 @@
+{
+ "id": "p0071",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "E",
+  "10": "M",
+  "11": "B",
+  "12": "R",
+  "13": "A",
+  "14": "C",
+  "15": "E",
+  "17": "S",
+  "18": "E",
+  "19": "E",
+  "21": "M",
+  "22": "A",
+  "23": "T",
+  "25": "P",
+  "26": "A",
+  "28": "C",
+  "29": "I",
+  "30": "T",
+  "31": "E",
+  "33": "I",
+  "34": "N",
+  "35": "P",
+  "36": "U",
+  "37": "T",
+  "39": "R",
+  "41": "O",
+  "42": "I",
+  "43": "L",
+  "45": "Y",
+  "46": "E",
+  "47": "N",
+  "49": "N",
+  "50": "E",
+  "51": "O",
+  "52": "N",
+  "54": "M",
+  "55": "A",
+  "57": "A",
+  "59": "T",
+  "60": "O",
+  "61": "T",
+  "62": "A",
+  "63": "L",
+  "65": "G",
+  "66": "M",
+  "68": "S",
+  "69": "O",
+  "70": "I",
+  "71": "L",
+  "73": "E",
+  "74": "L",
+  "75": "D",
+  "76": "E",
+  "77": "R",
+  "78": "L",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  20,
+  24,
+  27,
+  32,
+  38,
+  40,
+  44,
+  48,
+  53,
+  56,
+  58,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  55,
+  78
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "ESPIONAGE",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "ACTS OF __",
+    "full": "Fill the gap: Acts of ___"
+   },
+   "sense": {
+    "en": "the practice of spying or using spies to obtain political and military information.",
+    "hi": "जासूसी",
+    "entryId": 7707
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42,
+    50
+   ],
+   "answer": "MEANIE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Unkind person",
+    "full": "Unkind person"
+   },
+   "sense": {
+    "en": "a person who is unkind or has a mean disposition.",
+    "hi": "नीच व्यक्ति, दुष्ट",
+    "entryId": 13756
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19
+   ],
+   "answer": "BE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12
+   ],
+   "answer": "R",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “are”",
+    "full": "Sounds like “are”"
+   },
+   "sense": {
+    "en": "the letter R, which sounds like “are”",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45
+   ],
+   "answer": "AMITY",
+   "clueCell": 5,
+   "clue": {
+    "kind": "gap",
+    "text": "LIVE IN __",
+    "full": "Fill the gap: Live in ___"
+   },
+   "sense": {
+    "en": "a friendly relationship between people or countries.",
+    "hi": "मित्रता, मेलजोल",
+    "entryId": 732
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30
+   ],
+   "answer": "CAT",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Meow pet",
+    "full": "Meow pet"
+   },
+   "sense": {
+    "en": "a small domesticated carnivorous mammal with soft fur.",
+    "hi": "बिल्ली",
+    "entryId": 3389
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "ETERNALLY",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "For all time",
+    "full": "For all time"
+   },
+   "sense": {
+    "en": "for a limitless time.",
+    "hi": "सदैव, हमेशा के लिए",
+    "entryId": 7735
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "EMBRACE",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "A TIGHT __",
+    "full": "Fill the gap: A tight ___"
+   },
+   "sense": {
+    "en": "to hold someone closely in your arms with affection.",
+    "hi": "गले लगाना",
+    "entryId": 7338
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19
+   ],
+   "answer": "SEE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Observe",
+    "full": "Similar to observe"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "a:2:5",
+   "dir": "a",
+   "cells": [
+    21,
+    22,
+    23
+   ],
+   "answer": "MAT",
+   "clueCell": 20,
+   "clue": {
+    "kind": "gap",
+    "text": "WIPE ON __",
+    "full": "Fill the gap: Wipe on ___"
+   },
+   "sense": {
+    "en": "a small piece of material placed on the floor to clean shoes or sit on.",
+    "hi": "चटाई, मैट",
+    "entryId": 13682
+   }
+  },
+  {
+   "id": "d:3:4",
+   "dir": "d",
+   "cells": [
+    28,
+    36
+   ],
+   "answer": "CU",
+   "clueCell": 20,
+   "clue": {
+    "kind": "abbr",
+    "text": "Copper symbol",
+    "full": "Copper symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of copper",
+    "hi": "ताँबा (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26
+   ],
+   "answer": "PA",
+   "clueCell": 24,
+   "clue": {
+    "kind": "abbr",
+    "text": "Dad",
+    "full": "Dad"
+   },
+   "sense": {
+    "en": "dad",
+    "hi": "पिता"
+   }
+  },
+  {
+   "id": "a:3:4",
+   "dir": "a",
+   "cells": [
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "CITE",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Name a source",
+    "full": "Name a source"
+   },
+   "sense": {
+    "en": "to make reference to a book, person, or example.",
+    "hi": "उद्धृत करना, हवाला देना",
+    "entryId": 3904
+   }
+  },
+  {
+   "id": "d:4:3",
+   "dir": "d",
+   "cells": [
+    35,
+    43,
+    51,
+    59
+   ],
+   "answer": "PLOT",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "Story line",
+    "full": "Story line"
+   },
+   "sense": {
+    "en": "the story that is told in a novel, play, or movie.",
+    "hi": "कथानक, कहानी का सार",
+    "entryId": 16607
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "answer": "INPUT",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Data in",
+    "full": "Data in"
+   },
+   "sense": {
+    "en": "signal or data going into an electronic system or computer.",
+    "hi": "इनपुट, निवेश",
+    "entryId": 11728
+   }
+  },
+  {
+   "id": "a:4:7",
+   "dir": "a",
+   "cells": [
+    39
+   ],
+   "answer": "R",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “are”",
+    "full": "Sounds like “are”"
+   },
+   "sense": {
+    "en": "the letter R, which sounds like “are”",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:5:6",
+   "dir": "d",
+   "cells": [
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "EMAIL",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Web mail",
+    "full": "Web mail"
+   },
+   "sense": {
+    "en": "a system of world-wide electronic communication using computers.",
+    "hi": "ईमेल",
+    "entryId": 7299
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43
+   ],
+   "answer": "OIL",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Cooking liquid",
+    "full": "Cooking liquid"
+   },
+   "sense": {
+    "en": "a viscous liquid derived from petroleum or plants.",
+    "hi": "तेल, तैल",
+    "entryId": 15240
+   }
+  },
+  {
+   "id": "a:5:5",
+   "dir": "a",
+   "cells": [
+    45,
+    46,
+    47
+   ],
+   "answer": "YEN",
+   "clueCell": 44,
+   "clue": {
+    "kind": "def",
+    "text": "Japanese coin",
+    "full": "Japanese coin"
+   },
+   "sense": {
+    "en": "the basic unit of money in japan.",
+    "hi": "येन",
+    "entryId": 24921
+   }
+  },
+  {
+   "id": "d:6:4",
+   "dir": "d",
+   "cells": [
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "NOSE",
+   "clueCell": 44,
+   "clue": {
+    "kind": "def",
+    "text": "Face part for smell",
+    "full": "Face part for smell"
+   },
+   "sense": {
+    "en": "the part of the face used for breathing and smelling.",
+    "hi": "नाक",
+    "entryId": 14992
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52
+   ],
+   "answer": "NEON",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Red gas",
+    "full": "Red gas"
+   },
+   "sense": {
+    "en": "a colorless odorless gaseous element that gives a red glow in a vacuum tube.",
+    "hi": "नियॉन",
+    "entryId": 14779
+   }
+  },
+  {
+   "id": "a:6:6",
+   "dir": "a",
+   "cells": [
+    54,
+    55
+   ],
+   "answer": "MA",
+   "clueCell": 53,
+   "clue": {
+    "kind": "abbr",
+    "text": "Mum",
+    "full": "Mum"
+   },
+   "sense": {
+    "en": "mum",
+    "hi": "माँ"
+   }
+  },
+  {
+   "id": "d:7:5",
+   "dir": "d",
+   "cells": [
+    61,
+    69,
+    77
+   ],
+   "answer": "TOR",
+   "clueCell": 53,
+   "clue": {
+    "kind": "def",
+    "text": "Rock pile",
+    "full": "Rock pile"
+   },
+   "sense": {
+    "en": "a prominent rock or pile of rocks on a hill.",
+    "hi": "पहाड़ी चट्टान",
+    "entryId": 22626
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57
+   ],
+   "answer": "A",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Vitamin in carrots",
+    "full": "Vitamin in carrots"
+   },
+   "sense": {
+    "en": "vitamin in carrots",
+    "hi": "ए (विटामिन)"
+   }
+  },
+  {
+   "id": "a:7:3",
+   "dir": "a",
+   "cells": [
+    59,
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "TOTAL",
+   "clueCell": 58,
+   "clue": {
+    "kind": "rel",
+    "text": "Whole",
+    "full": "Similar to whole"
+   },
+   "sense": {
+    "en": "constituting the full quantity or extent; complete.",
+    "hi": "कुल, संपूर्ण, पूरा",
+    "entryId": 22654
+   }
+  },
+  {
+   "id": "d:8:2",
+   "dir": "d",
+   "cells": [
+    66,
+    74
+   ],
+   "answer": "ML",
+   "clueCell": 58,
+   "clue": {
+    "kind": "abbr",
+    "text": "Millilitre",
+    "full": "Millilitre"
+   },
+   "sense": {
+    "en": "millilitre (unit)",
+    "hi": "मिलीलीटर"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "GM",
+   "clueCell": 64,
+   "clue": {
+    "kind": "abbr",
+    "text": "Good morning",
+    "full": "Good morning"
+   },
+   "sense": {
+    "en": "good morning",
+    "hi": "सुप्रभात"
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "SOIL",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Earth dirt",
+    "full": "Earth dirt"
+   },
+   "sense": {
+    "en": "the part of the earth's surface consisting of humus and rock.",
+    "hi": "मिट्टी, ज़मीन",
+    "entryId": 20481
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "D",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after C",
+    "full": "Letter after C"
+   },
+   "sense": {
+    "en": "the letter D",
+    "hi": "डी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "ELDERLY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "rel",
+    "text": "Old",
+    "full": "Similar to old"
+   },
+   "sense": {
+    "en": "old or ageing, polite word for an older person.",
+    "hi": "बुजुर्ग, वृद्ध",
+    "entryId": 7226
+   }
+  }
+ ]
+}

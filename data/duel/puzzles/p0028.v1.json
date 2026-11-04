@@ -1,0 +1,706 @@
+{
+ "id": "p0028",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "D",
+  "10": "I",
+  "11": "S",
+  "12": "T",
+  "13": "U",
+  "14": "R",
+  "15": "B",
+  "17": "I",
+  "18": "N",
+  "19": "N",
+  "21": "S",
+  "22": "E",
+  "23": "E",
+  "25": "S",
+  "26": "H",
+  "27": "A",
+  "28": "P",
+  "29": "E",
+  "30": "D",
+  "33": "P",
+  "34": "U",
+  "35": "R",
+  "36": "E",
+  "38": "E",
+  "39": "X",
+  "41": "E",
+  "42": "M",
+  "43": "E",
+  "44": "R",
+  "45": "G",
+  "46": "E",
+  "49": "R",
+  "50": "A",
+  "52": "C",
+  "53": "O",
+  "54": "M",
+  "55": "P",
+  "57": "S",
+  "58": "N",
+  "59": "E",
+  "60": "E",
+  "61": "R",
+  "63": "I",
+  "65": "A",
+  "67": "A",
+  "68": "N",
+  "69": "G",
+  "70": "S",
+  "71": "T",
+  "73": "L",
+  "74": "O",
+  "75": "T",
+  "76": "T",
+  "77": "E",
+  "78": "R",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  20,
+  24,
+  31,
+  32,
+  37,
+  40,
+  47,
+  48,
+  51,
+  56,
+  62,
+  64,
+  66,
+  72
+ ],
+ "given": [
+  25,
+  42,
+  76
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "DISPERSAL",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "THE __ OF SEEDS",
+    "full": "Fill the gap: The ___ of seeds"
+   },
+   "sense": {
+    "en": "the act of spreading things in different directions.",
+    "hi": "प्रसार, फैलाव",
+    "entryId": 6514
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26,
+    34,
+    42,
+    50,
+    58
+   ],
+   "answer": "INHUMAN",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Very cruel",
+    "full": "Very cruel"
+   },
+   "sense": {
+    "en": "without compassion or human feeling; cruel.",
+    "hi": "अमानवीय, क्रूर",
+    "entryId": 11671
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35,
+    43
+   ],
+   "answer": "SNARE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Animal trap",
+    "full": "Animal trap"
+   },
+   "sense": {
+    "en": "a trap used to catch animals or to deceive people.",
+    "hi": "जाल, फंदा",
+    "entryId": 20358
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12
+   ],
+   "answer": "T",
+   "clueCell": 4,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Tango",
+    "full": "Radio code Tango"
+   },
+   "sense": {
+    "en": "the letter T (radio alphabet: Tango)",
+    "hi": "टी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29
+   ],
+   "answer": "USE",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Employ a tool",
+    "full": "Employ a tool"
+   },
+   "sense": {
+    "en": "to employ something for a purpose.",
+    "hi": "इस्तेमाल करना, प्रयोग करना",
+    "entryId": 23811
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46,
+    54
+   ],
+   "answer": "REDEEM",
+   "clueCell": 6,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ THE CODE",
+    "full": "Fill the gap: To ___ the code"
+   },
+   "sense": {
+    "en": "to restore the honor or worth of.",
+    "hi": "सुधारना, मूल्य चुकाना",
+    "entryId": 18040
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "BE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "DISTURB",
+   "clueCell": 8,
+   "clue": {
+    "kind": "rel",
+    "text": "Upset",
+    "full": "Similar to upset"
+   },
+   "sense": {
+    "en": "to move deeply or trouble someone's peace.",
+    "hi": "परेशान करना, खलल डालना",
+    "entryId": 6606
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19
+   ],
+   "answer": "INN",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Hotel",
+    "full": "Similar to hotel"
+   },
+   "sense": {
+    "en": "a pub or small hotel, typically in the countryside, providing food and accommodation.",
+    "hi": "सराय, धर्मशाला",
+    "entryId": 11701
+   }
+  },
+  {
+   "id": "a:2:5",
+   "dir": "a",
+   "cells": [
+    21,
+    22,
+    23
+   ],
+   "answer": "SEE",
+   "clueCell": 20,
+   "clue": {
+    "kind": "rel",
+    "text": "Notice",
+    "full": "Similar to notice"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "d:3:4",
+   "dir": "d",
+   "cells": [
+    28,
+    36,
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "PERCENT",
+   "clueCell": 20,
+   "clue": {
+    "kind": "gap",
+    "text": "TEN __ OFF",
+    "full": "Fill the gap: Ten ___ off"
+   },
+   "sense": {
+    "en": "a proportion in relation to a whole, usually per hundred.",
+    "hi": "प्रतिशत, फीसदी",
+    "entryId": 16123
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "SHAPED",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Formed",
+    "full": "Formed"
+   },
+   "sense": {
+    "en": "having a specific form or appearance.",
+    "hi": "आकार का, गढ़ा हुआ",
+    "entryId": 19729
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39
+   ],
+   "answer": "X",
+   "clueCell": 31,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after W",
+    "full": "Letter after W"
+   },
+   "sense": {
+    "en": "the letter X",
+    "hi": "एक्स (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36
+   ],
+   "answer": "PURE",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Unmixed",
+    "full": "Unmixed"
+   },
+   "sense": {
+    "en": "free of extraneous elements of any kind.",
+    "hi": "शुद्ध, खालिस",
+    "entryId": 17505
+   }
+  },
+  {
+   "id": "a:4:6",
+   "dir": "a",
+   "cells": [
+    38,
+    39
+   ],
+   "answer": "EX",
+   "clueCell": 37,
+   "clue": {
+    "kind": "def",
+    "text": "Past mate",
+    "full": "Past mate"
+   },
+   "sense": {
+    "en": "a former husband or wife.",
+    "hi": "एक्स",
+    "entryId": 7814
+   }
+  },
+  {
+   "id": "d:5:5",
+   "dir": "d",
+   "cells": [
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "GORGE",
+   "clueCell": 37,
+   "clue": {
+    "kind": "def",
+    "text": "Deep ravine",
+    "full": "Deep ravine"
+   },
+   "sense": {
+    "en": "a deep ravine usually with a river running through it.",
+    "hi": "खड्ड, दर्रा",
+    "entryId": 9680
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45,
+    46
+   ],
+   "answer": "EMERGE",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Come out",
+    "full": "Come out"
+   },
+   "sense": {
+    "en": "to come out into view, as from concealment.",
+    "hi": "सामने आना, निकलना",
+    "entryId": 7347
+   }
+  },
+  {
+   "id": "d:6:7",
+   "dir": "d",
+   "cells": [
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "PITY",
+   "clueCell": 47,
+   "clue": {
+    "kind": "def",
+    "text": "Feel sad for",
+    "full": "Feel sad for"
+   },
+   "sense": {
+    "en": "a feeling of sorrow or sympathy for the misfortunes of others.",
+    "hi": "दया, तरस",
+    "entryId": 16494
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50
+   ],
+   "answer": "RA",
+   "clueCell": 48,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radium symbol",
+    "full": "Radium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of radium",
+    "hi": "रेडियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:6:4",
+   "dir": "a",
+   "cells": [
+    52,
+    53,
+    54,
+    55
+   ],
+   "answer": "COMP",
+   "clueCell": 51,
+   "clue": {
+    "kind": "def",
+    "text": "Hard test",
+    "full": "Hard test"
+   },
+   "sense": {
+    "en": "an intensive examination testing a student's proficiency.",
+    "hi": "कंप्रिहेंसिव परीक्षा",
+    "entryId": 4374
+   }
+  },
+  {
+   "id": "d:7:3",
+   "dir": "d",
+   "cells": [
+    59,
+    67,
+    75
+   ],
+   "answer": "EAT",
+   "clueCell": 51,
+   "clue": {
+    "kind": "rel",
+    "text": "Dine",
+    "full": "Similar to dine"
+   },
+   "sense": {
+    "en": "to take in solid food.",
+    "hi": "खाना",
+    "entryId": 7095
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60,
+    61
+   ],
+   "answer": "SNEER",
+   "clueCell": 56,
+   "clue": {
+    "kind": "gap",
+    "text": "HE GAVE A COLD __",
+    "full": "Fill the gap: He gave a cold ___"
+   },
+   "sense": {
+    "en": "to smile in a way that shows lack of respect.",
+    "hi": "तिरस्कारपूर्ण मुस्कुराना",
+    "entryId": 20368
+   }
+  },
+  {
+   "id": "a:7:7",
+   "dir": "a",
+   "cells": [
+    63
+   ],
+   "answer": "I",
+   "clueCell": 62,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman one",
+    "full": "Roman one"
+   },
+   "sense": {
+    "en": "one in Roman numerals",
+    "hi": "एक (रोमन अंक)"
+   }
+  },
+  {
+   "id": "d:8:6",
+   "dir": "d",
+   "cells": [
+    70,
+    78
+   ],
+   "answer": "SR",
+   "clueCell": 62,
+   "clue": {
+    "kind": "abbr",
+    "text": "Senior",
+    "full": "Senior"
+   },
+   "sense": {
+    "en": "senior",
+    "hi": "वरिष्ठ"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65
+   ],
+   "answer": "A",
+   "clueCell": 64,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Alfa",
+    "full": "Radio code Alfa"
+   },
+   "sense": {
+    "en": "the letter A (radio alphabet: Alfa)",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:8:3",
+   "dir": "a",
+   "cells": [
+    67,
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "ANGST",
+   "clueCell": 66,
+   "clue": {
+    "kind": "def",
+    "text": "Deep dread",
+    "full": "Deep dread"
+   },
+   "sense": {
+    "en": "a feeling of deep anxiety or dread about life.",
+    "hi": "बेचैनी, चिंता",
+    "entryId": 846
+   }
+  },
+  {
+   "id": "d:9:2",
+   "dir": "d",
+   "cells": [
+    74
+   ],
+   "answer": "O",
+   "clueCell": 66,
+   "clue": {
+    "kind": "def",
+    "text": "Ring shape",
+    "full": "Ring shape"
+   },
+   "sense": {
+    "en": "ring shape",
+    "hi": "ओ (गोल आकार)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "LOTTERY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "rel",
+    "text": "Raffle",
+    "full": "Similar to raffle"
+   },
+   "sense": {
+    "en": "a game in which players buy numbered tickets and prizes are distributed by a random drawing.",
+    "hi": "लॉटरी, जुआ",
+    "entryId": 13219
+   }
+  }
+ ]
+}

@@ -1,0 +1,707 @@
+{
+ "id": "p0052",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "S",
+  "10": "U",
+  "11": "C",
+  "12": "C",
+  "13": "U",
+  "14": "M",
+  "15": "B",
+  "17": "A",
+  "18": "F",
+  "19": "A",
+  "20": "R",
+  "22": "I",
+  "23": "E",
+  "25": "C",
+  "26": "O",
+  "27": "S",
+  "28": "I",
+  "29": "G",
+  "30": "N",
+  "33": "R",
+  "35": "E",
+  "36": "N",
+  "37": "A",
+  "38": "C",
+  "39": "T",
+  "41": "A",
+  "42": "T",
+  "44": "G",
+  "45": "R",
+  "46": "E",
+  "47": "Y",
+  "49": "M",
+  "50": "I",
+  "51": "T",
+  "52": "E",
+  "53": "R",
+  "55": "P",
+  "57": "E",
+  "58": "G",
+  "59": "O",
+  "61": "O",
+  "62": "W",
+  "63": "E",
+  "65": "N",
+  "66": "E",
+  "67": "G",
+  "68": "A",
+  "69": "T",
+  "70": "E",
+  "73": "T",
+  "74": "R",
+  "75": "A",
+  "76": "G",
+  "77": "E",
+  "78": "D",
+  "79": "Y"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  31,
+  32,
+  34,
+  40,
+  43,
+  48,
+  54,
+  56,
+  60,
+  64,
+  71,
+  72
+ ],
+ "given": [
+  9,
+  53,
+  74
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "SACRAMENT",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Holy rite",
+    "full": "Holy rite"
+   },
+   "sense": {
+    "en": "a formal religious ceremony.",
+    "hi": "धार्मिक संस्कार",
+    "entryId": 18966
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26
+   ],
+   "answer": "UFO",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Sky mystery",
+    "full": "Sky mystery"
+   },
+   "sense": {
+    "en": "a mysterious flying object seen in the sky, often thought to be alien.",
+    "hi": "यूएफओ, उड़न तश्तरी",
+    "entryId": 23134
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35
+   ],
+   "answer": "CASE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Instance",
+    "full": "Instance"
+   },
+   "sense": {
+    "en": "an instance or occurrence of something.",
+    "hi": "मामला, स्थिति",
+    "entryId": 3363
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44,
+    52
+   ],
+   "answer": "CRINGE",
+   "clueCell": 4,
+   "clue": {
+    "kind": "rel",
+    "text": "Flinch",
+    "full": "Similar to flinch"
+   },
+   "sense": {
+    "en": "to move back or feel ashamed due to fear or discomfort.",
+    "hi": "सिहरना, संकोच करना",
+    "entryId": 5252
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "U",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “you”",
+    "full": "Sounds like “you”"
+   },
+   "sense": {
+    "en": "the letter U, which sounds like “you”",
+    "hi": "यू (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38,
+    46
+   ],
+   "answer": "MINCE",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "Chop finely",
+    "full": "Chop finely"
+   },
+   "sense": {
+    "en": "to chop food into very small pieces.",
+    "hi": "बारीक काटना, कीमा बनाना",
+    "entryId": 14072
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23
+   ],
+   "answer": "BE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ OR NOT",
+    "full": "Fill the gap: To ___ or not"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "SUCCUMB",
+   "clueCell": 8,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of survive",
+    "full": "Opposite of survive"
+   },
+   "sense": {
+    "en": "to give in or yield to force or pressure.",
+    "hi": "हार मान लेना, झुकना",
+    "entryId": 21488
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "AFAR",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Far away",
+    "full": "Far away"
+   },
+   "sense": {
+    "en": "at or to a great distance.",
+    "hi": "दूर",
+    "entryId": 389
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "IE",
+   "clueCell": 21,
+   "clue": {
+    "kind": "abbr",
+    "text": "That is",
+    "full": "That is"
+   },
+   "sense": {
+    "en": "that is",
+    "hi": "अर्थात"
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "GARROTE",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Wire for killing",
+    "full": "Wire for killing"
+   },
+   "sense": {
+    "en": "a wire or cord used for strangling someone.",
+    "hi": "फाँसी का फंदा, गला घोंटने का हथियार",
+    "entryId": 9291
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "answer": "COSIGN",
+   "clueCell": 24,
+   "clue": {
+    "kind": "gap",
+    "text": "WILL YOU __?",
+    "full": "Fill the gap: Will you ___?"
+   },
+   "sense": {
+    "en": "to sign a document jointly with another person to guarantee a loan.",
+    "hi": "सह-हस्ताक्षर करना",
+    "entryId": 4995
+   }
+  },
+  {
+   "id": "d:4:7",
+   "dir": "d",
+   "cells": [
+    39,
+    47,
+    55,
+    63
+   ],
+   "answer": "TYPE",
+   "clueCell": 31,
+   "clue": {
+    "kind": "def",
+    "text": "Kind",
+    "full": "Kind"
+   },
+   "sense": {
+    "en": "a category of people or things having common characteristics.",
+    "hi": "प्रकार, किस्म",
+    "entryId": 23114
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33
+   ],
+   "answer": "R",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after Q",
+    "full": "Letter after Q"
+   },
+   "sense": {
+    "en": "the letter R",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:4:3",
+   "dir": "a",
+   "cells": [
+    35,
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "ENACT",
+   "clueCell": 34,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ A ROLE",
+    "full": "Fill the gap: To ___ a role"
+   },
+   "sense": {
+    "en": "to perform or represent something as if in a play.",
+    "hi": "अभिनय करना, निभाना",
+    "entryId": 7398
+   }
+  },
+  {
+   "id": "d:5:2",
+   "dir": "d",
+   "cells": [
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "TIGER",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "Big wild cat",
+    "full": "Big wild cat"
+   },
+   "sense": {
+    "en": "large feline of forests in Asia having a tawny coat with black stripes.",
+    "hi": "बाघ",
+    "entryId": 22458
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "AT",
+   "clueCell": 40,
+   "clue": {
+    "kind": "gap",
+    "text": "LOOK __ ME",
+    "full": "Fill the gap: Look ___ me"
+   },
+   "sense": {
+    "en": "expressing location or arrival in a particular place or time.",
+    "hi": "पर, में",
+    "entryId": 1350
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "GREY",
+   "clueCell": 43,
+   "clue": {
+    "kind": "rel",
+    "text": "Gray",
+    "full": "Similar to gray"
+   },
+   "sense": {
+    "en": "of a color intermediate between black and white.",
+    "hi": "धूसर, स्लेटी",
+    "entryId": 9842
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "TOGA",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Roman wrap",
+    "full": "Roman wrap"
+   },
+   "sense": {
+    "en": "a loose outer garment worn by citizens in ancient Rome.",
+    "hi": "टोगा",
+    "entryId": 22560
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52,
+    53
+   ],
+   "answer": "MITER",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Bishop hat",
+    "full": "Bishop hat"
+   },
+   "sense": {
+    "en": "a tall headdress worn by a bishop on formal occasions.",
+    "hi": "बिशप की टोपी",
+    "entryId": 14222
+   }
+  },
+  {
+   "id": "a:6:7",
+   "dir": "a",
+   "cells": [
+    55
+   ],
+   "answer": "P",
+   "clueCell": 54,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Papa",
+    "full": "Radio code Papa"
+   },
+   "sense": {
+    "en": "the letter P (radio alphabet: Papa)",
+    "hi": "पी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:7:6",
+   "dir": "d",
+   "cells": [
+    62,
+    70,
+    78
+   ],
+   "answer": "WED",
+   "clueCell": 54,
+   "clue": {
+    "kind": "def",
+    "text": "Marry",
+    "full": "Marry"
+   },
+   "sense": {
+    "en": "to take someone in marriage.",
+    "hi": "शादी करना, विवाह करना",
+    "entryId": 24412
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59
+   ],
+   "answer": "EGO",
+   "clueCell": 56,
+   "clue": {
+    "kind": "rel",
+    "text": "Pride",
+    "full": "Similar to pride"
+   },
+   "sense": {
+    "en": "an inflated feeling of pride in your superiority to others.",
+    "hi": "अहंकार, घमंड",
+    "entryId": 7190
+   }
+  },
+  {
+   "id": "a:7:5",
+   "dir": "a",
+   "cells": [
+    61,
+    62,
+    63
+   ],
+   "answer": "OWE",
+   "clueCell": 60,
+   "clue": {
+    "kind": "def",
+    "text": "Be in debt",
+    "full": "Be in debt"
+   },
+   "sense": {
+    "en": "to be obliged to pay or repay money.",
+    "hi": "ऋण होना, कर्जदार होना",
+    "entryId": 15645
+   }
+  },
+  {
+   "id": "d:8:4",
+   "dir": "d",
+   "cells": [
+    68,
+    76
+   ],
+   "answer": "AG",
+   "clueCell": 60,
+   "clue": {
+    "kind": "abbr",
+    "text": "Silver symbol",
+    "full": "Silver symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of silver",
+    "hi": "चाँदी (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+   ],
+   "answer": "NEGATE",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Nullify",
+    "full": "Nullify"
+   },
+   "sense": {
+    "en": "to make something ineffective or invalid.",
+    "hi": "रद्द करना, प्रभावहीन करना",
+    "entryId": 14753
+   }
+  },
+  {
+   "id": "d:9:7",
+   "dir": "d",
+   "cells": [
+    79
+   ],
+   "answer": "Y",
+   "clueCell": 71,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Yankee",
+    "full": "Radio code Yankee"
+   },
+   "sense": {
+    "en": "the letter Y (radio alphabet: Yankee)",
+    "hi": "वाई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "TRAGEDY",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Great loss",
+    "full": "Great loss"
+   },
+   "sense": {
+    "en": "an event resulting in great loss and misfortune.",
+    "hi": "त्रासदी, दुर्घटना",
+    "entryId": 22723
+   }
+  }
+ ]
+}

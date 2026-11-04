@@ -1,0 +1,741 @@
+{
+ "id": "p0039",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "A",
+  "10": "R",
+  "11": "B",
+  "12": "I",
+  "13": "T",
+  "14": "E",
+  "15": "R",
+  "17": "S",
+  "18": "E",
+  "19": "E",
+  "21": "A",
+  "22": "X",
+  "23": "E",
+  "25": "T",
+  "26": "V",
+  "28": "C",
+  "29": "L",
+  "30": "A",
+  "31": "M",
+  "33": "R",
+  "35": "P",
+  "36": "R",
+  "37": "O",
+  "38": "M",
+  "39": "O",
+  "41": "O",
+  "42": "C",
+  "43": "E",
+  "44": "A",
+  "45": "N",
+  "47": "V",
+  "49": "N",
+  "50": "U",
+  "51": "T",
+  "52": "S",
+  "54": "C",
+  "55": "A",
+  "57": "A",
+  "58": "R",
+  "60": "H",
+  "61": "E",
+  "62": "R",
+  "63": "B",
+  "65": "U",
+  "66": "S",
+  "67": "H",
+  "68": "E",
+  "69": "R",
+  "71": "L",
+  "73": "T",
+  "74": "E",
+  "75": "R",
+  "76": "R",
+  "77": "A",
+  "78": "C",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  20,
+  24,
+  27,
+  32,
+  34,
+  40,
+  46,
+  48,
+  53,
+  56,
+  59,
+  64,
+  70,
+  72
+ ],
+ "given": [
+  15,
+  41,
+  76
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "ASTRONAUT",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "AN __ IN ORBIT",
+    "full": "Fill the gap: An ___ in orbit"
+   },
+   "sense": {
+    "en": "a person trained to travel in a spacecraft.",
+    "hi": "अंतरिक्ष यात्री",
+    "entryId": 1338
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18,
+    26
+   ],
+   "answer": "REV",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Engine turn",
+    "full": "Engine turn"
+   },
+   "sense": {
+    "en": "rate of revolution of a motor per minute.",
+    "hi": "चक्कर प्रति मिनट",
+    "entryId": 18576
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19
+   ],
+   "answer": "BE",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12
+   ],
+   "answer": "I",
+   "clueCell": 4,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code India",
+    "full": "Radio code India"
+   },
+   "sense": {
+    "en": "the letter I (radio alphabet: India)",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45
+   ],
+   "answer": "TALON",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Bird claw",
+    "full": "Bird claw"
+   },
+   "sense": {
+    "en": "a sharp hooked claw especially on a bird of prey.",
+    "hi": "पंजे का नाखून, नख",
+    "entryId": 21951
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38
+   ],
+   "answer": "EXAM",
+   "clueCell": 6,
+   "clue": {
+    "kind": "rel",
+    "text": "Quiz",
+    "full": "Similar to quiz"
+   },
+   "sense": {
+    "en": "a formal test of a person's knowledge or proficiency.",
+    "hi": "परीक्षा, इम्तिहान",
+    "entryId": 7825
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55,
+    63,
+    71,
+    79
+   ],
+   "answer": "REMOVABLE",
+   "clueCell": 7,
+   "clue": {
+    "kind": "gap",
+    "text": "IT IS __.",
+    "full": "Fill the gap: It is ___."
+   },
+   "sense": {
+    "en": "able to be taken off, detached or removed easily.",
+    "hi": "हटाने योग्य, निकालने योग्य",
+    "entryId": 18287
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "ARBITER",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Judge",
+    "full": "Judge"
+   },
+   "sense": {
+    "en": "a person who has the power to settle a dispute or decide matters.",
+    "hi": "पंच, फैसला करने वाला",
+    "entryId": 1084
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19
+   ],
+   "answer": "SEE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Notice",
+    "full": "Similar to notice"
+   },
+   "sense": {
+    "en": "to perceive or become aware of things using your eyes.",
+    "hi": "देखना",
+    "entryId": 19498
+   }
+  },
+  {
+   "id": "a:2:5",
+   "dir": "a",
+   "cells": [
+    21,
+    22,
+    23
+   ],
+   "answer": "AXE",
+   "clueCell": 20,
+   "clue": {
+    "kind": "rel",
+    "text": "Hatchet",
+    "full": "Similar to hatchet"
+   },
+   "sense": {
+    "en": "an edge tool with a heavy bladed head mounted across a handle.",
+    "hi": "कुल्हाड़ी",
+    "entryId": 1532
+   }
+  },
+  {
+   "id": "d:3:4",
+   "dir": "d",
+   "cells": [
+    28,
+    36,
+    44,
+    52,
+    60,
+    68,
+    76
+   ],
+   "answer": "CRASHER",
+   "clueCell": 20,
+   "clue": {
+    "kind": "def",
+    "text": "Party intruder",
+    "full": "Party intruder"
+   },
+   "sense": {
+    "en": "a person who goes to a party or event without being invited.",
+    "hi": "बिन बुलाया मेहमान",
+    "entryId": 5171
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25,
+    26
+   ],
+   "answer": "TV",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Screen box",
+    "full": "Screen box"
+   },
+   "sense": {
+    "en": "an electronic device that receives television signals and displays them.",
+    "hi": "टीवी, टेलीविज़न",
+    "entryId": 23071
+   }
+  },
+  {
+   "id": "a:3:4",
+   "dir": "a",
+   "cells": [
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "CLAM",
+   "clueCell": 27,
+   "clue": {
+    "kind": "gap",
+    "text": "DIG FOR A __",
+    "full": "Fill the gap: Dig for a ___"
+   },
+   "sense": {
+    "en": "a marine bivalve mollusc with shells of equal size.",
+    "hi": "सीप, घोंघा",
+    "entryId": 3926
+   }
+  },
+  {
+   "id": "d:4:3",
+   "dir": "d",
+   "cells": [
+    35,
+    43,
+    51
+   ],
+   "answer": "PET",
+   "clueCell": 27,
+   "clue": {
+    "kind": "def",
+    "text": "House animal",
+    "full": "House animal"
+   },
+   "sense": {
+    "en": "a domesticated animal kept for companionship.",
+    "hi": "पालतू जानवर",
+    "entryId": 16256
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33
+   ],
+   "answer": "R",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after Q",
+    "full": "Letter after Q"
+   },
+   "sense": {
+    "en": "the letter R",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:4:3",
+   "dir": "a",
+   "cells": [
+    35,
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "PROMO",
+   "clueCell": 34,
+   "clue": {
+    "kind": "rel",
+    "text": "Publicity",
+    "full": "Similar to publicity"
+   },
+   "sense": {
+    "en": "a message or material used to advertise a product or event.",
+    "hi": "प्रमोशन, प्रचार",
+    "entryId": 17251
+   }
+  },
+  {
+   "id": "d:5:2",
+   "dir": "d",
+   "cells": [
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "CURSE",
+   "clueCell": 34,
+   "clue": {
+    "kind": "def",
+    "text": "Bad word",
+    "full": "Bad word"
+   },
+   "sense": {
+    "en": "a rude or angry word used to express strong emotion.",
+    "hi": "गाली, अभिशाप",
+    "entryId": 5452
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "answer": "OCEAN",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Huge sea",
+    "full": "Huge sea"
+   },
+   "sense": {
+    "en": "a large body of water constituting a principal part of the hydrosphere.",
+    "hi": "महासागर, समुद्र",
+    "entryId": 15184
+   }
+  },
+  {
+   "id": "a:5:7",
+   "dir": "a",
+   "cells": [
+    47
+   ],
+   "answer": "V",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after U",
+    "full": "Letter after U"
+   },
+   "sense": {
+    "en": "the letter V",
+    "hi": "वी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:6:6",
+   "dir": "d",
+   "cells": [
+    54,
+    62
+   ],
+   "answer": "CR",
+   "clueCell": 46,
+   "clue": {
+    "kind": "abbr",
+    "text": "Chromium symbol",
+    "full": "Chromium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of chromium",
+    "hi": "क्रोमियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52
+   ],
+   "answer": "NUTS",
+   "clueCell": 48,
+   "clue": {
+    "kind": "picmath",
+    "img": "1f95c",
+    "math": "+s",
+    "full": "Picture maths: a shell with two seeds, plus S"
+   },
+   "sense": {
+    "en": "informal terms for mentally irregular or crazy.",
+    "hi": "पागल, सिरफिरा",
+    "entryId": 15090
+   }
+  },
+  {
+   "id": "a:6:6",
+   "dir": "a",
+   "cells": [
+    54,
+    55
+   ],
+   "answer": "CA",
+   "clueCell": 53,
+   "clue": {
+    "kind": "abbr",
+    "text": "Calcium symbol",
+    "full": "Calcium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of calcium",
+    "hi": "कैल्शियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:7:5",
+   "dir": "d",
+   "cells": [
+    61,
+    69,
+    77
+   ],
+   "answer": "ERA",
+   "clueCell": 53,
+   "clue": {
+    "kind": "def",
+    "text": "Time period",
+    "full": "Time period"
+   },
+   "sense": {
+    "en": "a period marked by distinctive character or reckoned from a fixed point.",
+    "hi": "युग, काल",
+    "entryId": 7652
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58
+   ],
+   "answer": "AR",
+   "clueCell": 56,
+   "clue": {
+    "kind": "abbr",
+    "text": "Argon symbol",
+    "full": "Argon symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of argon",
+    "hi": "आर्गन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:7:4",
+   "dir": "a",
+   "cells": [
+    60,
+    61,
+    62,
+    63
+   ],
+   "answer": "HERB",
+   "clueCell": 59,
+   "clue": {
+    "kind": "def",
+    "text": "Savory plant",
+    "full": "Savory plant"
+   },
+   "sense": {
+    "en": "aromatic plant used in cookery for its savory qualities.",
+    "hi": "जड़ी-बूटी",
+    "entryId": 10467
+   }
+  },
+  {
+   "id": "d:8:3",
+   "dir": "d",
+   "cells": [
+    67,
+    75
+   ],
+   "answer": "HR",
+   "clueCell": 59,
+   "clue": {
+    "kind": "abbr",
+    "text": "Staff office",
+    "full": "Staff office"
+   },
+   "sense": {
+    "en": "staff office",
+    "hi": "मानव संसाधन"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69
+   ],
+   "answer": "USHER",
+   "clueCell": 64,
+   "clue": {
+    "kind": "gap",
+    "text": "PLEASE __ THEM IN",
+    "full": "Fill the gap: Please ___ them in"
+   },
+   "sense": {
+    "en": "to show people to their seats in a theater or auditorium.",
+    "hi": "राह दिखाना, पहुँचाना",
+    "entryId": 23818
+   }
+  },
+  {
+   "id": "a:8:7",
+   "dir": "a",
+   "cells": [
+    71
+   ],
+   "answer": "L",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after K",
+    "full": "Letter after K"
+   },
+   "sense": {
+    "en": "the letter L",
+    "hi": "एल (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:9:6",
+   "dir": "d",
+   "cells": [
+    78
+   ],
+   "answer": "C",
+   "clueCell": 70,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after B",
+    "full": "Letter after B"
+   },
+   "sense": {
+    "en": "the letter C",
+    "hi": "सी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "TERRACE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "rel",
+    "text": "Patio",
+    "full": "Similar to patio"
+   },
+   "sense": {
+    "en": "a level paved area next to a building; a patio.",
+    "hi": "छत, बरामदा",
+    "entryId": 22206
+   }
+  }
+ ]
+}

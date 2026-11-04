@@ -150,7 +150,6 @@ async function main() {
         check('every manifest icon loads at its stated size, including a maskable one', icons.length === 3 && icons.every(Boolean) && m.icons.some((i) => i.purpose === 'maskable'), { icons, m: m.icons });
         // Android: Panna is a share target, and the icon's long-press menu has "Speak a word" and "Review".
         check('the manifest takes shared text as /?share_text=…', m.share_target?.action === '/' && m.share_target.method === 'GET' && m.share_target.params?.text === 'share_text' && m.share_target.params.title === 'share_title' && m.share_target.params.url === 'share_url', m.share_target);
-        // Off Vercel production (here) the Duel's shortcut is there too; production gets it at launch.
         check('the manifest has the icon shortcuts: Speak a word, Review and Panna Duel', JSON.stringify((m.shortcuts ?? []).map((s) => [s.name, s.url])) === JSON.stringify([['Speak a word', '/?voice=1'], ['Review', '/?open=review'], ['Panna Duel', '/play']]), m.shortcuts);
         const shortcutIcons = await Promise.all((m.shortcuts ?? []).flatMap((s) => s.icons ?? []).map(async (i) => {
           const res = await fetch(`${BASE}${i.src}`);

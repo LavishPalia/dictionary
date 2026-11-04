@@ -1,0 +1,707 @@
+{
+ "id": "p0102",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "T",
+  "10": "H",
+  "11": "I",
+  "12": "S",
+  "13": "T",
+  "14": "L",
+  "15": "E",
+  "17": "R",
+  "18": "E",
+  "19": "T",
+  "20": "I",
+  "21": "R",
+  "22": "E",
+  "25": "I",
+  "27": "S",
+  "28": "L",
+  "29": "A",
+  "30": "S",
+  "31": "H",
+  "33": "B",
+  "34": "E",
+  "36": "K",
+  "37": "I",
+  "38": "T",
+  "39": "E",
+  "41": "E",
+  "42": "X",
+  "43": "P",
+  "44": "E",
+  "45": "L",
+  "47": "N",
+  "49": "S",
+  "50": "H",
+  "51": "I",
+  "52": "N",
+  "54": "D",
+  "55": "C",
+  "57": "M",
+  "58": "A",
+  "59": "N",
+  "61": "V",
+  "62": "I",
+  "63": "E",
+  "65": "A",
+  "66": "L",
+  "67": "T",
+  "68": "A",
+  "69": "I",
+  "70": "R",
+  "73": "N",
+  "74": "E",
+  "75": "O",
+  "76": "N",
+  "77": "A",
+  "78": "T",
+  "79": "E"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  23,
+  24,
+  26,
+  32,
+  35,
+  40,
+  46,
+  48,
+  53,
+  56,
+  60,
+  64,
+  71,
+  72
+ ],
+ "given": [
+  9,
+  44,
+  66
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "TRIBESMAN",
+   "clueCell": 1,
+   "clue": {
+    "kind": "def",
+    "text": "Tribe member",
+    "full": "Tribe member"
+   },
+   "sense": {
+    "en": "someone who lives in a tribe.",
+    "hi": "कबीले का सदस्य, आदिवासी",
+    "entryId": 22874
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18
+   ],
+   "answer": "HE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "abbr",
+    "text": "Helium symbol",
+    "full": "Helium symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of helium",
+    "hi": "हीलियम (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27
+   ],
+   "answer": "ITS",
+   "clueCell": 3,
+   "clue": {
+    "kind": "gap",
+    "text": "DOG WAGGED __ TAIL",
+    "full": "Fill the gap: Dog wagged ___ tail"
+   },
+   "sense": {
+    "en": "belonging to or associated with a thing or animal.",
+    "hi": "इसका, उसका",
+    "entryId": 12128
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44,
+    52
+   ],
+   "answer": "SILKEN",
+   "clueCell": 4,
+   "clue": {
+    "kind": "gap",
+    "text": "HER __ HAIR",
+    "full": "Fill the gap: Her ___ hair"
+   },
+   "sense": {
+    "en": "soft, smooth, and shiny like silk.",
+    "hi": "रेशमी, मुलायम",
+    "entryId": 20014
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45
+   ],
+   "answer": "TRAIL",
+   "clueCell": 5,
+   "clue": {
+    "kind": "rel",
+    "text": "Track",
+    "full": "Similar to track"
+   },
+   "sense": {
+    "en": "a path or track roughly made through wild or hilly country.",
+    "hi": "रास्ता, मार्ग",
+    "entryId": 22726
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30,
+    38
+   ],
+   "answer": "LEST",
+   "clueCell": 6,
+   "clue": {
+    "kind": "def",
+    "text": "For fear that",
+    "full": "For fear that"
+   },
+   "sense": {
+    "en": "for fear that; to avoid the risk that.",
+    "hi": "कहीं ऐसा न हो कि",
+    "entryId": 12869
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15
+   ],
+   "answer": "E",
+   "clueCell": 7,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Echo",
+    "full": "Radio code Echo"
+   },
+   "sense": {
+    "en": "the letter E (radio alphabet: Echo)",
+    "hi": "ई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "THISTLE",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Prickly plant",
+    "full": "Prickly plant"
+   },
+   "sense": {
+    "en": "a plant with prickly leaves and purple flowers.",
+    "hi": "कांटेदार पौधा",
+    "entryId": 22340
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+   ],
+   "answer": "RETIRE",
+   "clueCell": 16,
+   "clue": {
+    "kind": "rel",
+    "text": "Depart",
+    "full": "Similar to depart"
+   },
+   "sense": {
+    "en": "to leave one's job and stop working, usually because of age.",
+    "hi": "सेवानिवृत्त होना, रिटायर होना",
+    "entryId": 18541
+   }
+  },
+  {
+   "id": "d:3:7",
+   "dir": "d",
+   "cells": [
+    31,
+    39,
+    47,
+    55,
+    63
+   ],
+   "answer": "HENCE",
+   "clueCell": 23,
+   "clue": {
+    "kind": "def",
+    "text": "Thus",
+    "full": "Thus"
+   },
+   "sense": {
+    "en": "as a consequence; for this reason.",
+    "hi": "अतः, इसलिए",
+    "entryId": 10456
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25
+   ],
+   "answer": "I",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Sounds like “eye”",
+    "full": "Sounds like “eye”"
+   },
+   "sense": {
+    "en": "the letter I, which sounds like “eye”",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:3:3",
+   "dir": "a",
+   "cells": [
+    27,
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "SLASH",
+   "clueCell": 26,
+   "clue": {
+    "kind": "gap",
+    "text": "__ THE TIRES",
+    "full": "Fill the gap: ___ the tires"
+   },
+   "sense": {
+    "en": "to cut with sweeping strokes.",
+    "hi": "चीरना, काटना",
+    "entryId": 20191
+   }
+  },
+  {
+   "id": "d:4:2",
+   "dir": "d",
+   "cells": [
+    34,
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "EXHALE",
+   "clueCell": 26,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of inhale",
+    "full": "Opposite of inhale"
+   },
+   "sense": {
+    "en": "to expel air from the lungs.",
+    "hi": "सांस छोड़ना",
+    "entryId": 7896
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34
+   ],
+   "answer": "BE",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "a:4:4",
+   "dir": "a",
+   "cells": [
+    36,
+    37,
+    38,
+    39
+   ],
+   "answer": "KITE",
+   "clueCell": 35,
+   "clue": {
+    "kind": "pic",
+    "img": "1fa81",
+    "full": "Picture: a toy that flies on a string"
+   },
+   "sense": {
+    "en": "a toy consisting of a light frame with thin material flown in the wind at the end of a long string.",
+    "hi": "पतंग",
+    "entryId": 12469
+   }
+  },
+  {
+   "id": "d:5:3",
+   "dir": "d",
+   "cells": [
+    43,
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "PINTO",
+   "clueCell": 35,
+   "clue": {
+    "kind": "def",
+    "text": "Spotted pony",
+    "full": "Spotted pony"
+   },
+   "sense": {
+    "en": "a horse or pony with large colored patches.",
+    "hi": "चितकबरा घोड़ा",
+    "entryId": 16452
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42,
+    43,
+    44,
+    45
+   ],
+   "answer": "EXPEL",
+   "clueCell": 40,
+   "clue": {
+    "kind": "rel",
+    "text": "Dismiss",
+    "full": "Similar to dismiss"
+   },
+   "sense": {
+    "en": "to officially force someone to leave a school, organization, or country.",
+    "hi": "निकाल देना, निष्कासित करना",
+    "entryId": 7950
+   }
+  },
+  {
+   "id": "a:5:7",
+   "dir": "a",
+   "cells": [
+    47
+   ],
+   "answer": "N",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after M",
+    "full": "Letter after M"
+   },
+   "sense": {
+    "en": "the letter N",
+    "hi": "एन (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:6:6",
+   "dir": "d",
+   "cells": [
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "DIRT",
+   "clueCell": 46,
+   "clue": {
+    "kind": "def",
+    "text": "Soil",
+    "full": "Soil"
+   },
+   "sense": {
+    "en": "the part of the earth's surface consisting of humus and disintegrated rock.",
+    "hi": "मिट्टी, धूल",
+    "entryId": 6315
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51,
+    52
+   ],
+   "answer": "SHIN",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Lower leg front",
+    "full": "Lower leg front"
+   },
+   "sense": {
+    "en": "the front part of the human leg between the knee and the ankle.",
+    "hi": "पिंडली, टांग का अगला भाग",
+    "entryId": 19804
+   }
+  },
+  {
+   "id": "a:6:6",
+   "dir": "a",
+   "cells": [
+    54,
+    55
+   ],
+   "answer": "DC",
+   "clueCell": 53,
+   "clue": {
+    "kind": "abbr",
+    "text": "Direct current",
+    "full": "Direct current"
+   },
+   "sense": {
+    "en": "direct current",
+    "hi": "दिष्ट धारा"
+   }
+  },
+  {
+   "id": "d:7:5",
+   "dir": "d",
+   "cells": [
+    61,
+    69,
+    77
+   ],
+   "answer": "VIA",
+   "clueCell": 53,
+   "clue": {
+    "kind": "def",
+    "text": "By way of",
+    "full": "By way of"
+   },
+   "sense": {
+    "en": "travelling through; by means of.",
+    "hi": "से होकर, के ज़रिए",
+    "entryId": 24032
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59
+   ],
+   "answer": "MAN",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Adult male",
+    "full": "Adult male"
+   },
+   "sense": {
+    "en": "an adult male human being.",
+    "hi": "आदमी, पुरुष",
+    "entryId": 13486
+   }
+  },
+  {
+   "id": "a:7:5",
+   "dir": "a",
+   "cells": [
+    61,
+    62,
+    63
+   ],
+   "answer": "VIE",
+   "clueCell": 60,
+   "clue": {
+    "kind": "rel",
+    "text": "Compete",
+    "full": "Similar to compete"
+   },
+   "sense": {
+    "en": "to compete for something or engage in a contest.",
+    "hi": "मुकाबला करना, होड़ करना",
+    "entryId": 24065
+   }
+  },
+  {
+   "id": "d:8:4",
+   "dir": "d",
+   "cells": [
+    68,
+    76
+   ],
+   "answer": "AN",
+   "clueCell": 60,
+   "clue": {
+    "kind": "def",
+    "text": "One unspecific",
+    "full": "One unspecific"
+   },
+   "sense": {
+    "en": "used before a vowel sound to denote a single unspecific thing.",
+    "hi": "एक, कोई",
+    "entryId": 774
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+   ],
+   "answer": "ALTAIR",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Bright star",
+    "full": "Bright star"
+   },
+   "sense": {
+    "en": "the brightest star in the aquila constellation.",
+    "hi": "अल्टेयर",
+    "entryId": 658
+   }
+  },
+  {
+   "id": "d:9:7",
+   "dir": "d",
+   "cells": [
+    79
+   ],
+   "answer": "E",
+   "clueCell": 71,
+   "clue": {
+    "kind": "def",
+    "text": "Note after D",
+    "full": "Note after D"
+   },
+   "sense": {
+    "en": "the musical note E",
+    "hi": "ग (स्वर ई)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "NEONATE",
+   "clueCell": 72,
+   "clue": {
+    "kind": "gap",
+    "text": "THE __ CRIED.",
+    "full": "Fill the gap: The ___ cried."
+   },
+   "sense": {
+    "en": "a newborn infant under four weeks of age.",
+    "hi": "नवजात शिशु",
+    "entryId": 14780
+   }
+  }
+ ]
+}

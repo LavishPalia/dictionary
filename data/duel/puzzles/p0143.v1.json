@@ -1,0 +1,724 @@
+{
+ "id": "p0143",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "A",
+  "10": "B",
+  "11": "S",
+  "12": "T",
+  "13": "A",
+  "14": "I",
+  "15": "N",
+  "17": "P",
+  "18": "E",
+  "19": "E",
+  "20": "R",
+  "22": "T",
+  "23": "O",
+  "25": "P",
+  "27": "M",
+  "28": "O",
+  "29": "I",
+  "30": "S",
+  "31": "T",
+  "33": "A",
+  "34": "D",
+  "35": "I",
+  "36": "O",
+  "37": "S",
+  "39": "I",
+  "41": "R",
+  "42": "E",
+  "44": "P",
+  "45": "O",
+  "46": "L",
+  "47": "O",
+  "49": "A",
+  "50": "T",
+  "51": "M",
+  "53": "T",
+  "54": "A",
+  "55": "N",
+  "57": "T",
+  "58": "E",
+  "59": "A",
+  "60": "P",
+  "61": "O",
+  "62": "T",
+  "65": "U",
+  "66": "S",
+  "68": "E",
+  "69": "P",
+  "70": "I",
+  "71": "C",
+  "73": "S",
+  "74": "T",
+  "75": "I",
+  "76": "P",
+  "77": "E",
+  "78": "N",
+  "79": "D"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  21,
+  24,
+  26,
+  32,
+  38,
+  40,
+  43,
+  48,
+  52,
+  56,
+  63,
+  64,
+  67,
+  72
+ ],
+ "given": [
+  9,
+  34,
+  77
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "APPARATUS",
+   "clueCell": 1,
+   "clue": {
+    "kind": "rel",
+    "text": "Setup",
+    "full": "Similar to setup"
+   },
+   "sense": {
+    "en": "equipment designed to serve a specific function.",
+    "hi": "उपकरण, यंत्र",
+    "entryId": 1003
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18
+   ],
+   "answer": "BE",
+   "clueCell": 2,
+   "clue": {
+    "kind": "gap",
+    "text": "TO __ OR NOT",
+    "full": "Fill the gap: To ___ or not"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35
+   ],
+   "answer": "SEMI",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Big truck",
+    "full": "Big truck"
+   },
+   "sense": {
+    "en": "a truck consisting of a tractor and trailer together.",
+    "hi": "बड़ा ट्रक, ट्रेलर",
+    "entryId": 19548
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44
+   ],
+   "answer": "TROOP",
+   "clueCell": 4,
+   "clue": {
+    "kind": "rel",
+    "text": "Squad",
+    "full": "Similar to squad"
+   },
+   "sense": {
+    "en": "a group of soldiers.",
+    "hi": "सैनिक दल, टुकड़ी",
+    "entryId": 22931
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13
+   ],
+   "answer": "A",
+   "clueCell": 5,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Alfa",
+    "full": "Radio code Alfa"
+   },
+   "sense": {
+    "en": "the letter A (radio alphabet: Alfa)",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30
+   ],
+   "answer": "ITS",
+   "clueCell": 6,
+   "clue": {
+    "kind": "gap",
+    "text": "DOG WAGGED __ TAIL",
+    "full": "Fill the gap: Dog wagged ___ tail"
+   },
+   "sense": {
+    "en": "belonging to or associated with a thing or animal.",
+    "hi": "इसका, उसका",
+    "entryId": 12128
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15,
+    23,
+    31,
+    39,
+    47,
+    55
+   ],
+   "answer": "NOTION",
+   "clueCell": 7,
+   "clue": {
+    "kind": "rel",
+    "text": "Thought",
+    "full": "Similar to thought"
+   },
+   "sense": {
+    "en": "a conception of or belief about something.",
+    "hi": "विचार, धारणा",
+    "entryId": 15020
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "ABSTAIN",
+   "clueCell": 8,
+   "clue": {
+    "kind": "def",
+    "text": "Say no",
+    "full": "Say no"
+   },
+   "sense": {
+    "en": "to choose not to use or consume something.",
+    "hi": "बचना, परहेज़ करना",
+    "entryId": 83
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "answer": "PEER",
+   "clueCell": 16,
+   "clue": {
+    "kind": "gap",
+    "text": "RESPECT EVERY __",
+    "full": "Fill the gap: Respect every ___"
+   },
+   "sense": {
+    "en": "a person of the same age, status, or ability as another.",
+    "hi": "साथी, समकक्ष",
+    "entryId": 16063
+   }
+  },
+  {
+   "id": "a:2:6",
+   "dir": "a",
+   "cells": [
+    22,
+    23
+   ],
+   "answer": "TO",
+   "clueCell": 21,
+   "clue": {
+    "kind": "gap",
+    "text": "GO __ TOWN",
+    "full": "Fill the gap: Go ___ town"
+   },
+   "sense": {
+    "en": "expressing motion in the direction of a particular location.",
+    "hi": "को, की ओर, तक",
+    "entryId": 22539
+   }
+  },
+  {
+   "id": "d:3:5",
+   "dir": "d",
+   "cells": [
+    29,
+    37,
+    45,
+    53,
+    61,
+    69,
+    77
+   ],
+   "answer": "ISOTOPE",
+   "clueCell": 21,
+   "clue": {
+    "kind": "def",
+    "text": "Atom variant",
+    "full": "Atom variant"
+   },
+   "sense": {
+    "en": "an atom that has the same number of protons but different neutrons.",
+    "hi": "आइसोटोप",
+    "entryId": 12114
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25
+   ],
+   "answer": "P",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after O",
+    "full": "Letter after O"
+   },
+   "sense": {
+    "en": "the letter P",
+    "hi": "पी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:3:3",
+   "dir": "a",
+   "cells": [
+    27,
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "MOIST",
+   "clueCell": 26,
+   "clue": {
+    "kind": "rel",
+    "text": "Opposite of dry",
+    "full": "Opposite of dry"
+   },
+   "sense": {
+    "en": "slightly wet.",
+    "hi": "नम, गीला",
+    "entryId": 14280
+   }
+  },
+  {
+   "id": "d:4:2",
+   "dir": "d",
+   "cells": [
+    34,
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "DETEST",
+   "clueCell": 26,
+   "clue": {
+    "kind": "def",
+    "text": "Hate much",
+    "full": "Hate much"
+   },
+   "sense": {
+    "en": "to dislike intensely or feel great hatred towards.",
+    "hi": "घृणा करना, नफरत करना",
+    "entryId": 6107
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "answer": "ADIOS",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Goodbye word",
+    "full": "Goodbye word"
+   },
+   "sense": {
+    "en": "a farewell remark or goodbye.",
+    "hi": "अलविदा",
+    "entryId": 278
+   }
+  },
+  {
+   "id": "a:4:7",
+   "dir": "a",
+   "cells": [
+    39
+   ],
+   "answer": "I",
+   "clueCell": 38,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after H",
+    "full": "Letter after H"
+   },
+   "sense": {
+    "en": "the letter I",
+    "hi": "आई (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "d:5:6",
+   "dir": "d",
+   "cells": [
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "LATIN",
+   "clueCell": 38,
+   "clue": {
+    "kind": "rel",
+    "text": "Roman",
+    "full": "Similar to roman"
+   },
+   "sense": {
+    "en": "of or relating to the ancient language of ancient rome.",
+    "hi": "लैटिन",
+    "entryId": 12682
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "RE",
+   "clueCell": 40,
+   "clue": {
+    "kind": "def",
+    "text": "Note after do",
+    "full": "Note after do"
+   },
+   "sense": {
+    "en": "the musical note RE",
+    "hi": "रे (सरगम)"
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "POLO",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Horse game",
+    "full": "Horse game"
+   },
+   "sense": {
+    "en": "a game played on horseback using long-handled mallets and a wooden ball.",
+    "hi": "पोलो",
+    "entryId": 16710
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51,
+    59
+   ],
+   "answer": "MA",
+   "clueCell": 43,
+   "clue": {
+    "kind": "abbr",
+    "text": "Mum",
+    "full": "Mum"
+   },
+   "sense": {
+    "en": "mum",
+    "hi": "माँ"
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51
+   ],
+   "answer": "ATM",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Cash machine",
+    "full": "Cash machine"
+   },
+   "sense": {
+    "en": "a machine that lets bank customers withdraw cash automatically.",
+    "hi": "एटीएम, नगद मशीन",
+    "entryId": 1360
+   }
+  },
+  {
+   "id": "a:6:5",
+   "dir": "a",
+   "cells": [
+    53,
+    54,
+    55
+   ],
+   "answer": "TAN",
+   "clueCell": 52,
+   "clue": {
+    "kind": "def",
+    "text": "Sun glow",
+    "full": "Sun glow"
+   },
+   "sense": {
+    "en": "browning of the skin caused by exposure to the sun.",
+    "hi": "धूप से सांवला होना",
+    "entryId": 21961
+   }
+  },
+  {
+   "id": "d:7:4",
+   "dir": "d",
+   "cells": [
+    60,
+    68,
+    76
+   ],
+   "answer": "PEP",
+   "clueCell": 52,
+   "clue": {
+    "kind": "def",
+    "text": "High energy",
+    "full": "High energy"
+   },
+   "sense": {
+    "en": "liveliness and energy.",
+    "hi": "जोश, स्फूर्ति",
+    "entryId": 16113
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60,
+    61,
+    62
+   ],
+   "answer": "TEAPOT",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Hot drink pot",
+    "full": "Hot drink pot"
+   },
+   "sense": {
+    "en": "a container with a handle and spout used for making and pouring tea.",
+    "hi": "चायदानी",
+    "entryId": 22062
+   }
+  },
+  {
+   "id": "d:8:7",
+   "dir": "d",
+   "cells": [
+    71,
+    79
+   ],
+   "answer": "CD",
+   "clueCell": 63,
+   "clue": {
+    "kind": "abbr",
+    "text": "Roman 400",
+    "full": "Roman 400"
+   },
+   "sense": {
+    "en": "400 in Roman numerals",
+    "hi": "चार सौ (रोमन अंक)"
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66
+   ],
+   "answer": "US",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Not them",
+    "full": "Not them"
+   },
+   "sense": {
+    "en": "used as the object of a verb referring to the speaker and others.",
+    "hi": "हमें, हमको",
+    "entryId": 23808
+   }
+  },
+  {
+   "id": "a:8:4",
+   "dir": "a",
+   "cells": [
+    68,
+    69,
+    70,
+    71
+   ],
+   "answer": "EPIC",
+   "clueCell": 67,
+   "clue": {
+    "kind": "def",
+    "text": "Grand scale",
+    "full": "Grand scale"
+   },
+   "sense": {
+    "en": "very imposing or impressive, surpassing the ordinary in scale.",
+    "hi": "महाकाव्य जैसा, विशाल",
+    "entryId": 7602
+   }
+  },
+  {
+   "id": "d:9:3",
+   "dir": "d",
+   "cells": [
+    75
+   ],
+   "answer": "I",
+   "clueCell": 67,
+   "clue": {
+    "kind": "abbr",
+    "text": "Iodine symbol",
+    "full": "Iodine symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of iodine",
+    "hi": "आयोडीन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "STIPEND",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Regular pay",
+    "full": "Regular pay"
+   },
+   "sense": {
+    "en": "a regular fixed payment for work or expenses.",
+    "hi": "वजीफा, भत्ता",
+    "entryId": 21156
+   }
+  }
+ ]
+}

@@ -1,0 +1,709 @@
+{
+ "id": "p0047",
+ "version": 1,
+ "rows": 10,
+ "cols": 8,
+ "solution": {
+  "9": "S",
+  "10": "I",
+  "11": "D",
+  "12": "E",
+  "13": "C",
+  "14": "A",
+  "15": "R",
+  "17": "E",
+  "18": "N",
+  "19": "A",
+  "20": "M",
+  "21": "O",
+  "22": "R",
+  "25": "A",
+  "27": "D",
+  "28": "A",
+  "29": "R",
+  "30": "T",
+  "31": "S",
+  "33": "S",
+  "34": "T",
+  "35": "A",
+  "36": "I",
+  "37": "R",
+  "39": "C",
+  "41": "O",
+  "42": "R",
+  "44": "L",
+  "45": "A",
+  "46": "T",
+  "47": "E",
+  "49": "N",
+  "50": "A",
+  "51": "G",
+  "53": "L",
+  "54": "A",
+  "55": "N",
+  "57": "I",
+  "58": "D",
+  "59": "L",
+  "60": "E",
+  "62": "B",
+  "63": "E",
+  "65": "N",
+  "66": "E",
+  "67": "U",
+  "68": "R",
+  "69": "A",
+  "70": "L",
+  "73": "G",
+  "74": "R",
+  "75": "E",
+  "76": "A",
+  "77": "S",
+  "78": "E",
+  "79": "D"
+ },
+ "clueCells": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  16,
+  23,
+  24,
+  26,
+  32,
+  38,
+  40,
+  43,
+  48,
+  52,
+  56,
+  61,
+  64,
+  71,
+  72
+ ],
+ "given": [
+  9,
+  37,
+  74
+ ],
+ "slots": [
+  {
+   "id": "d:1:1",
+   "dir": "d",
+   "cells": [
+    9,
+    17,
+    25,
+    33,
+    41,
+    49,
+    57,
+    65,
+    73
+   ],
+   "answer": "SEASONING",
+   "clueCell": 1,
+   "clue": {
+    "kind": "gap",
+    "text": "ADD SALT __",
+    "full": "Fill the gap: Add salt ___"
+   },
+   "sense": {
+    "en": "herbs or spices added to improve the flavor of food.",
+    "hi": "मसाला",
+    "entryId": 19449
+   }
+  },
+  {
+   "id": "d:1:2",
+   "dir": "d",
+   "cells": [
+    10,
+    18
+   ],
+   "answer": "IN",
+   "clueCell": 2,
+   "clue": {
+    "kind": "def",
+    "text": "Inside",
+    "full": "Inside"
+   },
+   "sense": {
+    "en": "expressing the situation of something enclosed or surrounded by something.",
+    "hi": "में, अंदर",
+    "entryId": 11319
+   }
+  },
+  {
+   "id": "d:1:3",
+   "dir": "d",
+   "cells": [
+    11,
+    19,
+    27,
+    35
+   ],
+   "answer": "DADA",
+   "clueCell": 3,
+   "clue": {
+    "kind": "def",
+    "text": "Dad",
+    "full": "Dad"
+   },
+   "sense": {
+    "en": "an informal word for a father.",
+    "hi": "पिता, पापा",
+    "entryId": 5533
+   }
+  },
+  {
+   "id": "d:1:4",
+   "dir": "d",
+   "cells": [
+    12,
+    20,
+    28,
+    36,
+    44
+   ],
+   "answer": "EMAIL",
+   "clueCell": 4,
+   "clue": {
+    "kind": "def",
+    "text": "Web mail",
+    "full": "Web mail"
+   },
+   "sense": {
+    "en": "a system of world-wide electronic communication using computers.",
+    "hi": "ईमेल",
+    "entryId": 7299
+   }
+  },
+  {
+   "id": "d:1:5",
+   "dir": "d",
+   "cells": [
+    13,
+    21,
+    29,
+    37,
+    45,
+    53
+   ],
+   "answer": "CORRAL",
+   "clueCell": 5,
+   "clue": {
+    "kind": "def",
+    "text": "Animal pen",
+    "full": "Animal pen"
+   },
+   "sense": {
+    "en": "a fenced enclosure for cattle or horses.",
+    "hi": "बाड़ा, घेर",
+    "entryId": 4960
+   }
+  },
+  {
+   "id": "d:1:6",
+   "dir": "d",
+   "cells": [
+    14,
+    22,
+    30
+   ],
+   "answer": "ART",
+   "clueCell": 6,
+   "clue": {
+    "kind": "rel",
+    "text": "Craft",
+    "full": "Similar to craft"
+   },
+   "sense": {
+    "en": "the expression or application of human creative skill and imagination.",
+    "hi": "कला",
+    "entryId": 1198
+   }
+  },
+  {
+   "id": "d:1:7",
+   "dir": "d",
+   "cells": [
+    15
+   ],
+   "answer": "R",
+   "clueCell": 7,
+   "clue": {
+    "kind": "def",
+    "text": "Letter after Q",
+    "full": "Letter after Q"
+   },
+   "sense": {
+    "en": "the letter R",
+    "hi": "आर (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:1:1",
+   "dir": "a",
+   "cells": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "answer": "SIDECAR",
+   "clueCell": 8,
+   "clue": {
+    "kind": "gap",
+    "text": "HE RODE IN A __.",
+    "full": "Fill the gap: He rode in a ___."
+   },
+   "sense": {
+    "en": "a small passenger carrier attached to a motorcycle.",
+    "hi": "साइडकार (मोटरबाइक की सवारी)",
+    "entryId": 19958
+   }
+  },
+  {
+   "id": "a:2:1",
+   "dir": "a",
+   "cells": [
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+   ],
+   "answer": "ENAMOR",
+   "clueCell": 16,
+   "clue": {
+    "kind": "def",
+    "text": "Charm much",
+    "full": "Charm much"
+   },
+   "sense": {
+    "en": "to fill with love and fascination.",
+    "hi": "मोह लेना, मंत्रमुग्ध करना",
+    "entryId": 7400
+   }
+  },
+  {
+   "id": "d:3:7",
+   "dir": "d",
+   "cells": [
+    31,
+    39,
+    47,
+    55,
+    63
+   ],
+   "answer": "SCENE",
+   "clueCell": 23,
+   "clue": {
+    "kind": "def",
+    "text": "Place of act",
+    "full": "Place of act"
+   },
+   "sense": {
+    "en": "the place where an incident in real life or fiction occurs or occurred.",
+    "hi": "दृश्य, नज़ारा",
+    "entryId": 19227
+   }
+  },
+  {
+   "id": "a:3:1",
+   "dir": "a",
+   "cells": [
+    25
+   ],
+   "answer": "A",
+   "clueCell": 24,
+   "clue": {
+    "kind": "def",
+    "text": "First letter",
+    "full": "First letter"
+   },
+   "sense": {
+    "en": "the letter A",
+    "hi": "ए (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:3:3",
+   "dir": "a",
+   "cells": [
+    27,
+    28,
+    29,
+    30,
+    31
+   ],
+   "answer": "DARTS",
+   "clueCell": 26,
+   "clue": {
+    "kind": "gap",
+    "text": "PLAY __",
+    "full": "Fill the gap: Play ___"
+   },
+   "sense": {
+    "en": "a game in which small pointed missiles are thrown at a board.",
+    "hi": "डार्ट्स खेल",
+    "entryId": 5599
+   }
+  },
+  {
+   "id": "d:4:2",
+   "dir": "d",
+   "cells": [
+    34,
+    42,
+    50,
+    58,
+    66,
+    74
+   ],
+   "answer": "TRADER",
+   "clueCell": 26,
+   "clue": {
+    "kind": "def",
+    "text": "Merchant",
+    "full": "Merchant"
+   },
+   "sense": {
+    "en": "someone who purchases and maintains an inventory of goods to be sold.",
+    "hi": "व्यापारी, सौदागर",
+    "entryId": 22714
+   }
+  },
+  {
+   "id": "a:4:1",
+   "dir": "a",
+   "cells": [
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "answer": "STAIR",
+   "clueCell": 32,
+   "clue": {
+    "kind": "def",
+    "text": "Step up",
+    "full": "Step up"
+   },
+   "sense": {
+    "en": "a single step used for ascending or descending.",
+    "hi": "सीढ़ी, पायदान",
+    "entryId": 20956
+   }
+  },
+  {
+   "id": "a:4:7",
+   "dir": "a",
+   "cells": [
+    39
+   ],
+   "answer": "C",
+   "clueCell": 38,
+   "clue": {
+    "kind": "abbr",
+    "text": "Carbon symbol",
+    "full": "Carbon symbol"
+   },
+   "sense": {
+    "en": "chemical symbol of carbon",
+    "hi": "कार्बन (रासायनिक संकेत)"
+   }
+  },
+  {
+   "id": "d:5:6",
+   "dir": "d",
+   "cells": [
+    46,
+    54,
+    62,
+    70,
+    78
+   ],
+   "answer": "TABLE",
+   "clueCell": 38,
+   "clue": {
+    "kind": "rel",
+    "text": "Desk",
+    "full": "Similar to desk"
+   },
+   "sense": {
+    "en": "a piece of furniture with a flat top and one or more legs.",
+    "hi": "मेज़, तालिका",
+    "entryId": 21881
+   }
+  },
+  {
+   "id": "a:5:1",
+   "dir": "a",
+   "cells": [
+    41,
+    42
+   ],
+   "answer": "OR",
+   "clueCell": 40,
+   "clue": {
+    "kind": "gap",
+    "text": "NOW __ NEVER",
+    "full": "Fill the gap: Now ___ never"
+   },
+   "sense": {
+    "en": "used to link alternatives.",
+    "hi": "या, अथवा",
+    "entryId": 15353
+   }
+  },
+  {
+   "id": "a:5:4",
+   "dir": "a",
+   "cells": [
+    44,
+    45,
+    46,
+    47
+   ],
+   "answer": "LATE",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Past due time",
+    "full": "Past due time"
+   },
+   "sense": {
+    "en": "later than usual or than expected.",
+    "hi": "देर से, विलंब से",
+    "entryId": 12673
+   }
+  },
+  {
+   "id": "d:6:3",
+   "dir": "d",
+   "cells": [
+    51,
+    59,
+    67,
+    75
+   ],
+   "answer": "GLUE",
+   "clueCell": 43,
+   "clue": {
+    "kind": "def",
+    "text": "Sticky bond",
+    "full": "Sticky bond"
+   },
+   "sense": {
+    "en": "cement consisting of a sticky substance that is used as an adhesive.",
+    "hi": "ग्लू, गोंद",
+    "entryId": 9581
+   }
+  },
+  {
+   "id": "a:6:1",
+   "dir": "a",
+   "cells": [
+    49,
+    50,
+    51
+   ],
+   "answer": "NAG",
+   "clueCell": 48,
+   "clue": {
+    "kind": "def",
+    "text": "Keep at him",
+    "full": "Keep at him"
+   },
+   "sense": {
+    "en": "to annoy someone by constantly complaining.",
+    "hi": "टोकना, परेशान करना",
+    "entryId": 14638
+   }
+  },
+  {
+   "id": "a:6:5",
+   "dir": "a",
+   "cells": [
+    53,
+    54,
+    55
+   ],
+   "answer": "LAN",
+   "clueCell": 52,
+   "clue": {
+    "kind": "rel",
+    "text": "Network",
+    "full": "Similar to network"
+   },
+   "sense": {
+    "en": "a computer network that links devices within a building.",
+    "hi": "लैन, लोकल एरिया नेटवर्क",
+    "entryId": 12597
+   }
+  },
+  {
+   "id": "d:7:4",
+   "dir": "d",
+   "cells": [
+    60,
+    68,
+    76
+   ],
+   "answer": "ERA",
+   "clueCell": 52,
+   "clue": {
+    "kind": "rel",
+    "text": "Period",
+    "full": "Similar to period"
+   },
+   "sense": {
+    "en": "a period marked by distinctive character or reckoned from a fixed point.",
+    "hi": "युग, काल",
+    "entryId": 7652
+   }
+  },
+  {
+   "id": "a:7:1",
+   "dir": "a",
+   "cells": [
+    57,
+    58,
+    59,
+    60
+   ],
+   "answer": "IDLE",
+   "clueCell": 56,
+   "clue": {
+    "kind": "def",
+    "text": "Doing nothing",
+    "full": "Doing nothing"
+   },
+   "sense": {
+    "en": "not working or active; doing nothing.",
+    "hi": "निकम्मा, बेकार, खाली",
+    "entryId": 11091
+   }
+  },
+  {
+   "id": "a:7:6",
+   "dir": "a",
+   "cells": [
+    62,
+    63
+   ],
+   "answer": "BE",
+   "clueCell": 61,
+   "clue": {
+    "kind": "def",
+    "text": "Exist",
+    "full": "Exist"
+   },
+   "sense": {
+    "en": "exist; occur; take place.",
+    "hi": "होना, रहना",
+    "entryId": 1859
+   }
+  },
+  {
+   "id": "d:8:5",
+   "dir": "d",
+   "cells": [
+    69,
+    77
+   ],
+   "answer": "AS",
+   "clueCell": 61,
+   "clue": {
+    "kind": "def",
+    "text": "In the role of",
+    "full": "In the role of"
+   },
+   "sense": {
+    "en": "in the role of; to the same degree; while.",
+    "hi": "जैसे, के रूप में, जब",
+    "entryId": 1226
+   }
+  },
+  {
+   "id": "a:8:1",
+   "dir": "a",
+   "cells": [
+    65,
+    66,
+    67,
+    68,
+    69,
+    70
+   ],
+   "answer": "NEURAL",
+   "clueCell": 64,
+   "clue": {
+    "kind": "def",
+    "text": "Nerve related",
+    "full": "Nerve related"
+   },
+   "sense": {
+    "en": "relating to a nerve or the nervous system.",
+    "hi": "तंत्रिका संबंधी",
+    "entryId": 14801
+   }
+  },
+  {
+   "id": "d:9:7",
+   "dir": "d",
+   "cells": [
+    79
+   ],
+   "answer": "D",
+   "clueCell": 71,
+   "clue": {
+    "kind": "abbr",
+    "text": "Radio code Delta",
+    "full": "Radio code Delta"
+   },
+   "sense": {
+    "en": "the letter D (radio alphabet: Delta)",
+    "hi": "डी (अंग्रेज़ी अक्षर)"
+   }
+  },
+  {
+   "id": "a:9:1",
+   "dir": "a",
+   "cells": [
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+   ],
+   "answer": "GREASED",
+   "clueCell": 72,
+   "clue": {
+    "kind": "def",
+    "text": "Oiled up",
+    "full": "Oiled up"
+   },
+   "sense": {
+    "en": "covered with oil or grease to make something move smoothly.",
+    "hi": "चिकना किया हुआ, तेल लगा",
+    "entryId": 9817
+   }
+  }
+ ]
+}
