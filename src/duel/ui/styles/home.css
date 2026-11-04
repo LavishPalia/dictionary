@@ -52,7 +52,7 @@ html[data-light="evening"] .duel-page {
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; animation: cal-slide .22s var(--out); }
 @keyframes cal-slide { from { opacity: 0; transform: translateX(14px); } }
 .cal-dow { text-align: center; font-size: 12px; color: var(--pg-muted); }
-.coin { position: relative; height: 44px; min-width: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; color: var(--ink); }
+.coin { position: relative; justify-self: center; width: 44px; height: 44px; min-width: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; color: var(--ink); }
 .coin.blank { pointer-events: none; }
 .coin.open, .coin.latest-open { background: #efe3c0; border: 1px solid var(--pg-line); }
 .coin.latest-open { box-shadow: 0 0 0 2px var(--brass); }

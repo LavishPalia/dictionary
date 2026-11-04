@@ -138,6 +138,41 @@ await run('Duel settings and guide', async (t) => {
   check('tip: the Calendar tip on the home', await waitFor(`document.querySelector('.coach-tip')?.textContent.includes('calendar')`, 20000));
   await axe('home with a tip');
 
+  // ── The desktop book ──
+  await setSize(DESKTOP);
+  await open(`/play/game/${TODAY}?seed=7`, seenCoach);
+  await waitFor(`Boolean(window.__duel && document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await sleep(300);
+  const pages = await evaluate(`(() => {
+    const r = (s) => document.querySelector(s).getBoundingClientRect(), b = r('.duel-board'), l = r('.duel-cluelist'), g = r('.duel-game'), m = g.left + g.width / 2;
+    return { boardLeft: b.right <= m, listRight: l.left >= m, cell: r('.duel-board [data-cell]').width, w: g.width };
+  })()`);
+  check('book: the board on the left page, the clues on the right', pages.boardLeft && pages.listRight, pages);
+  check('book: large cells', pages.cell >= 50, pages);
+  const P = await evaluate(`window.__duel.puzzle.slots.map((s) => ({ id: s.id, dir: s.dir, cells: s.cells }))`);
+  check('book: every clue is listed', (await evaluate(`document.querySelectorAll('.duel-cluelist [data-clue]').length`)) === P.length);
+  check('book: the key legend', (await text('.duel-keys')).includes('Tab next clue'));
+  const openSlot = await evaluate(`(() => { const st = window.__duel.snapshot().state; return window.__duel.puzzle.slots.find((s) => s.cells.every((c) => !st.filled[c]) && s.cells.length > 1).id; })()`);
+  await click(`[data-clue="${openSlot}"]`);
+  check('book: a clue selects its answer', await waitFor(`window.__duel.snapshot().selected === ${JSON.stringify(openSlot)}`));
+  check('book: and is highlighted', await evaluate(`document.querySelector('[data-clue="${openSlot}"]').classList.contains('cur')`));
+  const rackLetter = await evaluate(`window.__duel.snapshot().state.racks.you.find((l) => l)`);
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: rackLetter.toLowerCase(), code: `Key${rackLetter}`, text: rackLetter.toLowerCase() });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: rackLetter.toLowerCase(), code: `Key${rackLetter}` });
+  check('book: letters type into it', await waitFor(`window.__duel.snapshot().pending.length === 1`, 3000));
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+  check('book: Tab moves to the next clue', await waitFor(`window.__duel.snapshot().selected !== ${JSON.stringify(openSlot)}`, 2000));
+  const landed = async () => evaluate(`(() => { const s = document.querySelector('[data-score="you"]').getBoundingClientRect(); return s.width > 0 && s.left > innerWidth / 2; })()`);
+  check('book: the score sits on the right page', await landed());
+  await axe('book, Day');
+  await t.light('evening');
+  await sleep(100);
+  await axe('book, Evening');
+  await send('Emulation.setDeviceMetricsOverride', { width: 900, height: 800, deviceScaleFactor: 1, mobile: false });
+  check('book: narrower than 1000 px, the phone column', await waitFor(`!document.querySelector('.duel-cluelist') && document.querySelector('.duel-game').getBoundingClientRect().width <= 560`));
+  await setSize(PHONE);
+
   // Panna's Guided tours lists it.
   await open('/');
   await waitFor(`Boolean(document.querySelector('#menu-btn'))`, 20000);

@@ -88,7 +88,7 @@ async function main() {
     await send('Runtime.enable');
 
     const phone = { width: 360, height: 740, mobile: true };
-    const desktop = { width: 1280, height: 800, mobile: false };
+    const desktop = { width: 900, height: 800, mobile: false }; // below the open book (test-duel-guide-browser.mjs)
     let size = phone;
     const setSize = async (s) => {
       size = s;

@@ -209,6 +209,12 @@ export class GameController {
     this.publish({ zoom: this.snap.zoom === sl.clueCell ? null : sl.clueCell, selected: slot });
   }
 
+  /** A clue picked from the desktop's list: its answer takes the typing (in Word mode, it's the pick to reveal). */
+  selectClue(slot: SlotId) {
+    if (this.snap.wordMode) { this.tapClue(slot); return; }
+    if (!this.locked && this.p.slots.some(x => x.id === slot)) this.publish({ selected: slot, zoom: null });
+  }
+
   /** Any tap away from the clues closes the zoom (UI-DESIGN §0: it stays until the next tap). */
   closeZoom() { if (this.snap.zoom !== null) this.publish({ zoom: null }); }
 

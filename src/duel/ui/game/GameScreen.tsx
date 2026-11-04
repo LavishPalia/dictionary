@@ -12,6 +12,7 @@ import { CoachLayer, LaterTip } from '../guide/CoachLayer';
 import { GUIDE_KEY, nextTip, readGuide } from '../guide/tips';
 import { ActionRow } from './ActionRow';
 import { Board } from './Board';
+import { ClueList } from './ClueList';
 import { ClueZoom } from './ClueZoom';
 import { EndScreen } from '../end/EndScreen';
 import { HelpSheet } from './HelpSheet';
@@ -21,16 +22,29 @@ import { Rack } from './Rack';
 import { ScoreBar } from './ScoreBar';
 import { useSnapshot } from './useController';
 
-const MAX_CELL = 42, MIN_CELL = 26, MAX_TILE = 56, TILE_GAP = 8;
+const MAX_CELL = 42, MAX_BOOK_CELL = 54, MIN_CELL = 26, MAX_TILE = 56, TILE_GAP = 8;
+
+/** The desktop book's size: the same as `@media` in styles/book.css. */
+const BOOK = '(min-width: 1000px) and (min-height: 700px)';
+function useBook(): boolean {
+  const [book, setBook] = useState(() => matchMedia(BOOK).matches);
+  useEffect(() => {
+    const q = matchMedia(BOOK), on = () => setBook(q.matches);
+    on();
+    q.addEventListener('change', on);
+    return () => q.removeEventListener('change', on);
+  }, []);
+  return book;
+}
 
 /** Sizes cells and tiles to the space left, like the prototype's fitBoard: on mount, resize and rotation. */
-function useFit(root: React.RefObject<HTMLDivElement | null>, area: React.RefObject<HTMLDivElement | null>, p: Puzzle, stage: Stage) {
+function useFit(root: React.RefObject<HTMLDivElement | null>, area: React.RefObject<HTMLDivElement | null>, p: Puzzle, stage: Stage, book: boolean) {
   useEffect(() => {
     const fit = () => {
       const r = root.current, a = area.current;
       if (!r || !a) return;
-      const w = r.clientWidth - 16, h = a.clientHeight - 8;
-      const cell = Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(Math.min(w / p.cols, h / p.rows))));
+      const w = (book ? a.clientWidth : r.clientWidth) - 16, h = a.clientHeight - 8;
+      const cell = Math.max(MIN_CELL, Math.min(book ? MAX_BOOK_CELL : MAX_CELL, Math.floor(Math.min(w / p.cols, h / p.rows))));
       const tileW = Math.min(MAX_TILE, Math.floor((r.clientWidth - 40 - 4 * TILE_GAP) / 5));
       r.style.setProperty('--cell', `${cell}px`);
       r.style.setProperty('--tileW', `${tileW}px`);
@@ -44,7 +58,7 @@ function useFit(root: React.RefObject<HTMLDivElement | null>, area: React.RefObj
     addEventListener('orientationchange', fit);
     void document.fonts?.ready.then(() => stage.measure());
     return () => { ro.disconnect(); removeEventListener('orientationchange', fit); };
-  }, [root, area, p, stage]);
+  }, [root, area, p, stage, book]);
 }
 
 /** The game screen (UI-DESIGN §3.3 as changed by §0), phone first; desktop shows the same column, centred. */
@@ -72,7 +86,8 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   const root = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLDivElement>(null);
   const input = useRef<Input | null>(null);
-  useFit(root, area, p, stage);
+  const book = useBook();
+  useFit(root, area, p, stage, book);
   useEffect(() => {
     if (!root.current) return;
     const i = new Input(root.current, stage, layer, ctl, motion, platform);
@@ -112,8 +127,10 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
       <div className="duel-boardarea" ref={area} onClick={(e) => { if (e.target === e.currentTarget) ctl.tapOutside(); }}>
         <Board p={p} snap={snap} ctl={ctl} stage={stage} onCell={onCell} />
       </div>
+      {book && <ClueList p={p} snap={snap} ctl={ctl} />}
       <Rack snap={snap} ctl={ctl} stage={stage} />
       <ActionRow snap={snap} ctl={ctl} />
+      {book && <p className="duel-keys">A–Z type into the answer · ⌫ take back · Tab next clue · Enter submit</p>}
       </div>
       {snap.zoom !== null && <ClueZoom p={p} cell={snap.zoom} stage={stage} />}
       {snap.sheet?.k === 'swap' && <SwapSheet snap={snap} ctl={ctl} motion={motion} />}

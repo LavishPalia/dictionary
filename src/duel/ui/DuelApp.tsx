@@ -19,6 +19,7 @@ import './styles/game.css';
 import './styles/home.css';
 import './styles/end.css';
 import './styles/guide.css';
+import './styles/book.css';
 
 declare global {
   interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[]; platform: Platform } }

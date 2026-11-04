@@ -93,7 +93,9 @@ export async function run(name, body) {
       click: (sel) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return false; el.click(); return true; })()`),
       text: (sel) => evaluate(`document.querySelector(${JSON.stringify(sel)})?.innerText ?? ''`),
       exists: (sel) => evaluate(`Boolean(document.querySelector(${JSON.stringify(sel)}))`),
+      /** The check under the lighting its label names; Auto would otherwise follow the clock. */
       axe: async (label) => {
+        await evaluate(`document.documentElement.setAttribute('data-light', ${JSON.stringify(/evening/i.test(label) ? 'evening' : 'day')}); true`);
         await evaluate(`(() => { if (!window.axe) { const s = document.createElement('script'); s.textContent = ${JSON.stringify(AXE)}; document.head.appendChild(s); } return true; })()`);
         const out = await evaluate(`axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } })
           .then((r) => r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => ({ id: v.id, nodes: v.nodes.slice(0, 4).map((n) => n.target.join(' ')) })))`);

@@ -271,8 +271,8 @@ export class Input {
     } else if (e.key === 'Enter' && (onBoard || !active || active === document.body)) {
       e.preventDefault();
       queue(() => { void this.ctl.submit(); });
-    } else if (e.key === 'Tab' && onBoard) {
-      // On the board, Tab moves between answers; past the last (or first) one it leaves the board as usual.
+    } else if (e.key === 'Tab' && (onBoard || (active === document.body || active?.closest('.duel-cluelist')) && document.querySelector('.duel-cluelist'))) {
+      // On the board (or the desktop's clue list), Tab moves between answers; past the last (or first) one it leaves as usual.
       if (!this.ctl.selectNext(e.shiftKey ? -1 : 1)) return;
       e.preventDefault();
       // Focus moves now, not on the next frame: a late focus could pull it back after a later Tab left the board.
