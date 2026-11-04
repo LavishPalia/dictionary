@@ -43,6 +43,17 @@ export type TodayDuel = { date: string; practice: boolean; streak: number; next:
 
 const keyOf = (s: SavedGame) => `${s.puzzleId}.v${s.puzzleVersion}`;
 
+/**
+ * A stored game the game itself would restore: same rules and same puzzle. A save for another puzzle or version
+ * (a practice game on a day that now has its daily, a republished fix) or under other rules (Quill retuned) starts
+ * fresh. With `key` null the puzzle isn't known (the schedule couldn't be loaded), so it is trusted.
+ */
+export function matchingSave(raw: unknown, key: string | null): SavedGame | null {
+  const s = raw as SavedGame | null;
+  return s && typeof s === 'object' && s.rules === RULES_ID && (key === null || keyOf(s) === key) && s.score
+    && Number.isFinite(s.score.you) && Number.isFinite(s.score.quill) ? s : null;
+}
+
 /** Today's duel for the Today card. `schedule` is null when it couldn't be loaded: today's save is then trusted. */
 export function todayDuel(today: string, schedule: ClientSchedule | null, storage: Storage): TodayDuel {
   const raw = storage.get<SavedGame>(gameKey(today));
@@ -53,10 +64,7 @@ export function todayDuel(today: string, schedule: ClientSchedule | null, storag
   const next = playDate(Object.keys(schedule?.dates ?? {}), won, today);
   const base = { date: today, practice, streak: streak(won, today), next: next === today ? null : next };
 
-  // A save made for another puzzle or version (a practice game on a day that now has its daily, a republished fix)
-  // or under other rules (Quill retuned) starts fresh in the game too.
-  const save = raw && typeof raw === 'object' && raw.rules === RULES_ID && (!schedule || keyOf(raw) === (key ?? PRACTICE_KEY)) && raw.score
-    && Number.isFinite(raw.score.you) && Number.isFinite(raw.score.quill) ? raw : null;
+  const save = matchingSave(raw, schedule ? key ?? PRACTICE_KEY : null);
   const score = save?.score;
 
   const win = practice ? null : [...results].reverse().find(r => r.date === today && r.you > r.quill);
@@ -64,4 +72,34 @@ export function todayDuel(today: string, schedule: ClientSchedule | null, storag
   if (save && score && !save.over) return { ...base, state: 'playing', ...score };
   if (save && score) return score.you > score.quill ? { ...base, state: 'won', ...score, replaying: false } : { ...base, state: 'over', ...score };
   return { ...base, state: 'new' };
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+export const dayMonth = (date: string) => `${Number(date.slice(8))} ${MONTHS[Number(date.slice(5, 7)) - 1]}`;
+
+/** The headline of a TodayDuel, on the Today card and the game home. */
+export function duelLine(d: TodayDuel): string {
+  switch (d.state) {
+    case 'new': return !d.practice ? 'Today’s puzzle is ready' : d.next ? 'No new puzzle today' : 'Practice duel';
+    case 'playing': return d.you > d.quill ? `You lead ${d.you} to ${d.quill}` : d.you < d.quill ? `Quill leads ${d.quill} to ${d.you}` : `Level at ${d.you}`;
+    case 'won': return `Won ${d.you} to ${d.quill}${d.practice ? '' : ' ★'}`;
+    case 'over': return d.you === d.quill ? `A tie at ${d.you}` : `Quill won ${d.quill} to ${d.you}`;
+  }
+}
+
+export function duelSubLine(d: TodayDuel): string | null {
+  if (d.state === 'new') return d.practice && d.next ? `${dayMonth(d.next)}’s duel is still open.` : 'A word duel against Professor Quill.';
+  if (d.state === 'over' && !d.practice) return d.you === d.quill ? 'Replay to break the tie and earn today’s star.' : 'Replay to earn today’s star.';
+  return null;
+}
+
+/** The one button: `?fresh=1` asks the game for a new deal (a finished game's save would reopen its end screen). */
+export function duelAction(d: TodayDuel): { href: string; label: string } | null {
+  const today = `/play/game/${d.date}`, next = d.next ? { href: `/play/game/${d.next}`, label: `Play ${dayMonth(d.next)}` } : null;
+  switch (d.state) {
+    case 'new': return next || { href: today, label: d.practice ? 'Play practice duel' : 'Play today’s duel' };
+    case 'playing': return { href: today, label: 'Continue' };
+    case 'won': return d.replaying ? { href: today, label: 'Continue replay' } : next;
+    case 'over': return { href: `${today}?fresh=1`, label: 'Replay' };
+  }
 }

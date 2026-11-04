@@ -22,8 +22,8 @@ function check(label: string, ok: boolean, detail?: unknown) {
 async function main() {
   // ── Router ──
   check('IST today rolls over at 18:30 UTC', istToday(new Date('2026-11-01T18:29:59Z')) === '2026-11-01' && istToday(new Date('2026-11-01T18:30:00Z')) === '2026-11-02');
-  check('/play → pick the day', (parsePath('/play', '2026-11-01') as any).screen === 'play');
-  check('/play/ → pick the day', (parsePath('/play/', '2026-11-01') as any).screen === 'play');
+  check('/play → the home', (parsePath('/play', '2026-11-01') as any).screen === 'home');
+  check('/play/ → the home', (parsePath('/play/', '2026-11-01') as any).screen === 'home');
   check('a past date opens', (parsePath('/play/game/2026-10-28', '2026-11-01') as any).date === '2026-10-28');
   check('today opens', (parsePath('/play/game/2026-11-01', '2026-11-01') as any).date === '2026-11-01');
   for (const bad of ['/play/game/2026-11-02', '/play/game/banana', '/play/game/2026-02-30', '/play/ranks'])
@@ -234,6 +234,7 @@ async function controllerChecks() {
   const endLog = c.snapshot().state.log.length;
   await c.pass();
   check('n: pass after the end is ignored', c.snapshot().state.log.length === endLog);
+  check('n: a finished game is saved fully filled', pf.storage.get<SavedGame>(KEY)?.progress === 1, pf.storage.get<SavedGame>(KEY)?.progress);
   const balBefore = pf.help.balance();
   pf.help.spend('word');
   c.newGame();

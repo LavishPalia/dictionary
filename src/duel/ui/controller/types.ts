@@ -9,6 +9,8 @@ export interface SavedGame {
   seed: number; log: Action[]; startedAt: string;
   /** The scores and end after Quill's reply, for Panna's Today card (which doesn't replay the game). */
   score?: { you: number; quill: number }; over?: boolean;
+  /** The share of the board's open letters filled, 0–1, for the calendar's ring. */
+  progress?: number;
 }
 
 export type Sheet = null | { k: 'swap' } | { k: 'help'; want: 'hint' | 'word' } | { k: 'reveal'; slot: SlotId };

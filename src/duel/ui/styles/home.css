@@ -1,0 +1,86 @@
+/* Panna Duel: the screens around the game, on light paper (user's pick, 5 Nov). The game itself stays white.
+   .duel sets its own ink for the board, so the screens here take the lamp-lit values themselves in Evening. */
+
+.duel-page {
+  --pg-bg: #f1e9d6; --pg-card: #fbf7ec; --pg-line: #d9cba9; --pg-muted: #5e4a33;
+  position: relative; width: 100%; height: 100%; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 calc((100% - min(100%, 560px)) / 2) 32px; background: var(--pg-bg); color: var(--ink);
+  font: 16px var(--font-fell);
+}
+html[data-light="evening"] .duel-page {
+  --pg-bg: #b9a47b; --pg-card: #cdb991; --pg-line: #8f7a55; --pg-muted: #3f3020;
+  --ink: #1e150d; --inks: #3f3020; --crimson: #5e1a13; --binding: #431611; --onb: #e6d6b0; --brass: #8a6a22; --brass-soft: #b08b3c;
+}
+.duel-page .duel-top { position: sticky; top: 0; z-index: 2; background: var(--pg-bg); }
+.duel-page .ib { color: var(--pg-muted); }
+.duel-page .bigbtn { text-decoration: none; }
+
+.page-card { margin: 8px 12px 12px; padding: 12px; background: var(--pg-card); border: 1px solid var(--pg-line); border-radius: 14px; }
+.page-link { display: flex; align-items: center; justify-content: center; min-height: 44px; color: var(--binding); }
+.page-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 95; max-width: calc(100% - 32px); padding: 10px 16px;
+  border-radius: 12px; background: #2a1e14; color: #f4e6c5; animation: duel-fade-in .2s ease-out; }
+
+/* top bar chips */
+.home-chips { display: flex; align-items: center; gap: 4px; }
+.duel-home .duel-top { padding-right: 4px; }
+.duel-home .chip { min-height: 44px; min-width: 44px; padding: 0 6px; font-size: 13px; color: var(--pg-muted); white-space: nowrap; }
+.duel-home .chip b { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 11px;
+  background: var(--binding); color: var(--onb); font: 700 12px var(--letters); }
+@media (max-width: 380px) { .duel-home .ttl b { font-size: 15px; } .duel-home .chip { padding: 0 2px; font-size: 12px; } }
+
+/* today's duel */
+.hero { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; }
+.hero .bigbtn { grid-column: 1 / -1; margin-top: 4px; }
+.hero-text p { margin: 0; }
+.hero-date { font-size: 14px; color: var(--pg-muted); }
+.hero-line { font: 22px/1.15 var(--font-fell-sc); color: var(--binding); }
+.hero-sub { font-size: 15px; color: var(--pg-muted); }
+.hero-flame { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 14px; color: var(--crimson); }
+.mini { display: grid; width: 72px; aspect-ratio: 8 / 10; gap: 1px; padding: 2px; background: #c9ccd1; border-radius: 4px; }
+.mini i { background: #fff; }
+.mini i.c { background: #e8ecf1; }
+.mini i.g { background: #5b616b; }
+
+/* the calendar */
+.cal { padding: 6px 8px 10px; }
+.cal-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; text-align: center; }
+.cal-head h2 { margin: 0; font: 19px var(--font-fell-sc); color: var(--binding); }
+.cal-head .ib { font-size: 24px; }
+.cal-head .ib:disabled { opacity: .3; }
+.cal-won { grid-column: 1 / -1; font-size: 14px; color: var(--pg-muted); margin-bottom: 4px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; animation: cal-slide .22s var(--out); }
+@keyframes cal-slide { from { opacity: 0; transform: translateX(14px); } }
+.cal-dow { text-align: center; font-size: 12px; color: var(--pg-muted); }
+.coin { position: relative; height: 44px; min-width: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; color: var(--ink); }
+.coin.blank { pointer-events: none; }
+.coin.open, .coin.latest-open { background: #efe3c0; border: 1px solid var(--pg-line); }
+.coin.latest-open { box-shadow: 0 0 0 2px var(--brass); }
+.coin.future { color: var(--pg-muted); opacity: .62; }
+.coin.today { font-weight: bold; color: var(--crimson); box-shadow: inset 0 0 0 2px var(--crimson); animation: coin-pulse 2.4s ease-in-out infinite; }
+@keyframes coin-pulse { 50% { box-shadow: inset 0 0 0 2px var(--crimson), 0 0 0 4px rgba(122, 43, 34, .16); } }
+.coin.won { background: radial-gradient(circle at 35% 30%, #f3dc98, #c9a24a); border: 1px solid #94722a; color: #3a2a10; }
+.coin.won b { font-size: 17px; line-height: 1; margin-top: -3px; }
+.coin.won small { position: absolute; bottom: 1px; font: 700 9px var(--letters); }
+.coin.stamp b { animation: coin-stamp .42s var(--stamp) both; }
+@keyframes coin-stamp { from { transform: scale(2.2) rotate(-25deg); opacity: 0; } }
+.coin .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); fill: none; stroke-width: 3; }
+.coin .ring circle { stroke: rgba(122, 43, 34, .18); }
+.coin .ring .fill { stroke: var(--crimson); }
+.coin.today:has(.ring) { box-shadow: none; }
+
+/* the month seal */
+.seal-row { display: flex; align-items: center; gap: 10px; margin: 8px 6px 0; }
+.seal-row p { margin: 0; font-size: 15px; color: var(--pg-muted); }
+.seal-empty { fill: none; stroke: var(--pg-muted); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.seal-fill { fill: none; stroke: var(--brass); stroke-width: 4; transform: rotate(-90deg); transform-origin: center; }
+.seal-gold { fill: #d9b65c; stroke: #94722a; stroke-width: 2; }
+.seal-row text, .seal-moment text { font: 700 12px var(--letters); fill: #3a2a10; }
+.seal-moment { text-align: center; }
+.seal-moment h3 { margin: 6px 0 2px; }
+.seal-moment p { margin: 0 0 8px; }
+.seal-flip { animation: seal-flip .9s var(--spring) both; }
+@keyframes seal-flip { from { transform: perspective(500px) rotateY(180deg) scale(.5); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-grid, .seal-flip, .coin.stamp b, .coin.today { animation: duel-fade-in .12s ease-out; }
+}

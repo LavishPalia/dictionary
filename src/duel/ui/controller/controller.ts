@@ -103,9 +103,14 @@ export class GameController {
   private save(state: GameState, end: GameState = state) {
     const saved: SavedGame = {
       puzzleId: this.p.id, puzzleVersion: this.p.version, rules: RULES_ID, seed: state.seed, log: state.log, startedAt: this.startedAt,
-      score: { ...end.scores }, over: end.over,
+      score: { ...end.scores }, over: end.over, progress: this.progressOf(end),
     };
     this.platform.storage.set(this.key, saved);
+  }
+
+  private progressOf(s: GameState): number {
+    const open = Object.keys(this.p.solution).length - this.p.given.length;
+    return open > 0 ? Math.min(1, (Object.keys(s.filled).length - this.p.given.length) / open) : 1;
   }
 
   /** A finished daily game joins the results once, as it ends (a reload or Play again adds nothing). */

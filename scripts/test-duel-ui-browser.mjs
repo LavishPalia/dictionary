@@ -196,8 +196,6 @@ async function main() {
     // ── Phone: the screen ──
     await setSize(phone);
     await reduce(true);
-    check('phone: /play lands on a game', await open('/play?seed=7', { clear: true }));
-    check('phone: /play redirects to /play/game/<today>', /^\/play\/game\/\d{4}-\d{2}-\d{2}$/.test(await evaluate('location.pathname')), await evaluate('location.pathname'));
     check('phone: a future date goes to today', await open('/play/game/2099-01-01?seed=7') && !(await evaluate('location.pathname')).includes('2099'));
     check('phone: the game opens', await open(`${GAME}?seed=7`, { clear: true }));
     check('phone: an unscheduled date plays the labelled practice puzzle', await evaluate(`window.__duel.puzzle.id === 'p0001'
@@ -208,8 +206,7 @@ async function main() {
     check('schedule: a scheduled date plays its puzzle', await open('/play/game/2026-10-31?seed=7', { clear: true })
       && await evaluate(`window.__duel.puzzle.id === 'p0000' && document.querySelector('.duel-top .ttl b').textContent === 'Daily Duel'`));
     await evaluate(`localStorage.setItem('panna_duel_results', JSON.stringify([{ date: '2026-10-31', puzzle: 'p0000.v1', you: 50, quill: 40, at: '2026-10-31T10:00:00Z' }])); true`);
-    await open('/play?seed=7');
-    check('schedule: /play opens the latest open scheduled day when today has none', (await evaluate('location.pathname')) === '/play/game/2026-10-30', await evaluate('location.pathname'));
+    await open('/play/game/2026-10-30?seed=7');
     const before = await evaluate(`localStorage.getItem('panna_duel_game:2026-10-30')`);
     await route('fail');
     await send('Page.navigate', { url: `${BASE}/play/game/2026-10-30?seed=7` });

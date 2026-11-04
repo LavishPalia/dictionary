@@ -12,6 +12,8 @@ export interface Flags {
   perf: boolean;
   /** window.__duel is exposed (set when a seed is given). */
   test: boolean;
+  /** Start a new deal of this day; taken off the address once used, so a reload doesn't restart. */
+  fresh: boolean;
 }
 
 export function readFlags(search: string): Flags {
@@ -25,5 +27,6 @@ export function readFlags(search: string): Flags {
     tier: t === 'normal' || t === 'lite' ? t : undefined,
     perf: q.get('perf') === '1',
     test: seed !== undefined,
+    fresh: q.get('fresh') === '1',
   };
 }

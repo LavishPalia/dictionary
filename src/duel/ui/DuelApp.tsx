@@ -10,9 +10,11 @@ import { setPerf } from './fx/perf';
 import { Stage } from './fx/stage';
 import { pickTier } from './fx/tier';
 import { GameScreen } from './game/GameScreen';
-import { playDate, readResults, RESULTS_KEY, wonDays } from '../progress';
+import { gameKey } from '../progress';
+import { Home } from './home/Home';
 import { istToday, parsePath, type Route } from './router';
 import './styles/game.css';
+import './styles/home.css';
 
 declare global {
   interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[] } }
@@ -35,6 +37,12 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
       const stage = new Stage();
       const trace: string[] = [];
       const director = new WebDirector(p, stage, layer, platform, motion, flags.test ? trace : undefined);
+      if (flags.fresh) {
+        platform.storage.remove(gameKey(date));
+        const q = new URLSearchParams(location.search);
+        q.delete('fresh');
+        history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : ''));
+      }
       const ctl = new GameController(p, date, platform, director, { seed: flags.seed, practice });
       if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace };
       setGame({ p, practice, ctl, stage, layer, motion });
@@ -52,47 +60,36 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
     );
   }
   if (!game) return <div className="duel-game" aria-busy="true" />;
-  return <GameScreen p={game.p} date={date} practice={game.practice} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} />;
+  return <GameScreen p={game.p} date={date} practice={game.practice} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} nav={nav} />;
 }
 
-/** /play: today, or the most recent open day (product spec §6.2). Without a schedule, today. */
-async function dayToPlay(platform: Platform, today: string): Promise<string> {
-  try {
-    const { dates } = await platform.puzzles.schedule();
-    return playDate(Object.keys(dates), wonDays(readResults(platform.storage.get(RESULTS_KEY))), today);
-  } catch { return today; }
+/** Moves within the Duel; the address's test flags stay on it. */
+function nav(path: string) {
+  const u = new URL(path, location.href);
+  new URLSearchParams(location.search).forEach((v, k) => { if (k !== 'fresh' && !u.searchParams.has(k)) u.searchParams.set(k, v); });
+  history.pushState(null, '', u.pathname + u.search);
+  dispatchEvent(new PopStateEvent('popstate'));
 }
 
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {
   const [route, setRoute] = useState<Route | null>(null);
 
   useEffect(() => {
-    let live = true;
     const read = () => {
-      const today = istToday(new Date());
-      const r = parsePath(location.pathname, today);
+      const r = parsePath(location.pathname, istToday(new Date()));
       if ('redirect' in r) { history.replaceState(null, '', r.redirect + location.search); return read(); }
-      if (r.screen === 'play') {
-        setRoute(null);
-        void dayToPlay(platform, today).then((date) => {
-          const now = parsePath(location.pathname, today);
-          if (!live || !('screen' in now) || now.screen !== 'play') return; // Back was pressed meanwhile
-          history.replaceState(null, '', `/play/game/${date}${location.search}`);
-          read();
-        });
-        return;
-      }
       setRoute(r);
     };
     read();
     addEventListener('popstate', read);
-    return () => { live = false; removeEventListener('popstate', read); };
+    return () => removeEventListener('popstate', read);
   }, [platform]);
 
   return (
     <main className="duel">
       {!route && <div className="duel-game" aria-busy="true" />}
       {route && 'date' in route && <Game key={route.date} date={route.date} platform={platform} />}
+      {route && 'screen' in route && route.screen === 'home' && <Home platform={platform} nav={nav} />}
     </main>
   );
 }

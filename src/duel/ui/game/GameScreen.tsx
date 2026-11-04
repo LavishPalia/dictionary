@@ -6,6 +6,7 @@ import type { GameController } from '../controller/controller';
 import { Input } from '../fx/drag';
 import type { FxLayer, Motion } from '../fx/layer';
 import type { Stage } from '../fx/stage';
+import { longDate, type Nav } from '../dates';
 import { ActionRow } from './ActionRow';
 import { Board } from './Board';
 import { ClueZoom } from './ClueZoom';
@@ -16,13 +17,6 @@ import { WordConfirm } from './WordConfirm';
 import { Rack } from './Rack';
 import { ScoreBar } from './ScoreBar';
 import { useSnapshot } from './useController';
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-function longDate(date: string): string {
-  const d = new Date(`${date}T00:00:00Z`);
-  return `${DAYS[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
-}
 
 const MAX_CELL = 42, MIN_CELL = 26, MAX_TILE = 56, TILE_GAP = 8;
 
@@ -51,8 +45,8 @@ function useFit(root: React.RefObject<HTMLDivElement | null>, area: React.RefObj
 }
 
 /** The game screen (UI-DESIGN §3.3 as changed by §0), phone first; desktop shows the same column, centred. */
-export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platform }: {
-  p: Puzzle; date: string; practice: boolean; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion; platform: Platform;
+export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platform, nav }: {
+  p: Puzzle; date: string; practice: boolean; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion; platform: Platform; nav: Nav;
 }) {
   const snap = useSnapshot(ctl);
   const root = useRef<HTMLDivElement>(null);
@@ -84,7 +78,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
       onPointerUpCapture={() => platform.sound.unlock()}>
       <div className="duel-main" inert={behind}>
       <header className="duel-top">
-        <a className="ib" href={platform.exitHref} aria-label="Back to Panna">
+        <a className="ib" href="/play" aria-label="Back to the game home" onClick={(e) => { e.preventDefault(); nav('/play'); }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </a>
         {practice
