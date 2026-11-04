@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { emptyCells, replay, RULES_ID, type CellId, type Puzzle } from '../src/duel/engine';
 import type { Platform } from '../src/duel/platform/types';
-import { stubHelp } from '../src/duel/platform/web/help';
+import { webHelp } from '../src/duel/platform/web/help';
 import { GameController } from '../src/duel/ui/controller/controller';
 import { NullDirector } from '../src/duel/ui/controller/null-director';
 import { hintCells, nextEmpty, wordCandidates } from '../src/duel/ui/controller/selectors';
@@ -64,7 +64,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
   };
   const quiet = { enabled: true, play() {}, unlock() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
-  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: stubHelp(storage), reducedMotion: () => true, exitHref: '/' };
+  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), reducedMotion: () => true, exitHref: '/' };
 }
 
 /** A correct cell for every tile in your rack (the bag invariant guarantees one each). */
@@ -234,9 +234,11 @@ async function controllerChecks() {
   const endLog = c.snapshot().state.log.length;
   await c.pass();
   check('n: pass after the end is ignored', c.snapshot().state.log.length === endLog);
+  const balBefore = pf.help.balance();
   pf.help.spend('word');
   c.newGame();
-  check('n: Play again deals a new game and resets help', !c.snapshot().state.over && c.snapshot().state.log.length === 0 && c.snapshot().state.seed !== 123 && pf.help.balance().word === 1);
+  check('n: Play again deals a new game', !c.snapshot().state.over && c.snapshot().state.log.length === 0 && c.snapshot().state.seed !== 123);
+  check('n: Play again leaves the balances alone', pf.help.balance().word === balBefore.word - 1 && c.snapshot().rewards === null, pf.help.balance());
   check('n: the new game is saved', pf.storage.get<SavedGame>(KEY)?.seed === c.snapshot().state.seed);
   check('n: Play again records nothing', readResults(pf.storage.get(RESULTS_KEY)).length === 1);
   {
@@ -246,6 +248,25 @@ async function controllerChecks() {
       if (cp.snapshot().pending.length) await cp.submit(); else await cp.pass();
     }
     check('n: a finished practice game records nothing', cp.snapshot().state.over && !pp.storage.has(RESULTS_KEY));
+    check('n: a finished practice game earns nothing', cp.snapshot().rewards === null && pp.help.balance().hint === 1 && pp.help.balance().word === 1, cp.snapshot().rewards);
+  }
+  // rewards: a win earns once; a reload earns nothing more
+  {
+    let won: { pw: ReturnType<typeof memoryPlatform> } | null = null;
+    for (let seed = 200; seed < 260 && !won; seed++) {
+      const pw = memoryPlatform(), cw = new GameController(p0, DATE, pw, new NullDirector(), { seed });
+      for (let turns = 0; turns < 80 && !cw.snapshot().state.over; turns++) {
+        for (const t of correctPlacements(cw)) cw.place(t.rackSlot, t.cell);
+        if (cw.snapshot().pending.length) await cw.submit(); else await cw.pass();
+      }
+      const { you, quill } = cw.snapshot().state.scores;
+      if (you <= quill) continue;
+      won = { pw };
+      check('rewards: a won past day earns +1 Hint', JSON.stringify(cw.snapshot().rewards) === '{"hint":1,"word":0}' && pw.help.balance().hint === 2, { r: cw.snapshot().rewards, b: pw.help.balance() });
+      const again = new GameController(p0, DATE, pw, new NullDirector());
+      check('rewards: a reload earns nothing more', again.snapshot().rewards === null && pw.help.balance().hint === 2, pw.help.balance());
+    }
+    check('rewards: found a won game', won !== null);
   }
 
   // round 3: your rack empties near the end, so Quill plays several turns in a row and you never press Pass

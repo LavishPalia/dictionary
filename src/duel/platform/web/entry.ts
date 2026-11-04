@@ -2,7 +2,8 @@
 // the Duel never imports Panna.
 import { RULES_ID } from '../../engine';
 import type { SavedGame } from '../../ui/controller/types';
-import { gameKey, playDate, readResults, RESULTS_KEY, SEEN_KEY, streak, wonDays } from '../../progress';
+import { earnInto, HELP, HELP_KEY, readWallet } from '../../help-rules';
+import { gameKey, istToday, playDate, readResults, RESULTS_KEY, SEEN_KEY, streak, wonDays } from '../../progress';
 import type { ClientSchedule, Storage } from '../types';
 
 /** Launched 5 Nov 2026. While false, production shows the way in only on devices that have opened /play. */
@@ -23,6 +24,11 @@ export function duelEntryVisible(storage: Storage): boolean {
 
 export function markDuelSeen(storage: Storage) {
   if (!storage.has(SEEN_KEY)) storage.set(SEEN_KEY, true);
+}
+
+/** A finished review session in Panna earns a Hint (product spec §9). */
+export function earnReviewHint(storage: Storage, now = new Date()) {
+  storage.set(HELP_KEY, earnInto(readWallet(storage.get(HELP_KEY), istToday(now)), { hint: HELP.reviewHint, word: 0 }));
 }
 
 type Scores = { you: number; quill: number };

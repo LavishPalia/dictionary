@@ -37,6 +37,8 @@ export interface Snapshot {
   /** Rack slots whose new tiles are not shown yet: they arrive after Quill's turn. */
   held: number[];
   balance: { hint: number; word: number };
+  /** What the game that just ended earned; null otherwise, and after a reload. */
+  rewards: { hint: number; word: number } | null;
 }
 
 /** Plays the engine's events as motion. The web one animates; the null one resolves at once. */

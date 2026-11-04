@@ -3,7 +3,8 @@
 // motion. A snapshot changes only at rest: never while a director promise is pending.
 import { apply, botTurn, newGame, replay, RULES_ID, type Action, type CellId, type GameEvent, type GameState, type Puzzle, type SlotId } from '../../engine';
 import type { Platform } from '../../platform/types';
-import { gameKey, readResults, RESULTS_KEY, type DuelResult } from '../../progress';
+import { rewardsFor } from '../../help-rules';
+import { gameKey, istToday, readResults, RESULTS_KEY, streak, wonDays, type DuelResult } from '../../progress';
 import { nextEmpty, slotsThrough, wordCandidates } from './selectors';
 import type { Director, Pending, SavedGame, Sheet, Snapshot } from './types';
 
@@ -46,6 +47,7 @@ export class GameController {
   private readonly key: string;
 
   private readonly practice: boolean;
+  private rewards: Snapshot['rewards'] = null;
 
   /** `practice`: the date has no daily puzzle, so a finished game wins nothing. */
   constructor(private p: Puzzle, private date: string, private platform: Platform, private director: Director, opts: { seed?: number; practice?: boolean } = {}) {
@@ -67,7 +69,7 @@ export class GameController {
   private rest(state: GameState): Snapshot {
     return {
       state, pending: [], lifted: null, selected: null, zoom: null, lastQuill: state.lastQuill,
-      hintOn: hintIsOn(state.log), wordMode: false, sheet: null, busy: false, held: [], balance: this.platform.help.balance(),
+      hintOn: hintIsOn(state.log), wordMode: false, sheet: null, busy: false, held: [], balance: this.platform.help.balance(), rewards: this.rewards,
     };
   }
 
@@ -90,7 +92,7 @@ export class GameController {
   }
 
   private fresh(seed: number): GameState {
-    this.platform.help.resetForNewGame();
+    this.rewards = null;
     this.startedAt = new Date().toISOString();
     const state = newGame(this.p, seed);
     this.save(state);
@@ -109,11 +111,19 @@ export class GameController {
   /** A finished daily game joins the results once, as it ends (a reload or Play again adds nothing). */
   private record(end: GameState) {
     if (this.practice) return;
-    const { storage } = this.platform;
+    const { storage, help } = this.platform;
+    const today = istToday(new Date()), before = readResults(storage.get(RESULTS_KEY));
     const result: DuelResult = {
       date: this.date, puzzle: `${this.p.id}.v${this.p.version}`, you: end.scores.you, quill: end.scores.quill, at: new Date().toISOString(),
     };
-    storage.set(RESULTS_KEY, [...readResults(storage.get(RESULTS_KEY)), result]);
+    const after = [...before, result];
+    storage.set(RESULTS_KEY, after);
+    const was = wonDays(before);
+    this.rewards = rewardsFor({
+      won: result.you > result.quill, practice: false, date: this.date, today, alreadyWon: was.has(this.date),
+      streakBefore: streak(was, today), streakAfter: streak(wonDays(after), today),
+    });
+    help.earn(this.rewards);
   }
 
   /** Play again: a new deal of the same puzzle. */
@@ -337,7 +347,7 @@ export class GameController {
     } catch {
       // A failed animation must never lock the game: the result below is already saved.
     } finally {
-      this.publish({ state: end.state, pending: [], hintOn: false, lastQuill: quill.length ? end.state.lastQuill : [], busy: false, held: [] });
+      this.publish({ state: end.state, pending: [], hintOn: false, lastQuill: quill.length ? end.state.lastQuill : [], busy: false, held: [], rewards: this.rewards });
     }
   }
 }

@@ -103,7 +103,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
       </div>
       {snap.zoom !== null && <ClueZoom p={p} cell={snap.zoom} stage={stage} />}
       {snap.sheet?.k === 'swap' && <SwapSheet snap={snap} ctl={ctl} motion={motion} />}
-      {snap.sheet?.k === 'help' && <HelpSheet snap={snap} ctl={ctl} />}
+      {snap.sheet?.k === 'help' && <HelpSheet balance={snap.balance} want={snap.sheet.want} onClose={() => ctl.closeSheet()} />}
       {snap.sheet?.k === 'reveal' && <WordConfirm p={p} slot={snap.sheet.slot} ctl={ctl} />}
       {snap.state.over && !snap.busy && <GameOver snap={snap} ctl={ctl} />}
       <div className="duel-rotate" role="status">

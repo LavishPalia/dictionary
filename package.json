@@ -76,6 +76,7 @@
     "test:duel-content": "tsx scripts/test-duel-content.ts",
     "test:duel-controller": "tsx scripts/test-duel-controller.ts",
     "test:duel-progress": "tsx scripts/test-duel-progress.ts",
+    "test:duel-help": "tsx scripts/test-duel-help.ts",
     "test:duel-schedule": "tsx scripts/test-duel-schedule.ts",
     "test:duel-ui": "node scripts/test-duel-ui-browser.mjs",
     "test:duel-entry-ui": "node scripts/test-duel-entry-browser.mjs",

@@ -38,7 +38,7 @@ export interface HelpWallet {
   balance(): { hint: number; word: number };
   /** Takes one; false when the balance is 0. */
   spend(kind: 'hint' | 'word'): boolean;
-  resetForNewGame(): void;
+  earn(gain: { hint: number; word: number }): void;
 }
 
 export interface Platform {
