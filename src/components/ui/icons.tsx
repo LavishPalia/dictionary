@@ -14,4 +14,6 @@ export const CardsIcon = () => <Svg><rect x="4" y="6" width="13" height="15" rx=
 export const CloseIcon = () => <Svg><path d="M6 6l12 12M18 6L6 18" /></Svg>;
 export const CompassIcon = () => <Svg><circle cx="12" cy="12" r="8.5" /><path d="M15.5 8.5l-2 5-5 2 2-5z" /></Svg>;
 export const DiceIcon = () => <Svg><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1.1" /><circle cx="15" cy="15" r="1.1" /><circle cx="15" cy="9" r="1.1" /><circle cx="9" cy="15" r="1.1" /></Svg>;
+// Four letter tiles, two by two: the Duel.
+export const PlayIcon = () => <Svg><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.5" /><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.5" /><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.5" /><rect x="13" y="13" width="7.5" height="7.5" rx="1.5" /></Svg>;
 export const MicIcon = () => <Svg><rect x="9" y="3.5" width="6" height="11" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5M9 20.5h6" /></Svg>;

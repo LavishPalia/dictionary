@@ -41,15 +41,15 @@
     height: calc(62px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
     background: var(--desk-bar); border-top: 1px solid #4a3a2c;
   }
-  .app-bottomnav button {
+  .app-bottomnav button, .app-bottomnav a {
     flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    border: 0; background: transparent; color: var(--nav-ink); font: 12px var(--font-fell-sc); cursor: pointer;
+    border: 0; background: transparent; color: var(--nav-ink); font: 12px var(--font-fell-sc); cursor: pointer; text-decoration: none;
   }
   .app-bottomnav button[aria-current='page'] { color: var(--brass); }
   .app-bottomnav button[aria-current='page']::before {
     content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 2px; border-radius: 2px; background: var(--brass);
   }
-  .app-bottomnav button:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
+  .app-bottomnav button:focus-visible, .app-bottomnav a:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
   .app-bottomnav .app-count { position: absolute; top: 6px; left: calc(50% + 12px); font-size: 11px; }
   .app-bottomnav .app-count::before { content: ''; }
   .app-bottomnav .ui-badge { position: absolute; top: 6px; left: calc(50% + 8px); }

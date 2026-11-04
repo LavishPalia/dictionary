@@ -22,7 +22,17 @@ export interface Sound {
 
 export interface Haptics { tick(): void; drop(): void; wrong(): void; celebrate(): void; enabled: boolean }
 
-export interface PuzzleSource { forDate(date: string): Promise<Puzzle> }
+/** public/duel/schedule.json, as scripts/duel/build-copy.ts writes it: date → puzzle key → hashed file name. */
+export interface ClientSchedule { dates: Record<string, string>; files: Record<string, string> }
+
+/** A date's puzzle; `practice` when the date has no scheduled puzzle and the practice puzzle stands in. */
+export interface DatedPuzzle { puzzle: Puzzle; practice: boolean }
+
+export interface PuzzleSource {
+  schedule(): Promise<ClientSchedule>;
+  /** Rejects when the schedule or the puzzle can't be loaded; never swaps in the practice puzzle for a failure. */
+  forDate(date: string): Promise<DatedPuzzle>;
+}
 
 export interface HelpWallet {
   balance(): { hint: number; word: number };

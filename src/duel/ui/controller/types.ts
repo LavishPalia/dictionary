@@ -7,6 +7,8 @@ export interface SavedGame {
   /** The engine's RULES_ID when the game started; a save from other rules starts afresh. */
   rules: string;
   seed: number; log: Action[]; startedAt: string;
+  /** The scores and end after Quill's reply, for Panna's Today card (which doesn't replay the game). */
+  score?: { you: number; quill: number }; over?: boolean;
 }
 
 export type Sheet = null | { k: 'swap' } | { k: 'help'; want: 'hint' | 'word' } | { k: 'reveal'; slot: SlotId };

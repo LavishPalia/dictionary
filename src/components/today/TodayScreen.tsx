@@ -8,6 +8,7 @@ import { Button, Card } from '@/components/ui';
 import { StarIcon } from '@/components/ui/icons';
 import { ProgressBar, ReviewCalendar } from '@/components/progress/Progress';
 import type { CalendarDay, Progress } from '@/lib/progress';
+import { DuelCard } from './DuelCard';
 
 interface TodayScreenProps {
   dueCount: number;
@@ -82,6 +83,8 @@ export function TodayScreen(props: TodayScreenProps) {
           </div>
         </Card>
       )}
+
+      <DuelCard />
 
       <Card className="today-card" id="today-review">
         <div className="today-card-head">

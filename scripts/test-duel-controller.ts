@@ -10,6 +10,7 @@ import { hintCells, nextEmpty, wordCandidates } from '../src/duel/ui/controller/
 import type { Director, SavedGame } from '../src/duel/ui/controller/types';
 import { readFlags } from '../src/duel/ui/flags';
 import { pickTier, shouldStepDown } from '../src/duel/ui/fx/tier';
+import { readResults, RESULTS_KEY } from '../src/duel/progress';
 import { istToday, parsePath } from '../src/duel/ui/router';
 
 let failures = 0;
@@ -21,8 +22,8 @@ function check(label: string, ok: boolean, detail?: unknown) {
 async function main() {
   // ── Router ──
   check('IST today rolls over at 18:30 UTC', istToday(new Date('2026-11-01T18:29:59Z')) === '2026-11-01' && istToday(new Date('2026-11-01T18:30:00Z')) === '2026-11-02');
-  check('/play → today', (parsePath('/play', '2026-11-01') as any).redirect === '/play/game/2026-11-01');
-  check('/play/ → today', (parsePath('/play/', '2026-11-01') as any).redirect === '/play/game/2026-11-01');
+  check('/play → pick the day', (parsePath('/play', '2026-11-01') as any).screen === 'play');
+  check('/play/ → pick the day', (parsePath('/play/', '2026-11-01') as any).screen === 'play');
   check('a past date opens', (parsePath('/play/game/2026-10-28', '2026-11-01') as any).date === '2026-10-28');
   check('today opens', (parsePath('/play/game/2026-11-01', '2026-11-01') as any).date === '2026-11-01');
   for (const bad of ['/play/game/2026-11-02', '/play/game/banana', '/play/game/2026-02-30', '/play/ranks'])
@@ -63,7 +64,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
   };
   const quiet = { enabled: true, play() {}, unlock() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
-  return { mem, storage, sound: quiet, haptics: still, puzzles: { forDate: async () => p0 }, help: stubHelp(storage), reducedMotion: () => true, exitHref: '/' };
+  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: stubHelp(storage), reducedMotion: () => true, exitHref: '/' };
 }
 
 /** A correct cell for every tile in your rack (the bag invariant guarantees one each). */
@@ -131,6 +132,8 @@ async function controllerChecks() {
   await Promise.resolve();
   const saved = pf.storage.get<SavedGame>(KEY);
   check('f: the save holds the submit before any motion ends', saved?.log.length === 1 && saved.log[0].t === 'submit', saved);
+  check("f: the save's score is the one after Quill's reply", !!saved?.score && saved.over === false
+    && saved.score.you + saved.score.quill > 0 && JSON.stringify(saved.score) !== JSON.stringify(c.snapshot().state.scores), saved?.score);
   check('f: busy while the sequence plays', c.snapshot().busy && c.submit() instanceof Promise && c.snapshot().state.log.length === 0);
 
   // g. Continue rebuilds the same board
@@ -219,6 +222,15 @@ async function controllerChecks() {
     if (c.snapshot().pending.length) await c.submit(); else await c.pass();
   }
   check('n: the game ends', c.snapshot().state.over && !c.snapshot().busy);
+  {
+    const fin = c.snapshot().state.scores, sv = pf.storage.get<SavedGame>(KEY);
+    const rows = readResults(pf.storage.get(RESULTS_KEY));
+    check('n: the save holds the final score and the end', sv?.over === true && sv.score?.you === fin.you && sv.score?.quill === fin.quill, sv?.score);
+    check('n: the finished game is recorded once', rows.length === 1 && rows[0].date === DATE && rows[0].puzzle === 'p0000.v1'
+      && rows[0].you === fin.you && rows[0].quill === fin.quill, rows);
+    new GameController(p0, DATE, pf, new NullDirector());
+    check('n: a reload records nothing more', readResults(pf.storage.get(RESULTS_KEY)).length === 1);
+  }
   const endLog = c.snapshot().state.log.length;
   await c.pass();
   check('n: pass after the end is ignored', c.snapshot().state.log.length === endLog);
@@ -226,6 +238,15 @@ async function controllerChecks() {
   c.newGame();
   check('n: Play again deals a new game and resets help', !c.snapshot().state.over && c.snapshot().state.log.length === 0 && c.snapshot().state.seed !== 123 && pf.help.balance().word === 1);
   check('n: the new game is saved', pf.storage.get<SavedGame>(KEY)?.seed === c.snapshot().state.seed);
+  check('n: Play again records nothing', readResults(pf.storage.get(RESULTS_KEY)).length === 1);
+  {
+    const pp = memoryPlatform(), cp = new GameController(p0, DATE, pp, new NullDirector(), { seed: 123, practice: true });
+    for (let turns = 0; turns < 80 && !cp.snapshot().state.over; turns++) {
+      for (const t of correctPlacements(cp)) cp.place(t.rackSlot, t.cell);
+      if (cp.snapshot().pending.length) await cp.submit(); else await cp.pass();
+    }
+    check('n: a finished practice game records nothing', cp.snapshot().state.over && !pp.storage.has(RESULTS_KEY));
+  }
 
   // round 3: your rack empties near the end, so Quill plays several turns in a row and you never press Pass
   {

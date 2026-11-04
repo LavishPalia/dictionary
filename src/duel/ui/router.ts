@@ -1,14 +1,12 @@
 // The Duel's own little router on top of the History API, so the same package can mount outside Next.
-// M2 has one screen: /play/game/YYYY-MM-DD. Everything else lands on today's game.
+// /play picks the day to play (DuelApp, from the schedule); /play/game/YYYY-MM-DD plays it. Everything else lands
+// on today's game. (M4b puts the game home at /play.)
 
-export type Route = { screen: 'game'; date: string } | { redirect: string };
+import { istToday } from '../progress';
 
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+export { istToday };
 
-/** Today's date (YYYY-MM-DD) in India: the Duel's day starts at 00:00 IST. */
-export function istToday(now: Date): string {
-  return new Date(now.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
-}
+export type Route = { screen: 'play' } | { screen: 'game'; date: string } | { redirect: string };
 
 /** A real calendar date, written YYYY-MM-DD (so 2026-02-30 is not one). */
 function isDate(s: string): boolean {
@@ -20,6 +18,7 @@ function isDate(s: string): boolean {
 /** What a /play path shows. A future, malformed or unknown path goes to today's game. */
 export function parsePath(path: string, today: string): Route {
   const toToday: Route = { redirect: `/play/game/${today}` };
+  if (/^\/play\/?$/.test(path)) return { screen: 'play' };
   const m = /^\/play\/game\/([^/]+)\/?$/.exec(path);
   if (!m) return toToday;
   const date = m[1];

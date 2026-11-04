@@ -17,6 +17,7 @@ import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocat
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
+import { useDuelVisible } from '@/components/today/DuelCard';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
 import { BackupManager, lastBackupLabel, type BackupHandle } from '@/components/shell/BackupManager';
 import { LAST_BACKUP_KEY, isMarginNote, isSavedWord, keepValid } from '@/lib/backup';
@@ -111,6 +112,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [showWordDrawer, setShowWordDrawer] = useState<boolean>(Boolean(initialEntry));
   // Which screen is showing. The book stays mounted (hidden) under Saved and Review, so its place and state survive.
   const [section, setSection] = useState<Section>(initialSection);
+  const showPlay = useDuelVisible();
   // The home screen (Today or Book) that Saved, Review and the study guide return to. The guide opened at /learn
   // sits over Today, as the front page would.
   const [homeSection, setHomeSection] = useState<Section>(initialSection === 'book' ? 'book' : 'today');
@@ -1284,6 +1286,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       }}
     >
       <AppHeader
+        showPlay={showPlay}
         search={
           <LookupBar
             onSelectWord={handleSelectWord}
@@ -1607,6 +1610,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onSaved={() => goTo('saved')}
         onToday={() => goTo('today')}
         onReview={() => goTo('review')}
+        showPlay={showPlay}
       />
     </main>
   );

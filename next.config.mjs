@@ -28,8 +28,15 @@ const nextConfig = {
   reactStrictMode: true,
   // Panna never uses next/image; turning the optimiser off removes the /_next/image endpoint.
   images: { unoptimized: true },
+  // Which Vercel deploy this is ('production', 'preview', or '' locally), for the Duel's pre-launch hiding
+  // (src/duel/platform/web/entry.ts), without relying on Vercel exposing its system variables to the browser.
+  env: { NEXT_PUBLIC_DUEL_ENV: process.env.VERCEL_ENV ?? '' },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // Duel puzzles are published under their hash, so a name never changes content.
+      { source: '/duel/p/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+    ];
   },
   // better-sqlite3 is a native module: load it from node_modules at runtime instead of bundling it.
   serverExternalPackages: ['better-sqlite3'],
