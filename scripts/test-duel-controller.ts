@@ -1,7 +1,7 @@
 // The Duel UI's logic that runs without a browser: the router, URL flags, tiers and the game controller.
 // Usage: npx tsx scripts/test-duel-controller.ts
 import { readFileSync } from 'node:fs';
-import { emptyCells, replay, type CellId, type Puzzle } from '../src/duel/engine';
+import { emptyCells, replay, RULES_ID, type CellId, type Puzzle } from '../src/duel/engine';
 import type { Platform } from '../src/duel/platform/types';
 import { stubHelp } from '../src/duel/platform/web/help';
 import { GameController } from '../src/duel/ui/controller/controller';
@@ -143,10 +143,16 @@ async function controllerChecks() {
   check('g: Continue gives the same state', JSON.stringify(again.snapshot().state) === JSON.stringify(c.snapshot().state));
 
   // h. saves that can't be restored
-  const good = { puzzleId: p0.id, puzzleVersion: p0.version, seed: 5, log: [], startedAt: '2026-11-01T00:00:00Z' };
+  const good = { puzzleId: p0.id, puzzleVersion: p0.version, rules: RULES_ID, seed: 5, log: [], startedAt: '2026-11-01T00:00:00Z' };
+  pf = memoryPlatform(); pf.mem.set(KEY, JSON.stringify(good)); d = new NullDirector();
+  c = new GameController(p0, DATE, pf, d);
+  check('h: a save under these rules continues', c.snapshot().state.seed === 5 && !d.toasts.length, d.toasts);
+  const { rules: _, ...noRules } = good;
   const bads: [string, string][] = [
     ['junk JSON', '{junk'],
     ['another puzzle version', JSON.stringify({ ...good, puzzleVersion: 99 })],
+    ['a save from other rules (Quill tuned differently)', JSON.stringify({ ...good, rules: '1.00000000' })],
+    ['a save from before saves named their rules', JSON.stringify(noRules)],
     ['an illegal action', JSON.stringify({ ...good, log: [{ t: 'submit', place: [] }] })],
     ['not a save at all', JSON.stringify([1, 2, 3])],
   ];

@@ -1,5 +1,6 @@
 // What Panna's way into the Duel (the Today card, the Play tab, the header item) reads about it. Panna imports this;
 // the Duel never imports Panna.
+import { RULES_ID } from '../../engine';
 import type { SavedGame } from '../../ui/controller/types';
 import { gameKey, playDate, readResults, RESULTS_KEY, SEEN_KEY, streak, wonDays } from '../../progress';
 import type { ClientSchedule, Storage } from '../types';
@@ -47,8 +48,8 @@ export function todayDuel(today: string, schedule: ClientSchedule | null, storag
   const base = { date: today, practice, streak: streak(won, today), next: next === today ? null : next };
 
   // A save made for another puzzle or version (a practice game on a day that now has its daily, a republished fix)
-  // starts fresh in the game too.
-  const save = raw && typeof raw === 'object' && (!schedule || keyOf(raw) === (key ?? PRACTICE_KEY)) && raw.score
+  // or under other rules (Quill retuned) starts fresh in the game too.
+  const save = raw && typeof raw === 'object' && raw.rules === RULES_ID && (!schedule || keyOf(raw) === (key ?? PRACTICE_KEY)) && raw.score
     && Number.isFinite(raw.score.you) && Number.isFinite(raw.score.quill) ? raw : null;
   const score = save?.score;
 

@@ -97,7 +97,8 @@ async function main() {
         .then((r) => r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => ({ id: v.id, nodes: v.nodes.slice(0, 4).map((n) => n.target.join(' ')) })))`);
       check(`${label}: axe finds no serious or critical problems`, Array.isArray(out) && out.length === 0, out);
     };
-    const save = (puzzleId, you, quill, over = false) => ({ puzzleId, puzzleVersion: 1, seed: 7, log: [], startedAt: '', score: { you, quill }, over });
+    let rules; // the engine's RULES_ID, read from the game saved below
+    const save = (puzzleId, you, quill, over = false) => ({ puzzleId, puzzleVersion: 1, rules, seed: 7, log: [], startedAt: '', score: { you, quill }, over });
 
     // ── Phone ──
     await setSize({ width: 412, height: 915, mobile: true });
@@ -132,6 +133,8 @@ async function main() {
     await waitFor(`Boolean(document.querySelector('#today-duel'))`, 20000);
     text = await cardText();
     check('phone: a game under way → Continue and the score', /You lead|Quill leads|Level at/.test(text) && (await button())?.text === 'Continue', text);
+    rules = await evaluate(`JSON.parse(localStorage.getItem('panna_duel_game:${TODAY}')).rules`);
+    check('phone: the save names its rules', typeof rules === 'string' && rules.length > 0, rules);
 
     await route(true);
     await today({ [`panna_duel_game:${TODAY}`]: save('p0000', 55, 41, true), panna_duel_results: [{ date: TODAY, puzzle: 'p0000.v1', you: 55, quill: 41, at: 'x' }] });
@@ -144,6 +147,8 @@ async function main() {
     await today({ [`panna_duel_game:${TODAY}`]: save('p0000', 40, 40, true) });
     text = await cardText();
     check('phone: a tie → "A tie at 40" and Replay', text.includes('A tie at 40') && (await button())?.text === 'Replay', text);
+    await today({ [`panna_duel_game:${TODAY}`]: { ...save('p0000', 24, 19), rules: 'older' } });
+    check('phone: a save from other rules → a new game, not Continue', (await button())?.text === 'Play today’s duel', await button());
     await today();
     check("phone: a scheduled day → today's puzzle", (await cardText()).includes('Today’s puzzle is ready') && (await button())?.text === 'Play today’s duel');
     await route(false);

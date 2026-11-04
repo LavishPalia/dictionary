@@ -69,7 +69,7 @@ export function apply(p: Puzzle, state: GameState, a: Action): { state: GameStat
       for (const l of old) s.bag.splice(nextInt(s.rng.bag, s.bag.length + 1), 0, l);
       s.passStreak++;
       s.lastQuill = [];
-      events = [{ e: 'swapped', rackSlots: [...a.rackSlots] }, { e: 'passed', who: 'you', streak: s.passStreak }];
+      events = [{ e: 'swapped', rackSlots: [...a.rackSlots], letters: a.rackSlots.map(i => s.racks.you[i]!) }, { e: 'passed', who: 'you', streak: s.passStreak }];
       endTurn(p, s, 'you', events);
       break;
     }

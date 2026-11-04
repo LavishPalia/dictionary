@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The full test suite against a fresh production build; exits non-zero if any test fails.
 # Used by .github/workflows/ci.yml, and runs the same way locally: bash scripts/ci-suite.sh [part]
-# CI runs the three parts (1, 2, 3) in parallel; with no part, everything runs.
+# CI runs the four parts (1–4) in parallel; with no part, everything runs.
 # Browser tests drive Edge at its default Windows path, so this needs Windows (or Git Bash on it).
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -13,9 +13,10 @@ export REPORTS_FILE=$PWD/scratch/reports-test.jsonl
 export NEXT_PUBLIC_REPORTS=1
 
 # Parts of about 6.5 minutes each on a GitHub runner (seconds in brackets, from a CI log, 2026-10-31).
-PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:duel-entry-ui test:saved test:word"  # 139 82 70 55 23 19
-PART_2="test:duel-ui test:learn-ui test:reach-ui test:history-ui test:goto-ui test:review-ui test:book-fit-ui test:backup-ui
-  test:duel-sim test:duel-purity test:duel-engine test:duel-controller test:duel-content test:duel-progress test:duel-schedule"  # duel-ui ~230 locally; 116 78 69 44 27 25 24 35 5 2 3
+PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:saved test:word"  # 139 82 70 55 23 19
+PART_2="test:learn-ui test:reach-ui test:history-ui test:goto-ui test:review-ui test:book-fit-ui test:backup-ui"  # 116 78 69 44 27 25 24
+# The Duel's own part (from 4 Nov): it had made part 2 the slowest by about 3 minutes.
+PART_4="test:duel-ui test:duel-sim test:duel-entry-ui test:duel-content test:duel-purity test:duel-engine test:duel-controller test:duel-progress test:duel-schedule"  # duel-ui ~230 locally, sim ~60
 PART_3="test:tour-ui test:quiz test:search test:motion test:related-ui test:report-ui test:saved-search-ui
   test:progress-ui test:phase4 test:phase3 test:shell test:marks-ui test:phase5 verify:determinism
   test:learn test:highlight test:pos test:review test:related test:hinglish test:report test:progress
@@ -27,13 +28,13 @@ PART_3="test:tour-ui test:quiz test:search test:motion test:related-ui test:repo
 missing=$(node -e '
 const parts = process.argv[1].split(/\s+/);
 const tests = Object.keys(require("./package.json").scripts).filter((k) => k.startsWith("test:"));
-console.log(tests.filter((t) => !parts.includes(t)).join(" "));' "$PART_1 $PART_2 $PART_3")
+console.log(tests.filter((t) => !parts.includes(t)).join(" "));' "$PART_1 $PART_2 $PART_3 $PART_4")
 if [ -n "$missing" ]; then echo "Not in any part of scripts/ci-suite.sh: $missing"; exit 1; fi
 
 case "${1:-all}" in
-  1) TESTS=$PART_1 ;; 2) TESTS=$PART_2 ;; 3) TESTS=$PART_3 ;;
-  all) TESTS="$PART_1 $PART_2 $PART_3" ;;
-  *) echo "Unknown part: $1 (use 1, 2, 3 or nothing)"; exit 1 ;;
+  1) TESTS=$PART_1 ;; 2) TESTS=$PART_2 ;; 3) TESTS=$PART_3 ;; 4) TESTS=$PART_4 ;;
+  all) TESTS="$PART_1 $PART_2 $PART_3 $PART_4" ;;
+  *) echo "Unknown part: $1 (use 1, 2, 3, 4 or nothing)"; exit 1 ;;
 esac
 
 free_port() {

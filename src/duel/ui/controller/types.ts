@@ -3,7 +3,10 @@ import type { Action, CellId, GameEvent, GameState, SlotId, Who } from '../../en
 
 /** A game in progress on the device. The state is rebuilt from it with replay() on Continue. */
 export interface SavedGame {
-  puzzleId: string; puzzleVersion: number; seed: number; log: Action[]; startedAt: string;
+  puzzleId: string; puzzleVersion: number;
+  /** The engine's RULES_ID when the game started; a save from other rules starts afresh. */
+  rules: string;
+  seed: number; log: Action[]; startedAt: string;
   /** The scores and end after Quill's reply, for Panna's Today card (which doesn't replay the game). */
   score?: { you: number; quill: number }; over?: boolean;
 }

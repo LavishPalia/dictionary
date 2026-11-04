@@ -1,5 +1,6 @@
 // The Duel's progress rules (src/duel/progress.ts): IST days, won days, the streak and the day Play opens.
 // Usage: npx tsx scripts/test-duel-progress.ts
+import { RULES_ID } from '../src/duel/engine';
 import { entryVisible, todayDuel } from '../src/duel/platform/web/entry';
 import type { Storage } from '../src/duel/platform/types';
 import { addDays, istToday, playDate, readResults, streak, wonDays, type DuelResult } from '../src/duel/progress';
@@ -69,7 +70,7 @@ function mem(entries: Record<string, unknown> = {}): Storage {
 }
 const T = '2026-11-04';
 const SCHED = { dates: { '2026-11-02': 'p0002.v1', '2026-11-03': 'p0003.v1', [T]: 'p0004.v1' }, files: {} };
-const save = (puzzleId: string, you: number, quill: number, over = false) => ({ puzzleId, puzzleVersion: 1, seed: 1, log: [], startedAt: '', score: { you, quill }, over });
+const save = (puzzleId: string, you: number, quill: number, over = false) => ({ puzzleId, puzzleVersion: 1, rules: RULES_ID, seed: 1, log: [], startedAt: '', score: { you, quill }, over });
 const G = `panna_duel_game:${T}`;
 let td = todayDuel(T, SCHED, mem());
 check('card: no save → new, a daily', td.state === 'new' && !td.practice);
@@ -88,6 +89,10 @@ td = todayDuel(T, SCHED, mem({ [G]: save('p0004', 50, 40, true) }));
 check('card: a won save without its result row still counts as won', td.state === 'won' && td.you === 50, td);
 td = todayDuel(T, { ...SCHED, dates: { ...SCHED.dates, [T]: 'p0004.v2' } }, mem({ [G]: save('p0004', 24, 19) }));
 check('card: a save of an older version → new', td.state === 'new', td);
+td = todayDuel(T, SCHED, mem({ [G]: { ...save('p0004', 24, 19), rules: 'older' } }));
+check('card: a save from other rules → new, as the game starts afresh', td.state === 'new', td);
+td = todayDuel(T, null, mem({ [G]: { ...save('p0004', 24, 19), rules: 'older' } }));
+check('card: a save from other rules → new, even with the schedule unknown', td.state === 'new', td);
 td = todayDuel('2026-11-05', SCHED, mem({ panna_duel_results: [r('2026-11-03', 50, 40)] }));
 check('card: no puzzle today but an open past daily → next is that day', td.state === 'new' && td.practice && td.next === '2026-11-04', td);
 td = todayDuel(T, SCHED, mem({ [G]: save('p0001', 24, 19) }));

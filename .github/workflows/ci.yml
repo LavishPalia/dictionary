@@ -15,12 +15,12 @@ concurrency:
 
 jobs:
   test:
-    # Three parts run side by side (see the parts in scripts/ci-suite.sh); each builds the app itself.
+    # Four parts run side by side (see the parts in scripts/ci-suite.sh); each builds the app itself.
     name: Suite part ${{ matrix.part }}
     strategy:
       fail-fast: false
       matrix:
-        part: [1, 2, 3]
+        part: [1, 2, 3, 4]
     # Windows: the browser tests drive Edge at its default Windows path, as on the dev PC.
     runs-on: windows-latest
     timeout-minutes: 60
