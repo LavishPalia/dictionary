@@ -214,10 +214,9 @@ async function main() {
     await tap(`.duel-board [data-cell="${first.cell}"]`);
     await sleep(30);
     const home = await evaluate(`[...document.querySelectorAll('.duel-fx .fx-tile')].map((e) => e.textContent).join('|')`);
-    await waitFor(`window.__duel.snapshot().pending.length === 0`, 2000);
-    await sleep(100);
-    check('phone: tapping a pending tile arcs it home', home === s.state.racks.you[first.rackSlot]
-      && await evaluate(`Boolean(document.querySelector('[data-rack="${first.rackSlot}"] .duel-tile')) && !document.querySelector('.duel-fx .fx-tile') && !document.querySelector('[data-fx-hidden], [data-fx-homing]')`), home);
+    // the tile is taken back at once, so wait for its flight home to end
+    const settled = await waitFor(`window.__duel.snapshot().pending.length === 0 && Boolean(document.querySelector('[data-rack="${first.rackSlot}"] .duel-tile')) && !document.querySelector('.duel-fx .fx-tile') && !document.querySelector('[data-fx-hidden], [data-fx-homing]')`, 2000);
+    check('phone: tapping a pending tile arcs it home', home === s.state.racks.you[first.rackSlot] && settled, home);
     // a clue zoom stays until the next tap
     const clue = P0.slots[0];
     await tap(`[data-slot="${clue.id}"]`);
@@ -412,10 +411,9 @@ async function main() {
       await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await key('Enter');
       await idle();
-      await sleep(300);
+      const landed = await waitFor(`Boolean(document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile')) && !document.querySelector('[data-fx-hidden], [data-fx-homing]') && !document.querySelector('.duel-fx .fx-tile')`, 2000);
       s = await snap();
-      check('phone: Enter during a flight home passes, and the tile is home', s.state.log.at(-1)?.t === 'pass'
-        && await evaluate(`Boolean(document.querySelector('[data-rack="${t0.rackSlot}"] .duel-tile')) && !document.querySelector('[data-fx-hidden], [data-fx-homing]') && !document.querySelector('.duel-fx .fx-tile')`), s.state.log.at(-1));
+      check('phone: Enter during a flight home passes, and the tile is home', s.state.log.at(-1)?.t === 'pass' && landed, s.state.log.at(-1));
     }
 
     // a drag during a sequence does nothing
