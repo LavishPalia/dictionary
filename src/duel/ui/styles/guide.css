@@ -1,0 +1,34 @@
+/* Panna Duel: settings and How to play, on the same light paper as the home. */
+
+.set-label { margin: 12px 20px 0; font: 15px var(--font-fell-sc); letter-spacing: .4px; color: var(--pg-muted); }
+.set-list { padding: 0; overflow: hidden; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 8px 14px; color: var(--ink); text-decoration: none; }
+.set-row + .set-row { border-top: 1px solid var(--pg-line); }
+.set-row b { display: block; font: normal 17px var(--font-fell); }
+.set-row small { display: block; font-size: 14px; color: var(--pg-muted); }
+.set-row small a { color: var(--binding); }
+.set-row i { font-style: normal; font-size: 22px; color: var(--pg-muted); }
+.set-row input { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 48px; height: 28px; margin: 0; border-radius: 14px; background: #7d6f58; cursor: pointer; transition: background .18s; }
+.set-row input::after { content: ""; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .18s var(--out); }
+.set-row input:checked { background: var(--binding); }
+.set-row input:checked::after { transform: translateX(20px); }
+.set-note { margin: 4px 20px 0; font-size: 14.5px; color: var(--pg-muted); }
+
+.how-page { margin-bottom: 10px; }
+.how-page h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 19px var(--font-fell-sc); color: var(--binding); }
+.how-page h2 span { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--binding); color: var(--onb); font: 700 12px var(--letters); }
+.how-page p { margin: 0 0 6px; line-height: 1.32; }
+.how-page p b { font-weight: normal; color: var(--binding); }
+.how-page .hi { font: 15px var(--font-deva); color: var(--pg-muted); }
+.how-ex { margin: 8px 0 0 !important; padding: 8px 10px; border-radius: 8px; background: #efe3c0; color: #2a1e14; font-size: 15px; }
+.how-ex b { color: #5b1f19 !important; }
+.how-score { width: 100%; border-collapse: collapse; }
+.how-score td { padding: 5px 0; border-bottom: 1px solid var(--pg-line); }
+.how-score td:last-child { text-align: right; font: 700 13px var(--letters); color: #1a6b2d; white-space: nowrap; }
+.how-score td.minus { color: #a32020; }
+html[data-light="evening"] .how-score td:last-child { color: #0f3f1a; }
+html[data-light="evening"] .how-score td.minus { color: #5e1a13; }
+.duel-board-legend { --cell: 38px; --tileW: 36px; --tileH: 37px; display: grid; grid-template-columns: var(--cell) 1fr; gap: 6px 10px; align-items: center; }
+.duel-board-legend .duel-cell { width: var(--cell); height: var(--cell); box-shadow: 0 0 0 1px #c9ccd1; }
+.duel-board-legend .duel-cell.ghost .lt { color: rgba(94, 74, 51, .42); }
+.how-page .bigbtn { margin-top: 8px; border: 1.5px solid var(--crimson); color: var(--crimson); }

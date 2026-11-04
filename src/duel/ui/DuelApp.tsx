@@ -12,13 +12,16 @@ import { pickTier } from './fx/tier';
 import { GameScreen } from './game/GameScreen';
 import { gameKey } from '../progress';
 import { Home } from './home/Home';
+import { HowToPlay } from './how/HowToPlay';
+import { Settings } from './settings/Settings';
 import { istToday, parsePath, type Route } from './router';
 import './styles/game.css';
 import './styles/home.css';
 import './styles/end.css';
+import './styles/guide.css';
 
 declare global {
-  interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[] } }
+  interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[]; platform: Platform } }
 }
 
 function Game({ date, platform }: { date: string; platform: Platform }) {
@@ -45,7 +48,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
         history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : ''));
       }
       const ctl = new GameController(p, date, platform, director, { seed: flags.seed, practice });
-      if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace };
+      if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace, platform };
       setGame({ p, practice, ctl, stage, layer, motion });
     }, () => { if (live) setFailed(true); });
     return () => { live = false; layer.destroy(); };
@@ -64,12 +67,20 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
   return <GameScreen p={game.p} date={date} practice={game.practice} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} nav={nav} />;
 }
 
+let moves = 0;
+
 /** Moves within the Duel; the address's test flags stay on it. */
 function nav(path: string) {
   const u = new URL(path, location.href);
   new URLSearchParams(location.search).forEach((v, k) => { if (k !== 'fresh' && !u.searchParams.has(k)) u.searchParams.set(k, v); });
   history.pushState(null, '', u.pathname + u.search);
+  moves++;
   dispatchEvent(new PopStateEvent('popstate'));
+}
+
+/** Back to the screen you came from; an address opened directly has none, so the home. */
+function back() {
+  if (moves > 0) { moves--; history.back(); } else nav('/play');
 }
 
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {
@@ -91,6 +102,8 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
       {!route && <div className="duel-game" aria-busy="true" />}
       {route && 'date' in route && <Game key={route.date} date={route.date} platform={platform} />}
       {route && 'screen' in route && route.screen === 'home' && <Home platform={platform} nav={nav} />}
+      {route && 'screen' in route && route.screen === 'settings' && <Settings platform={platform} nav={nav} back={back} />}
+      {route && 'screen' in route && route.screen === 'how' && <HowToPlay nav={nav} back={back} />}
     </main>
   );
 }

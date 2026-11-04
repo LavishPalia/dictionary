@@ -87,9 +87,9 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
         {practice
           ? <h1 className="ttl"><b>Practice duel</b><i>No daily puzzle for {longDate(date)}</i></h1>
           : <h1 className="ttl"><b>Daily Duel</b><i>{longDate(date)}</i></h1>}
-        <button type="button" className="ib" aria-label="Settings (coming soon)" disabled>
+        <a className="ib" href="/play/settings" aria-label="Settings" onClick={(e) => { e.preventDefault(); nav('/play/settings'); }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="12" cy="12" r="3.2" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></svg>
-        </button>
+        </a>
       </header>
       <ScoreBar snap={snap} stage={stage} />
       <div className="duel-boardarea" ref={area} onClick={(e) => { if (e.target === e.currentTarget) ctl.tapOutside(); }}>

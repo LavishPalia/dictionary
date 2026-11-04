@@ -1,4 +1,5 @@
 // The Duel running inside Panna on the web.
+import { readSettings, SETTINGS_KEY } from '../../settings';
 import type { Platform } from '../types';
 import { webHaptics } from './haptics';
 import { istToday } from '../../progress';
@@ -10,10 +11,14 @@ import { webStorage } from './storage';
 
 export function webPlatform(): Platform {
   const storage = webStorage();
+  const settings = readSettings(storage.get(SETTINGS_KEY));
+  const sound = webSound(), haptics = webHaptics();
+  sound.enabled = settings.sound;
+  haptics.enabled = settings.vibration;
   return {
     storage,
-    sound: webSound(),
-    haptics: webHaptics(),
+    sound,
+    haptics,
     puzzles: webPuzzles(),
     help: webHelp(storage, () => istToday(new Date())),
     panna: webPanna(storage),
