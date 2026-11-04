@@ -41,12 +41,22 @@ export interface HelpWallet {
   earn(gain: { hint: number; word: number }): void;
 }
 
+/** Panna's word pages and review deck. */
+export interface PannaBridge {
+  wordHref(word: string): string;
+  isSaved(word: string): boolean;
+  /** Adds it to the review deck; false when Panna doesn't know the word or can't be reached. */
+  save(word: string): Promise<boolean>;
+  remove(word: string): void;
+}
+
 export interface Platform {
   storage: Storage;
   sound: Sound;
   haptics: Haptics;
   puzzles: PuzzleSource;
   help: HelpWallet;
+  panna: PannaBridge;
   reducedMotion(): boolean;
   /** Where the back arrow goes. */
   exitHref: string;

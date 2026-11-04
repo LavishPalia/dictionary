@@ -15,6 +15,7 @@ import { Home } from './home/Home';
 import { istToday, parsePath, type Route } from './router';
 import './styles/game.css';
 import './styles/home.css';
+import './styles/end.css';
 
 declare global {
   interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[] } }

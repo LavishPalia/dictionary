@@ -10,7 +10,7 @@ import { longDate, type Nav } from '../dates';
 import { ActionRow } from './ActionRow';
 import { Board } from './Board';
 import { ClueZoom } from './ClueZoom';
-import { GameOver } from './GameOver';
+import { EndScreen } from '../end/EndScreen';
 import { HelpSheet } from './HelpSheet';
 import { SwapSheet } from './SwapSheet';
 import { WordConfirm } from './WordConfirm';
@@ -49,6 +49,9 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   p: Puzzle; date: string; practice: boolean; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion; platform: Platform; nav: Nav;
 }) {
   const snap = useSnapshot(ctl);
+  // A game already finished when the screen opens shows its end at once, with no arrival.
+  const finishedAtOpen = useRef(snap.state.over);
+  if (!snap.state.over) finishedAtOpen.current = false;
   const root = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLDivElement>(null);
   const input = useRef<Input | null>(null);
@@ -70,7 +73,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   };
 
   // While a sheet is open, everything behind it is out of reach (focus, taps, screen readers).
-  const behind = snap.sheet !== null;
+  const behind = snap.sheet !== null || (snap.state.over && !snap.busy);
   return (
     // Browsers start audio only on a "user activation": on touch that is the finger lifting (pointerup), not
     // pointerdown, so the sound unlocks here (keys unlock in Input).
@@ -99,7 +102,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
       {snap.sheet?.k === 'swap' && <SwapSheet snap={snap} ctl={ctl} motion={motion} />}
       {snap.sheet?.k === 'help' && <HelpSheet balance={snap.balance} want={snap.sheet.want} onClose={() => ctl.closeSheet()} />}
       {snap.sheet?.k === 'reveal' && <WordConfirm p={p} slot={snap.sheet.slot} ctl={ctl} />}
-      {snap.state.over && !snap.busy && <GameOver snap={snap} ctl={ctl} />}
+      {snap.state.over && !snap.busy && <EndScreen p={p} date={date} practice={practice} snap={snap} ctl={ctl} platform={platform} layer={layer} instant={finishedAtOpen.current} nav={nav} />}
       <div className="duel-rotate" role="status">
         <p>Turn your phone upright to play.</p>
       </div>

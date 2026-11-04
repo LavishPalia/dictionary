@@ -277,11 +277,7 @@ async function main() {
     s = await snap();
     check('phone: a full game by tap ends', s.state.over, { turns, log: s.state.log.length });
     check('round 3: you never get a turn with an empty rack, so you never have to pass', emptyRack === 0 && s.state.log.every((a) => a.t === 'submit'), { emptyRack, kinds: s.state.log.map((a) => a.t) });
-    const over = await evaluate(`document.querySelector('.duel-over')?.textContent ?? ''`);
-    check('phone: the game-over card says who won and the score', /You (win|lose|tie)/.test(over) && over.includes(`${s.state.scores.you} to ${s.state.scores.quill}`), over);
-    await tap('.duel-over button');
-    s = await snap();
-    check('phone: Play again deals a new game', !s.state.over && s.state.log.length === 0);
+    check('phone: the end screen shows the score', await waitFor(`document.querySelector('.end-score')?.getAttribute('aria-label') === 'You ${s.state.scores.you}, Professor Quill ${s.state.scores.quill}'`));
 
     // Continue after a reload
     await open(`${GAME}?seed=7`, { clear: true });

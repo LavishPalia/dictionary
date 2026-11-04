@@ -13,6 +13,7 @@ html[data-light="evening"] .duel-page {
 }
 .duel-page .duel-top { position: sticky; top: 0; z-index: 2; background: var(--pg-bg); }
 .duel-page .ib { color: var(--pg-muted); }
+.duel-page .ttl i { color: var(--pg-muted); }
 .duel-page .bigbtn { text-decoration: none; }
 
 .page-card { margin: 8px 12px 12px; padding: 12px; background: var(--pg-card); border: 1px solid var(--pg-line); border-radius: 14px; }

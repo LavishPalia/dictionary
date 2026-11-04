@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import { emptyCells, replay, RULES_ID, type CellId, type Puzzle } from '../src/duel/engine';
 import type { Platform } from '../src/duel/platform/types';
 import { webHelp } from '../src/duel/platform/web/help';
+import { wordReview } from '../src/duel/ui/controller/selectors';
+import { endCopy } from '../src/duel/ui/end/copy';
 import { GameController } from '../src/duel/ui/controller/controller';
 import { NullDirector } from '../src/duel/ui/controller/null-director';
 import { hintCells, nextEmpty, wordCandidates } from '../src/duel/ui/controller/selectors';
@@ -64,7 +66,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
   };
   const quiet = { enabled: true, play() {}, unlock() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
-  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), reducedMotion: () => true, exitHref: '/' };
+  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => false, remove() {} }, reducedMotion: () => true, exitHref: '/' };
 }
 
 /** A correct cell for every tile in your rack (the bag invariant guarantees one each). */
@@ -269,6 +271,39 @@ async function controllerChecks() {
     }
     check('rewards: found a won game', won !== null);
   }
+
+  // The end screen's word list
+  {
+    const pr = memoryPlatform(), cr = new GameController(p0, DATE, pr, new NullDirector(), { seed: 321 });
+    const wrongSlot = p0.slots.find(sl => sl.cells.length >= 3 && sl.cells.every(x => !p0.given.includes(x)))!;
+    const revealSlot = p0.slots.find(sl => sl.id !== wrongSlot.id && sl.cells.length >= 3 && sl.cells.every(x => !p0.given.includes(x) && !wrongSlot.cells.includes(x)))!;
+    await cr.reveal(revealSlot.id);
+    // One deliberately wrong tile in the first turn.
+    const s0 = cr.snapshot().state;
+    const slot = s0.racks.you.findIndex(l => l !== null && l !== p0.solution[wrongSlot.cells[0]]);
+    cr.place(slot, wrongSlot.cells[0]);
+    await cr.submit();
+    for (let turns = 0; turns < 80 && !cr.snapshot().state.over; turns++) {
+      for (const t of correctPlacements(cr)) cr.place(t.rackSlot, t.cell);
+      if (cr.snapshot().pending.length) await cr.submit(); else await cr.pass();
+    }
+    const st = cr.snapshot().state, rev = wordReview(p0, st);
+    const reason = (id: string) => rev.worth.find(w => w.slot.id === id)?.reason;
+    check('words: a revealed word is tagged revealed', reason(revealSlot.id) === 'revealed', reason(revealSlot.id));
+    check('words: a word with a wrong tile is tagged wrong', reason(wrongSlot.id) === 'wrong', reason(wrongSlot.id));
+    const quills = rev.worth.filter(w => w.reason === 'quill');
+    check('words: every word tagged quill has no letter of yours', quills.every(w => w.slot.cells.every(x => st.filled[x]?.by !== 'you')), quills.map(w => w.slot.answer));
+    check('words: some word went to Quill in a whole game', quills.length > 0);
+    const all = [...rev.worth.map(w => w.slot.answer), ...rev.rest.map(s => s.answer)];
+    check('words: every answer appears once', new Set(all).size === all.length && new Set(p0.slots.map(s => s.answer)).size === all.length, all.length);
+    const worthFirst = rev.worth.map(w => w.reason);
+    check('words: revealed, then wrong, then Quill', [...worthFirst].sort((a, b) => 'rwq'.indexOf(a[0]) - 'rwq'.indexOf(b[0])).join() === worthFirst.join(), worthFirst);
+  }
+  check('end copy: a win', JSON.stringify(endCopy({ you: 55, quill: 41, practice: false, isToday: true })) === JSON.stringify({ kind: 'win', title: 'You win!', line: 'Professor Quill tips his hat.' }));
+  check('end copy: a loss today', endCopy({ you: 41, quill: 45, practice: false, isToday: true }).line === 'Professor Quill wins by 4. Replay to earn today’s star.');
+  check('end copy: a loss on a past day', endCopy({ you: 41, quill: 45, practice: false, isToday: false }).line === 'Professor Quill wins by 4. Replay to earn this day’s star.');
+  check('end copy: a tie', JSON.stringify(endCopy({ you: 46, quill: 46, practice: false, isToday: true })) === JSON.stringify({ kind: 'tie', title: 'A dead heat', line: '46 all. Replay to break the tie and win the star.' }));
+  check('end copy: practice promises no star', !/star/.test(endCopy({ you: 41, quill: 45, practice: true, isToday: true }).line) && !/star/.test(endCopy({ you: 4, quill: 4, practice: true, isToday: true }).line));
 
   // round 3: your rack empties near the end, so Quill plays several turns in a row and you never press Pass
   {
