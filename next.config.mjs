@@ -43,6 +43,10 @@ const nextConfig = {
   // Ship the generated database with every server route ('/**' — '/*' would miss the root page).
   outputFileTracingIncludes: {
     '/**': ['./data/dictionary.db'],
+    // What the Duel's server reads: the published puzzles to replay games on, and the word lists for names.
+    '/api/duel/games': ['./data/duel/puzzles/**', './data/duel/published.json'],
+    '/api/duel/players': ['./data/sources/blocklist.txt', './data/duel/names-blocked.txt'],
+    '/api/duel/players/me': ['./data/sources/blocklist.txt', './data/duel/names-blocked.txt'],
   },
 };
 
