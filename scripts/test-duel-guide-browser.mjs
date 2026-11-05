@@ -17,7 +17,7 @@ await run('Duel settings and guide', async (t) => {
   await open('/play/settings');
   check('settings: opens by address', await settings());
   check('settings: sound and vibration start on', await evaluate(`document.querySelector('#set-sound').checked && document.querySelector('#set-vibration').checked`));
-  check('settings: the device note', (await text('#duel-settings')).includes('Your games, streak and hints are kept on this device. Clearing the browser’s data starts you afresh.'));
+  check('settings: the device note', (await text('#duel-settings')).includes('Your games, streak and hints are kept on this device, and your name and scores go to Panna’s server for the leaderboard. Clearing the browser’s data starts you afresh, unless you have a backup'));
   check('settings: motion follows the phone', (await text('#duel-settings')).includes('Follows your phone’s reduced-motion setting'));
   check('settings: picture credits', (await text('#duel-settings')).includes('Twemoji') && (await text('#duel-settings')).includes('CC BY 4.0'));
   check('settings: no board style (dropped, user 5 Nov)', !(await text('#duel-settings')).includes('Board style'));
