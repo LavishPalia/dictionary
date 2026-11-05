@@ -162,9 +162,11 @@ export function restoreData(
     Object.assign(b, { panna_bookmarks: moved.ribbons, panna_dog_ears: moved.dogEars, panna_marginalia: moved.notes, panna_mark_anchors: moved.anchors });
   }
   if (mode === 'replace') {
-    const out = Object.fromEntries(BACKUP_KEYS.filter((k) => k !== 'panna_recent_searches' && k !== 'panna_history')
+    const out = Object.fromEntries(BACKUP_KEYS.filter((k) => k !== 'panna_recent_searches' && k !== 'panna_history' && k !== 'panna_mark_anchors')
       .map((k) => [k, b[k] ?? (k === 'panna_review' || k === 'panna_settings' || k === 'panna_tours' ? {} : [])])) as BackupData;
     out.panna_history = b.panna_history ?? foldRecent(b.panna_recent_searches, madeAt);
+    // A file with no anchors leaves none: the app makes them when it next opens, and an empty list would crash it.
+    if (b.panna_mark_anchors) out.panna_mark_anchors = b.panna_mark_anchors;
     return out;
   }
 

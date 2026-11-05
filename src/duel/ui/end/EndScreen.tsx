@@ -7,6 +7,7 @@ import type { GameController } from '../controller/controller';
 import type { Snapshot } from '../controller/types';
 import { dayMonth, type Nav } from '../dates';
 import type { FxLayer } from '../fx/layer';
+import { useNet } from '../ranks/WeekCard';
 import { endCopy } from './copy';
 import { WordList } from './WordList';
 
@@ -62,6 +63,23 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   const rewards = snap.rewards;
   const dayWon = won.has(date);
 
+  // This week: the server's total once it has answered; until then, the last known total plus what's waiting.
+  useNet(platform.net);
+  const [flushed, setFlushed] = useState(false);
+  useEffect(() => {
+    let live = true;
+    setFlushed(false);
+    void platform.net.flush().then(() => { if (live) setFlushed(true); });
+    return () => { live = false; };
+  }, [platform, snap.state.seed]);
+  const week = platform.net.week();
+  const sending = platform.net.statusOf(`${p.id}.v${p.version}`, snap.state.seed);
+  const waiting = platform.net.unsent().reduce((n, g) => n + g.claimedScore, 0);
+  const weekPoints = (week?.points ?? 0) + waiting;
+  const weekLine = sending === 'rejected' ? 'This game couldn’t be counted'
+    : sending === 'waiting' ? (flushed ? 'will count when you’re online' : 'counting…')
+      : `this week${week?.rank ? ` · #${week.rank}` : ''}`;
+
   return (
     <div className={`duel-page duel-end ${copy.kind}${arriving ? ' arriving' : ''}`} role="dialog" aria-modal="false" aria-labelledby="duel-end-title"
       onPointerDown={() => setArriving(false)}>
@@ -83,7 +101,7 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
       </div>
 
       {!practice && (
-        <div className="end-stats">
+        <div className="end-stats three">
           <div className="page-card stat" data-stat="day">
             <span className={`stat-coin${dayWon ? ' won' : ''}`} aria-hidden="true">{dayWon ? '★' : Number(date.slice(8))}</span>
             <small>{dayWon ? `${isToday ? 'Today' : dayMonth(date)} won` : 'star still open'}</small>
@@ -91,6 +109,10 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
           <div className="page-card stat" data-stat="streak">
             <b>{flame}</b>
             <small>{flame === 1 ? 'day in a row' : 'days in a row'}{!dayWon && isToday && flame > 0 ? ' · safe till midnight' : ''}</small>
+          </div>
+          <div className="page-card stat" data-stat="week">
+            <b>{weekPoints.toLocaleString('en-IN')}</b>
+            <small>{weekLine}</small>
           </div>
         </div>
       )}
@@ -114,6 +136,7 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
         <div className="end-foot2">
           {copy.kind !== 'win' && !practice && <button type="button" data-end="next" onClick={goNext}>Next ›</button>}
           <button type="button" data-end="calendar" onClick={() => nav('/play')}>Calendar</button>
+          {!practice && <button type="button" data-end="ranks" onClick={() => nav('/play/ranks')}>Ranks</button>}
         </div>
       </footer>
     </div>

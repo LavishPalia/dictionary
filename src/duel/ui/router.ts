@@ -1,12 +1,12 @@
 // The Duel's own little router on top of the History API, so the same package can mount outside Next.
-// /play is the game home, /play/game/YYYY-MM-DD plays a day, /play/settings and /play/how are what they say.
+// /play is the game home, /play/game/YYYY-MM-DD plays a day, /play/settings, /play/how and /play/ranks are what they say.
 // Everything else lands on today's game.
 
 import { istToday } from '../progress';
 
 export { istToday };
 
-export type Route = { screen: 'home' } | { screen: 'settings' } | { screen: 'how' } | { screen: 'game'; date: string } | { redirect: string };
+export type Route = { screen: 'home' } | { screen: 'settings' } | { screen: 'how' } | { screen: 'ranks' } | { screen: 'game'; date: string } | { redirect: string };
 
 /** A real calendar date, written YYYY-MM-DD (so 2026-02-30 is not one). */
 function isDate(s: string): boolean {
@@ -21,6 +21,7 @@ export function parsePath(path: string, today: string): Route {
   if (/^\/play\/?$/.test(path)) return { screen: 'home' };
   if (/^\/play\/settings\/?$/.test(path)) return { screen: 'settings' };
   if (/^\/play\/how\/?$/.test(path)) return { screen: 'how' };
+  if (/^\/play\/ranks\/?$/.test(path)) return { screen: 'ranks' };
   const m = /^\/play\/game\/([^/]+)\/?$/.exec(path);
   if (!m) return toToday;
   const date = m[1];

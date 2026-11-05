@@ -13,6 +13,7 @@ import { GameScreen } from './game/GameScreen';
 import { gameKey } from '../progress';
 import { Home } from './home/Home';
 import { HowToPlay } from './how/HowToPlay';
+import { Ranks } from './ranks/Ranks';
 import { Settings } from './settings/Settings';
 import { istToday, parsePath, type Route } from './router';
 import './styles/game.css';
@@ -20,6 +21,7 @@ import './styles/home.css';
 import './styles/end.css';
 import './styles/guide.css';
 import './styles/book.css';
+import './styles/ranks.css';
 
 declare global {
   interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[]; platform: Platform } }
@@ -118,6 +120,7 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
       {route && 'screen' in route && route.screen === 'home' && <Home platform={platform} nav={nav} />}
       {route && 'screen' in route && route.screen === 'settings' && <Settings platform={platform} nav={nav} back={back} />}
       {route && 'screen' in route && route.screen === 'how' && <HowToPlay nav={nav} back={back} />}
+      {route && 'screen' in route && route.screen === 'ranks' && <Ranks platform={platform} nav={nav} back={back} />}
     </main>
   );
 }

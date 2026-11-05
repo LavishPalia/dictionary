@@ -121,6 +121,13 @@ check('marks from an older build land on their words’ current pages', JSON.str
   check('saved word rejects a negative or empty blank', !isSavedWord(w({ en, hi: 'x', blank: [-1, 3] })) && !isSavedWord(w({ en, hi: 'x', blank: [2, 0] })));
 }
 
+// A file with no anchors, restored with Replace everything, must not write an empty list where the app expects an object.
+{
+  const made = parseBackup(JSON.stringify(createBackup({ panna_saved_words: [] }, 'v1')));
+  const out = made.ok ? restoreData({}, made.backup, 'replace', { dataVersion: 'v1', totalPages: 100 }) : {};
+  check('replace with no anchors in the file leaves none', out.panna_mark_anchors === undefined, out.panna_mark_anchors);
+}
+
 // ── The Duel in the backup (src/duel/backup.ts) ──
 {
   const ME = { id: '11111111-1111-4111-8111-111111111111', token: 'a'.repeat(64), name: 'Curious Inkwell' };
