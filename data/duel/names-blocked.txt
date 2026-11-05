@@ -1,21 +1,22 @@
 # Words a leaderboard name may not contain, on top of data/sources/blocklist.txt. Matched inside a name after
 # spaces, digits and common letter swaps are normalised (src/duel/server/players.ts), so keep each word specific
-# enough not to catch ordinary names. English first, then a short Hinglish list.
+# enough not to catch ordinary names. A word under 6 letters only counts as a whole word, unless it ends in *.
+# English first, then a short Hinglish list.
 asshole
 bastard
-bitch
+bitch*
 blowjob
 boob
 bollock
-cunt
+cunt*
 dickhead
 dildo
 faggot
-fuck
+fuck*
 horny
 jerkoff
 motherfuck
-nigga
+nigga*
 nigger
 penis
 pussy
@@ -47,3 +48,6 @@ madarchod
 randi
 saala
 tatti
+bullshit
+shithead
+fack*

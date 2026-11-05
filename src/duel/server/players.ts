@@ -14,19 +14,41 @@ const MAX_BODY = 1024;
 const NEW_PLAYERS_PER_HOUR = 10;
 const RENAMES_PER_HOUR = 10;
 
-let blocked: string[] | null = null;
-function blockedWords(): string[] {
+/**
+ * A short word only counts as a whole word, so Kshitij, Shital and Grand India are fine; a long one, or one marked
+ * with * in the list, counts anywhere in the name.
+ */
+const ANYWHERE_FROM = 6;
+let blocked: { word: string; anywhere: boolean }[] | null = null;
+function blockedWords() {
   if (blocked) return blocked;
   const read = (file: string) => readFileSync(path.join(process.cwd(), file), 'utf8').split(/\r?\n/).map(l => l.trim().toLowerCase()).filter(l => l && !l.startsWith('#'));
-  blocked = [...read('data/sources/blocklist.txt'), ...read('data/duel/names-blocked.txt'), ...BOT_NAMES.map(nameKey), 'quill', 'panna', 'admin'];
+  const list = [...read('data/sources/blocklist.txt'), ...read('data/duel/names-blocked.txt'), ...BOT_NAMES.map(nameKey), 'quill', 'panna', 'admin'];
+  blocked = list.map(l => ({ word: l.replace(/\*$/, ''), anywhere: l.endsWith('*') || l.length >= ANYWHERE_FROM }));
   return blocked;
 }
 
-/** Spaces gone and common letter swaps undone, so "f 4 c k" can't slip through. */
-const SWAPS: Record<string, string> = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', '$': 's' };
-const normal = (name: string) => name.toLowerCase().replace(/[0-9@$]/g, c => SWAPS[c] ?? '').replace(/\s+/g, '');
+/** Common letter swaps undone; a 1 may stand for i or l. Runs of single letters join up, so "f u c k" can't slip through. */
+function readings(name: string): string[][] {
+  const swaps = (one: string): Record<string, string> => ({ '0': 'o', '1': one, '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', '$': 's' });
+  return ['i', 'l'].map((one) => {
+    const map = swaps(one);
+    const tokens = name.toLowerCase().replace(/[0-9@$]/g, c => map[c] ?? '').split(/\s+/).filter(Boolean);
+    const joined: string[] = [];
+    tokens.forEach((t, i) => {
+      if (t.length === 1 && i > 0 && tokens[i - 1].length === 1) joined[joined.length - 1] += t;
+      else joined.push(t);
+    });
+    return joined;
+  });
+}
 
-export const isBlockedName = (name: string) => { const n = normal(name); return blockedWords().some(w => n.includes(w)); };
+export function isBlockedName(name: string): boolean {
+  return readings(name).some((tokens) => {
+    const whole = tokens.join('');
+    return blockedWords().some(({ word, anywhere }) => (anywhere ? whole.includes(word) : tokens.includes(word)));
+  });
+}
 
 const senderKey = (req: Request) => {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'local';

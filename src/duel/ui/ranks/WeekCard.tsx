@@ -12,7 +12,8 @@ export function useNet(net: DuelNet) {
 /** The home's way to the ranks (UI-DESIGN §3.2): your place this week, and how long is left. */
 export function WeekCard({ net, nav }: { net: DuelNet; nav: Nav }) {
   useNet(net);
-  useEffect(() => { void net.me('this'); }, [net]);
+  // After anything unsent has gone, so an older answer can't land on top of a newer total.
+  useEffect(() => { void net.flush().then(() => net.me('this')); }, [net]);
   const week = net.week(), waiting = net.unsent().length;
   const playing = !!week && week.points > 0;
   const climbed = week ? climbedToday(week.dayRank, week.rank) : null;

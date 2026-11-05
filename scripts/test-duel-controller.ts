@@ -31,8 +31,9 @@ async function main() {
   check('/play/ → the home', (parsePath('/play/', '2026-11-01') as any).screen === 'home');
   check('a past date opens', (parsePath('/play/game/2026-10-28', '2026-11-01') as any).date === '2026-10-28');
   check('today opens', (parsePath('/play/game/2026-11-01', '2026-11-01') as any).date === '2026-11-01');
-  for (const bad of ['/play/game/2026-11-02', '/play/game/banana', '/play/game/2026-02-30', '/play/ranks'])
+  for (const bad of ['/play/game/2026-11-02', '/play/game/banana', '/play/game/2026-02-30', '/play/nowhere'])
     check(`${bad} → today`, (parsePath(bad, '2026-11-01') as any).redirect === '/play/game/2026-11-01');
+  check('/play/ranks opens the ranks', JSON.stringify(parsePath('/play/ranks', '2026-11-01')) === JSON.stringify({ screen: 'ranks' }));
 
   // ── Flags ──
   check('seed flag', readFlags('?seed=7').seed === 7 && readFlags('?seed=7').test && !readFlags('').test);
@@ -222,10 +223,14 @@ async function controllerChecks() {
 
   // n. a game to the end, then Play again
   pf = memoryPlatform(); d = new NullDirector(); c = new GameController(p0, DATE, pf, d, { seed: 123 });
+  let queuedByEnd: boolean | null = null;
+  const unwatch = c.subscribe(() => { if (queuedByEnd === null && c.snapshot().state.over) queuedByEnd = readOutbox(pf.storage.get(OUTBOX_KEY)).length === 1; });
   for (let turns = 0; turns < 80 && !c.snapshot().state.over; turns++) {
     for (const t of correctPlacements(c)) c.place(t.rackSlot, t.cell);
     if (c.snapshot().pending.length) await c.submit(); else await c.pass();
   }
+  unwatch();
+  check('n: the game is queued before the end shows', queuedByEnd === true, queuedByEnd);
   check('n: the game ends', c.snapshot().state.over && !c.snapshot().busy);
   {
     const fin = c.snapshot().state.scores, sv = pf.storage.get<SavedGame>(KEY);

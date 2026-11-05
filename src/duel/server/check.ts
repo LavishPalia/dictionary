@@ -16,12 +16,14 @@ export interface ReportedGame {
 export interface CheckResult { reason: RejectReason | null; score: number; quillScore: number }
 
 const isInt = (v: unknown): v is number => Number.isInteger(v);
-const isTime = (v: unknown): v is string => typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v));
+/** Years a real game can have; JavaScript accepts others that Postgres refuses. */
+const inRange = (ms: number) => ms >= Date.UTC(2000, 0, 1) && ms < Date.UTC(2100, 0, 1);
+const isTime = (v: unknown): v is string => typeof v === 'string' && v.length <= 40 && inRange(Date.parse(v));
 
 function isDate(v: unknown): v is string {
   if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
   const d = new Date(`${v}T00:00:00Z`);
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+  return inRange(d.getTime()) && d.toISOString().slice(0, 10) === v;
 }
 
 /** A clean copy of an action, or null. Replay never sees a string where a number belongs. */
@@ -48,7 +50,7 @@ function cleanAction(a: unknown): Action | null {
 export function readReport(body: unknown): ReportedGame | null {
   if (!body || typeof body !== 'object') return null;
   const b = body as Record<string, unknown>;
-  if (typeof b.puzzle !== 'string' || !/^p\d{4}\.v\d+$/.test(b.puzzle) || !isDate(b.date) || typeof b.rules !== 'string' || b.rules.length > 40) return null;
+  if (typeof b.puzzle !== 'string' || !/^p\d{4}\.v\d+$/.test(b.puzzle) || !isDate(b.date) || typeof b.rules !== 'string' || !/^[\w.]{1,40}$/.test(b.rules)) return null;
   if (!isInt(b.seed) || b.seed < 0 || b.seed > 0xffffffff || !isInt(b.claimedScore) || !isTime(b.startedAt) || !isTime(b.finishedAt)) return null;
   if (!Array.isArray(b.actions) || b.actions.length > MAX_ACTIONS) return null;
   const actions = b.actions.map(cleanAction);

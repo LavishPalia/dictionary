@@ -34,9 +34,9 @@ const BotTag = () => <span className="rank-bot" data-bot>Bot</span>;
 function withMe(rows: BoardRow[], me: Me | null): { rows: Row[]; mine: Row | null } {
   if (!me || me.rank === null) return { rows, mine: null };
   const others = rows.filter(r => r.bot || r.name !== me.name);
-  let at = others.findIndex(r => r.points < me.points);
-  if (at < 0) at = others.length;
-  if (at >= 100) return { rows: others, mine: { rank: me.rank, name: me.name, points: me.points, bot: false, me: true } };
+  if (me.rank > 100) return { rows: others, mine: { rank: me.rank, name: me.name, points: me.points, bot: false, me: true } };
+  // Where the server says, so this screen and the end screen agree even on tied points.
+  const at = Math.min(me.rank - 1, others.length);
   const merged = [...others.slice(0, at), { rank: 0, name: me.name, points: me.points, bot: false, me: true }, ...others.slice(at)].slice(0, 100);
   return { rows: merged.map((r, i) => ({ ...r, rank: i + 1 })), mine: null };
 }
@@ -46,18 +46,21 @@ export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; b
   const { net } = platform;
   useNet(net);
   const [tab, setTab] = useState<WeekPick>('this');
-  const [state, setState] = useState<{ tab: WeekPick; board: Board | null; stale: boolean; me: Me | null } | null>(null);
+  // `shown`: the server has answered, rather than this being the copy from the device.
+  const [state, setState] = useState<{ tab: WeekPick; board: Board | null; stale: boolean; me: Me | null; shown: boolean } | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [renaming, setRenaming] = useState(false);
   const [, setTick] = useState(0);
 
   useEffect(() => {
     let live = true;
-    setState(s => (s?.tab === tab ? s : null));
+    // The copy on this device at once, so a slow connection never leaves an empty screen.
+    const copy = net.lastBoard(tab);
+    setState(s => (s?.tab === tab ? s : copy ? { tab, board: copy, stale: false, me: null, shown: false } : null));
     void (async () => {
       await net.flush(); // anything unsent counts before the board is read
       const [board, me] = await Promise.all([net.board(tab), net.me(tab)]);
-      if (live) setState({ tab, board: board.data, stale: board.stale, me });
+      if (live) setState({ tab, board: board.data, stale: board.stale, me, shown: true });
     })();
     return () => { live = false; };
   }, [net, tab, attempt]);
@@ -69,7 +72,7 @@ export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; b
 
   const player = net.player(), week = net.week();
   // Offline, your place comes from the last thing the server said.
-  const me: Me | null = state?.me ?? (tab === 'this' && state?.stale && player?.name && week && week.points > 0
+  const me: Me | null = state?.me ?? (tab === 'this' && (state?.stale || !state?.shown) && player?.name && week && week.points > 0
     ? { name: player.name, week: week.week, points: week.points, games: 0, rank: week.rank, of: 0 } : null);
   const { rows, mine } = withMe(state?.board?.rows ?? [], me);
   const podium = rows.slice(0, 3), list = rows.slice(3);
@@ -141,7 +144,7 @@ export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; b
         {r.me && tab === 'this' && <button type="button" className="rank-edit" onClick={() => setRenaming(true)}>rename</button>}
       </span>
       <span className="rank-pts">{r.points.toLocaleString('en-IN')}</span>
-      {r.me && gain !== null && <span className="rank-gain" aria-hidden="true">+{gain}</span>}
+      {r.me && gain !== null && tab === 'this' && <span className="rank-gain" aria-hidden="true">+{gain}</span>}
     </li>
   );
 

@@ -49,7 +49,7 @@ async function main() {
   const board = await fetch(`${base}/api/duel/leaderboard?week=this`);
   const rows = (await board.json() as { rows: { name: string; points: number; bot: boolean }[] }).rows;
   check('the board has the bots', rows.filter(r => r.bot).length === 8, rows.length);
-  check('the board may be cached', (board.headers.get('cache-control') ?? '').length > 0, board.headers.get('cache-control'));
+  check('the board goes through the CDN', board.headers.has('x-vercel-cache') && !(board.headers.get('cache-control') ?? '').includes('no-store'), board.headers.get('cache-control'));
 
   const mine = await (await fetch(`${base}/api/duel/leaderboard/me?week=this`, { headers: auth })).json() as { name: string; points: number; rank: number };
   check('your own row is right', mine.name === name && mine.points === game.claimedScore && Number.isInteger(mine.rank), mine);

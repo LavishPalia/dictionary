@@ -8,6 +8,7 @@ import { DbUnavailable, query, setDb } from '../src/duel/server/db';
 import { submitGame } from '../src/duel/server/games';
 import { BOT_NAMES, botsFor } from '../src/duel/server/housebots';
 import { guard } from '../src/duel/server/http';
+import { SCHEMA } from '../src/duel/server/schema';
 import { isBlockedName, registerPlayer, renamePlayer } from '../src/duel/server/players';
 import { addWeeks, creditWeek, weekEnds, weekOf } from '../src/duel/week';
 import { loadPuzzle, playGame, reportOf } from './duel/play';
@@ -66,7 +67,12 @@ async function testPlayers(db: TestDb) {
   check('other characters', await errorOf(await rename(a, '<b>hi</b>')) === 'chars');
   check('Devanagari isn\'t allowed yet', await errorOf(await rename(a, 'पन्ना जी')) === 'chars');
   check('a swear word', await errorOf(await rename(a, 'fuck face')) === 'blocked');
-  check('a swear word with letter swaps', await errorOf(await rename(a, 'f u c k 3r')) === 'blocked' && await errorOf(await rename(a, 'sh1t lord')) === 'blocked');
+  check('a swear word with letter swaps', await errorOf(await rename(a, 'f u c k 3r')) === 'blocked' && await errorOf(await rename(a, 'sh1t lord')) === 'blocked'
+    && await errorOf(await rename(a, 'f4ck')) === 'blocked' && await errorOf(await rename(a, 's1ut queen')) === 'blocked');
+  check('a word inside a longer one', isBlockedName('fuckface') && isBlockedName('bullshit'));
+  const realNames = ['Kshitij Rao', 'Shital', 'Document', 'Tycoon', 'Spice Trader', 'Suspicious', 'Music Umbrella', 'Grand India', 'Analyst', 'Arsenal'];
+  check('real names and words aren\'t caught', realNames.every(n => !isBlockedName(n)), realNames.filter(isBlockedName));
+  check('a bot\'s name with letter swaps', isBlockedName('Profess0r Qui11'));
   check('a Hinglish swear word', await errorOf(await rename(a, 'Ch0otiya Chutiya')) === 'blocked');
   check('a bot\'s name, in any case or spacing', await errorOf(await rename(a, 'PROFESSOR  quill')) === 'blocked' && await errorOf(await rename(a, 'ProfessorQuill')) === 'blocked');
   await rename(b, 'Tea Lover');
@@ -146,10 +152,15 @@ async function testGames(db: TestDb) {
   check('nor the practice puzzle', await rejectedAs({ ...game(205), puzzle: 'p0001.v1' }) === 'puzzle');
   check('an unknown puzzle', await rejectedAs({ ...game(206), puzzle: 'p9999.v1' }) === 'puzzle');
   check('other rules', await rejectedAs({ ...game(207), rules: '0.abc' }) === 'rules');
-  check('a daily from tomorrow', await rejectedAs({ ...game(208), date: '2026-11-05' }) === 'future');
+  check('a daily from further ahead than a fast clock explains', await rejectedAs({ ...game(208), date: '2026-11-06' }) === 'future');
   check('a game under a minute', await rejectedAs(reportOf(KEY, TODAY, 209, playGame(p, 209), NOW, 0.5)) === 'too_fast');
   check('started after it finished', await rejectedAs({ ...game(210), startedAt: new Date(NOW.getTime() + 60_000).toISOString() }) === 'times');
   check('none of these added points', (await totals(b)).points === 0);
+  // A phone a little fast at midnight has tomorrow's date: not lost, and not stored, so it can count later.
+  const early = { ...game(211), date: '2026-11-05' };
+  const tooEarly = await send(b, early);
+  check('tomorrow\'s date waits rather than being refused', tooEarly.status === 429 && tooEarly.headers.get('retry-after') !== null, tooEarly.status);
+  check('and counts once tomorrow comes', (await (await send(b, early, new Date('2026-11-04T18:31:00Z'))).json()).status === 'ok');
 
   // ── Honest things the first design would have refused ──
   await db.clear();
@@ -194,6 +205,10 @@ async function testGames(db: TestDb) {
     ['a date that doesn\'t exist', { ...good, date: '2026-02-30' }],
     ['a path as a puzzle', { ...good, puzzle: '../../package' }],
     ['no puzzle version', { ...good, puzzle: 'p0001' }],
+    ['a year Postgres has no date for', { ...good, date: '0000-01-01' }],
+    ['a nul in the rules', { ...good, rules: 'a\u0000b' }],
+    ['a time before year 0', { ...good, startedAt: '-000100-01-01T00:00:00Z' }],
+    ['a time past year 9999', { ...good, finishedAt: '+010000-01-01T00:00:00Z' }],
     ['a time that isn\'t one', { ...good, finishedAt: 'soon' }],
     ['not an object', [1, 2]],
     ['null', null],
@@ -205,7 +220,7 @@ async function testGames(db: TestDb) {
   check('nothing stored from them', (await query<{ n: number }>('select count(*)::int as n from games'))[0].n === 0);
   check('over 32 KB is 413', (await send(e, { ...good, junk: 'x'.repeat(33_000) })).status === 413);
   check('no token is 401', (await submitGame(post('/games', good), NOW)).status === 401);
-  const longest = JSON.stringify({ ...good, actions: Array(maxActions(p)).fill({ t: 'pass' }) });
+  const longest = JSON.stringify({ ...good, actions: Array(maxActions(p)).fill({ t: 'swap', rackSlots: [0, 1, 2, 3, 4] }) });
   check('the longest log a real game can have fits', Buffer.byteLength(longest) < 32 * 1024, Buffer.byteLength(longest));
 
   // ── Thirty games an hour ──
@@ -333,8 +348,17 @@ async function main() {
   setDb(db);
   const rows = await query<{ n: number }>('select count(*)::int as n from players');
   check('the schema applied itself on an empty database', rows[0].n === 0);
-  setDb(db);
+  for (const statement of SCHEMA) await db.query(statement);
   check('applying it again does nothing', (await query<{ n: number }>('select count(*)::int as n from weekly_totals'))[0].n === 0);
+  // Two first requests at once: the loser finds the table already made, and that isn't an error.
+  const racing = { ready: false, query: async (text: string, params: unknown[] = []) => {
+    if (/^create /.test(text)) throw Object.assign(new Error('already exists'), { code: '42P07' });
+    if (text === 'select 7 from nowhere') { if (!racing.ready) { racing.ready = true; throw Object.assign(new Error('no table'), { code: '42P01' }); } return [{ ok: 1 }]; }
+    return db.query(text, params);
+  } };
+  setDb(racing);
+  check('losing the race to make the tables is fine', (await query<{ ok: number }>('select 7 from nowhere'))[0].ok === 1);
+  setDb(db);
 
   await testPlayers(db);
   await testGames(db);

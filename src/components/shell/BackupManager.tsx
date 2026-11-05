@@ -5,7 +5,7 @@ import {
   BACKUP_KEYS, LAST_BACKUP_KEY, backupFileName, createBackup, parseBackup, restoreData, wordsToLocate,
   type Backup, type BackupData, type BackupSummary,
 } from '@/lib/backup';
-import { collectDuel, restoreDuel } from '@/duel/backup';
+import { collectDuel, hasDuelData, restoreDuel } from '@/duel/backup';
 import { Button, Sheet } from '@/components/ui';
 
 export interface BackupHandle {
@@ -155,7 +155,10 @@ export const BackupManager = forwardRef<BackupHandle, { dataVersion: string; tot
                 <Button full id="restore-replace-btn" disabled={status === 'working'} onClick={() => apply('replace')}>
                   Replace everything on this device
                 </Button>
-                <p className="menu-sub">This device’s saved words, progress, marks and settings are replaced by the backup’s.</p>
+                <p className="menu-sub">
+                  This device’s saved words, progress, marks and settings are replaced by the backup’s
+                  {hasDuelData(pending.backup.data.panna_duel) ? ', and so are its Duel stars and games.' : '.'}
+                </p>
               </div>
             </>
           )}

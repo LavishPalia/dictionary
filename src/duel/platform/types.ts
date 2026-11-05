@@ -62,6 +62,8 @@ export interface DuelNet {
   week(): CachedWeek | null;
   unsent(): OutboxGame[];
   statusOf(puzzle: string, seed: number): 'sent' | 'waiting' | 'rejected';
+  /** The copy on this device, to show at once. */
+  lastBoard(week: WeekPick): Board | null;
   /** `stale`: this is the last copy, because the server couldn't be reached. */
   board(week: WeekPick): Promise<{ data: Board | null; stale: boolean }>;
   me(week: WeekPick): Promise<Me | null>;

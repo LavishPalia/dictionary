@@ -44,6 +44,13 @@ export function duelSummary(v: unknown): { won: number; name: string | null } {
   return { won: wonDays(readResults(v[RESULTS_KEY])).size, name: readPlayer(v[PLAYER_KEY])?.name ?? null };
 }
 
+/** A device that only opened the Duel once has a section in its file, but nothing in it to restore. */
+export function hasDuelData(v: unknown): v is Values {
+  if (!isObject(v)) return false;
+  return !!readPlayer(v[PLAYER_KEY]) || readResults(v[RESULTS_KEY]).length > 0 || readOutbox(v[OUTBOX_KEY]).length > 0
+    || Object.keys(v).some(k => k.startsWith('panna_duel_game:'));
+}
+
 const unionStrings = (a: unknown, b: unknown) => [...new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])])];
 
 /** The backup's player takes over [user, 6 Nov]; if it is the same one, this device's copy has the newer name. */
@@ -84,7 +91,7 @@ function mergeValue(key: string, here: unknown, there: unknown): unknown {
  * this device's unsent scores stay. Null: the file has no Duel data, so leave the Duel alone.
  */
 export function restoreDuel(current: Values, backup: unknown, mode: 'merge' | 'replace'): { set: Values; remove: string[] } | null {
-  if (!isObject(backup) || !Object.keys(backup).length) return null;
+  if (!hasDuelData(backup)) return null;
   const set: Values = {};
   if (mode === 'merge') {
     for (const key of new Set([...Object.keys(current), ...Object.keys(backup)])) {

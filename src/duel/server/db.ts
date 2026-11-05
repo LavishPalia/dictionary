@@ -30,7 +30,10 @@ export async function query<T>(text: string, params: unknown[] = []): Promise<T[
   } catch (e) {
     const code = codeOf(e);
     if (code === '42P01') { // no such table: a new database or a new preview branch
-      for (const statement of SCHEMA) await db.query(statement);
+      for (const statement of SCHEMA) {
+        // Two first requests at once can race here; whichever loses finds the thing already made.
+        await db.query(statement).catch((err) => { if (!['23505', '42P07'].includes(codeOf(err) ?? '')) throw err; });
+      }
       return await db.query(text, params) as T[];
     }
     if (code === null || /^(08|53|57)/.test(code)) throw new DbUnavailable(e instanceof Error ? e.message : 'database error');

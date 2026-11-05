@@ -175,6 +175,8 @@ check('marks from an older build land on their words’ current pages', JSON.str
   check('an old file leaves the Duel alone when merging', restoreDuel(onDevice, undefined, 'merge') === null);
   check('and with Replace everything', restoreDuel(onDevice, undefined, 'replace') === null);
   check('an empty section too', restoreDuel(onDevice, {}, 'replace') === null);
+  const justOpened = { panna_duel_seen: true, panna_duel_settings: { sound: false } };
+  check('a device that only opened the Duel once has nothing to restore', restoreDuel(onDevice, justOpened, 'replace') === null && restoreDuel(onDevice, justOpened, 'merge') === null);
 
   // No player here, or the same player
   const toEmpty = restoreDuel({}, inFile, 'replace')!;
@@ -191,7 +193,7 @@ check('marks from an older build land on their words’ current pages', JSON.str
     check(`${mode}: unsent scores from both sides are kept`, seeds.join() === '1,2', seeds);
     check(`${mode}: the cached week and board go`, r.remove.includes('panna_duel_week') && r.remove.includes('panna_duel_board') && !('panna_duel_week' in r.set));
   }
-  const fileHasNoPlayer = restoreDuel(onDevice, { panna_duel_results: [] }, 'replace')!;
+  const fileHasNoPlayer = restoreDuel(onDevice, { panna_duel_results: [won('2026-11-01', '2026-11-01T10:00:00Z')] }, 'replace')!;
   check('a file with no player leaves this device\'s player', (fileHasNoPlayer.set.panna_duel_player as typeof ME).id === OTHER.id);
 
   // Add to this device

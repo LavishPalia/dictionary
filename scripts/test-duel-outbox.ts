@@ -1,6 +1,7 @@
 // The outbox and the device's player, against the real server code on a real Postgres (PGlite).
 // Usage: npx tsx scripts/test-duel-outbox.ts
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 import { collectDuel, restoreDuel } from '../src/duel/backup';
 import { OUTBOX_KEY, PLAYER_KEY, readOutbox, readPlayer, WEEK_KEY } from '../src/duel/net-rules';
 import { webNet } from '../src/duel/platform/web/net';
@@ -10,6 +11,7 @@ import { query, setDb } from '../src/duel/server/db';
 import { submitGame } from '../src/duel/server/games';
 import { registerPlayer, renamePlayer } from '../src/duel/server/players';
 import { istToday } from '../src/duel/progress';
+import { weekOf } from '../src/duel/week';
 import { loadPuzzle, playGame, reportOf } from './duel/play';
 import { testDb } from './duel/test-db';
 
@@ -33,13 +35,15 @@ function memory(): Storage & { map: Map<string, string> } {
 /** The real handlers behind fetch; `mode` can take the network away or make replies go missing. */
 function server() {
   const log: string[] = [];
+  const seeds: number[] = [];
   const s = {
-    log, mode: 'up' as 'up' | 'down' | 'lose-reply' | number,
+    log, seeds, mode: 'up' as 'up' | 'down' | 'lose-reply' | number,
     fetch: (async (url: string, init: RequestInit = {}) => {
       const path = String(url), method = init.method ?? 'GET';
       log.push(`${method} ${path}`);
       if (s.mode === 'down') throw new TypeError('offline');
       if (typeof s.mode === 'number') return new Response('{}', { status: s.mode });
+      if (path.endsWith('/games')) seeds.push((JSON.parse(init.body as string) as { seed: number }).seed);
       const req = new Request(`http://t${path}`, { method, headers: init.headers, body: init.body as string | undefined });
       const res = path.endsWith('/players') ? await registerPlayer(req)
         : path.endsWith('/players/me') ? await renamePlayer(req)
@@ -135,8 +139,7 @@ async function main() {
   net.enqueue(game(9)); net.enqueue(game(10));
   srv.mode = 'up';
   await net.flush();
-  const seeds = (await query<{ seed: string }>('select seed::text from games order by received_at, seed')).map(r => r.seed);
-  check('both sent', seeds.length === 2 && seeds.includes('9'), seeds);
+  check('both sent, oldest first', srv.seeds.join() === '9,10', srv.seeds);
 
   // ── The same game queued twice ──
   await db.clear();
@@ -171,6 +174,44 @@ async function main() {
   otherNet.enqueue(game(15));
   await otherNet.flush();
   check('an id someone else holds means a new identity, and the game still goes', otherNet.player()?.id !== known.id && !!otherNet.player()?.name && unsent(other).length === 0);
+
+  // ── The token no longer matches: 401, register says 409, so a new identity ──
+  await db.clear();
+  const stale = memory();
+  const held = { id: '33333333-3333-4333-8333-333333333333', token: 'c'.repeat(64) };
+  await registerPlayer(new Request('http://t/players', { method: 'POST', body: JSON.stringify(held) }));
+  stale.set(PLAYER_KEY, { id: held.id, token: 'd'.repeat(64), name: 'Old Name' });
+  const staleNet = webNet(stale, srv.fetch);
+  staleNet.enqueue(game(17));
+  await staleNet.flush();
+  check('401 then 409: a new identity, and the game still goes', staleNet.player()?.id !== held.id && staleNet.player()?.name !== 'Old Name' && unsent(stale).length === 0 && await rows() === 1);
+
+  // ── The board's copy, and the CDN ──
+  await db.clear();
+  st = memory(); srv = server(); net = webNet(st, srv.fetch);
+  check('no copy on the device yet', net.lastBoard('this') === null);
+  await net.board('this');
+  check('the copy is kept', net.lastBoard('this')?.rows.length === 8);
+  net.enqueue(game(18));
+  await net.flush();
+  srv.log.length = 0;
+  await net.board('this');
+  check('normally the CDN may answer', srv.log.some(l => /week=this$/.test(l)), srv.log);
+  await net.rename('Fresh Name');
+  srv.log.length = 0;
+  await net.board('this');
+  check('just after a rename it asks past the CDN', srv.log.some(l => /week=this&t=\d+$/.test(l)), srv.log);
+  const oldWeek = memory();
+  const lastWeeksBoard = { week: '2020-01-06', endsAt: '', players: 0, rows: [] };
+  oldWeek.set('panna_duel_board', { this: lastWeeksBoard });
+  check('a copy from another week isn\'t this week\'s', webNet(oldWeek, srv.fetch).lastBoard('this') === null);
+  const asked: string[] = [];
+  const staleCdn = (async (url: string) => {
+    asked.push(String(url));
+    return new Response(JSON.stringify(asked.length === 1 ? lastWeeksBoard : { week: weekOf(new Date()), endsAt: '', players: 8, rows: [] }));
+  }) as unknown as typeof fetch;
+  const afterMidnight = await webNet(memory(), staleCdn).board('this');
+  check('a CDN copy from last week is asked for again', afterMidnight.data?.week === weekOf(new Date()) && asked.length === 2 && /&t=/.test(asked[1]), asked);
 
   // ── Damage ──
   st = memory(); srv = server();
@@ -269,9 +310,11 @@ async function main() {
   check('a score unsent on the phone goes out as the backup\'s player', netC2.player()?.id === netA.player()?.id && await total() === before + unsentOnC.claimedScore && netC2.unsent().length === 0, await total());
 
   // ── The service worker keeps out ──
-  const sw = readFileSync('public/sw.js', 'utf8');
-  check('the service worker keeps no copy of the Duel\'s replies', sw.indexOf(`p.startsWith('/api/duel/')) return null`) >= 0
-    && sw.indexOf(`p.startsWith('/api/duel/')`) < sw.indexOf(`p.startsWith('/api/')`));
+  const worker = { self: { addEventListener() {}, location: { origin: 'http://t' } } as unknown, URL, found: null as null | ((u: URL) => string | null) };
+  runInNewContext(`${readFileSync('public/sw.js', 'utf8')}\nfound = cacheFor;`, worker);
+  const cacheFor = worker.found!;
+  check('the service worker keeps no copy of the Duel\'s replies', cacheFor(new URL('http://t/api/duel/leaderboard/me?week=this')) === null && cacheFor(new URL('http://t/api/duel/leaderboard')) === null);
+  check('and still keeps the dictionary\'s', cacheFor(new URL('http://t/api/word/camel')) !== null);
 
   if (failures) { console.error(`\n${failures} failed`); process.exit(1); }
   console.log('\ntest:duel-outbox: all checks passed.');

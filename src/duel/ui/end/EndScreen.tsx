@@ -69,7 +69,7 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   useEffect(() => {
     let live = true;
     setFlushed(false);
-    void platform.net.flush().then(() => { if (live) setFlushed(true); });
+    void platform.net.flush().then(() => platform.net.me('this')).then(() => { if (live) setFlushed(true); });
     return () => { live = false; };
   }, [platform, snap.state.seed]);
   const week = platform.net.week();

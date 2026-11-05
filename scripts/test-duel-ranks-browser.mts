@@ -138,6 +138,8 @@ await run('Duel ranks', async (t: any) => {
     await lastMove(low);
     await click('[data-end="ranks"]');
     await waitFor(`Boolean(document.querySelector('.rank-row.me'))`, 15000);
+    const serverRank = JSON.parse(await evaluate(`localStorage.getItem('panna_duel_week')`)).rank;
+    check(`${size}: this screen and the server agree on your rank`, (await text('.rank-list .rank-row.me .rank-num')) === String(serverRank), [await text('.rank-list .rank-row.me .rank-num'), serverRank]);
     check(`${size}: your row is pinned while it's off-screen`, await waitFor(`Boolean(document.querySelector('.rank-pinned .rank-row.me'))`), await text('#duel-ranks'));
     await evaluate(`document.querySelector('.rank-list .rank-row.me').scrollIntoView({ block: 'center' }); true`);
     check(`${size}: the pinned copy hides when the real one is in view`, await waitFor(`!document.querySelector('.rank-pinned')`, 3000));

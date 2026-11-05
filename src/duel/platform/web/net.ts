@@ -5,11 +5,13 @@ import {
   type Board, type CachedWeek, type DuelPlayer, type Me, type OutboxGame, type WeekPick,
 } from '../../net-rules';
 import { istToday } from '../../progress';
-import { weekOf } from '../../week';
+import { addWeeks, weekOf } from '../../week';
 import type { DuelNet, Storage } from '../types';
 
 const TIMEOUT_MS = 15_000;
 const KEEP_REJECTED = 50;
+/** How long the CDN may answer with an old board (s-maxage + stale-while-revalidate, src/duel/server/board.ts). */
+const CDN_STALE_MS = 330_000;
 
 /** The server can't take this now (offline, down, too many): stop, and try again at the next chance. */
 class TryLater extends Error {}
@@ -32,10 +34,15 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
   const auth = (p: DuelPlayer) => ({ Authorization: `Bearer ${p.id}.${p.token}` });
 
   async function call(path: string, init: RequestInit = {}): Promise<Response> {
+    // Not AbortSignal.timeout: iPhones before iOS 16 don't have it.
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
     try {
-      return await fetchFn(`/api/duel/${path}`, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+      return await fetchFn(`/api/duel/${path}`, { ...init, signal: abort.signal });
     } catch {
       throw new TryLater();
+    } finally {
+      clearTimeout(timer);
     }
   }
   const sendJson = (method: string, body: unknown, headers: Record<string, string> = {}): RequestInit =>
@@ -113,6 +120,13 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
     }
   }
 
+  /** The last copy of a week's board, if it is still that week's. */
+  function lastBoard(week: WeekPick): Board | null {
+    const copy = storage.get<Partial<Record<WeekPick, Board>>>(BOARD_KEY)?.[week];
+    return copy && copy.week === (week === 'this' ? weekOf(now()) : addWeeks(weekOf(now()), -1)) && Array.isArray(copy.rows) ? copy : null;
+  }
+
+  let freshUntil = 0;
   let flushing: Promise<void> | null = null;
   let again = false;
 
@@ -150,15 +164,22 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
       const rejected = storage.get<string[]>(REJECTED_KEY);
       return Array.isArray(rejected) && rejected.includes(key) ? 'rejected' : 'sent';
     },
+    lastBoard,
     async board(week: WeekPick) {
-      const cache = storage.get<Partial<Record<WeekPick, Board>>>(BOARD_KEY) ?? {};
-      const wanted = week === 'this' ? weekOf(now()) : null;
-      const cached = cache[week] && (wanted === null || cache[week]!.week === wanted) ? cache[week]! : null;
+      const cached = lastBoard(week);
+      const wanted = week === 'this' ? weekOf(now()) : addWeeks(weekOf(now()), -1);
+      // The CDN's copy can't be used just after a rename (it still has the old name) or just after Monday midnight.
+      const ask = (fresh: boolean) => call(`leaderboard?week=${week}${fresh ? `&t=${now().getTime()}` : ''}`);
       try {
-        const res = await call(`leaderboard?week=${week}`);
+        let res = await ask(now().getTime() < freshUntil);
         if (!res.ok) return { data: cached, stale: true };
-        const data = await res.json() as Board;
-        storage.set(BOARD_KEY, { ...cache, [week]: data });
+        let data = await res.json() as Board;
+        if (data.week !== wanted) {
+          res = await ask(true);
+          if (!res.ok) return { data: cached, stale: true };
+          data = await res.json() as Board;
+        }
+        storage.set(BOARD_KEY, { ...(storage.get<Partial<Record<WeekPick, Board>>>(BOARD_KEY) ?? {}), [week]: data });
         return { data, stale: false };
       } catch {
         return { data: cached, stale: true };
@@ -184,7 +205,11 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
       try {
         const res = await call('players/me', sendJson('PATCH', { name }, auth(p)));
         const body = await res.json().catch(() => ({})) as { name?: string; error?: string };
-        if (res.ok && body.name) { setName(body.name); return { ok: true }; }
+        if (res.ok && body.name) {
+          setName(body.name);
+          freshUntil = now().getTime() + CDN_STALE_MS;
+          return { ok: true };
+        }
         return { ok: false, error: body.error ?? 'offline' };
       } catch {
         return { ok: false, error: 'offline' };

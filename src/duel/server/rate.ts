@@ -6,12 +6,8 @@ export async function overLimit(key: string, perHour: number): Promise<boolean> 
   return row.n >= perHour;
 }
 
+/** Spent rows go whoever's they were, so no hash of an address outlives its hour by more than the next event. */
 export async function noteEvent(key: string) {
-  await query(`delete from rate_events where key = $1 and at <= now() - interval '1 hour'`, [key]);
-  await query(`insert into rate_events (key) values ($1)`, [key]);
-}
-
-/** Now and then, the rows no key came back for. */
-export async function sweepEvents() {
   await query(`delete from rate_events where at <= now() - interval '1 hour'`);
+  await query(`insert into rate_events (key) values ($1)`, [key]);
 }

@@ -6,7 +6,7 @@ import { standing } from './board';
 import { checkGame, readReport, type ReportedGame, type RejectReason } from './check';
 import { query } from './db';
 import { guard, json, readJson } from './http';
-import { sweepEvents } from './rate';
+import { addDays, istToday } from '../progress';
 import { creditWeek, weekOf } from '../week';
 
 const MAX_BODY = 32 * 1024;
@@ -44,10 +44,9 @@ async function answer(playerId: string, s: Stored, now: Date): Promise<Response>
   });
 }
 
-/** Now and then: the moves of old games (the score row stays) and spent rate rows. */
+/** Now and then: the moves of old games (the score row stays). */
 async function tidyUp() {
   await query(`update games set actions = null where actions is not null and received_at < now() - interval '30 days'`);
-  await sweepEvents();
 }
 
 export const submitGame = (req: Request, now = new Date()) => guard(async () => {
@@ -60,6 +59,9 @@ export const submitGame = (req: Request, now = new Date()) => guard(async () => 
 
   const known = await storedGame(me.id, game);
   if (known) return answer(me.id, known, now);
+
+  // A phone a little fast at midnight opens tomorrow's date early. Nothing is stored, so it counts once tomorrow comes.
+  if (game.date === addDays(istToday(now), 1)) return json({ error: 'too_early' }, 429, { 'Retry-After': '600' });
 
   const [{ n }] = await query<{ n: number }>(
     `select count(*)::int as n from games where player_id = $1::uuid and received_at > $2::text::timestamptz - interval '1 hour'`, [me.id, now.toISOString()]);
