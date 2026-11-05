@@ -78,6 +78,7 @@
     "test:duel-progress": "tsx scripts/test-duel-progress.ts",
     "test:duel-help": "tsx scripts/test-duel-help.ts",
     "test:duel-schedule": "tsx scripts/test-duel-schedule.ts",
+    "test:duel-api": "tsx scripts/test-duel-api.ts",
     "test:duel-ui": "node scripts/test-duel-ui-browser.mjs",
     "test:duel-entry-ui": "node scripts/test-duel-entry-browser.mjs",
     "test:duel-home-ui": "node scripts/test-duel-home-browser.mjs",
@@ -89,12 +90,14 @@
     "duel:perf": "node scripts/duel/perf-phone.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "better-sqlite3": "^13.0.3",
     "next": "15.5.28",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20.14.0",
     "@types/react": "^19.3.0",
