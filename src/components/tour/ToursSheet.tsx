@@ -31,6 +31,16 @@ export function ToursSheet({ open, state, onClose, onStart, onTipsAgain, onTipsO
             </button>
           </li>
         ))}
+        <li>
+          <a className="tours-item" id="tour-start-duel" href="/play/game/today?guide=1">
+            <span className="tours-item-text">
+              <span className="tours-item-title">Panna Duel</span>
+              <span className="tours-item-sub">Your first game, with tips · 4 steps</span>
+              <span className="tours-item-hi" lang="hi">खेल के पहले दौर के लिए सुझाव।</span>
+            </span>
+            <ChevronIcon />
+          </a>
+        </li>
       </ul>
       <div className="tours-foot">
         <span className="tours-note">

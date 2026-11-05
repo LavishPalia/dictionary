@@ -1,9 +1,10 @@
 // The Duel's progress rules (src/duel/progress.ts): IST days, won days, the streak and the day Play opens.
 // Usage: npx tsx scripts/test-duel-progress.ts
 import { RULES_ID } from '../src/duel/engine';
-import { entryVisible, todayDuel } from '../src/duel/platform/web/entry';
+import { entryVisible, matchingSave, todayDuel } from '../src/duel/platform/web/entry';
 import type { Storage } from '../src/duel/platform/types';
-import { addDays, istToday, playDate, readResults, streak, wonDays, type DuelResult } from '../src/duel/progress';
+import { addDays, bestFor, calendarMonth, istToday, monthRange, playDate, readResults, streak, wonDays, type DuelResult } from '../src/duel/progress';
+import { parsePath } from '../src/duel/ui/router';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -105,6 +106,53 @@ td = todayDuel(T, null, mem({ [G]: save('p0004', 24, 19) }));
 check("card: schedule unknown → today's save is trusted", td.state === 'playing' && !td.practice, td);
 td = todayDuel(T, SCHED, mem({ [G]: { junk: true } }));
 check('card: a broken save → new', td.state === 'new');
+
+// The calendar
+{
+  const res = (date: string, you: number, quill: number): DuelResult => ({ date, puzzle: 'p0002.v1', you, quill, at: 'x' });
+  const days = (from: number, to: number, m = '2026-10') => Array.from({ length: to - from + 1 }, (_, i) => `${m}-${String(from + i).padStart(2, '0')}`);
+  const none = () => null;
+  const m = calendarMonth('2026-10', days(5, 31), [res('2026-10-07', 30, 20), res('2026-10-08', 20, 30), res('2026-10-09', 25, 25)], none, '2026-10-20');
+  const kind = (d: number) => m.coins[d - 1].kind;
+  check('calendar: one coin per day of the month', m.coins.length === 31 && m.coins[30].date === '2026-10-31', m.coins.length);
+  check('calendar: before the first scheduled date → blank', kind(4) === 'blank');
+  check('calendar: a won day', kind(7) === 'won');
+  check('calendar: a lost day stays open', kind(8) === 'open');
+  check('calendar: a tie stays open', kind(9) === 'open');
+  check('calendar: today', kind(20) === 'today');
+  check('calendar: after today → future', kind(21) === 'future');
+  check('calendar: the most recent open past day', kind(19) === 'latest-open' && kind(18) === 'open', [kind(19), kind(18)]);
+  check('calendar: won/total counts scheduled days only', m.won === 1 && m.total === 27, m);
+  check('calendar: a part-blank month earns no seal', !calendarMonth('2026-10', days(5, 31), days(5, 31).map(d => res(d, 2, 1)), none, '2026-11-20').sealed);
+  check('calendar: a fully won month is sealed', calendarMonth('2026-10', days(1, 31), days(1, 31).map(d => res(d, 2, 1)), none, '2026-11-20').sealed);
+  const won = calendarMonth('2026-10', days(1, 31), [res('2026-10-20', 2, 1)], none, '2026-10-20');
+  check('calendar: today won is won, and the day before is the latest open', won.coins[19].kind === 'won' && won.coins[18].kind === 'latest-open');
+  const ring = calendarMonth('2026-10', days(1, 31), [], d => (d === '2026-10-20' ? 0.4 : null), '2026-10-20');
+  check('calendar: a game under way shows its progress', ring.coins[19].progress === 0.4 && ring.coins[18].progress === null);
+  const gap = calendarMonth('2026-12', days(1, 29, '2026-12'), [], none, '2026-12-31');
+  check('calendar: today without a daily stays blank', gap.coins[30].kind === 'blank' && gap.coins[28].kind === 'latest-open');
+  check('best: the highest win across replays', JSON.stringify(bestFor([res('2026-10-07', 30, 20), res('2026-10-07', 52, 40), res('2026-10-07', 41, 39)], '2026-10-07')) === '{"you":52,"quill":40}');
+  check('best: a lower replay after does not lower it', bestFor([res('2026-10-07', 52, 40), res('2026-10-07', 30, 20)], '2026-10-07')?.you === 52);
+  check('best: losses do not count', bestFor([res('2026-10-07', 20, 30)], '2026-10-07') === null);
+  check('months: the first scheduled month to today', JSON.stringify(monthRange(['2026-11-02', '2026-09-01'], '2026-11-05')) === '{"first":"2026-09","last":"2026-11"}');
+  check('months: no schedule → this month only', JSON.stringify(monthRange([], '2026-11-05')) === '{"first":"2026-11","last":"2026-11"}');
+}
+
+// A save the calendar may trust (Review Focus 3)
+{
+  const s = (over: Record<string, unknown> = {}) => ({ puzzleId: 'p0002', puzzleVersion: 1, rules: RULES_ID, seed: 1, log: [], startedAt: '', score: { you: 3, quill: 1 }, over: false, ...over });
+  check('save: matches its key', matchingSave(s(), 'p0002.v1') !== null);
+  check('save: a republished version does not', matchingSave(s(), 'p0002.v2') === null);
+  check('save: other rules do not', matchingSave(s({ rules: 'older' }), 'p0002.v1') === null);
+  check('save: no score does not', matchingSave(s({ score: undefined }), 'p0002.v1') === null);
+  check('save: junk does not', matchingSave({ junk: true }, 'p0002.v1') === null && matchingSave(null, 'p0002.v1') === null);
+  check('save: with no key known, trusted', matchingSave(s(), null) !== null);
+}
+
+// Routes
+check('route: /play is the home', (parsePath('/play', '2026-11-01') as { screen: string }).screen === 'home');
+check('route: /play/settings', (parsePath('/play/settings', '2026-11-01') as { screen: string }).screen === 'settings');
+check('route: /play/how', (parsePath('/play/how/', '2026-11-01') as { screen: string }).screen === 'how');
 
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }
 console.log('\nAll duel progress checks passed.');

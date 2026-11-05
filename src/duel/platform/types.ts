@@ -38,7 +38,16 @@ export interface HelpWallet {
   balance(): { hint: number; word: number };
   /** Takes one; false when the balance is 0. */
   spend(kind: 'hint' | 'word'): boolean;
-  resetForNewGame(): void;
+  earn(gain: { hint: number; word: number }): void;
+}
+
+/** Panna's word pages and review deck. */
+export interface PannaBridge {
+  wordHref(word: string): string;
+  isSaved(word: string): boolean;
+  /** Adds it to the review deck; false when Panna doesn't know the word or can't be reached. */
+  save(word: string): Promise<boolean>;
+  remove(word: string): void;
 }
 
 export interface Platform {
@@ -47,6 +56,7 @@ export interface Platform {
   haptics: Haptics;
   puzzles: PuzzleSource;
   help: HelpWallet;
+  panna: PannaBridge;
   reducedMotion(): boolean;
   /** Where the back arrow goes. */
   exitHref: string;

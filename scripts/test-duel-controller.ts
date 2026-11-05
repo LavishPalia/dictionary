@@ -3,7 +3,10 @@
 import { readFileSync } from 'node:fs';
 import { emptyCells, replay, RULES_ID, type CellId, type Puzzle } from '../src/duel/engine';
 import type { Platform } from '../src/duel/platform/types';
-import { stubHelp } from '../src/duel/platform/web/help';
+import { webHelp } from '../src/duel/platform/web/help';
+import { turnStats, wordReview } from '../src/duel/ui/controller/selectors';
+import { nextTip } from '../src/duel/ui/guide/tips';
+import { endCopy } from '../src/duel/ui/end/copy';
 import { GameController } from '../src/duel/ui/controller/controller';
 import { NullDirector } from '../src/duel/ui/controller/null-director';
 import { hintCells, nextEmpty, wordCandidates } from '../src/duel/ui/controller/selectors';
@@ -22,8 +25,8 @@ function check(label: string, ok: boolean, detail?: unknown) {
 async function main() {
   // ── Router ──
   check('IST today rolls over at 18:30 UTC', istToday(new Date('2026-11-01T18:29:59Z')) === '2026-11-01' && istToday(new Date('2026-11-01T18:30:00Z')) === '2026-11-02');
-  check('/play → pick the day', (parsePath('/play', '2026-11-01') as any).screen === 'play');
-  check('/play/ → pick the day', (parsePath('/play/', '2026-11-01') as any).screen === 'play');
+  check('/play → the home', (parsePath('/play', '2026-11-01') as any).screen === 'home');
+  check('/play/ → the home', (parsePath('/play/', '2026-11-01') as any).screen === 'home');
   check('a past date opens', (parsePath('/play/game/2026-10-28', '2026-11-01') as any).date === '2026-10-28');
   check('today opens', (parsePath('/play/game/2026-11-01', '2026-11-01') as any).date === '2026-11-01');
   for (const bad of ['/play/game/2026-11-02', '/play/game/banana', '/play/game/2026-02-30', '/play/ranks'])
@@ -64,7 +67,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
   };
   const quiet = { enabled: true, play() {}, unlock() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
-  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: stubHelp(storage), reducedMotion: () => true, exitHref: '/' };
+  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => false, remove() {} }, reducedMotion: () => true, exitHref: '/' };
 }
 
 /** A correct cell for every tile in your rack (the bag invariant guarantees one each). */
@@ -234,9 +237,12 @@ async function controllerChecks() {
   const endLog = c.snapshot().state.log.length;
   await c.pass();
   check('n: pass after the end is ignored', c.snapshot().state.log.length === endLog);
+  check('n: a finished game is saved fully filled', pf.storage.get<SavedGame>(KEY)?.progress === 1, pf.storage.get<SavedGame>(KEY)?.progress);
+  const balBefore = pf.help.balance();
   pf.help.spend('word');
   c.newGame();
-  check('n: Play again deals a new game and resets help', !c.snapshot().state.over && c.snapshot().state.log.length === 0 && c.snapshot().state.seed !== 123 && pf.help.balance().word === 1);
+  check('n: Play again deals a new game', !c.snapshot().state.over && c.snapshot().state.log.length === 0 && c.snapshot().state.seed !== 123);
+  check('n: Play again leaves the balances alone', pf.help.balance().word === balBefore.word - 1 && c.snapshot().rewards === null, pf.help.balance());
   check('n: the new game is saved', pf.storage.get<SavedGame>(KEY)?.seed === c.snapshot().state.seed);
   check('n: Play again records nothing', readResults(pf.storage.get(RESULTS_KEY)).length === 1);
   {
@@ -246,7 +252,75 @@ async function controllerChecks() {
       if (cp.snapshot().pending.length) await cp.submit(); else await cp.pass();
     }
     check('n: a finished practice game records nothing', cp.snapshot().state.over && !pp.storage.has(RESULTS_KEY));
+    check('n: a finished practice game earns nothing', cp.snapshot().rewards === null && pp.help.balance().hint === 1 && pp.help.balance().word === 1, cp.snapshot().rewards);
   }
+  // rewards: a win earns once; a reload earns nothing more
+  {
+    let won: { pw: ReturnType<typeof memoryPlatform> } | null = null;
+    for (let seed = 200; seed < 260 && !won; seed++) {
+      const pw = memoryPlatform(), cw = new GameController(p0, DATE, pw, new NullDirector(), { seed });
+      for (let turns = 0; turns < 80 && !cw.snapshot().state.over; turns++) {
+        for (const t of correctPlacements(cw)) cw.place(t.rackSlot, t.cell);
+        if (cw.snapshot().pending.length) await cw.submit(); else await cw.pass();
+      }
+      const { you, quill } = cw.snapshot().state.scores;
+      if (you <= quill) continue;
+      won = { pw };
+      check('rewards: a won past day earns +1 Hint', JSON.stringify(cw.snapshot().rewards) === '{"hint":1,"word":0}' && pw.help.balance().hint === 2, { r: cw.snapshot().rewards, b: pw.help.balance() });
+      const again = new GameController(p0, DATE, pw, new NullDirector());
+      check('rewards: a reload earns nothing more', again.snapshot().rewards === null && pw.help.balance().hint === 2, pw.help.balance());
+    }
+    check('rewards: found a won game', won !== null);
+  }
+
+  // The end screen's word list
+  {
+    const pr = memoryPlatform(), cr = new GameController(p0, DATE, pr, new NullDirector(), { seed: 321 });
+    const wrongSlot = p0.slots.find(sl => sl.cells.length >= 3 && sl.cells.every(x => !p0.given.includes(x)))!;
+    const revealSlot = p0.slots.find(sl => sl.id !== wrongSlot.id && sl.cells.length >= 3 && sl.cells.every(x => !p0.given.includes(x) && !wrongSlot.cells.includes(x)))!;
+    await cr.reveal(revealSlot.id);
+    // One deliberately wrong tile in the first turn.
+    const s0 = cr.snapshot().state;
+    const slot = s0.racks.you.findIndex(l => l !== null && l !== p0.solution[wrongSlot.cells[0]]);
+    cr.place(slot, wrongSlot.cells[0]);
+    await cr.submit();
+    for (let turns = 0; turns < 80 && !cr.snapshot().state.over; turns++) {
+      for (const t of correctPlacements(cr)) cr.place(t.rackSlot, t.cell);
+      if (cr.snapshot().pending.length) await cr.submit(); else await cr.pass();
+    }
+    const st = cr.snapshot().state, rev = wordReview(p0, st);
+    const reason = (id: string) => rev.worth.find(w => w.slot.id === id)?.reason;
+    check('words: a revealed word is tagged revealed', reason(revealSlot.id) === 'revealed', reason(revealSlot.id));
+    check('words: a word with a wrong tile is tagged wrong', reason(wrongSlot.id) === 'wrong', reason(wrongSlot.id));
+    const quills = rev.worth.filter(w => w.reason === 'quill');
+    check('words: every word tagged quill has no letter of yours', quills.every(w => w.slot.cells.every(x => st.filled[x]?.by !== 'you')), quills.map(w => w.slot.answer));
+    check('words: some word went to Quill in a whole game', quills.length > 0);
+    const all = [...rev.worth.map(w => w.slot.answer), ...rev.rest.map(s => s.answer)];
+    check('words: every answer appears once', new Set(all).size === all.length && new Set(p0.slots.map(s => s.answer)).size === all.length, all.length);
+    const worthFirst = rev.worth.map(w => w.reason);
+    check('words: revealed, then wrong, then Quill', [...worthFirst].sort((a, b) => 'rwq'.indexOf(a[0]) - 'rwq'.indexOf(b[0])).join() === worthFirst.join(), worthFirst);
+  }
+  // One-time tips
+  {
+    const none = { wrongOrPass: 0, dryTurns: 0, passes: 0, finished: 0 };
+    check('tips: none at the start', nextTip(new Set(), none) === null);
+    check('tips: Hint after the first wrong tile or pass', nextTip(new Set(), { ...none, wrongOrPass: 1 }) === 'hint');
+    check('tips: Word after two turns without a right tile', nextTip(new Set(['hint']), { ...none, wrongOrPass: 2, dryTurns: 2 }) === 'word');
+    check('tips: Swap after a second pass', nextTip(new Set(['hint', 'word']), { ...none, wrongOrPass: 2, dryTurns: 2, passes: 2 }) === 'swap');
+    check('tips: Calendar after the first finished game', nextTip(new Set(), { ...none, finished: 1 }) === 'calendar');
+    check('tips: each only once', nextTip(new Set(['hint', 'word', 'swap', 'calendar']), { wrongOrPass: 9, dryTurns: 9, passes: 9, finished: 9 }) === null);
+    const pt = memoryPlatform(), ct = new GameController(p0, DATE, pt, new NullDirector(), { seed: 55 });
+    await ct.pass();
+    check('tips: a pass counts as a dry turn', JSON.stringify(turnStats(p0, ct.snapshot().state)) === '{"wrongOrPass":1,"dryTurns":1,"passes":1}', turnStats(p0, ct.snapshot().state));
+    for (const t of correctPlacements(ct)) ct.place(t.rackSlot, t.cell);
+    await ct.submit();
+    check('tips: a right tile is no dry turn', turnStats(p0, ct.snapshot().state).dryTurns === 1, turnStats(p0, ct.snapshot().state));
+  }
+  check('end copy: a win', JSON.stringify(endCopy({ you: 55, quill: 41, practice: false, isToday: true })) === JSON.stringify({ kind: 'win', title: 'You win!', line: 'Professor Quill tips his hat.' }));
+  check('end copy: a loss today', endCopy({ you: 41, quill: 45, practice: false, isToday: true }).line === 'Professor Quill wins by 4. Replay to earn today’s star.');
+  check('end copy: a loss on a past day', endCopy({ you: 41, quill: 45, practice: false, isToday: false }).line === 'Professor Quill wins by 4. Replay to earn this day’s star.');
+  check('end copy: a tie', JSON.stringify(endCopy({ you: 46, quill: 46, practice: false, isToday: true })) === JSON.stringify({ kind: 'tie', title: 'A dead heat', line: '46 all. Replay to break the tie and win the star.' }));
+  check('end copy: practice promises no star', !/star/.test(endCopy({ you: 41, quill: 45, practice: true, isToday: true }).line) && !/star/.test(endCopy({ you: 4, quill: 4, practice: true, isToday: true }).line));
 
   // round 3: your rack empties near the end, so Quill plays several turns in a row and you never press Pass
   {

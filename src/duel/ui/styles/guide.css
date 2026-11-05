@@ -1,0 +1,59 @@
+/* Panna Duel: settings and How to play, on the same light paper as the home. */
+
+.set-label { margin: 12px 20px 0; font: 15px var(--font-fell-sc); letter-spacing: .4px; color: var(--pg-muted); }
+.set-list { padding: 0; overflow: hidden; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 8px 14px; color: var(--ink); text-decoration: none; }
+.set-row + .set-row { border-top: 1px solid var(--pg-line); }
+.set-row b { display: block; font: normal 17px var(--font-fell); }
+.set-row small { display: block; font-size: 14px; color: var(--pg-muted); }
+.set-row small a { color: var(--binding); }
+.set-row i { font-style: normal; font-size: 22px; color: var(--pg-muted); }
+.set-row input { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 48px; height: 28px; margin: 0; border-radius: 14px; background: #7d6f58; cursor: pointer; transition: background .18s; }
+.set-row input::after { content: ""; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .18s var(--out); }
+.set-row input:checked { background: var(--binding); }
+.set-row input:checked::after { transform: translateX(20px); }
+.set-note { margin: 4px 20px 0; font-size: 14.5px; color: var(--pg-muted); }
+
+.how-page { margin-bottom: 10px; }
+.how-page h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 19px var(--font-fell-sc); color: var(--binding); }
+.how-page h2 span { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--binding); color: var(--onb); font: 700 12px var(--letters); }
+.how-page p { margin: 0 0 6px; line-height: 1.32; }
+.how-page p b { font-weight: normal; color: var(--binding); }
+.how-page .hi { font: 15px var(--font-deva); color: var(--pg-muted); }
+.how-ex { margin: 8px 0 0 !important; padding: 8px 10px; border-radius: 8px; background: #efe3c0; color: #2a1e14; font-size: 15px; }
+.how-ex b { color: #5b1f19 !important; }
+.how-score { width: 100%; border-collapse: collapse; }
+.how-score td { padding: 5px 0; border-bottom: 1px solid var(--pg-line); }
+.how-score td:last-child { text-align: right; font: 700 13px var(--letters); color: #1a6b2d; white-space: nowrap; }
+.how-score td.minus { color: #a32020; }
+html[data-light="evening"] .how-score td:last-child { color: #0f3f1a; }
+html[data-light="evening"] .how-score td.minus { color: #5e1a13; }
+.duel-board-legend { --cell: 38px; --tileW: 36px; --tileH: 37px; display: grid; grid-template-columns: var(--cell) 1fr; gap: 6px 10px; align-items: center; }
+.duel-board-legend .duel-cell { width: var(--cell); height: var(--cell); box-shadow: 0 0 0 1px #c9ccd1; }
+.duel-board-legend .duel-cell.ghost .lt { color: rgba(94, 74, 51, .42); }
+.how-page .bigbtn { margin-top: 8px; border: 1.5px solid var(--crimson); color: var(--crimson); }
+
+/* the coached first game */
+.coach { position: fixed; inset: 0; z-index: 80; touch-action: none; }
+.coach-spot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 200vmax rgba(15, 9, 5, .62); transition: all .25s var(--out); }
+.coach-hand { position: fixed; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, .9); box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+  animation: coach-drag 1.8s var(--out) infinite; }
+@keyframes coach-drag { 0% { opacity: 0; transform: none; } 15% { opacity: 1; } 70% { opacity: 1; transform: translate(60px, -180px); } 100% { opacity: 0; transform: translate(60px, -180px); } }
+.coach-tipbox { position: fixed; left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 24px)); padding: 12px 14px; border-radius: 14px;
+  background: #f6ecd0; color: #2a1e14; font: 16px var(--font-fell); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); }
+.coach-k { font: 18px var(--font-fell-sc); color: #5b1f19; }
+.coach-en, .coach-hi { margin: 2px 0 0; }
+.coach-hi { font: 14.5px var(--font-deva); color: #5e4a33; }
+.coach-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.coach-dots { flex: 1; display: flex; gap: 5px; }
+.coach-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(94, 74, 51, .3); }
+.coach-dots i.on { background: #5b1f19; }
+.coach-row button { min-height: 44px; padding: 0 12px; }
+.coach-row .next { border-radius: 10px; background: #5b1f19; color: #f4e6c5; font: 16px var(--font-fell-sc); }
+.coach-tip { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 8px;
+  width: min(360px, calc(100% - 24px)); padding: 8px 10px 8px 14px; border-radius: 14px; background: #f6ecd0; color: #2a1e14; font: 15px var(--font-fell);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35); animation: duel-fade-in .2s ease-out; }
+.duel-game .coach-tip { top: 116px; bottom: auto; } /* clear of the rack and the buttons the tip is about */
+.coach-tip > div { flex: 1; }
+.coach-tip button { flex: none; min-height: 44px; padding: 0 10px; color: #5b1f19; font: 15px var(--font-fell-sc); }
+@media (prefers-reduced-motion: reduce) { .coach-hand { display: none; } .coach-spot { transition: none; } }

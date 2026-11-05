@@ -53,3 +53,34 @@ export function playDate(scheduled: string[], won: Set<string>, today: string): 
   if (open.includes(today)) return today;
   return open[open.length - 1] ?? today;
 }
+
+/** What a date's coin shows on the calendar (UI-DESIGN §3.2). `blank`: no daily that day. */
+export interface DayCoin { date: string; kind: 'blank' | 'won' | 'open' | 'latest-open' | 'today' | 'future'; progress: number | null }
+
+/** One month (YYYY-MM). `inProgress` says how far a game under way on a date has got, 0–1, or null. */
+export function calendarMonth(month: string, scheduled: string[], results: DuelResult[], inProgress: (date: string) => number | null, today: string): { coins: DayCoin[]; won: number; total: number; sealed: boolean } {
+  const [y, m] = month.split('-').map(Number);
+  const length = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const days = new Set(scheduled), won = wonDays(results);
+  const latestOpen = scheduled.filter(d => d < today && !won.has(d)).sort().pop();
+  const coins: DayCoin[] = Array.from({ length }, (_, i) => {
+    const date = `${month}-${String(i + 1).padStart(2, '0')}`;
+    const kind: DayCoin['kind'] = !days.has(date) ? 'blank' : won.has(date) ? 'won' : date > today ? 'future'
+      : date === today ? 'today' : date === latestOpen ? 'latest-open' : 'open';
+    return { date, kind, progress: kind === 'blank' || kind === 'future' ? null : inProgress(date) };
+  });
+  const total = coins.filter(c => c.kind !== 'blank').length, wins = coins.filter(c => c.kind === 'won').length;
+  return { coins, won: wins, total, sealed: total === length && wins === total };
+}
+
+/** The highest winning score on a date, across replays. */
+export function bestFor(results: DuelResult[], date: string): { you: number; quill: number } | null {
+  const wins = results.filter(r => r.date === date && r.you > r.quill).sort((a, b) => b.you - a.you);
+  return wins.length ? { you: wins[0].you, quill: wins[0].quill } : null;
+}
+
+/** The months the calendar can browse: from the first scheduled one to this one. */
+export function monthRange(scheduled: string[], today: string): { first: string; last: string } {
+  const last = today.slice(0, 7), first = [...scheduled].sort()[0]?.slice(0, 7) ?? last;
+  return { first: first < last ? first : last, last };
+}

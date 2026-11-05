@@ -9,6 +9,8 @@ export interface SavedGame {
   seed: number; log: Action[]; startedAt: string;
   /** The scores and end after Quill's reply, for Panna's Today card (which doesn't replay the game). */
   score?: { you: number; quill: number }; over?: boolean;
+  /** The share of the board's open letters filled, 0–1, for the calendar's ring. */
+  progress?: number;
 }
 
 export type Sheet = null | { k: 'swap' } | { k: 'help'; want: 'hint' | 'word' } | { k: 'reveal'; slot: SlotId };
@@ -37,6 +39,8 @@ export interface Snapshot {
   /** Rack slots whose new tiles are not shown yet: they arrive after Quill's turn. */
   held: number[];
   balance: { hint: number; word: number };
+  /** What the game that just ended earned; null otherwise, and after a reload. */
+  rewards: { hint: number; word: number } | null;
 }
 
 /** Plays the engine's events as motion. The web one animates; the null one resolves at once. */

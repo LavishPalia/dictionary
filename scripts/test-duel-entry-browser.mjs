@@ -114,7 +114,7 @@ async function main() {
     await axe('phone Today');
 
     await evaluate(`document.querySelector('#nav-play-btn').click(); true`);
-    check('phone: the Play tab opens a game', await waitFor(`/^\\/play\\/game\\/\\d{4}-\\d{2}-\\d{2}$/.test(location.pathname) && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000));
+    check('phone: the Play tab opens the game home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 20000));
     // One correct tile and Submit, then back to Today.
     await send('Page.navigate', { url: `${BASE}/play/game/${TODAY}?seed=7` });
     await waitFor(`Boolean(window.__duel && document.querySelector('.duel-board [data-cell]'))`, 20000);

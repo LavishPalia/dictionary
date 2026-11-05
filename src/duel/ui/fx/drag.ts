@@ -256,7 +256,7 @@ export class Input {
     this.platform.sound.unlock(); // a key press counts as a user activation: keyboard players get sound too
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const snap = this.ctl.snapshot();
-    if (snap.busy || snap.sheet || snap.state.over) return;
+    if (snap.busy || snap.sheet || snap.state.over || document.getElementById('duel-coach')) return;
     const active = document.activeElement as HTMLElement | null;
     if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
     const onBoard = !!active?.closest('.duel-board');
@@ -268,11 +268,11 @@ export class Input {
     } else if (e.key === 'Backspace') {
       e.preventDefault();
       queue(() => this.ctl.backspace());
-    } else if (e.key === 'Enter' && (onBoard || !active || active === document.body)) {
+    } else if (e.key === 'Enter' && (onBoard || !active || active === document.body || active.closest('.duel-cluelist'))) {
       e.preventDefault();
       queue(() => { void this.ctl.submit(); });
-    } else if (e.key === 'Tab' && onBoard) {
-      // On the board, Tab moves between answers; past the last (or first) one it leaves the board as usual.
+    } else if (e.key === 'Tab' && (onBoard || (active === document.body || active?.closest('.duel-cluelist')) && document.querySelector('.duel-cluelist'))) {
+      // On the board (or the desktop's clue list), Tab moves between answers; past the last (or first) one it leaves as usual.
       if (!this.ctl.selectNext(e.shiftKey ? -1 : 1)) return;
       e.preventDefault();
       // Focus moves now, not on the next frame: a late focus could pull it back after a later Tab left the board.

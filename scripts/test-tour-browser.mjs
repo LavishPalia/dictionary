@@ -200,7 +200,7 @@ async function main() {
       await click('#guided-tours-btn');
       await sleep(500);
       check(`${sizeName}: ⋯ → Guided tours lists the five tours`, await evaluate(`[...document.querySelectorAll('#tours-sheet .tours-item-title')].map((e) => e.textContent).join('|')`)
-        === 'Getting started|The word card|Saving and Review|Marking the book|Settings and backup');
+        === 'Getting started|The word card|Saving and Review|Marking the book|Settings and backup|Panna Duel');
       check(`${sizeName}: every tour has a Hindi line`, await evaluate(`[...document.querySelectorAll('#tours-sheet .tours-item-hi')].every((e) => e.lang === 'hi' && e.textContent.length > 5)`));
       await click('#tour-start-start');
       s = await waitStep('1 of 5');

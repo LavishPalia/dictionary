@@ -230,6 +230,17 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Words the Duel saved while this page stayed open: in another tab, or kept in the browser's back-forward cache.
+  useEffect(() => {
+    const reload = (e: Event) => {
+      if (e instanceof StorageEvent ? e.key !== null && e.key !== 'panna_saved_words' : !(e as PageTransitionEvent).persisted) return;
+      try { setBookmarkedWords(keepValid<SavedWord>(JSON.parse(localStorage.getItem('panna_saved_words') ?? '[]'), isSavedWord)); } catch { /* left as it is */ }
+    };
+    window.addEventListener('storage', reload);
+    window.addEventListener('pageshow', reload);
+    return () => { window.removeEventListener('storage', reload); window.removeEventListener('pageshow', reload); };
+  }, []);
+
   // Load saved bookmarks, dog-ears, and marginalia from localStorage. Marks made under an older build of the book
   // are first moved to the pages their anchor words are on now (src/lib/marks.ts).
   useEffect(() => {

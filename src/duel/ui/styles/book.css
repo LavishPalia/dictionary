@@ -1,0 +1,35 @@
+/* Panna Duel: the desktop game as an open book (UI-DESIGN §3.7): the white board on the left page, paper on the right
+   (user's pick, 5 Nov). The same elements as the phone's column, placed by the grid, so the effects layer needn't know. */
+
+.duel-keys, .duel-cluelist { display: none; }
+
+@media (min-width: 1000px) and (min-height: 700px) {
+  .duel:has(> .duel-game) { align-items: center; background: radial-gradient(circle at 50% 40%, #4a3322, #2b1d14 75%); }
+  .duel-game {
+    --pg1: #fbf6e8; --pg2: #f1e9d6; --gutter: #d8c494;
+    max-width: 1180px; width: calc(100% - 40px); height: min(720px, calc(100% - 32px)); border-radius: 4px; box-shadow: 0 18px 40px rgba(0, 0, 0, .5);
+    background: linear-gradient(to right, var(--pg1), var(--pg2) 44%, var(--gutter) 50%, var(--pg2) 56%, var(--pg1));
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "top score" "board clues" "board rack" "board actions" "board keys";
+    column-gap: 40px; padding: 8px 20px 12px;
+  }
+  html[data-light="evening"] .duel-game { --pg1: #cdb991; --pg2: #c2ad84; --gutter: #9a7f55; }
+  .duel-game .duel-top { grid-area: top; }
+  .duel-game .duel-score { grid-area: score; align-self: center; padding: 4px 0 8px; }
+  .duel-game .duel-boardarea { grid-area: board; }
+  .duel-game .duel-rackbar { grid-area: rack; margin: 8px 0 0; }
+  .duel-game .duel-actions { grid-area: actions; padding: 10px 0 6px; }
+  .duel-cluelist { grid-area: clues; display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; min-height: 0; overflow-y: auto; color: var(--ink); }
+  .duel-cluelist h2 { position: sticky; top: 0; margin: 0; padding: 2px 0; background: var(--pg2); font: 16px var(--font-fell-sc); color: var(--binding); }
+  .duel-cluelist ul { list-style: none; margin: 0; padding: 0; }
+  .duel-cluelist button { display: block; width: 100%; min-height: 28px; padding: 2px 4px; text-align: left; font: 15px/1.2 var(--font-fell); border-radius: 4px; }
+  .duel-cluelist button span { color: var(--inks); }
+  .duel-cluelist button.cur { background: var(--binding); color: var(--onb); }
+  .duel-cluelist button.cur span { color: var(--onb); }
+  .duel-cluelist button.done { text-decoration: line-through; color: var(--inks); }
+  html[data-light="evening"] .duel-cluelist { --ink: #1e150d; --inks: #3f3020; --binding: #431611; --onb: #e6d6b0; }
+  .duel-keys { grid-area: keys; display: block; margin: 0; text-align: center; font: italic 14px var(--font-fell); color: var(--inks); }
+  .duel-game::after { content: ""; position: absolute; right: 0; bottom: 0; width: 26px; height: 26px; pointer-events: none;
+    background: linear-gradient(315deg, #2b1d14 50%, #e3d4ae 50%); }
+  html[data-light="evening"] .duel-keys { --inks: #3f3020; }
+}

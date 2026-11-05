@@ -8,6 +8,8 @@ import {
   comesBackLabel, daysUntil, dueWords, nextDue, questionKind, type QuestionKind, type ReviewRecords, SESSION_SIZE,
 } from '@/lib/review';
 import { speechUnavailableReason, useSpeechVoices } from '@/lib/speech';
+import { earnReviewHint } from '@/duel/platform/web/entry';
+import { webStorage } from '@/duel/platform/web/storage';
 import { Button, IconButton } from '@/components/ui';
 import { CloseIcon, SpeakerIcon } from '@/components/ui/icons';
 import type { SavedWord } from '@/components/saved/SavedScreen';
@@ -181,6 +183,11 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
 
   const firstRoundSize = useMemo(() => (queue ? queue.filter((q) => !q.retry).length : 0), [queue]);
   const done = queue !== null && index >= queue.length;
+  // A finished review session earns a Hint in the Duel (once per session; practice rounds don't count).
+  const earned = useRef(false);
+  useEffect(() => {
+    if (done && firstRoundSize > 0 && !practice && !earned.current) { earned.current = true; earnReviewHint(webStorage()); }
+  }, [done, firstRoundSize, practice]);
   const header = (
     <div className="review-top">
       <IconButton id="close-review-btn" aria-label="Close review" onClick={onClose}><CloseIcon /></IconButton>

@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui';
-import { duelEntryVisible, todayDuel, type TodayDuel } from '@/duel/platform/web/entry';
+import { duelAction, duelEntryVisible, duelLine, duelSubLine, todayDuel, type TodayDuel } from '@/duel/platform/web/entry';
 import { webPuzzles } from '@/duel/platform/web/puzzles';
 import { webStorage } from '@/duel/platform/web/storage';
 import { istToday } from '@/duel/progress';
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const dayMonth = (date: string) => `${Number(date.slice(8))} ${MONTHS[Number(date.slice(5, 7)) - 1]}`;
 
 /** Whether Panna shows its way into the Duel (hidden on production until launch); false until known on the client. */
 export function useDuelVisible(): boolean {
@@ -36,36 +33,11 @@ function useTodayDuel(): TodayDuel | null {
   return duel;
 }
 
-function scoreLine(d: TodayDuel): string {
-  switch (d.state) {
-    case 'new': return !d.practice ? 'Today’s puzzle is ready' : d.next ? 'No new puzzle today' : 'Practice duel';
-    case 'playing': return d.you > d.quill ? `You lead ${d.you} to ${d.quill}` : d.you < d.quill ? `Quill leads ${d.quill} to ${d.you}` : `Level at ${d.you}`;
-    case 'won': return `Won ${d.you} to ${d.quill}${d.practice ? '' : ' ★'}`;
-    case 'over': return d.you === d.quill ? `A tie at ${d.you}` : `Quill won ${d.quill} to ${d.you}`;
-  }
-}
-
-function subLine(d: TodayDuel): string | null {
-  if (d.state === 'new') return d.practice && d.next ? `${dayMonth(d.next)}’s duel is still open.` : 'A word duel against Professor Quill.';
-  if (d.state === 'over' && !d.practice) return d.you === d.quill ? 'Replay to break the tie and earn today’s star.' : 'Replay to earn today’s star.';
-  return null;
-}
-
-function actionOf(d: TodayDuel): { href: string; label: string } | null {
-  const today = `/play/game/${d.date}`, next = d.next ? { href: `/play/game/${d.next}`, label: `Play ${dayMonth(d.next)}` } : null;
-  switch (d.state) {
-    case 'new': return next || { href: today, label: d.practice ? 'Play practice duel' : 'Play today’s duel' };
-    case 'playing': return { href: today, label: 'Continue' };
-    case 'won': return d.replaying ? { href: today, label: 'Continue replay' } : next;
-    case 'over': return { href: today, label: 'Replay' };
-  }
-}
-
 /** The first card on Today (UI-DESIGN §3.1): play, continue or replay today's duel against Professor Quill. */
 export function DuelCard() {
   const d = useTodayDuel();
   if (!d) return null;
-  const action = actionOf(d), sub = subLine(d);
+  const action = duelAction(d), sub = duelSubLine(d);
   return (
     <Card className="today-card today-duel" id="today-duel" role="region" aria-labelledby="today-duel-label today-duel-title">
       <div className="today-card-head">
@@ -75,7 +47,7 @@ export function DuelCard() {
       <div className="today-duel-row">
         <span className="today-duel-tiles" aria-hidden="true">{'DUEL'.split('').map((l) => <span key={l}>{l}</span>)}</span>
         <div>
-          <p className="today-big" id="today-duel-title">{scoreLine(d)}</p>
+          <p className="today-big" id="today-duel-title">{duelLine(d)}</p>
           {sub && <p className="today-muted today-tight">{sub}</p>}
         </div>
       </div>
