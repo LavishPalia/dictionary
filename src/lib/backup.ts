@@ -5,6 +5,7 @@ import type { MarginNote } from './types';
 import { isReviewRecord, type ReviewRecords } from './review';
 import { isHistoryWord, foldRecent, mergeHistory, type HistoryWord } from './history';
 import { relocateMarks, type MarkAnchors } from './marks';
+import { duelSummary, isDuelBackup } from '../duel/backup';
 
 export const BACKUP_FORMAT = 1;
 export const LAST_BACKUP_KEY = 'panna_last_backup';
@@ -15,7 +16,8 @@ export const BACKUP_KEYS = [
   'panna_mark_anchors', 'panna_settings', 'panna_recent_searches', 'panna_tours', 'panna_history',
 ] as const;
 export type BackupKey = typeof BACKUP_KEYS[number];
-export type BackupData = Partial<Record<BackupKey, unknown>>;
+/** `panna_duel` holds the Duel's own keys (src/duel/backup.ts), which vary by date, so it isn't one localStorage key. */
+export type BackupData = Partial<Record<BackupKey | 'panna_duel', unknown>>;
 
 export interface Backup {
   app: 'panna';
@@ -67,7 +69,7 @@ export function keepValid<T>(value: unknown, valid: (item: unknown) => boolean):
   return isArray(value) ? (value.filter(valid) as T[]) : [];
 }
 
-export interface BackupSummary { words: number; reviewing: number; pages: number; notes: number; created_at: string }
+export interface BackupSummary { words: number; reviewing: number; pages: number; notes: number; created_at: string; duelWon: number; duelName: string | null }
 
 /** Reads a backup file's text; explains plainly what is wrong if it is not a usable Panna backup. */
 export function parseBackup(text: string): { ok: true; backup: Backup; summary: BackupSummary } | { ok: false; error: string } {
@@ -76,7 +78,8 @@ export function parseBackup(text: string): { ok: true; backup: Backup; summary: 
   if (!isObject(raw) || raw.app !== 'panna' || !isObject(raw.data)) return { ok: false, error: 'This file isn’t a Panna backup.' };
   if (typeof raw.format !== 'number' || raw.format > BACKUP_FORMAT) return { ok: false, error: 'This backup was made by a newer version of Panna. Update the app and try again.' };
   const d = raw.data;
-  const checks: Array<[BackupKey, (v: unknown) => boolean]> = [
+  const checks: Array<[BackupKey | 'panna_duel', (v: unknown) => boolean]> = [
+    ['panna_duel', isDuelBackup],
     ['panna_saved_words', (v) => isArray(v) && v.every(isSavedWord)],
     ['panna_review', (v) => isObject(v) && Object.values(v).every(isReviewRecord)],
     ['panna_bookmarks', (v) => isArray(v) && v.every(Number.isInteger)],
@@ -104,6 +107,8 @@ export function parseBackup(text: string): { ok: true; backup: Backup; summary: 
       pages: ((d.panna_bookmarks as unknown[] | undefined)?.length ?? 0) + ((d.panna_dog_ears as unknown[] | undefined)?.length ?? 0),
       notes: (d.panna_marginalia as unknown[] | undefined)?.length ?? 0,
       created_at: backup.created_at,
+      duelWon: duelSummary(d.panna_duel).won,
+      duelName: duelSummary(d.panna_duel).name,
     },
   };
 }

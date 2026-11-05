@@ -5,6 +5,7 @@ import {
   BACKUP_KEYS, LAST_BACKUP_KEY, backupFileName, createBackup, parseBackup, restoreData, wordsToLocate,
   type Backup, type BackupData, type BackupSummary,
 } from '@/lib/backup';
+import { collectDuel, restoreDuel } from '@/duel/backup';
 import { Button, Sheet } from '@/components/ui';
 
 export interface BackupHandle {
@@ -19,12 +20,27 @@ function readAll(): BackupData {
   for (const key of BACKUP_KEYS) {
     try { const raw = localStorage.getItem(key); if (raw !== null) data[key] = JSON.parse(raw); } catch {}
   }
+  const duel = readDuel();
+  if (Object.keys(duel).length) data.panna_duel = duel;
   return data;
+}
+
+/** The Duel's keys vary by date, so they are found by name. */
+function readDuel(): Record<string, unknown> {
+  const raw: Record<string, string> = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) raw[key] = localStorage.getItem(key) ?? '';
+    }
+  } catch {}
+  return collectDuel(raw);
 }
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const describe = (s: BackupSummary) =>
-  [plural(s.words, 'saved word'), `${s.reviewing} in review`, plural(s.pages, 'marked page'), plural(s.notes, 'note')].join(' · ');
+  [plural(s.words, 'saved word'), `${s.reviewing} in review`, plural(s.pages, 'marked page'), plural(s.notes, 'note'),
+    ...(s.duelWon ? [`${plural(s.duelWon, 'Duel day')} won`] : [])].join(' · ');
 
 /** "3 days ago", "today", "never": for the menu's reminder. */
 export function lastBackupLabel(at: number | null, now = Date.now()): string {
@@ -84,10 +100,15 @@ export const BackupManager = forwardRef<BackupHandle, { dataVersion: string; tot
         } catch {} // offline: marks keep their old page numbers
       }
       const data = restoreData(readAll(), pending.backup, mode, { dataVersion, totalPages }, located);
+      const duel = restoreDuel(readDuel(), pending.backup.data.panna_duel, mode);
       try {
         for (const key of BACKUP_KEYS) {
           if (data[key] === undefined) localStorage.removeItem(key);
           else localStorage.setItem(key, JSON.stringify(data[key]));
+        }
+        if (duel) {
+          for (const key of duel.remove) localStorage.removeItem(key);
+          for (const [key, value] of Object.entries(duel.set)) localStorage.setItem(key, JSON.stringify(value));
         }
       } catch {
         setStatus('idle');
@@ -123,6 +144,9 @@ export const BackupManager = forwardRef<BackupHandle, { dataVersion: string; tot
                   ? created.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'an unknown date'}
               </p>
               <p className="menu-title restore-summary">{describe(pending.summary)}</p>
+              {pending.summary.duelName && (
+                <p className="menu-sub" id="restore-duel">Panna Duel: you’ll play as {pending.summary.duelName}. This file holds that name’s key, so keep it to yourself.</p>
+              )}
               <div className="restore-actions">
                 <Button variant="primary" full id="restore-merge-btn" disabled={status === 'working'} onClick={() => apply('merge')}>
                   Add to what’s on this device

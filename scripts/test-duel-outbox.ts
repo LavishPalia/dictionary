@@ -1,6 +1,7 @@
 // The outbox and the device's player, against the real server code on a real Postgres (PGlite).
 // Usage: npx tsx scripts/test-duel-outbox.ts
 import { readFileSync } from 'node:fs';
+import { collectDuel, restoreDuel } from '../src/duel/backup';
 import { OUTBOX_KEY, PLAYER_KEY, readOutbox, readPlayer, WEEK_KEY } from '../src/duel/net-rules';
 import { webNet } from '../src/duel/platform/web/net';
 import type { Storage } from '../src/duel/platform/types';
@@ -219,6 +220,53 @@ async function main() {
   check('what the Ranks screen last showed is kept', dayNet.week()?.seen?.rank === 20);
   dayNet.markSeen(12, 200);
   check('and can be moved on', dayNet.week()?.seen?.rank === 12);
+
+  // ── One backup on two devices: one player ──
+  await db.clear();
+  srv = server();
+  const phoneA = memory();
+  const netA = webNet(phoneA, srv.fetch);
+  const dealA = game(50), shared = game(60);
+  netA.enqueue(dealA);
+  await netA.flush();
+  // A backup made now, with a game already sent still listed, as an old file might have.
+  const file = collectDuel(Object.fromEntries(phoneA.map));
+  file[OUTBOX_KEY] = [dealA];
+  const phoneB = memory();
+  for (const [k, v] of Object.entries(restoreDuel({}, file, 'replace')!.set)) phoneB.set(k, v);
+  const netB = webNet(phoneB, srv.fetch);
+  check('the restored phone is the same player', netB.player()?.id === netA.player()?.id && netB.player()?.name === netA.player()?.name);
+  await netB.flush();
+  check('a game in an old backup that was already sent isn\'t recounted', await total() === dealA.claimedScore && await rows() === 1 && netB.unsent().length === 0, await total());
+  const dealB = game(61);
+  netB.enqueue(dealB);
+  await netB.flush();
+  await netA.me('this');
+  check('both devices\' games add up on one row', await total() === dealA.claimedScore + dealB.claimedScore && netA.week()?.points === await total(), netA.week());
+  check('one row on the board for the two of them', (await query<{ n: number }>('select count(*)::int as n from weekly_totals'))[0].n === 1);
+  netA.enqueue(shared);
+  netB.enqueue(shared);
+  await Promise.all([netA.flush(), netB.flush()]);
+  check('the same deal finished on both counts once', await total() === dealA.claimedScore + dealB.claimedScore + shared.claimedScore && netA.unsent().length === 0 && netB.unsent().length === 0, await total());
+  await netA.rename('Tea Lover');
+  await netB.me('this');
+  check('a new name reaches the other device', netB.player()?.name === 'Tea Lover');
+
+  // ── Restoring over a different player ──
+  const phoneC = memory();
+  const netC = webNet(phoneC, srv.fetch);
+  srv.mode = 'down';
+  const unsentOnC = game(70);
+  netC.enqueue(unsentOnC);
+  await netC.flush();
+  srv.mode = 'up';
+  const before = await total();
+  const restored = restoreDuel(Object.fromEntries([...phoneC.map].map(([k, v]) => [k, JSON.parse(v)])), file, 'merge')!;
+  for (const k of restored.remove) phoneC.remove(k);
+  for (const [k, v] of Object.entries(restored.set)) phoneC.set(k, v);
+  const netC2 = webNet(phoneC, srv.fetch);
+  await netC2.flush();
+  check('a score unsent on the phone goes out as the backup\'s player', netC2.player()?.id === netA.player()?.id && await total() === before + unsentOnC.claimedScore && netC2.unsent().length === 0, await total());
 
   // ── The service worker keeps out ──
   const sw = readFileSync('public/sw.js', 'utf8');

@@ -1,4 +1,5 @@
 // Checks backup and restore (src/lib/backup.ts). Usage: npx tsx scripts/test-backup.ts
+import { collectDuel, restoreDuel } from '../src/duel/backup';
 import { isSavedWord, keepValid, backupFileName, createBackup, parseBackup, restoreData, wordsToLocate, type BackupData } from '../src/lib/backup';
 
 let failures = 0;
@@ -118,6 +119,95 @@ check('marks from an older build land on their words’ current pages', JSON.str
   check('saved word still accepts an old examples list', isSavedWord({ normalized: 'a', headword: 'A', examples: ['x'] }));
   check('saved word rejects a blank running past the sentence', !isSavedWord(w({ en, hi: 'x', blank: [20, 20] })));
   check('saved word rejects a negative or empty blank', !isSavedWord(w({ en, hi: 'x', blank: [-1, 3] })) && !isSavedWord(w({ en, hi: 'x', blank: [2, 0] })));
+}
+
+// ── The Duel in the backup (src/duel/backup.ts) ──
+{
+  const ME = { id: '11111111-1111-4111-8111-111111111111', token: 'a'.repeat(64), name: 'Curious Inkwell' };
+  const OTHER = { id: '22222222-2222-4222-8222-222222222222', token: 'b'.repeat(64), name: 'Quiet Folio' };
+  const queued = (seed: number) => ({ puzzle: 'p0067.v1', date: '2026-11-04', seed, rules: '1.x', actions: [], startedAt: '2026-11-04T10:00:00Z', finishedAt: '2026-11-04T10:05:00Z', claimedScore: 50 });
+  const won = (date: string, at: string) => ({ date, puzzle: 'p0002.v1', you: 60, quill: 40, at });
+  const inFile = {
+    panna_duel_player: ME, panna_duel_outbox: [queued(1)], panna_duel_results: [won('2026-11-01', '2026-11-01T10:00:00Z')],
+    panna_duel_help: { day: '2026-11-01', free: { hint: 0, word: 0 }, earned: { hint: 5, word: 1 } },
+    panna_duel_settings: { sound: false, vibration: true }, panna_duel_guide: { coach: true, tips: ['hint'] },
+    panna_duel_home: { seals: ['2026-09'], stamped: 'old' }, 'panna_duel_game:2026-11-02': { seed: 1, from: 'file' }, 'panna_duel_game:2026-11-03': { seed: 3, from: 'file' },
+  };
+  const onDevice = {
+    panna_duel_player: OTHER, panna_duel_outbox: [queued(2)], panna_duel_results: [won('2026-11-05', '2026-11-05T10:00:00Z')],
+    panna_duel_help: { day: '2026-11-06', free: { hint: 1, word: 1 }, earned: { hint: 2, word: 4 } },
+    panna_duel_settings: { sound: true, vibration: false }, panna_duel_guide: { coach: false, tips: ['word'] },
+    panna_duel_home: { seals: ['2026-10'], stamped: 'new' }, 'panna_duel_game:2026-11-03': { seed: 9, from: 'device' }, 'panna_duel_game:2026-11-06': { seed: 6, from: 'device' },
+    panna_duel_week: { week: 'x' }, panna_duel_board: { this: {} },
+  };
+
+  // What a backup takes
+  const collected = collectDuel({
+    panna_duel_player: JSON.stringify(ME), 'panna_duel_game:2026-11-03': '{"seed":3}', panna_duel_week: '{}', panna_duel_board: '{}', panna_duel_results: '{broken', panna_saved_words: '[]',
+  });
+  check('a backup takes the player, token included, and dated games', (collected.panna_duel_player as typeof ME).token === ME.token && 'panna_duel_game:2026-11-03' in collected);
+  check('not the cached week or board, not Panna\'s keys, not an unreadable value', Object.keys(collected).length === 2, Object.keys(collected));
+  const made = createBackup({ panna_saved_words: [], panna_duel: collected }, 'v1');
+  const parsedFile = parseBackup(JSON.stringify(made));
+  check('the file reads back with its Duel data', parsedFile.ok && (parsedFile.backup.data.panna_duel as typeof collected).panna_duel_player !== undefined);
+  check('the format stays 1, so older files and apps still work', made.format === 1);
+  const sum = parseBackup(JSON.stringify(createBackup({ panna_duel: inFile }, 'v1')));
+  check('the summary names the Duel player and days won', sum.ok && sum.summary.duelWon === 1 && sum.summary.duelName === ME.name);
+  const oldFile = parseBackup(JSON.stringify(createBackup({ panna_saved_words: [] }, 'v1')));
+  check('an old file has no Duel in its summary', oldFile.ok && oldFile.summary.duelWon === 0 && oldFile.summary.duelName === null);
+
+  // What a file may not do
+  const damaged = (d: unknown) => { const r = parseBackup(JSON.stringify({ app: 'panna', format: 1, created_at: '', data: { panna_duel: d } })); return !r.ok && /damaged/.test(r.error); };
+  check('the Duel\'s section can\'t reach Panna\'s own keys', damaged({ panna_saved_words: [] }));
+  check('nor bring in a cache', damaged({ panna_duel_week: {} }));
+  check('a malformed player is damage', damaged({ panna_duel_player: { id: 'x', token: 'y' } }));
+  check('a malformed outbox is damage', damaged({ panna_duel_outbox: [{ seed: 'x' }] }) && damaged({ panna_duel_outbox: 'x' }));
+  check('results that aren\'t a list are damage', damaged({ panna_duel_results: 'x' }));
+
+  // A file from before the Duel: both modes
+  check('an old file leaves the Duel alone when merging', restoreDuel(onDevice, undefined, 'merge') === null);
+  check('and with Replace everything', restoreDuel(onDevice, undefined, 'replace') === null);
+  check('an empty section too', restoreDuel(onDevice, {}, 'replace') === null);
+
+  // No player here, or the same player
+  const toEmpty = restoreDuel({}, inFile, 'replace')!;
+  check('a cleared phone: everything comes back', (toEmpty.set.panna_duel_player as typeof ME).id === ME.id && 'panna_duel_game:2026-11-02' in toEmpty.set && (toEmpty.set.panna_duel_help as { earned: { hint: number } }).earned.hint === 5);
+  check('a cleared phone when merging too', (restoreDuel({}, inFile, 'merge')!.set.panna_duel_player as typeof ME).id === ME.id);
+  const renamedHere = { ...ME, name: 'Newer Name' };
+  check('the same player keeps this device\'s newer name', (restoreDuel({ panna_duel_player: renamedHere }, inFile, 'merge')!.set.panna_duel_player as typeof ME).name === 'Newer Name');
+
+  // A different player here: the backup's takes over, in both modes
+  for (const mode of ['merge', 'replace'] as const) {
+    const r = restoreDuel(onDevice, inFile, mode)!;
+    check(`${mode}: the backup's player takes over`, (r.set.panna_duel_player as typeof ME).id === ME.id);
+    const seeds = (r.set.panna_duel_outbox as { seed: number }[]).map(g => g.seed).sort();
+    check(`${mode}: unsent scores from both sides are kept`, seeds.join() === '1,2', seeds);
+    check(`${mode}: the cached week and board go`, r.remove.includes('panna_duel_week') && r.remove.includes('panna_duel_board') && !('panna_duel_week' in r.set));
+  }
+  const fileHasNoPlayer = restoreDuel(onDevice, { panna_duel_results: [] }, 'replace')!;
+  check('a file with no player leaves this device\'s player', (fileHasNoPlayer.set.panna_duel_player as typeof ME).id === OTHER.id);
+
+  // Add to this device
+  const merged = restoreDuel(onDevice, inFile, 'merge')!.set;
+  check('merge: results from both', (merged.panna_duel_results as unknown[]).length === 2);
+  check('merge: this device\'s game wins on a shared date, the file fills the others',
+    (merged['panna_duel_game:2026-11-03'] as { from: string }).from === 'device' && (merged['panna_duel_game:2026-11-02'] as { from: string }).from === 'file' && (merged['panna_duel_game:2026-11-06'] as { from: string }).from === 'device');
+  const help = merged.panna_duel_help as { day: string; free: { hint: number }; earned: { hint: number; word: number } };
+  check('merge: the higher of each earned balance', help.earned.hint === 5 && help.earned.word === 4, help);
+  check('merge: today\'s free ones are this device\'s', help.day === '2026-11-06' && help.free.hint === 1);
+  check('merge: this device\'s settings stay', (merged.panna_duel_settings as { sound: boolean }).sound === true);
+  check('merge: tips and seals from both', (merged.panna_duel_guide as { tips: string[] }).tips.length === 2 && (merged.panna_duel_home as { seals: string[] }).seals.length === 2);
+  check('merge: first-game guide state stays this device\'s', (merged.panna_duel_guide as { coach: boolean }).coach === false);
+  const twice = restoreDuel(merged, inFile, 'merge')!.set;
+  const sameExceptPlayer = (x: Record<string, unknown>) => JSON.stringify(Object.entries(x).sort(([a], [b]) => a.localeCompare(b)));
+  check('merging the same file twice changes nothing', sameExceptPlayer(twice) === sameExceptPlayer(merged));
+
+  // Replace everything
+  const replaced = restoreDuel(onDevice, inFile, 'replace')!;
+  check('replace: results are the backup\'s', (replaced.set.panna_duel_results as { date: string }[]).map(r => r.date).join() === '2026-11-01');
+  check('replace: games only here are removed, the backup\'s written', replaced.remove.includes('panna_duel_game:2026-11-06') && (replaced.set['panna_duel_game:2026-11-03'] as { from: string }).from === 'file');
+  check('replace: help and settings are the backup\'s', (replaced.set.panna_duel_help as { earned: { hint: number } }).earned.hint === 5 && (replaced.set.panna_duel_settings as { sound: boolean }).sound === false);
+  check('replace never removes a key it also writes', !replaced.remove.some(k => k in replaced.set));
 }
 
 if (failures) { console.error(`\n${failures} backup check(s) failed.`); process.exit(1); }
