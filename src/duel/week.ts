@@ -1,5 +1,5 @@
 // The leaderboard's weeks: a week is named by its Monday in IST. Nothing "resets"; a new week is a new key.
-import { addDays, istToday } from '../progress';
+import { addDays, istToday } from './progress';
 
 const istStart = (date: string) => new Date(`${date}T00:00:00+05:30`);
 

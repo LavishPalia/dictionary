@@ -9,7 +9,7 @@ import { submitGame } from '../src/duel/server/games';
 import { BOT_NAMES, botsFor } from '../src/duel/server/housebots';
 import { guard } from '../src/duel/server/http';
 import { isBlockedName, registerPlayer, renamePlayer } from '../src/duel/server/players';
-import { addWeeks, creditWeek, weekEnds, weekOf } from '../src/duel/server/week';
+import { addWeeks, creditWeek, weekEnds, weekOf } from '../src/duel/week';
 import { loadPuzzle, playGame, reportOf } from './duel/play';
 import { testDb } from './duel/test-db';
 

@@ -4,6 +4,7 @@
 //   The manifest                              network first: its name never changes, and Chrome rebuilds the
 //                                             installed app (share target, shortcuts) from what it is given
 //   Book pages (/api/page/N?v=<version>)      cache first: a rebuilt book has a new version, so new URLs
+//   The Duel's server (/api/duel/*)           never touched: straight to the network
 //   Other API calls                           network first, falling back to the last copy
 //   Search, word, sentence look-ups, offline  answered from the book pages in the cache (all of them once
 //                                             "Save the book for offline" has run, else the pages visited)
@@ -80,6 +81,8 @@ function cacheFor(url) {
   if (url.origin !== self.location.origin) return null;
   const p = url.pathname;
   if (p.startsWith('/_next/static/') || p.startsWith('/icons/') || p === '/icon.svg' || p === '/manifest.webmanifest') return STATIC;
+  // The Duel's server: replies are per player, so none is kept here (the game keeps its own last copy of the board).
+  if (p.startsWith('/api/duel/')) return null;
   if (p.startsWith('/api/page/')) return BOOK;
   if (p.startsWith('/api/')) return DATA;
   return null;

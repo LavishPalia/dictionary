@@ -89,6 +89,17 @@ function back() {
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {
   const [route, setRoute] = useState<Route | null>(null);
 
+  // Unsent scores go on opening, when the connection returns, and when the app comes back into view.
+  useEffect(() => {
+    const flush = () => { void platform.net.flush(); };
+    const onVisible = () => { if (document.visibilityState === 'visible') flush(); };
+    flush();
+    addEventListener('online', flush);
+    addEventListener('focus', flush);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { removeEventListener('online', flush); removeEventListener('focus', flush); document.removeEventListener('visibilitychange', onVisible); };
+  }, [platform]);
+
   useEffect(() => {
     const read = () => {
       const r = parsePath(location.pathname, istToday(new Date()));

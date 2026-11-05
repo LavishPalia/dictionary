@@ -7,7 +7,7 @@ import { checkGame, readReport, type ReportedGame, type RejectReason } from './c
 import { query } from './db';
 import { guard, json, readJson } from './http';
 import { sweepEvents } from './rate';
-import { creditWeek, weekOf } from './week';
+import { creditWeek, weekOf } from '../week';
 
 const MAX_BODY = 32 * 1024;
 const GAMES_PER_HOUR = 30;

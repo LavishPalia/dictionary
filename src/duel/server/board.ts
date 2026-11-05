@@ -3,7 +3,7 @@ import { authenticate } from './auth';
 import { query } from './db';
 import { botsFor } from './housebots';
 import { guard, json } from './http';
-import { addWeeks, weekEnds, weekOf } from './week';
+import { addWeeks, weekEnds, weekOf } from '../week';
 
 const TOP = 100;
 const BOARD_CACHE = 'public, s-maxage=30, stale-while-revalidate=300';

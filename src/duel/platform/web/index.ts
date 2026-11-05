@@ -4,6 +4,7 @@ import type { Platform } from '../types';
 import { webHaptics } from './haptics';
 import { istToday } from '../../progress';
 import { webHelp } from './help';
+import { webNet } from './net';
 import { webPanna } from './panna';
 import { webPuzzles } from './puzzles';
 import { webSound } from './sound';
@@ -16,6 +17,7 @@ export function webPlatform(): Platform {
   sound.enabled = settings.sound;
   haptics.enabled = settings.vibration;
   return {
+    net: webNet(storage),
     storage,
     sound,
     haptics,

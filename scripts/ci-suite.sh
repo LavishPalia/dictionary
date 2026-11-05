@@ -16,7 +16,7 @@ export NEXT_PUBLIC_REPORTS=1
 PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:saved test:word"  # 139 82 70 55 23 19
 PART_2="test:learn-ui test:reach-ui test:history-ui test:goto-ui test:review-ui test:book-fit-ui test:backup-ui"  # 116 78 69 44 27 25 24
 # The Duel's own part (from 4 Nov): it had made part 2 the slowest by about 3 minutes.
-PART_4="test:duel-ui test:duel-sim test:duel-entry-ui test:duel-home-ui test:duel-end-ui test:duel-guide-ui test:duel-content test:duel-purity test:duel-engine test:duel-controller test:duel-help test:duel-progress test:duel-schedule test:duel-api"  # duel-ui ~230 locally, sim ~60
+PART_4="test:duel-ui test:duel-sim test:duel-entry-ui test:duel-home-ui test:duel-end-ui test:duel-guide-ui test:duel-content test:duel-purity test:duel-engine test:duel-controller test:duel-help test:duel-progress test:duel-schedule test:duel-api test:duel-outbox"  # duel-ui ~230 locally, sim ~60
 PART_3="test:tour-ui test:quiz test:search test:motion test:related-ui test:report-ui test:saved-search-ui
   test:progress-ui test:phase4 test:phase3 test:shell test:marks-ui test:phase5 verify:determinism
   test:learn test:highlight test:pos test:review test:related test:hinglish test:report test:progress

@@ -116,13 +116,18 @@ export class GameController {
   /** A finished daily game joins the results once, as it ends (a reload or Play again adds nothing). */
   private record(end: GameState) {
     if (this.practice) return;
-    const { storage, help } = this.platform;
+    const { storage, help, net } = this.platform;
     const today = istToday(new Date()), before = readResults(storage.get(RESULTS_KEY));
     const result: DuelResult = {
       date: this.date, puzzle: `${this.p.id}.v${this.p.version}`, you: end.scores.you, quill: end.scores.quill, at: new Date().toISOString(),
     };
     const after = [...before, result];
     storage.set(RESULTS_KEY, after);
+    // Queued before the end screen shows, so a game finished offline (or a tab closed now) still gets sent.
+    net.enqueue({
+      puzzle: result.puzzle, date: this.date, seed: end.seed, rules: RULES_ID, actions: end.log,
+      startedAt: this.startedAt, finishedAt: result.at, claimedScore: end.scores.you,
+    });
     const was = wonDays(before);
     this.rewards = rewardsFor({
       won: result.you > result.quill, practice: false, date: this.date, today, alreadyWon: was.has(this.date),
