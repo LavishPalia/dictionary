@@ -1,19 +1,19 @@
 // The house bots: marked characters that keep the board alive while there are few players (product spec §6.5).
 // Computed, never stored: a bot's points follow from its name, the week and the time, so there are no fake rows or
-// jobs to run. `base` is a week's points, set so a player with one game a day lands mid-table.
+// jobs to run. `base` is a week's points, set so a player with one game a day (a median game scores about 90) lands mid-table.
 import { weekEnds } from './week';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 const BOTS: { name: string; base: number }[] = [
-  { name: 'Professor Quill', base: 820 },
-  { name: 'Miss Marginalia', base: 640 },
-  { name: 'Old Owl Ink', base: 520 },
-  { name: 'Madam Lexicon', base: 430 },
-  { name: 'Uncle Almanac', base: 340 },
-  { name: 'Little Bookworm', base: 250 },
-  { name: 'Sir Semicolon', base: 170 },
-  { name: 'Dame Dogear', base: 90 },
+  { name: 'Professor Quill', base: 1500 },
+  { name: 'Miss Marginalia', base: 1150 },
+  { name: 'Old Owl Ink', base: 900 },
+  { name: 'Madam Lexicon', base: 720 },
+  { name: 'Uncle Almanac', base: 540 },
+  { name: 'Little Bookworm', base: 400 },
+  { name: 'Sir Semicolon', base: 270 },
+  { name: 'Dame Dogear', base: 150 },
 ];
 
 export const BOT_NAMES = BOTS.map(b => b.name);
