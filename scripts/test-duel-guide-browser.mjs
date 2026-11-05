@@ -130,6 +130,12 @@ await run('Duel settings and guide', async (t) => {
   await click('#duel-coach [data-coach="skip"]');
   await click('[data-act="submit"]');
   check('tip: a pass brings the Hint tip', await waitFor(`document.querySelector('.coach-tip')?.textContent.includes('Hint')`, 30000));
+  const clear = await evaluate(`(() => {
+    const r = (s) => document.querySelector(s).getBoundingClientRect(), tip = r('.coach-tip');
+    const apart = (o) => tip.bottom <= o.top || tip.top >= o.bottom;
+    return { rack: apart(r('.duel-rack')), actions: apart(r('.duel-actions')), score: apart(r('.duel-score')) };
+  })()`);
+  check('tip: it covers neither the rack, the buttons nor the score', clear.rack && clear.actions && clear.score, clear);
   await click('.coach-tip button');
   check('tip: Got it closes it', !(await exists('.coach-tip')));
   check('tip: and it is kept', await evaluate(`JSON.parse(localStorage.getItem('panna_duel_guide')).tips.includes('hint')`));
@@ -169,6 +175,34 @@ await run('Duel settings and guide', async (t) => {
   await t.light('evening');
   await sleep(100);
   await axe('book, Evening');
+
+  // With a real mouse, so the clue takes the focus as it does for a player.
+  const mouse = async (sel) => {
+    const { x, y } = await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); el.scrollIntoView({ block: 'nearest' }); const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 });
+    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+  };
+  await open(`/play/game/${TODAY}?seed=7`, seenCoach);
+  await waitFor(`Boolean(window.__duel && document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await sleep(300);
+  await mouse(`[data-clue="${openSlot}"]`);
+  await waitFor(`window.__duel.snapshot().selected === ${JSON.stringify(openSlot)}`);
+  const letter = await evaluate(`window.__duel.snapshot().state.racks.you.find((l) => l)`);
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: letter.toLowerCase(), code: `Key${letter}`, text: letter.toLowerCase() });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: letter.toLowerCase(), code: `Key${letter}` });
+  await waitFor(`window.__duel.snapshot().pending.length === 1`, 3000);
+  check('book: focus is on the clue', await evaluate(`Boolean(document.activeElement?.closest('.duel-cluelist'))`));
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+  check('book: Enter submits after a clue was clicked', await waitFor(`window.__duel.snapshot().state.log.length > 0`, 5000));
+
+  await open(`/play/game/${TODAY}?seed=7`, seenCoach);
+  await waitFor(`Boolean(window.__duel && document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await sleep(300);
+  await mouse('[data-act="word"]');
+  await waitFor(`window.__duel.snapshot().wordMode`, 3000);
+  await mouse(`[data-clue="${openSlot}"]`);
+  check('book: in Word mode, a clue from the list is the pick', await waitFor(`window.__duel.snapshot().sheet?.k === 'reveal'`, 3000), await evaluate(`window.__duel.snapshot().wordMode`));
   await send('Emulation.setDeviceMetricsOverride', { width: 900, height: 800, deviceScaleFactor: 1, mobile: false });
   check('book: narrower than 1000 px, the phone column', await waitFor(`!document.querySelector('.duel-cluelist') && document.querySelector('.duel-game').getBoundingClientRect().width <= 560`));
   await setSize(PHONE);
@@ -182,5 +216,36 @@ await run('Duel settings and guide', async (t) => {
   await sleep(400);
   await click('#guided-tours-btn');
   check('tours: Guided tours lists Panna Duel', await waitFor(`Boolean(document.querySelector('#tours-sheet a[href*="guide=1"]'))`, 5000));
-  void send;
+
+  // Panna's side of the Duel. A review with nothing due earns nothing.
+  const panna = async (store) => {
+    await open('/', store);
+    await waitFor(`Boolean(document.querySelector('#nav-review-btn'))`, 20000);
+    await sleep(1500); // hydration
+  };
+  await panna({});
+  await click('#nav-review-btn');
+  check('review: opens with nothing due', await waitFor(`Boolean(document.querySelector('#review-screen'))`, 5000));
+  await sleep(1000);
+  check('review: nothing due earns no Hint', (await evaluate(`localStorage.getItem('panna_duel_help')`)) === null, await evaluate(`localStorage.getItem('panna_duel_help')`));
+  // A real round earns one.
+  const entry = await evaluate(`fetch('/api/word/night').then((r) => r.json()).then((d) => d.entry)`);
+  await panna({ panna_saved_words: [{ ...entry, saved_at: Date.now() - 60000 }] });
+  await click('#nav-review-btn');
+  for (let i = 0; i < 6 && !(await waitFor(`Boolean(document.querySelector('#review-done'))`, 300)); i++) {
+    await waitFor(`Boolean(document.querySelector('.review-option, #review-done'))`, 5000);
+    await click('.review-option');
+    await waitFor(`Boolean(document.querySelector('#review-next-btn'))`, 2000);
+    await click('#review-next-btn');
+  }
+  check('review: a finished round earns a Hint', await waitFor(`JSON.parse(localStorage.getItem('panna_duel_help') || 'null')?.earned.hint === 1`, 3000), await evaluate(`localStorage.getItem('panna_duel_help')`));
+
+  // Words the Duel saved while Panna stayed open (another tab, or a page kept in the browser's back-forward cache).
+  await panna({});
+  const word = (w) => ({ normalized: w, headword: w, saved_at: Date.now() });
+  const savedList = (ws) => `localStorage.setItem('panna_saved_words', ${JSON.stringify(JSON.stringify(ws))});`;
+  await evaluate(`${savedList([word('zzfirst')])} dispatchEvent(new StorageEvent('storage', { key: 'panna_saved_words' })); true`);
+  await evaluate(`${savedList([word('zzfirst'), word('zzsecond')])} dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })); true`);
+  await click('#nav-saved-btn');
+  check('saved: Panna picks up words saved elsewhere', await waitFor(`document.body.innerText.includes('zzfirst') && document.body.innerText.includes('zzsecond')`, 5000));
 });

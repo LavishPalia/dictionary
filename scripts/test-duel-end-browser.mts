@@ -119,6 +119,31 @@ await run("Duel end screens", async (t: any) => {
   check('reload: no arrival to sit through', !(await evaluate(`document.querySelector('.duel-end').classList.contains('arriving')`)));
   check('reload: no rewards again', !(await exists('[data-rewards]')));
 
+  // A day whose lost game is still saved: every way onto it deals afresh, rather than reopening that end screen.
+  const dealtAfresh = () => waitFor(`location.pathname === '/play/game/${YESTERDAY}' && !location.search.includes('fresh') && Boolean(window.__duel) && window.__duel.snapshot().state.log.length === 0 && !document.querySelector('.duel-end')`, 20000);
+  const wonToday = { panna_duel_results: [{ date: TODAY, puzzle: 'p0000.v1', you: 50, quill: 40, at: 'x' }] };
+  await open(url(TODAY, WIN), { [gameKey(TODAY)]: finished(WIN), [gameKey(YESTERDAY)]: finished(LOSS), ...wonToday });
+  await atEnd();
+  await waitFor(`document.querySelector('[data-end="next"]')?.textContent.includes('not yet won')`);
+  await click('[data-end="next"]');
+  check('Next: a lost day deals afresh', await dealtAfresh(), await evaluate('location.href'));
+  await open(`/play?seed=${WIN.seed}`, { [gameKey(YESTERDAY)]: finished(LOSS), ...wonToday });
+  await waitFor(`Boolean(document.querySelector('#duel-hero-btn'))`, 20000);
+  await click('#duel-hero-btn');
+  check('hero: a lost day deals afresh', await dealtAfresh(), await evaluate('location.href'));
+  await open(`/play?seed=${WIN.seed}`, { [gameKey(YESTERDAY)]: { ...LOSS.save, progress: 0.3 }, ...wonToday });
+  await waitFor(`Boolean(document.querySelector('#duel-hero-btn'))`, 20000);
+  check('hero: a day under way isn\'t dealt afresh', (await evaluate(`document.querySelector('#duel-hero-btn').getAttribute('href')`)) === `/play/game/${YESTERDAY}`);
+
+  // The coached first game never draws over a finished game.
+  await open(`/play/game/${TODAY}`, { [gameKey(TODAY)]: finished(LOSS) });
+  await atEnd();
+  check('coach: not over an end screen', !(await exists('#duel-coach')));
+  await click('[data-end="replay"]');
+  check('coach: it waits for the new game', await waitFor(`Boolean(document.querySelector('#duel-coach')) && !document.querySelector('.duel-end')`));
+  await open(`/play/game/${TODAY}?guide=1`, { [gameKey(TODAY)]: finished(LOSS), panna_duel_guide: { coach: true, tips: [] } });
+  check('coach: a replay of the guide deals a fresh game', await waitFor(`Boolean(document.querySelector('#duel-coach')) && !document.querySelector('.duel-end')`, 20000));
+
   // A loss, live.
   await open(url(TODAY, LOSS), { [gameKey(TODAY)]: LOSS.save });
   check('loss: the end screen', await lastMove(LOSS));

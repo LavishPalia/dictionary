@@ -42,6 +42,8 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
       const stage = new Stage();
       const trace: string[] = [];
       const director = new WebDirector(p, stage, layer, platform, motion, flags.test ? trace : undefined);
+      // The guide is shown on a game in play, so a finished one makes way for a new deal; one under way is kept.
+      if (flags.guide && platform.storage.get<{ over?: boolean }>(gameKey(date))?.over) platform.storage.remove(gameKey(date));
       if (flags.fresh) {
         platform.storage.remove(gameKey(date));
         const q = new URLSearchParams(location.search);

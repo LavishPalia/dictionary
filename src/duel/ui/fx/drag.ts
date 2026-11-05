@@ -268,7 +268,7 @@ export class Input {
     } else if (e.key === 'Backspace') {
       e.preventDefault();
       queue(() => this.ctl.backspace());
-    } else if (e.key === 'Enter' && (onBoard || !active || active === document.body)) {
+    } else if (e.key === 'Enter' && (onBoard || !active || active === document.body || active.closest('.duel-cluelist'))) {
       e.preventDefault();
       queue(() => { void this.ctl.submit(); });
     } else if (e.key === 'Tab' && (onBoard || (active === document.body || active?.closest('.duel-cluelist')) && document.querySelector('.duel-cluelist'))) {

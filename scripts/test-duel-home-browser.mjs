@@ -96,6 +96,14 @@ await run('Duel home', async (t) => {
   check('no schedule: every coin is blank', !(await exists('.coin[data-kind]')));
   check('no schedule: ‹ stops at this month', await evaluate(`document.querySelector('[aria-label="Previous month"]').disabled`));
 
+  // A month only partly scheduled can't be sealed, so it doesn't count down to one.
+  setSchedule(fixture([TODAY]));
+  await home();
+  check('a part-scheduled month: an honest seal line', (await text('.seal-row')).includes('seal needs every day') && !(await text('.seal-row')).includes('to the'), await text('.seal-row'));
+  setSchedule(fixture(allOfMonth(MONTH)));
+  await home();
+  check('a fully scheduled month: the count', /\d+ days to the /.test(await text('.seal-row')), await text('.seal-row'));
+
   // Months and the seal.
   const before = prevMonth(MONTH), all = allOfMonth(before);
   setSchedule(fixture([...all, TODAY]));

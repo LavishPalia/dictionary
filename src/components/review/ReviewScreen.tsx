@@ -186,8 +186,8 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
   // A finished review session earns a Hint in the Duel (once per session; practice rounds don't count).
   const earned = useRef(false);
   useEffect(() => {
-    if (done && !practice && !earned.current) { earned.current = true; earnReviewHint(webStorage()); }
-  }, [done, practice]);
+    if (done && firstRoundSize > 0 && !practice && !earned.current) { earned.current = true; earnReviewHint(webStorage()); }
+  }, [done, firstRoundSize, practice]);
   const header = (
     <div className="review-top">
       <IconButton id="close-review-btn" aria-label="Close review" onClick={onClose}><CloseIcon /></IconButton>

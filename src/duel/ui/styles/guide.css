@@ -53,6 +53,7 @@ html[data-light="evening"] .how-score td.minus { color: #5e1a13; }
 .coach-tip { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 8px;
   width: min(360px, calc(100% - 24px)); padding: 8px 10px 8px 14px; border-radius: 14px; background: #f6ecd0; color: #2a1e14; font: 15px var(--font-fell);
   box-shadow: 0 8px 24px rgba(0, 0, 0, .35); animation: duel-fade-in .2s ease-out; }
+.duel-game .coach-tip { top: 116px; bottom: auto; } /* clear of the rack and the buttons the tip is about */
 .coach-tip > div { flex: 1; }
 .coach-tip button { flex: none; min-height: 44px; padding: 0 10px; color: #5b1f19; font: 15px var(--font-fell-sc); }
 @media (prefers-reduced-motion: reduce) { .coach-hand { display: none; } .coach-spot { transition: none; } }

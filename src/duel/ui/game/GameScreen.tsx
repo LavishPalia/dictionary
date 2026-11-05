@@ -70,7 +70,9 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   const finishedAtOpen = useRef(snap.state.over);
   if (!snap.state.over) finishedAtOpen.current = false;
   const [seen, setSeen] = useState(() => readGuide(platform.storage.get(GUIDE_KEY)));
-  const [coach, setCoach] = useState(() => guide || (tips && !seen.coach));
+  const [wantCoach, setCoach] = useState(() => guide || (tips && !seen.coach));
+  // Over a finished game's end screen it would have nothing to point at, so it waits for the next game.
+  const coach = wantCoach && !snap.state.over;
   const endCoach = () => {
     const next = { ...seen, coach: true };
     setSeen(next);
@@ -101,7 +103,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
     const t = e.target as HTMLElement;
     if (!t.closest('.duel-cl')) ctl.closeZoom();
     // Word mode ends with a tap anywhere but a clue or the Word button (UI-DESIGN §3.3).
-    if (ctl.snapshot().wordMode && !t.closest('.duel-clue, [data-act="word"]')) ctl.exitWordMode();
+    if (ctl.snapshot().wordMode && !t.closest('.duel-clue, [data-clue], [data-act="word"]')) ctl.exitWordMode();
   };
 
   // While a sheet is open, everything behind it is out of reach (focus, taps, screen readers).

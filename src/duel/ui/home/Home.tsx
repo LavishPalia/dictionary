@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Puzzle } from '../../engine';
 import type { Platform, ClientSchedule } from '../../platform/types';
-import { duelAction, duelLine, duelSubLine, matchingSave, todayDuel } from '../../platform/web/entry';
+import { dayHref, duelAction, duelLine, duelSubLine, matchingSave, todayDuel } from '../../platform/web/entry';
 import { bestFor, calendarMonth, gameKey, istToday, monthRange, readResults, RESULTS_KEY, streak, wonDays, type DayCoin } from '../../progress';
 import { addMonths, dayMonth, longDate, monthName, type Nav } from '../dates';
 import { readFlags } from '../flags';
@@ -122,8 +122,7 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
     if (c.kind === 'future') { say(`This puzzle opens on ${dayMonth(c.date)}.`); return; }
     if (c.progress !== null) { setSheet({ k: 'day', date: c.date, playing: true }); return; }
     if (c.kind === 'won') { setSheet({ k: 'day', date: c.date, playing: false }); return; }
-    // An open day starts at once; a lost game's save would reopen its end screen.
-    open(c.date, storage.has(gameKey(c.date)));
+    nav(dayHref(c.date, schedule, storage));
   };
 
   const action = duel ? duelAction(duel) : null;
@@ -172,7 +171,7 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
 
           <section className="page-card cal" aria-label="Calendar">
             <Calendar month={month} first={range.first} last={range.last} coins={cal.coins} won={cal.won} total={cal.total} stamp={stamp} onMonth={setMonth} onDay={onDay} />
-            <MonthSeal month={month} won={cal.won} total={cal.total} sealed={cal.sealed} />
+            <MonthSeal month={month} won={cal.won} total={cal.total} sealed={cal.sealed} days={cal.coins.length} />
           </section>
 
           <a className="page-link" href="/play/how" onClick={(e) => { e.preventDefault(); nav('/play/how'); }}>How to play</a>

@@ -48,7 +48,7 @@ export function Calendar({ month, first, last, coins, won, total, stamp, onMonth
 }
 
 /** The month seal row: the ring fills with the share of days won; a complete month shows the gold seal. */
-export function MonthSeal({ month, won, total, sealed }: { month: string; won: number; total: number; sealed: boolean }) {
+export function MonthSeal({ month, won, total, sealed, days }: { month: string; won: number; total: number; sealed: boolean; days: number }) {
   const name = monthName(month), left = total - won, c = 2 * Math.PI * 21;
   return (
     <div className={`seal-row${sealed ? ' sealed' : ''}`}>
@@ -59,9 +59,11 @@ export function MonthSeal({ month, won, total, sealed }: { month: string; won: n
       </svg>
       {sealed
         ? <p>The {name} seal is yours</p>
-        : total > 0
+        : total === days
           ? <p>{left} {left === 1 ? 'day' : 'days'} to the {name} seal · Lost days stay open</p>
-          : <p>No daily puzzles in {name}</p>}
+          : total > 0
+            ? <p>The {name} seal needs every day · More puzzles are on the way</p>
+            : <p>No daily puzzles in {name}</p>}
     </div>
   );
 }

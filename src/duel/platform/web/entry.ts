@@ -32,8 +32,8 @@ export function earnReviewHint(storage: Storage, now = new Date()) {
 }
 
 type Scores = { you: number; quill: number };
-/** `next`: the day Play opens, when it isn't today (an open past daily). */
-export type TodayDuel = { date: string; practice: boolean; streak: number; next: string | null } & (
+/** `next`: the day Play opens, when it isn't today (an open past daily), and `nextHref` the way to it. */
+export type TodayDuel = { date: string; practice: boolean; streak: number; next: string | null; nextHref: string | null } & (
   | { state: 'new' }
   | ({ state: 'playing' } & Scores)
   /** `replaying`: a fresh game of the won day is under way. */
@@ -54,6 +54,12 @@ export function matchingSave(raw: unknown, key: string | null): SavedGame | null
     && Number.isFinite(s.score.you) && Number.isFinite(s.score.quill) ? s : null;
 }
 
+/** The way into a day's game: `?fresh=1` asks for a new deal, since a finished game's save would reopen its end screen. */
+export function dayHref(date: string, schedule: ClientSchedule | null, storage: Storage): string {
+  const save = matchingSave(storage.get(gameKey(date)), schedule?.dates[date] ?? null);
+  return `/play/game/${date}${save?.over ? '?fresh=1' : ''}`;
+}
+
 /** Today's duel for the Today card. `schedule` is null when it couldn't be loaded: today's save is then trusted. */
 export function todayDuel(today: string, schedule: ClientSchedule | null, storage: Storage): TodayDuel {
   const raw = storage.get<SavedGame>(gameKey(today));
@@ -61,8 +67,9 @@ export function todayDuel(today: string, schedule: ClientSchedule | null, storag
   const practice = schedule ? !key : raw?.puzzleId === PRACTICE_KEY.split('.')[0];
   const results = readResults(storage.get(RESULTS_KEY));
   const won = wonDays(results);
-  const next = playDate(Object.keys(schedule?.dates ?? {}), won, today);
-  const base = { date: today, practice, streak: streak(won, today), next: next === today ? null : next };
+  const open = playDate(Object.keys(schedule?.dates ?? {}), won, today);
+  const next = open === today ? null : open;
+  const base = { date: today, practice, streak: streak(won, today), next, nextHref: next && dayHref(next, schedule, storage) };
 
   const save = matchingSave(raw, schedule ? key ?? PRACTICE_KEY : null);
   const score = save?.score;
@@ -93,9 +100,9 @@ export function duelSubLine(d: TodayDuel): string | null {
   return null;
 }
 
-/** The one button: `?fresh=1` asks the game for a new deal (a finished game's save would reopen its end screen). */
+/** The one button. */
 export function duelAction(d: TodayDuel): { href: string; label: string } | null {
-  const today = `/play/game/${d.date}`, next = d.next ? { href: `/play/game/${d.next}`, label: `Play ${dayMonth(d.next)}` } : null;
+  const today = `/play/game/${d.date}`, next = d.next && d.nextHref ? { href: d.nextHref, label: `Play ${dayMonth(d.next)}` } : null;
   switch (d.state) {
     case 'new': return next || { href: today, label: d.practice ? 'Play practice duel' : 'Play today’s duel' };
     case 'playing': return { href: today, label: 'Continue' };

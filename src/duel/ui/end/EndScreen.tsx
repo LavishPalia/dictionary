@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Puzzle } from '../../engine';
-import type { Platform } from '../../platform/types';
+import type { ClientSchedule, Platform } from '../../platform/types';
+import { dayHref } from '../../platform/web/entry';
 import { gameKey, istToday, readResults, RESULTS_KEY, streak, wonDays } from '../../progress';
 import type { GameController } from '../controller/controller';
 import type { Snapshot } from '../controller/types';
@@ -23,7 +24,8 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   const copy = endCopy({ you, quill, practice, isToday });
   const won = wonDays(readResults(platform.storage.get(RESULTS_KEY)));
   const [arriving, setArriving] = useState(!instant);
-  const [next, setNext] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<ClientSchedule | null>(null);
+  const next = schedule && nextOpen(Object.keys(schedule.dates), won, today, date);
   const [toast, setToast] = useState<string | null>(null);
   const seal = useRef<HTMLDivElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -36,11 +38,9 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
 
   useEffect(() => {
     let live = true;
-    void platform.puzzles.schedule().then((s) => {
-      if (live) setNext(nextOpen(Object.keys(s.dates), wonDays(readResults(platform.storage.get(RESULTS_KEY))), today, date));
-    }, () => {});
+    void platform.puzzles.schedule().then((s) => { if (live) setSchedule(s); }, () => {});
     return () => { live = false; };
-  }, [platform, date, today]);
+  }, [platform]);
 
   useEffect(() => {
     if (instant) return;
@@ -55,7 +55,7 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const goNext = () => nav(next ? `/play/game/${next}` : '/play');
+  const goNext = () => nav(next ? dayHref(next, schedule, platform.storage) : '/play');
   const nextLabel = next ? `${dayMonth(next)} · not yet won` : 'Pick a day on the calendar';
   const replay = () => ctl.newGame();
   const flame = streak(won, today);
