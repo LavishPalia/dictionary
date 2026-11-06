@@ -85,6 +85,9 @@ async function main() {
       return r.result?.value;
     };
     await send('Page.enable');
+    await send('Network.enable');
+    // The stand-in schedule only reaches requests the page itself makes, not ones a service worker makes for it.
+    await send('Network.setBypassServiceWorker', { bypass: true });
     await send('Runtime.enable');
 
     const phone = { width: 360, height: 740, mobile: true };

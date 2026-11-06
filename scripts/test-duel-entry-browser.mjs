@@ -63,6 +63,9 @@ async function main() {
     };
     const visible = (selector) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).display !== 'none'; })()`);
     await send('Page.enable');
+    await send('Network.enable');
+    // The stand-in schedule only reaches requests the page itself makes, not ones a service worker makes for it.
+    await send('Network.setBypassServiceWorker', { bypass: true });
     await send('Runtime.enable');
 
     // A stand-in schedule through CDP's Fetch domain: the fixture, or with route(false) an empty one (no puzzle today).

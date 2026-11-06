@@ -10,7 +10,7 @@ const allOfMonth = (m) => { const [y, mo] = m.split('-').map(Number); return Arr
 const prevMonth = (m) => { const [y, mo] = m.split('-').map(Number); return new Date(Date.UTC(y, mo - 2, 1)).toISOString().slice(0, 7); };
 
 await run('Duel home', async (t) => {
-  const { check, waitFor, evaluate, open, click, text, exists, setSize, setSchedule, axe, go } = t;
+  const { check, waitFor, evaluate, open, click, text, exists, setSize, setSchedule, axe, go, send, reduceMotion } = t;
   const home = (store, raw) => open('/play?seed=7', store, raw).then(() => waitFor(`Boolean(document.querySelector('#duel-hero'))`, 20000));
   const sched = fixture([TWO_AGO, YESTERDAY, TODAY, TOMORROW]);
 
@@ -109,6 +109,7 @@ await run('Duel home', async (t) => {
   setSchedule(fixture([...all, TODAY]));
   await home({ panna_duel_results: all.map((d) => win(d, 2, 1)) });
   check('a finished month: the seal moment', await waitFor(`document.querySelector('.seal-moment h3')?.textContent.startsWith('The ')`));
+  check('the seal moment has its art, a chime and paper', await exists('.seal-moment svg.seal-flip ellipse') && await waitFor(`(window.__duelSounds ?? []).includes('seal') && document.querySelectorAll('.confetto').length > 0`, 2000), await evaluate('window.__duelSounds'));
   await axe('the seal moment');
   await click('.seal-moment .bigbtn');
   await click('[aria-label="Previous month"]');
@@ -138,4 +139,154 @@ await run('Duel home', async (t) => {
   const w = await evaluate(`document.querySelector('.duel-home .page-card').getBoundingClientRect().width`);
   check('desktop: a centred column', w > 400 && w <= 560, w);
   await axe('home, desktop');
+
+  // ── Going back ──
+  setSchedule(sched);
+  await home();
+  await click('#duel-hero-btn');
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Back to the game home"]');
+  check('the game’s arrow returns to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
+  const stepped = await evaluate('history.length');
+  await click('#duel-hero-btn');
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Settings"]');
+  await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
+  await evaluate('history.back(); true');
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Settings"]');
+  await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
+  await click('#duel-settings [aria-label="Back"]');
+  check('browser Back then the arrow: one screen at a time, inside the Duel', await waitFor(`location.pathname.startsWith('/play/game/')`, 10000), await evaluate('location.pathname'));
+  check('(no extra entries were left behind)', (await evaluate('history.length')) >= stepped);
+  await open('/play/settings?seed=7');
+  await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
+  await click('#duel-settings [aria-label="Back"]');
+  check('an address opened directly goes back to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
+
+  // A win, Next puzzle, then the close arrow: system Back must leave, not reopen a finished game.
+  setSchedule(sched);
+  await home();
+  const internal = (path) => evaluate(`(() => { history.pushState({ duelMoves: (history.state?.duelMoves ?? 0) + 1 }, '', ${JSON.stringify(path)}); dispatchEvent(new PopStateEvent('popstate')); return true; })()`);
+  await click('#duel-hero-btn');
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await internal(`/play/game/${YESTERDAY}?seed=7`);
+  await waitFor(`location.pathname === '/play/game/${YESTERDAY}' && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Back to the game home"]');
+  check('two games deep, the arrow returns to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
+  check('and it is the first entry, with no game behind it', (await evaluate('history.state?.duelMoves ?? 0')) === 0, await evaluate('history.state'));
+  await evaluate('history.forward(); true');
+  check('(the games were stepped back over, not left underneath)', await waitFor(`location.pathname.startsWith('/play/game/')`, 5000), await evaluate('location.href'));
+  // A game opened directly, one more on top: the arrow makes the first entry the home.
+  await open(`/play/game/${TODAY}?seed=7`);
+  await waitFor(`Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await internal(`/play/game/${YESTERDAY}?seed=7`);
+  await waitFor(`location.pathname === '/play/game/${YESTERDAY}' && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Back to the game home"]');
+  check('from a game opened directly, too', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000), await evaluate('location.href'));
+  // A new deal's address is tidied without losing how it was reached.
+  await home();
+  await internal(`/play/game/${TODAY}?seed=7&fresh=1`);
+  await waitFor(`Boolean(document.querySelector('.duel-board [data-cell]')) && !location.search.includes('fresh')`, 20000);
+  check('tidying ?fresh keeps the history entry\'s count', (await evaluate('history.state?.duelMoves')) === 1, await evaluate('history.state'));
+
+  // ── Everything won ──
+  setSchedule(fixture([TODAY]));
+  await home({ panna_duel_results: [{ date: TODAY, you: 60, quill: 40, puzzle: 'p0000.v1', at: new Date().toISOString() }] });
+  check('all won: the hero offers the ranks, not a dead end', (await text('#duel-hero-btn')) === 'See this week’s ranks', await text('#duel-hero'));
+
+  // ── Swiping the month ──
+  await setSize(PHONE);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  const months = [prevMonth(prevMonth(MONTH)), prevMonth(MONTH), MONTH];
+  setSchedule(fixture(months.flatMap(allOfMonth).filter((d) => d <= TODAY)));
+  await home();
+  const shown = () => evaluate(`document.querySelector('.cal-grid').dataset.month`);
+  const swipe = async (fromSel, dx, dy = 0, steps = 12, gap = 16) => {
+    const c = await evaluate(`(() => { const r = document.querySelector(${JSON.stringify(fromSel)}).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [c] });
+    for (let i = 1; i <= steps; i++) {
+      await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: c.x + dx * i / steps, y: c.y + dy * i / steps }] });
+      await sleep(gap);
+    }
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(60);
+  };
+  check('swipe: starts on the current month', (await shown()) === MONTH);
+  // A second finger during a swipe: the first still finishes it, and the page comes to rest.
+  {
+    const c = await evaluate(`(() => { const r = document.querySelector('.cal-grid').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    const one = (dx) => ({ x: c.x + dx, y: c.y, id: 1 });
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [one(0)] });
+    for (const dx of [8, 16, 24, 30]) { await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [one(dx)] }); await sleep(30); }
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [one(30), { x: c.x - 60, y: c.y + 30, id: 2 }] });
+    await sleep(30);
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [{ x: c.x - 60, y: c.y + 30, id: 2 }] });
+    await sleep(30);
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(350);
+    check('a second finger doesn\'t leave the calendar off-centre', (await evaluate(`document.querySelector('.cal-grid').style.transform`)) === '', await evaluate(`document.querySelector('.cal-grid').style.transform`));
+  }
+  await swipe('.cal-grid', 120);
+  check('swipe right: the month before', (await shown()) === months[1], await shown());
+  check('the new month slides in, by transform', await evaluate(`document.querySelector('.cal-grid').getAnimations().some((a) => a.effect.getKeyframes().some((k) => k.transform && k.transform.includes('translateX')))`));
+  await sleep(300);
+  await swipe('.cal-grid', -120);
+  check('swipe left: back to the next month', (await shown()) === MONTH, await shown());
+  await sleep(300);
+  await swipe('.cal-grid', -120);
+  check('past the last month nothing changes', (await shown()) === MONTH, await shown());
+  await sleep(300);
+  check('and the page springs back to rest', (await evaluate(`document.querySelector('.cal-grid').style.transform`)) === '');
+  await swipe(coin(YESTERDAY.slice(0, 7) === MONTH ? YESTERDAY : TODAY), 120);
+  check('a swipe starting on a day changes the month and opens nothing', (await shown()) === months[1] && (await evaluate('location.pathname')) === '/play' && !(await exists('.duel-sheet')), await evaluate('location.pathname'));
+  await sleep(300);
+  await click('[aria-label="Next month"]');
+  await sleep(300);
+  await swipe('.cal-grid', 20, 0, 3, 200);
+  check('a short slow move changes nothing', (await shown()) === MONTH, await shown());
+  await sleep(300);
+  await swipe('.cal-grid', 8, 160);
+  check('a mostly vertical drag leaves the month alone', (await shown()) === MONTH, await shown());
+  await evaluate('window.scrollTo(0, 0); true');
+  await sleep(300);
+  await reduceMotion(true);
+  await home();
+  await swipe('.cal-grid', 120);
+  check('reduced motion: the month still changes', (await shown()) === months[1], await shown());
+  check('reduced motion: by a short fade, no sliding', await evaluate(`document.querySelector('.cal-grid').getAnimations().every((a) => a.effect.getTiming().duration <= 120 && !a.effect.getKeyframes().some((k) => k.transform))`));
+  await reduceMotion(false);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+
+  // A mouse has the arrows; a mouse drag isn't a swipe.
+  await home();
+  const mouse = async (type, x, y) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1, buttons: type === 'mouseReleased' ? 0 : 1 });
+  const m = await evaluate(`(() => { const r = document.querySelector('.cal-grid').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 20 }; })()`);
+  await mouse('mousePressed', m.x, m.y); await mouse('mouseMoved', m.x + 150, m.y); await mouse('mouseReleased', m.x + 150, m.y);
+  await sleep(100);
+  check('a mouse drag leaves the month alone', (await shown()) === MONTH, await shown());
+
+  // ── The month turning over while the app is open ──
+  const clockTo = (iso) => evaluate(`(() => { const R = window.__RealDate ?? Date; window.__RealDate = R; const at = new R(${JSON.stringify(iso)}).getTime();
+    window.Date = class extends R { constructor(...a) { if (a.length) super(...a); else super(at); } static now() { return at; } }; dispatchEvent(new Event('focus')); return true; })()`);
+  const nextMonthStart = (() => { const [y, mo] = MONTH.split('-').map(Number); return new Date(Date.UTC(y, mo, 1, 0, 30)).toISOString(); })();
+  const nextName = nextMonthStart.slice(0, 7);
+  setSchedule(fixture([...months.flatMap(allOfMonth), `${nextName}-01`]));
+  await home();
+  check('(today’s month is showing)', (await shown()) === MONTH);
+  await clockTo(nextMonthStart);
+  check('the calendar follows the new month when it was on the old one', await waitFor(`document.querySelector('.cal-grid').dataset.month === ${JSON.stringify(nextName)}`, 3000), await shown());
+  await home();
+  await click('[aria-label="Previous month"]');
+  await sleep(300);
+  await clockTo(nextMonthStart);
+  await sleep(300);
+  check('and stays put when the player had paged elsewhere', (await shown()) === months[1], await shown());
+
+  // A month with no dailies has no won count.
+  setSchedule(fixture([`${months[0]}-01`, TODAY]));
+  await home();
+  await click('[aria-label="Previous month"]');
+  await sleep(300);
+  check('a month with no dailies shows no “0 of 0”', !(await exists('.cal-won')), await text('.cal-head'));
 });

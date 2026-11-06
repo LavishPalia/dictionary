@@ -1,17 +1,32 @@
-// The prototype's synthesised sounds (docs/crossword-duel/ui/game.html): wood knocks and soft sine chimes.
-// No files to load and no decode delay. A sound can become a sample later without changing callers.
+// The Duel's sounds: short files where one has been chosen, decoded once on the first touch, and the prototype's
+// synthesised wood knocks and sine chimes (docs/crossword-duel/ui/game.html) for the rest, and whenever a file
+// hasn't loaded or can't be decoded.
 import type { Sound, SoundName } from '../types';
 
 type Tone = { type?: OscillatorType; vol?: number; at?: number; slide?: number };
+export interface SoundFile { src: string; gain?: number }
 
-export function webSound(): Sound {
+/** The chosen files (Kenney's CC0 packs). Names carry a version, because they are cached forever. */
+export const SOUND_FILES: Partial<Record<SoundName, SoundFile>> = {
+  drop: { src: '/duel/sounds/drop.v1.mp3' },
+  wrong: { src: '/duel/sounds/wrong.v1.mp3' },
+  rack: { src: '/duel/sounds/rack.v1.mp3' },
+  thud: { src: '/duel/sounds/thud.v1.mp3' },
+};
+
+export const soundFileList = (files = SOUND_FILES): string[] => Object.values(files).map(f => f.src);
+
+export function webSound({ files = SOUND_FILES, audioContext, fetchFn = (...a) => fetch(...a) }: {
+  files?: Partial<Record<SoundName, SoundFile>>; audioContext?: () => AudioContext | null; fetchFn?: typeof fetch;
+} = {}): Sound {
   let ac: AudioContext | null = null;
+  const make = audioContext ?? (() => {
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    return AC ? new AC() : null;
+  });
   const ctx = (): AudioContext | null => {
     if (!ac) {
-      try {
-        const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        ac = AC ? new AC() : null;
-      } catch { ac = null; }
+      try { ac = make(); } catch { ac = null; }
     }
     if (ac && ac.state === 'suspended') void ac.resume();
     return ac;
@@ -37,22 +52,59 @@ export function webSound(): Sound {
     n.connect(bp).connect(g).connect(a.destination); n.start(t);
     tone(f / 5, 0.07, { type: 'triangle', vol: vol * 0.5 });
   };
+  const rising = (notes: number[], step = 0.07, dur = 0.5) => notes.forEach((f, i) => tone(f, dur, { vol: 0.07, at: i * step }));
   const SND: Record<SoundName, (step: number) => void> = {
-    lift: () => knock(0.07, 1600),
     drop: () => knock(0.2, 850),
     chip: (i) => tone(740 * Math.pow(2, i / 12), 0.14, { vol: 0.07 }),
     coin: () => tone(1320, 0.08, { vol: 0.04 }),
-    word: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, { vol: 0.07, at: i * 0.06 })),
+    word: () => rising([523, 659, 784, 1047], 0.06, 0.35),
     wrong: () => { tone(140, 0.22, { type: 'square', vol: 0.05, slide: 0.6 }); knock(0.12, 300); },
-    bonus: () => { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.5, { vol: 0.07, at: i * 0.07 })); tone(2093, 0.8, { vol: 0.03, at: 0.45 }); },
+    bonus: () => { rising([523, 659, 784, 1047, 1319, 1568]); tone(2093, 0.8, { vol: 0.03, at: 0.45 }); },
     rack: () => knock(0.1, 1200),
-    think: () => tone(330, 0.12, { vol: 0.03 }),
+    thud: () => { tone(90, 0.3, { type: 'triangle', vol: 0.2, slide: 0.6 }); knock(0.2, 260); },
+    chime: () => rising([784, 988, 1175], 0.09),
+    seal: () => rising([523, 659, 784, 1047, 1319], 0.11, 0.7),
+    crown: () => { rising([523, 659, 784, 1047, 1319, 1568], 0.09, 0.6); tone(2093, 1, { vol: 0.03, at: 0.6 }); },
   };
+
+  const buffers = new Map<string, Promise<AudioBuffer | null>>();
+  const decoded = new Map<string, AudioBuffer>();
+  const load = (a: AudioContext, src: string) => {
+    if (buffers.has(src)) return;
+    buffers.set(src, (async () => {
+      try {
+        const res = await fetchFn(src);
+        if (!res.ok) return null;
+        const buffer = await a.decodeAudioData(await res.arrayBuffer());
+        decoded.set(src, buffer);
+        return buffer;
+      } catch { return null; } // the synthesised sound stands in
+    })());
+  };
+  const playFile = (a: AudioContext, name: SoundName, step: number): boolean => {
+    const file = files[name], buffer = file && decoded.get(file.src);
+    if (!file || !buffer) return false;
+    const n = a.createBufferSource(), g = a.createGain();
+    n.buffer = buffer;
+    if (step) n.playbackRate.value = Math.pow(2, step / 12);
+    g.gain.value = file.gain ?? 1;
+    n.connect(g).connect(a.destination);
+    n.start();
+    return true;
+  };
+
   const sound: Sound = {
     enabled: true,
     // Only after unlock(): before the first touch there is no context, and making one would only warn.
-    play(name, step = 0) { if (sound.enabled && ac) { try { SND[name](step); } catch {} } },
-    unlock() { ctx(); },
+    play(name, step = 0) {
+      if (!sound.enabled || !ac) return;
+      try { if (!playFile(ac, name, step)) SND[name](step); } catch {}
+    },
+    unlock() {
+      const a = ctx();
+      if (!a || !sound.enabled) return; // with Sound off, nothing is fetched
+      for (const f of Object.values(files)) load(a, f.src);
+    },
   };
   return sound;
 }

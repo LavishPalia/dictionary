@@ -26,6 +26,8 @@
 :where(.duel) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 .duel button:disabled { cursor: default; }
 .duel :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+/* A heading takes focus only so reading starts there: it isn't a control to show a ring on. */
+.duel [tabindex="-1"]:is(h1, h2):focus { outline: none; }
 
 .duel-game {
   --cell: 40px; --tileW: 52px; --tileH: 54px;
@@ -72,6 +74,8 @@
 .duel-cell .lt { color: #1f2328; }
 .duel-cell.by-given .lt { color: var(--crimson); }
 .duel-cell.by-quill.last .lt { color: var(--blue); }
+/* Not by colour alone: a thin line under the letters he has just played. */
+.duel-cell.by-quill.last::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: 8%; height: 2px; border-radius: 1px; background: var(--blue); }
 .duel-cell .gl { color: rgba(94, 74, 51, .42); font-style: normal; font-weight: 700; }
 .duel-cell .gl.in { animation: duel-ghost-in .6s var(--out) both; animation-delay: var(--gd, 0ms); }
 @keyframes duel-ghost-in { 0% { opacity: 0; filter: blur(3px); transform: translateY(-4px) scale(1.15); } 60% { opacity: 1; color: rgba(201, 140, 40, .9); } 100% {} }

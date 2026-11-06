@@ -33,13 +33,12 @@ export function WordList({ p, state, panna, say }: { p: Puzzle; state: GameState
 
   const toggle = async (word: string) => {
     if (panna.isSaved(word)) { panna.remove(word); say('Removed from review'); }
-    else if (await panna.save(word)) say('Saved to your review deck');
-    else say(`Couldn’t save ${word}. Check your connection.`);
+    else say({ saved: 'Saved to your review deck', unknown: `Panna doesn’t have ${word} yet`, offline: `Couldn’t save ${word}. Check your connection.`, full: 'Couldn’t save on this phone. It may be full.' }[await panna.save(word)]);
     setVersion(n => n + 1);
   };
   const addAll = async () => {
     const results = await Promise.all(all.filter(s => !panna.isSaved(s.answer)).map(s => panna.save(s.answer)));
-    say(results.every(Boolean) ? 'Saved to your review deck' : 'Some words couldn’t be saved. Check your connection.');
+    say(results.every(r => r === 'saved') ? 'Saved to your review deck' : results.includes('offline') ? 'Some words couldn’t be saved. Check your connection.' : 'Some words couldn’t be saved.');
     setVersion(n => n + 1);
   };
 

@@ -5,6 +5,10 @@
 //                                             installed app (share target, shortcuts) from what it is given
 //   Book pages (/api/page/N?v=<version>)      cache first: a rebuilt book has a new version, so new URLs
 //   The Duel's server (/api/duel/*)           never touched: straight to the network
+//   The Duel's files (/duel/*)                cache first: puzzles are named by their hash, and pictures, fonts and
+//                                             sounds never change under one name. The schedule is network first
+//   The Duel's visits (/play...)              network first, kept nowhere; offline, the one shell the game saved
+//                                             itself (src/duel/platform/web/offline.ts), which then shows the address
 //   Other API calls                           network first, falling back to the last copy
 //   Search, word, sentence look-ups, offline  answered from the book pages in the cache (all of them once
 //                                             "Save the book for offline" has run, else the pages visited)
@@ -16,8 +20,9 @@ const STATIC = 'panna-static-v1';
 const PAGES = 'panna-pages-v1';
 const BOOK = 'panna-book-v1';
 const DATA = 'panna-data-v1';
-const KEEP = [STATIC, PAGES, BOOK, DATA];
-const LIMITS = { [STATIC]: 400, [PAGES]: 60, [DATA]: 400 }; // BOOK is not trimmed: it holds the saved book
+const DUEL = 'panna-duel-v1';
+const KEEP = [STATIC, PAGES, BOOK, DATA, DUEL];
+const LIMITS = { [STATIC]: 400, [PAGES]: 60, [DATA]: 400 }; // BOOK and DUEL are not trimmed: what they hold was chosen
 const SAVED_MARKER = '/__panna/book-saved';
 
 self.addEventListener('install', (event) => {
@@ -44,6 +49,7 @@ self.addEventListener('message', (event) => {
 async function warm(url) {
   const request = new Request(url);
   const u = new URL(request.url);
+  if (isPlay(u) || u.pathname.startsWith('/api/duel/')) return; // the game saves its own shell, and server replies are never kept
   // The address the page was opened at is an HTML page visit.
   const name = cacheFor(u) ?? (u.origin === self.location.origin && !u.pathname.startsWith('/_next/') ? PAGES : null);
   if (!name) return;
@@ -77,9 +83,12 @@ async function putPage(request, response) {
   }));
 }
 
+const isPlay = (url) => url.origin === self.location.origin && /^\/play(\/|$)/.test(url.pathname);
+
 function cacheFor(url) {
   if (url.origin !== self.location.origin) return null;
   const p = url.pathname;
+  if (p.startsWith('/duel/')) return DUEL;
   if (p.startsWith('/_next/static/') || p.startsWith('/icons/') || p === '/icon.svg' || p === '/manifest.webmanifest') return STATIC;
   // The Duel's server: replies are per player, so none is kept here (the game keeps its own last copy of the board).
   if (p.startsWith('/api/duel/')) return null;
@@ -104,19 +113,52 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === 'navigate') { event.respondWith(page(request)); return; }
+  if (request.mode === 'navigate') { event.respondWith(isPlay(url) ? playPage(request, url) : page(request)); return; }
   const name = cacheFor(url);
   if (url.pathname === '/manifest.webmanifest') { event.respondWith(manifest(request)); return; }
-  if (name === STATIC || name === BOOK) { event.respondWith(cacheFirst(name, request)); return; }
+  if (url.pathname === '/duel/schedule.json') { event.respondWith(duelSchedule(request)); return; }
+  if (name === STATIC || name === BOOK || name === DUEL) { event.respondWith(cacheFirst(name, request)); return; }
   if (name === DATA) { event.respondWith(networkFirst(request, url)); return; }
 });
 
 async function cacheFirst(name, request) {
-  const hit = await caches.match(request, { cacheName: name });
+  // The Duel keeps its own copy of the app files it needs, safe from the trimming of STATIC.
+  const hit = await caches.match(request, { cacheName: name }) ?? (name === STATIC ? await caches.match(request, { cacheName: DUEL }) : undefined);
   if (hit) return hit;
   const res = await fetch(request);
   if (res.ok) await put(name, request, res.clone());
   return res;
+}
+
+// A connection that shows signal but carries nothing never fails by itself: past this, what's saved will do.
+const STALLED = 4000;
+const inTime = (reply) => Promise.race([reply, new Promise((_, reject) => setTimeout(() => reject(new Error('stalled')), STALLED))]);
+
+async function duelSchedule(request) {
+  const hit = await caches.match(request, { cacheName: DUEL });
+  const reply = fetch(request).then(async (res) => {
+    if (res.ok) await put(DUEL, request, res.clone());
+    return res;
+  });
+  try {
+    return await (hit ? inTime(reply) : reply);
+  } catch (error) {
+    if (hit) return hit;
+    throw error;
+  }
+}
+
+// Offline, every /play address is the one saved shell: /play shows it, and any other address goes there carrying
+// itself in ?to=, because a page only runs under the address it was built for. Nothing is stored per address, so
+// playing many days can't push book pages out of PAGES.
+async function playPage(request, url) {
+  const shell = await caches.match('/play', { cacheName: DUEL });
+  try {
+    return await (shell ? inTime(fetch(request)) : fetch(request));
+  } catch {
+    if (shell) return /^\/play\/?$/.test(url.pathname) ? shell : Response.redirect(`/play?to=${encodeURIComponent(url.pathname + url.search)}`, 302);
+    return page(request);
+  }
 }
 
 async function manifest(request) {

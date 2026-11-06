@@ -52,7 +52,7 @@ export function Settings({ platform, nav, back }: { platform: Platform; nav: Nav
           <span><b>Replay the first-game guide</b><small>The tips from your first duel</small></span><i aria-hidden="true">›</i>
         </a>
         <div className="set-row">
-          <span><b>Picture credits</b><small>Clue pictures: Twemoji, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer" target="_blank">CC BY 4.0</a></small></span>
+          <span><b>Credits</b><small>Clue pictures: Twemoji, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer" target="_blank">CC BY 4.0</a>. Sounds: Kenney, CC0</small></span>
         </div>
       </div>
       <p className="set-note">Your games, streak and hints are kept on this device, and your name and scores go to Panna’s server for the leaderboard. Clearing the browser’s data starts you afresh, unless you have a backup (Back up in Panna’s ⋯ menu).</p>

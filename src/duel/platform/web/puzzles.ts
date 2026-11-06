@@ -10,7 +10,10 @@ const SCHEDULE_TTL_MS = 60_000;
 const isMap = (v: unknown): v is Record<string, string> =>
   !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'string');
 
-async function practice(): Promise<Puzzle> {
+/** The puzzle is on neither the device nor reachable: a reason to say so plainly, never a game to swap in. */
+export class NotSaved extends Error {}
+
+export async function practice(): Promise<Puzzle> {
   const mod = await import('../../../../data/duel/puzzles/p0001.json');
   return (mod.default ?? mod) as unknown as Puzzle;
 }
@@ -50,7 +53,8 @@ export function webPuzzles(fetchFn: typeof fetch = (...a) => fetch(...a)): Puzzl
       const key = dates[date];
       if (!key) return { puzzle: await practice(), practice: true };
       if (!files[key]) throw new Error(`schedule: no file for ${key}`);
-      const res = await fetchFn(`/duel/p/${files[key]}`);
+      let res: Response;
+      try { res = await fetchFn(`/duel/p/${files[key]}`); } catch { throw new NotSaved(key); }
       if (!res.ok) throw new Error(`puzzle ${key}: HTTP ${res.status}`);
       return { puzzle: checked(await res.json() as Puzzle, key), practice: false };
     },

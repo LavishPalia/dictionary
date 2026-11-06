@@ -4,16 +4,18 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
  * A modal sheet (a bottom sheet on phones, a centred card on desktop): focus moves in, stays in, Escape
  * closes it, and focus goes back to whatever opened it.
  */
-export function Sheet({ kind = 'sheet', onClose, children }: {
-  kind?: 'sheet' | 'confirm'; onClose: () => void; children: (titleId: string) => ReactNode;
+export function Sheet({ kind = 'sheet', focus = 'button:not(:disabled)', onClose, children }: {
+  kind?: 'sheet' | 'confirm'; focus?: string; onClose: () => void; children: (titleId: string) => ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus();
+    ref.current?.querySelector<HTMLElement>(focus)?.focus();
     return () => { if (opener && opener.isConnected) opener.focus(); };
+    // Once, as it opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onKeyDown = (e: React.KeyboardEvent) => {

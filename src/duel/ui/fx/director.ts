@@ -4,11 +4,12 @@
 import type { CellId, GameEvent, Puzzle, SlotId, Who } from '../../engine';
 import type { Platform } from '../../platform/types';
 import type { Director, Snapshot } from '../controller/types';
+import { turnSummary } from '../announce';
 import { arcFrames, centerOf, type FxLayer, type Motion, type Pt } from './layer';
 import { mark } from './perf';
 import type { Stage } from './stage';
 import { FrameMonitor, shouldStepDown } from './tier';
-import { countDur, EASE, T } from './timings';
+import { countDur, EASE, scoringScale, T } from './timings';
 
 type Judged = Extract<GameEvent, { e: 'judged' }>;
 type BotPlaced = Extract<GameEvent, { e: 'botPlaced' }>;
@@ -30,12 +31,16 @@ export class WebDirector implements Director {
   private dealt: Animation[] = [];
   /** Your score as shown while points land one by one (the engine's floor at 0 applies at every step). */
   private shown = 0;
+  /** How quickly the scoring plays right now: it speeds up word by word (timings.ts). */
+  private scale = 1;
 
   constructor(private p: Puzzle, private stage: Stage, private layer: FxLayer, private platform: Platform,
     private motion: Motion, private trace?: string[]) {}
 
   private note(s: string) { this.trace?.push(s); }
   private wait(ms: number) { return this.layer.wait(ms); }
+  /** A scoring duration at the current speed. */
+  private sc(ms: number) { return this.layer.dur(ms * this.scale); }
 
   toast(text: string) { this.layer.toast(text); }
 
@@ -51,6 +56,7 @@ export class WebDirector implements Director {
       const frames = this.monitor.stop();
       if (this.motion.tier === 'normal' && shouldStepDown(frames)) this.motion.tier = 'lite';
       mark(phase, 'end');
+      this.layer.say(turnSummary(this.p, who, events, before.state.scores));
     }
   }
 
@@ -61,9 +67,12 @@ export class WebDirector implements Director {
       if (passed.e === 'passed' && passed.streak === 1) await this.remark(REMARKS[Math.floor(Math.random() * REMARKS.length)]);
       return;
     }
-    await this.wait(this.layer.dur(T.submitPause));
+    let words = 0;
+    this.scale = scoringScale(0);
+    await this.wait(this.sc(T.submitPause));
     this.shown = before.state.scores.you;
     for (const ev of events) {
+      if (ev.e === 'word') this.scale = scoringScale(words++);
       switch (ev.e) {
         case 'emptyHand': this.note('you:emptyHand'); await this.emptyHand(); break;
         case 'judged': this.note('you:judged'); await this.judge(ev); break;
@@ -109,7 +118,7 @@ export class WebDirector implements Director {
     });
     if (ev.tiles.some(t => t.ok)) sound.play('word');
     if (ev.tiles.some(t => !t.ok)) { sound.play('wrong'); haptics.wrong(); } else haptics.drop();
-    await this.wait(this.motion.reduced ? T.judgeHoldReduced : T.judgeHold);
+    await this.wait(this.motion.reduced ? T.judgeHoldReduced : T.judgeHold * this.scale);
 
     const score = centerOf(this.stage.rect('score', 'you')!);
     await Promise.all(clones.map(async ({ t, r, clone, badge }, i) => {
@@ -122,10 +131,10 @@ export class WebDirector implements Director {
       const frames = this.motion.reduced
         ? [{ transform: `translate3d(${r.left}px,${r.top}px,0)`, opacity: 1 }, { transform: `translate3d(${slot.left}px,${slot.top}px,0) scale(${slot.width / r.width})`, opacity: 1 }]
         : arcFrames(topLeft(r), topLeft(slot), 50, { s1: slot.width / r.width });
-      await this.layer.anim(clone, frames, { duration: T.wrongHome, easing: EASE.home });
+      await this.layer.anim(clone, frames, { duration: T.wrongHome * this.scale, easing: EASE.home });
       this.leftovers.push(clone);
     }));
-    await this.wait(this.layer.dur(T.afterChips));
+    await this.wait(this.sc(T.afterChips));
   }
 
   /** A "+N" or "−N" badge on the top-right corner of a box (a tile, a word, the Empty hand card). */
@@ -139,9 +148,9 @@ export class WebDirector implements Director {
 
   /** The badge leaves its box and flies to your score, which moves by `n` the moment it lands. */
   private async flyBadge(badge: HTMLElement, from: Pt, to: Pt, n: number, delay = 0) {
-    if (delay) await this.wait(this.layer.dur(delay));
+    if (delay) await this.wait(this.sc(delay));
     badge.remove();
-    await this.layer.chip(from, to, n, n > 0 ? 'ok' : 'neg');
+    await this.layer.chip(from, to, n, n > 0 ? 'ok' : 'neg', { scale: this.scale });
     this.shown = Math.max(0, this.shown + n);
     this.show('you', this.shown);
   }
@@ -182,13 +191,13 @@ export class WebDirector implements Director {
     this.platform.sound.play('word');
     this.platform.haptics.drop();
     this.tint(slot.cells, 'ok');
-    await this.layer.anim(box, [{ opacity: 0 }, { opacity: 1 }], { duration: T.boxIn, easing: 'ease-out' });
-    await this.wait(this.motion.reduced ? T.judgeHoldReduced : T.judgeHold);
+    await this.layer.anim(box, [{ opacity: 0 }, { opacity: 1 }], { duration: T.boxIn * this.scale, easing: 'ease-out' });
+    await this.wait(this.motion.reduced ? T.judgeHoldReduced : T.judgeHold * this.scale);
     await this.flyBadge(badge, { x: right, y: top }, centerOf(this.stage.rect('score', 'you')!), points);
     this.tint(slot.cells, null);
-    await this.layer.anim(box, [{ opacity: 1 }, { opacity: 0 }], { duration: T.boxOut });
+    await this.layer.anim(box, [{ opacity: 1 }, { opacity: 0 }], { duration: T.boxOut * this.scale });
     box.remove();
-    await this.wait(this.layer.dur(T.afterChips));
+    await this.wait(this.sc(T.afterChips));
   }
 
   /** Empty hand: 🎉 and "+5" on a clear background, with confetti; then the "+5" flies to your score like any other badge. */
@@ -204,10 +213,10 @@ export class WebDirector implements Director {
       { duration: T.emptyIn, easing: EASE.out });
     const c = card.getBoundingClientRect();
     this.layer.confetti(centerOf(c));
-    await this.wait(this.motion.reduced ? 300 : T.emptyHold);
+    await this.wait(this.motion.reduced ? 300 : T.emptyHold * this.scale);
     const b = badge.getBoundingClientRect();
     await this.flyBadge(badge, centerOf(b), centerOf(this.stage.rect('score', 'you')!), 5);
-    await this.layer.anim(card, [{ opacity: 1 }, { opacity: 0, transform: 'translate(-50%, 10px) scale(.9)' }], { duration: T.boxOut });
+    await this.layer.anim(card, [{ opacity: 1 }, { opacity: 0, transform: 'translate(-50%, 10px) scale(.9)' }], { duration: T.boxOut * this.scale });
     card.remove();
   }
 
@@ -248,7 +257,6 @@ export class WebDirector implements Director {
   private async resolveQuill(events: GameEvent[]) {
     const pill = this.stage.el('pill', 'quill');
     pill?.setAttribute('data-fx-thinking', '');
-    this.platform.sound.play('think');
     await this.wait(this.motion.reduced ? T.thinkReduced : T.thinkMin + Math.random() * (T.thinkMax - T.thinkMin));
     pill?.removeAttribute('data-fx-thinking');
 

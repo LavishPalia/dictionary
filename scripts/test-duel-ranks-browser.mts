@@ -231,6 +231,32 @@ await run('Duel ranks', async (t: any) => {
   await new Promise(r => setTimeout(r, 200));
   check('climb: reduced motion: no glide', await evaluate(`document.querySelector('.rank-list .rank-row.me').getAnimations().filter((a) => a.constructor.name === 'Animation' && !a.animationName).length === 0`));
 
+  // ── The top of the board ──
+  await reduceMotion(false);
+  const crownSound = `(window.__duelSounds ?? []).filter((s) => s === 'crown').length`;
+  const atRank = async (points: number, seen: number | null) => {
+    await query(`update weekly_totals set points = $1 where player_id = $2::uuid`, [points, me.id]);
+    await open('/play/ranks?seed=1', { panna_duel_player: stored.panna_duel_player, panna_duel_week: { ...stored.panna_duel_week, points, rank: seen, seen: seen === null ? null : { rank: seen, points } } });
+    await waitFor(`Boolean(document.querySelector('.rank-pod.me'))`, 10000);
+  };
+  await atRank(89_950, 4); // second place: behind only Reader 00
+  check('top three: your block rises', await evaluate(`document.querySelector('.rank-pod.me').classList.contains('raised') && document.querySelector('.rank-pod.me').getAnimations().length > 0`));
+  await new Promise(r => setTimeout(r, 500));
+  check('top three: no fanfare short of first place', (await evaluate(crownSound)) === 0 && !(await exists('.rank-lead')));
+  await atRank(500_000, 4);
+  check('first place: the crown drops in', await evaluate(`document.querySelector('.rank-pod.me .rank-crown').classList.contains('drop')`));
+  check('first place: only transforms and opacity move', await evaluate(`document.querySelector('.rank-pod.me .rank-crown').getAnimations().every((a) => a.effect.getKeyframes().every((k) => !('top' in k) && !('height' in k)))`));
+  check('first place: it says so', (await text('.rank-lead')) === 'You lead the week!');
+  check('first place: the fanfare, once', await waitFor(`${crownSound} === 1`, 1500), await evaluate(`window.__duelSounds`));
+  await t.go('/play/ranks?seed=1');
+  await waitFor(`Boolean(document.querySelector('.rank-pod.me'))`, 10000);
+  await new Promise(r => setTimeout(r, 600));
+  check('still first next visit: nothing again', (await evaluate(crownSound)) === 0 && !(await exists('.rank-lead')) && !(await evaluate(`document.querySelector('.rank-pod.me .rank-crown').classList.contains('drop')`)));
+  await reduceMotion(true);
+  await atRank(500_000, 4);
+  check('reduced motion: the line shows, and no drop', (await text('.rank-lead')) === 'You lead the week!' && await evaluate(`document.querySelector('.rank-pod.me .rank-crown').getAnimations().every((a) => a.effect.getTiming().duration <= 120)`));
+  await reduceMotion(false);
+
   // ── The real route, with no database behind it ──
   setApi(null);
   const res = await evaluate(`fetch('/api/duel/leaderboard?week=this').then(async (r) => ({ status: r.status, body: await r.json(), cache: r.headers.get('cache-control') }))`);

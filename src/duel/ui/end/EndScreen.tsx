@@ -8,12 +8,32 @@ import type { Snapshot } from '../controller/types';
 import { dayMonth, type Nav } from '../dates';
 import type { FxLayer } from '../fx/layer';
 import { useNet } from '../ranks/WeekCard';
+import { weekOf } from '../../week';
 import { endCopy } from './copy';
+import { SealArt } from './SealArt';
 import { WordList } from './WordList';
 
 /** The most recent scheduled day up to today that isn't won, other than this one. */
+const COUNT_MS = 750, STAMP_MS = 300;
+
 function nextOpen(scheduled: string[], won: Set<string>, today: string, date: string): string | null {
   return scheduled.filter(d => d <= today && d !== date && !won.has(d)).sort().pop() ?? null;
+}
+
+/** A score counting up as the screen arrives, on its own so the rest of the screen doesn't render each frame. */
+function CountUp({ to, run }: { to: number; run: boolean }) {
+  const [shown, setShown] = useState(run ? 0 : to);
+  useEffect(() => {
+    if (!run) { setShown(to); return; }
+    const t0 = performance.now();
+    let frame = requestAnimationFrame(function step(now) {
+      const t = Math.min(1, (now - t0) / COUNT_MS);
+      setShown(Math.round(to * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) frame = requestAnimationFrame(step);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [to, run]);
+  return <>{shown}</>;
 }
 
 /** The end of a game (UI-DESIGN §3.4). The footer works from the first frame, so a racing player isn't held up. */
@@ -22,9 +42,10 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
 }) {
   const { you, quill } = snap.state.scores;
   const today = istToday(new Date()), isToday = date === today;
-  const copy = endCopy({ you, quill, practice, isToday });
   const won = wonDays(readResults(platform.storage.get(RESULTS_KEY)));
+  const copy = endCopy({ you, quill, practice, isToday, starred: won.has(date) });
   const [arriving, setArriving] = useState(!instant);
+  const counting = arriving && !platform.reducedMotion();
   const [schedule, setSchedule] = useState<ClientSchedule | null>(null);
   const next = schedule && nextOpen(Object.keys(schedule.dates), won, today, date);
   const [toast, setToast] = useState<string | null>(null);
@@ -37,6 +58,9 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   }, []);
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
+  // It covers the whole screen, so reading starts here.
+  useEffect(() => { document.getElementById('duel-end-title')?.focus({ preventScroll: true }); }, []);
+
   useEffect(() => {
     let live = true;
     void platform.puzzles.schedule().then((s) => { if (live) setSchedule(s); }, () => {});
@@ -46,12 +70,17 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   useEffect(() => {
     if (instant) return;
     const t = setTimeout(() => setArriving(false), 2000);
-    if (copy.kind === 'win') {
+    // The seal lands, and only then the rest: the thud, then a win's chime and paper.
+    const landed = setTimeout(() => {
+      if (copy.kind === 'loss') return;
+      platform.sound.play('thud');
+      if (copy.kind !== 'win') return;
+      platform.sound.play('chime');
       platform.haptics.celebrate();
       const r = seal.current?.getBoundingClientRect();
       if (r) layer.confetti({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-    }
-    return () => clearTimeout(t);
+    }, platform.reducedMotion() ? 0 : STAMP_MS);
+    return () => { clearTimeout(t); clearTimeout(landed); };
     // Once, as the screen arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,7 +105,12 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   const sending = platform.net.statusOf(`${p.id}.v${p.version}`, snap.state.seed);
   const waiting = platform.net.unsent().reduce((n, g) => n + g.claimedScore, 0);
   const weekPoints = (week?.points ?? 0) + waiting;
+  const credit = platform.net.creditOf(`${p.id}.v${p.version}`, snap.state.seed);
+  // Counted for last week, this week's total says nothing about it: the card shows what the game itself brought.
+  const lastWeek = Boolean(credit && credit !== weekOf(new Date()));
   const weekLine = sending === 'rejected' ? 'This game couldn’t be counted'
+    : sending === 'unsaved' ? 'Your phone is full, so this score may not be kept'
+    : lastWeek ? 'counted for last week'
     : sending === 'waiting' ? (flushed ? 'will count when you’re online' : 'counting…')
       : `this week${week?.rank ? ` · #${week.rank}` : ''}`;
 
@@ -92,11 +126,11 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
       </header>
 
       <div className="end-hero">
-        <div className="end-seal" ref={seal} aria-hidden="true" />
-        <h2 id="duel-end-title">{copy.title}</h2>
+        <div className="end-seal" ref={seal} aria-hidden="true"><SealArt kind={copy.kind} /></div>
+        <h2 id="duel-end-title" tabIndex={-1}>{copy.title}</h2>
         <p>{copy.line}</p>
         <p className="end-score" aria-label={`You ${you}, Professor Quill ${quill}`}>
-          <b className={you >= quill ? 'lead' : ''}>{you}</b> <span>to</span> <b className={`q${quill >= you ? ' lead' : ''}`}>{quill}</b>
+          <b className={you >= quill ? 'lead' : ''}><CountUp to={you} run={counting} /></b> <span>to</span> <b className={`q${quill >= you ? ' lead' : ''}`}><CountUp to={quill} run={counting} /></b>
         </p>
       </div>
 
@@ -111,7 +145,7 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
             <small>{flame === 1 ? 'day in a row' : 'days in a row'}{!dayWon && isToday && flame > 0 ? ' · safe till midnight' : ''}</small>
           </div>
           <div className="page-card stat" data-stat="week">
-            <b>{weekPoints.toLocaleString('en-IN')}</b>
+            <b>{(lastWeek ? you : weekPoints).toLocaleString('en-IN')}</b>
             <small>{weekLine}</small>
           </div>
         </div>

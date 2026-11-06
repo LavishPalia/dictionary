@@ -8,6 +8,7 @@ import type { FxLayer, Motion } from '../fx/layer';
 import type { Stage } from '../fx/stage';
 import { longDate, type Nav } from '../dates';
 import { turnStats } from '../controller/selectors';
+import { readResults, RESULTS_KEY } from '../../progress';
 import { CoachLayer, LaterTip } from '../guide/CoachLayer';
 import { GUIDE_KEY, nextTip, readGuide } from '../guide/tips';
 import { ActionRow } from './ActionRow';
@@ -70,7 +71,8 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   const finishedAtOpen = useRef(snap.state.over);
   if (!snap.state.over) finishedAtOpen.current = false;
   const [seen, setSeen] = useState(() => readGuide(platform.storage.get(GUIDE_KEY)));
-  const [wantCoach, setCoach] = useState(() => guide || (tips && !seen.coach));
+  // Someone with results already knows the game (a backup restored without its guide state, say).
+  const [wantCoach, setCoach] = useState(() => guide || (tips && !seen.coach && readResults(platform.storage.get(RESULTS_KEY)).length === 0));
   // Over a finished game's end screen it would have nothing to point at, so it waits for the next game.
   const coach = wantCoach && !snap.state.over;
   const endCoach = () => {
@@ -79,7 +81,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
     platform.storage.set(GUIDE_KEY, next);
     setCoach(false);
     const q = new URLSearchParams(location.search);
-    if (q.has('guide')) { q.delete('guide'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '')); }
+    if (q.has('guide')) { q.delete('guide'); history.replaceState({ duelMoves: history.state?.duelMoves }, '', location.pathname + (q.size ? `?${q}` : '')); }
   };
   const logLength = snap.state.log.length;
   const tip = useMemo(() => (tips && !snap.state.over ? nextTip(new Set(seen.tips), { ...turnStats(p, snap.state), finished: 0 }) : null),
@@ -109,10 +111,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   // While a sheet is open, everything behind it is out of reach (focus, taps, screen readers).
   const behind = snap.sheet !== null || coach || (snap.state.over && !snap.busy);
   return (
-    // Browsers start audio only on a "user activation": on touch that is the finger lifting (pointerup), not
-    // pointerdown, so the sound unlocks here (keys unlock in Input).
-    <div className={`duel-game${snap.busy ? ' busy' : ''}`} ref={root} onPointerDownCapture={onPointerDown}
-      onPointerUpCapture={() => platform.sound.unlock()}>
+    <div className={`duel-game${snap.busy ? ' busy' : ''}`} ref={root} onPointerDownCapture={onPointerDown}>
       <div className="duel-main" inert={behind}>
       <header className="duel-top">
         <a className="ib" href="/play" aria-label="Back to the game home" onClick={(e) => { e.preventDefault(); nav('/play'); }}>

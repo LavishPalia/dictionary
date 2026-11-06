@@ -93,7 +93,6 @@ export class Input {
     d.ghost = this.layer.tile(d.letter, d.rect, 'lifted');
     d.ghost.style.transformOrigin = '50% 50%';
     d.el.setAttribute('data-fx-hidden', '');
-    this.platform.sound.play('lift');
     this.platform.haptics.tick();
     const loop = () => {
       if (this.d !== d || !d.ghost) return;
@@ -196,7 +195,6 @@ export class Input {
     const to = cellRect(this.stage.rect('cell', cell)!);
     const g = this.layer.tile(letter, from, 'lifted');
     src.setAttribute('data-fx-hidden', '');
-    this.platform.sound.play('lift');
     const frames = this.motion.reduced
       ? [{ transform: `translate3d(${to.left}px,${to.top}px,0) scale(${to.width / from.width})` }]
       : arcFrames({ x: from.left, y: from.top }, { x: to.left, y: to.top }, 50, { s0: 1.12, s1: to.width / from.width });
@@ -260,6 +258,8 @@ export class Input {
     const active = document.activeElement as HTMLElement | null;
     if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
     const onBoard = !!active?.closest('.duel-board');
+    // A screen's heading holds focus when it opens: nothing is really focused yet.
+    const nowhere = !active || active === document.body || active.matches('h1[tabindex="-1"]');
     const queue = (fn: () => unknown) => { this.keys = this.keys.then(fn, fn); };
     if (/^[a-z]$/i.test(e.key)) {
       if (!snap.selected) return;
@@ -268,10 +268,10 @@ export class Input {
     } else if (e.key === 'Backspace') {
       e.preventDefault();
       queue(() => this.ctl.backspace());
-    } else if (e.key === 'Enter' && (onBoard || !active || active === document.body || active.closest('.duel-cluelist'))) {
+    } else if (e.key === 'Enter' && (onBoard || nowhere || active?.closest('.duel-cluelist'))) {
       e.preventDefault();
       queue(() => { void this.ctl.submit(); });
-    } else if (e.key === 'Tab' && (onBoard || (active === document.body || active?.closest('.duel-cluelist')) && document.querySelector('.duel-cluelist'))) {
+    } else if (e.key === 'Tab' && (onBoard || (nowhere || active?.closest('.duel-cluelist')) && document.querySelector('.duel-cluelist'))) {
       // On the board (or the desktop's clue list), Tab moves between answers; past the last (or first) one it leaves as usual.
       if (!this.ctl.selectNext(e.shiftKey ? -1 : 1)) return;
       e.preventDefault();

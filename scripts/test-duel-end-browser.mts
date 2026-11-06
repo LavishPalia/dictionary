@@ -174,4 +174,63 @@ await run("Duel end screens", async (t: any) => {
   await t.light('evening');
   await reduceMotion(true);
   await axe('loss, Evening');
+
+  // ── How it arrives ──
+  await reduceMotion(false);
+  const heard = () => evaluate(`window.__duelSounds ?? []`);
+  const animated = (sel: string) => evaluate(`(document.querySelector(${JSON.stringify(sel)})?.getAnimations({ subtree: true }) ?? []).length > 0`);
+  await setSize(PHONE);
+  setSchedule(fixture([TWO_AGO, YESTERDAY, TODAY]));
+  await open(url(TODAY, WIN), { [gameKey(TODAY)]: WIN.save });
+  await waitFor(`Boolean(window.__duel)`, 20000);
+  await evaluate(`(() => { window.__lowest = Infinity; requestAnimationFrame(function look() { const b = document.querySelector('.end-score b'); if (b) window.__lowest = Math.min(window.__lowest, Number(b.textContent)); requestAnimationFrame(look); }); return true; })()`);
+  await lastMove(WIN);
+  await atEnd();
+  const final = { you: WIN.final.scores.you, quill: WIN.final.scores.quill };
+  check('arrival: the seal has art', await exists('.end-seal svg.seal-art'));
+  check('arrival: the score starts low and counts up', (await waitFor(`window.__lowest < ${final.you}`, 1000)), await evaluate(`window.__lowest`));
+  check('arrival: and ends exact', await waitFor(`document.querySelector('.end-score b').textContent === '${final.you}' && document.querySelector('.end-score b.q').textContent === '${final.quill}'`, 3000));
+  check('win: the thud, then the chime', await waitFor(`(window.__duelSounds ?? []).filter((s) => s === 'thud' || s === 'chime').join() === 'thud,chime'`, 1500), await heard());
+  await evaluate(`window.__duelSounds.length = 0; true`);
+  await open(url(TODAY, WIN), { [gameKey(TODAY)]: finished(WIN) });
+  await atEnd();
+  check('reopened: the final score at once', (await evaluate(`document.querySelector('.end-score b').textContent`)) === String(final.you));
+  await new Promise(r => setTimeout(r, 500));
+  check('reopened: no sound and no animation', !(await heard()).includes('thud') && !(await animated('.end-seal')), await heard());
+
+  await open(url(TODAY, LOSS), { [gameKey(TODAY)]: LOSS.save });
+  await lastMove(LOSS);
+  await atEnd();
+  await new Promise(r => setTimeout(r, 500));
+  const lost = await heard();
+  check('loss: no thud and no chime', !lost.includes('thud') && !lost.includes('chime'), lost);
+  check('loss: no confetti', (await evaluate(`document.querySelectorAll('.confetto').length`)) === 0);
+  check('loss: a pencilled ring', await exists('.seal-art circle[stroke-dasharray]'));
+
+  await open(url(TODAY, WIN), { [gameKey(TODAY)]: WIN.save });
+  await lastMove(WIN);
+  await atEnd();
+  await evaluate(`document.querySelector('.duel-end').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); true`);
+  check('a tap skips to the final numbers', await waitFor(`document.querySelector('.end-score b').textContent === '${final.you}' && !document.querySelector('.duel-end.arriving')`, 300));
+
+  await reduceMotion(true);
+  await open(url(TODAY, WIN), { [gameKey(TODAY)]: WIN.save });
+  await lastMove(WIN);
+  await atEnd();
+  check('reduced motion: the final numbers at once', (await evaluate(`document.querySelector('.end-score b').textContent`)) === String(final.you));
+  check('reduced motion: sound stays', await waitFor(`(window.__duelSounds ?? []).includes('chime')`, 1000), await heard());
+
+  // A game finished on Sunday and sent on Monday: the card shows that game's points, not this week's empty total.
+  t.setApi(async (req: Request) => {
+    const path = new URL(req.url).pathname;
+    if (path.endsWith('/players')) return Response.json({ name: 'Wise Comma' });
+    if (path.endsWith('/games')) return Response.json({ status: 'ok', week: '2000-01-03', weekTotal: 999, rank: 1 });
+    return Response.json({ week: '2000-01-03', points: 0, rank: null });
+  });
+  await open(url(TODAY, WIN), { [gameKey(TODAY)]: WIN.save });
+  await lastMove(WIN);
+  check('counted for last week: says so', await waitFor(`document.querySelector('[data-stat="week"]')?.innerText.includes('counted for last week')`, 8000), await text('[data-stat="week"]'));
+  check('and shows the game\'s own points', (await text('[data-stat="week"] b')) === final.you.toLocaleString('en-IN'), await text('[data-stat="week"]'));
+  t.setApi(null);
+  await reduceMotion(false);
 });
