@@ -1,5 +1,6 @@
 import { addMonths, dayMonth, monthName } from '../dates';
 import type { DayCoin } from '../../progress';
+import { useMonthSwipe } from './useMonthSwipe';
 
 const WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const STATUS: Record<DayCoin['kind'], string> = { blank: '', won: 'won', open: 'still open', 'latest-open': 'still open', today: 'today', future: 'opens later' };
@@ -15,20 +16,22 @@ function Ring({ share }: { share: number }) {
 }
 
 /** The month's coins (UI-DESIGN §3.2): gold stars for won days, parchment for open ones, today ringed. */
-export function Calendar({ month, first, last, coins, won, total, stamp, onMonth, onDay }: {
-  month: string; first: string; last: string; coins: DayCoin[]; won: number; total: number; stamp: string | null;
+export function Calendar({ month, first, last, coins, won, total, stamp, reduced, onMonth, onDay }: {
+  month: string; first: string; last: string; coins: DayCoin[]; won: number; total: number; stamp: string | null; reduced: boolean;
   onMonth: (m: string) => void; onDay: (c: DayCoin) => void;
 }) {
   const offset = new Date(`${month}-01T00:00:00Z`).getUTCDay();
+  const swipe = useMonthSwipe({ month, canPrev: month > first, canNext: month < last, reduced, onMonth: (step) => onMonth(addMonths(month, step)) });
   return (
     <>
       <div className="cal-head">
-        <button type="button" className="ib" aria-label="Previous month" disabled={month <= first} onClick={() => onMonth(addMonths(month, -1))}>‹</button>
+        <button type="button" className="ib" aria-label="Previous month" disabled={month <= first} onClick={() => swipe.go(-1)}>‹</button>
         <h2 aria-live="polite">{monthName(month)} {month.slice(0, 4)}</h2>
-        <button type="button" className="ib" aria-label="Next month" disabled={month >= last} onClick={() => onMonth(addMonths(month, 1))}>›</button>
-        <span className="cal-won">★ {won} of {total} won</span>
+        <button type="button" className="ib" aria-label="Next month" disabled={month >= last} onClick={() => swipe.go(1)}>›</button>
+        {total > 0 && <span className="cal-won">★ {won} of {total} won</span>}
       </div>
-      <div className="cal-grid" key={month} data-month={month}>
+      <div className="cal-swipe">
+      <div className="cal-grid" key={month} data-month={month} ref={swipe.grid} {...swipe.bind}>
         {WEEK.map((d, i) => <span key={i} className="cal-dow" aria-hidden="true">{d}</span>)}
         {Array.from({ length: offset }, (_, i) => <span key={`x${i}`} />)}
         {coins.map((c) => (c.kind === 'blank'
@@ -42,6 +45,7 @@ export function Calendar({ month, first, last, coins, won, total, stamp, onMonth
               {c.kind === 'won' ? <><b aria-hidden="true">★</b><small>{Number(c.date.slice(8))}</small></> : Number(c.date.slice(8))}
             </button>
           )))}
+      </div>
       </div>
     </>
   );

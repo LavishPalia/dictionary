@@ -78,6 +78,15 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
     return save && !save.over ? save.progress ?? 0 : null;
   };
 
+  // The month turning over while the app is open: a calendar showing the current month goes with it; one paged elsewhere stays.
+  const thisMonth = today.slice(0, 7), lastThisMonth = useRef(thisMonth);
+  useEffect(() => {
+    const before = lastThisMonth.current;
+    if (before === thisMonth) return;
+    lastThisMonth.current = thisMonth;
+    setMonth(m => (m === before ? thisMonth : m));
+  }, [thisMonth]);
+
   // A newly won day stamps its star, and a newly finished month plays its seal, once.
   useEffect(() => {
     if (!schedule) return;
@@ -171,7 +180,7 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
           </section>
 
           <section className="page-card cal" aria-label="Calendar">
-            <Calendar month={month} first={range.first} last={range.last} coins={cal.coins} won={cal.won} total={cal.total} stamp={stamp} onMonth={setMonth} onDay={onDay} />
+            <Calendar month={month} first={range.first} last={range.last} coins={cal.coins} won={cal.won} total={cal.total} stamp={stamp} reduced={platform.reducedMotion()} onMonth={setMonth} onDay={onDay} />
             <MonthSeal month={month} won={cal.won} total={cal.total} sealed={cal.sealed} days={cal.coins.length} />
           </section>
 
