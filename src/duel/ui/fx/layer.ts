@@ -1,10 +1,10 @@
 // The effects layer: one fixed, click-through element outside the React tree. Flying tiles, chips,
 // streaks, seals, confetti, cards and toasts live here, are animated with Web Animations (transform and
 // opacity only), and are removed when done.
-import { CONFETTI, EASE, T } from './timings';
+import { CONFETTI, EASE, T, type Pace } from './timings';
 
 export interface Pt { x: number; y: number }
-export interface Motion { reduced: boolean; tier: 'normal' | 'lite' }
+export interface Motion { reduced: boolean; tier: 'normal' | 'lite'; pacing?: Pace }
 
 export const centerOf = (r: DOMRect): Pt => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 
@@ -76,7 +76,7 @@ export class FxLayer {
    * A chip ("+1", "−1", "+5") that pops, flies straight to `to` with a glowing streak behind it, and merges in.
    * kind: ok = green (every point you win: tiles, words, Empty hand), neg = red.
    */
-  async chip(from: Pt, to: Pt, n: number, kind: 'ok' | 'neg', { big = false, delay = 0 } = {}) {
+  async chip(from: Pt, to: Pt, n: number, kind: 'ok' | 'neg', { big = false, delay = 0, scale = 1 } = {}) {
     const chip = this.add(`chip ${kind}${big ? ' big' : ''}`, `${n > 0 ? '+' : '−'}${Math.abs(n)}`);
     const dx = to.x - from.x, dy = to.y - from.y, dist = Math.hypot(dx, dy), ang = Math.atan2(dy, dx) * 180 / Math.PI;
     let rot = ang + 90;
@@ -86,19 +86,19 @@ export class FxLayer {
     chip.style.transform = at(from, 'scale(.5)');
     chip.style.opacity = '0';
     await this.anim(chip, [{ transform: at(from, 'scale(.5)'), opacity: 0.5 }, { transform: at(from, `rotate(${rot}deg) scale(1.1)`), opacity: 1 }],
-      { duration: T.chipPop, delay, easing: 'ease-out' });
+      { duration: T.chipPop * scale, delay, easing: 'ease-out' });
     let trail: HTMLElement | null = null;
     if (!this.motion.reduced) {
       trail = this.add(`trail ${kind}${this.motion.tier === 'lite' ? ' lite' : ''}`);
       trail.style.width = `${dist}px`;
       void this.anim(trail, [{ transform: at(from, `rotate(${ang}deg) scaleX(0)`) }, { transform: at(from, `rotate(${ang}deg) scaleX(1)`) }],
-        { duration: T.chipFly, easing: EASE.chip });
+        { duration: T.chipFly * scale, easing: EASE.chip });
     }
     await this.anim(chip, [{ transform: at(from, `rotate(${rot}deg) scale(1.1)`) }, { transform: at(to, `rotate(${rot}deg) scale(.85)`) }],
-      { duration: T.chipFly, easing: EASE.chip });
+      { duration: T.chipFly * scale, easing: EASE.chip });
     if (trail) { const t = trail; void this.anim(t, [{ opacity: 1 }, { opacity: 0 }], { duration: 320, easing: 'ease-out' }).then(() => t.remove()); }
     await this.anim(chip, [{ transform: at(to, `rotate(${rot}deg) scale(.85)`), opacity: 1 }, { transform: at(to, 'scale(.15)'), opacity: 0 }],
-      { duration: T.chipMerge, easing: 'ease-in' });
+      { duration: T.chipMerge * scale, easing: 'ease-in' });
     chip.remove();
   }
 

@@ -6,7 +6,7 @@ import { istToday } from '../progress';
 
 export { istToday };
 
-export type Route = { screen: 'home' } | { screen: 'settings' } | { screen: 'how' } | { screen: 'ranks' } | { screen: 'game'; date: string } | { redirect: string };
+export type Route = { screen: 'home' } | { screen: 'settings' } | { screen: 'how' } | { screen: 'ranks' } | { screen: 'lab' } | { screen: 'game'; date: string } | { redirect: string };
 
 /** A real calendar date, written YYYY-MM-DD (so 2026-02-30 is not one). */
 function isDate(s: string): boolean {
@@ -22,6 +22,7 @@ export function parsePath(path: string, today: string): Route {
   if (/^\/play\/settings\/?$/.test(path)) return { screen: 'settings' };
   if (/^\/play\/how\/?$/.test(path)) return { screen: 'how' };
   if (/^\/play\/ranks\/?$/.test(path)) return { screen: 'ranks' };
+  if (/^\/play\/lab\/?$/.test(path)) return { screen: 'lab' };
   const m = /^\/play\/game\/([^/]+)\/?$/.exec(path);
   if (!m) return toToday;
   const date = m[1];

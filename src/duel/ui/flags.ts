@@ -16,6 +16,14 @@ export interface Flags {
   fresh: boolean;
   /** Show the coached first game again. A fixed seed (a test) otherwise skips the guide's tips. */
   guide: boolean;
+  /** The lab's trial scoring speed. */
+  pace?: number;
+  ramp?: number;
+}
+
+function speedFlag(raw: string | null): number | undefined {
+  const n = raw === null ? NaN : Number(raw);
+  return n >= 0.2 && n <= 1.5 ? n : undefined;
 }
 
 export function readFlags(search: string): Flags {
@@ -31,5 +39,7 @@ export function readFlags(search: string): Flags {
     test: seed !== undefined,
     fresh: q.get('fresh') === '1',
     guide: q.get('guide') === '1',
+    pace: speedFlag(q.get('pace')),
+    ramp: speedFlag(q.get('ramp')),
   };
 }

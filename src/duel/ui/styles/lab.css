@@ -1,0 +1,12 @@
+/* The temporary speed and sound lab. */
+.duel-lab { padding-bottom: 60px; }
+.duel-lab .bigbtn { display: block; margin: 10px 12px; width: calc(100% - 24px); }
+.lab-note { margin: 4px 12px 2px; color: var(--pg-muted); }
+.lab-choice { margin: 0 12px 8px; padding: 8px 10px; border: 1px dashed var(--pg-muted); border-radius: 8px; font-size: 14px; }
+.lab-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 12px; }
+.lab-row button { min-height: 40px; min-width: 40px; padding: 6px 10px; border: 1px solid var(--pg-muted); border-radius: 8px; background: transparent; color: inherit; font: inherit; }
+.lab-row button[aria-pressed="true"] { background: var(--binding); color: var(--onb); border-color: var(--binding); }
+.lab-took { min-height: 22px; margin: 0 12px; text-align: center; font-weight: 700; }
+.lab-board { position: relative; inset: auto; height: auto; width: auto; margin: 6px auto; }
+.lab-sound { flex-wrap: wrap; gap: 6px; }
+.lab-sound .lab-row { margin: 0; }
