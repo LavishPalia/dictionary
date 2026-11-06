@@ -20,6 +20,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // 0.8 ms for rAF timestamp jitter: a perfectly smooth run measures 16.6–17.2 ms, never a clean 16.7.
 const LIMITS = { dragP95: 17.5, dragMax: 33, slowShare: 0.02, slowFrame: 20, longTask: 50 };
 
+const SAVED = '__perfsave__';
+const SET_ASIDE = `Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => { localStorage.setItem('${SAVED}' + k, localStorage.getItem(k)); localStorage.removeItem(k); });`;
+const PUT_BACK = `if (Object.keys(localStorage).some((k) => k.startsWith('${SAVED}'))) { Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => localStorage.removeItem(k)); Object.keys(localStorage).filter((k) => k.startsWith('${SAVED}')).forEach((k) => { localStorage.setItem(k.slice(${'__perfsave__'.length}), localStorage.getItem(k)); localStorage.removeItem(k); }); }`;
+
 function adb(...args) {
   const r = spawnSync('adb', args, { encoding: 'utf8' });
   return r.status === 0 && !/error/i.test(r.stderr ?? '');
@@ -59,6 +63,7 @@ async function main() {
   };
   const waitFor = async (expr, ms) => { for (let t = 0; t < ms; t += 100) { try { if (await evaluate(expr)) return true; } catch {} await sleep(100); } return false; };
 
+  let setAside = false;
   try {
     await send('Page.enable');
     await send('Runtime.enable');
@@ -69,11 +74,13 @@ async function main() {
     await send('Emulation.setCPUThrottlingRate', { rate: THROTTLE });
     await send('Page.navigate', { url: `${URL_BASE}/icon.svg` });
     await sleep(800);
-    // Duel saves only: on a deployed site this is the phone's own Panna, with its saved words and review progress.
-    await evaluate(`Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => localStorage.removeItem(k)); true`);
+    // On a deployed site this is the phone's own Panna, with its real stars, player and unsent scores. They are set
+    // aside on the phone for the run and put back after it, or at the start of the next run if this one was cut off.
+    await evaluate(`${PUT_BACK} ${SET_ASIDE} true`);
+    setAside = true;
     await send('Page.navigate', { url: `${URL_BASE}/play/game/2026-11-01?seed=7&perf=1&tier=${TIER}` });
     if (!(await waitFor(`Boolean(window.__duel && document.querySelector('.duel-board [data-cell]'))`, 30000))) throw new Error('The game did not load');
-    await sleep(1500);
+    await sleep(8000); // a first visit saves the game for offline in the background, once: that isn't play
 
     // Frame and long-task recorders.
     await evaluate(`(() => {
@@ -118,6 +125,8 @@ async function main() {
       await sleep(500);
     };
 
+    const device = await evaluate(`({ cores: navigator.hardwareConcurrency, memory: navigator.deviceMemory ?? '?', ua: navigator.userAgent })`);
+    console.log(`Device: ${device.cores} cores, ${device.memory} GB. ${device.ua}`);
     console.log(`Playing 3 turns at ${THROTTLE}× CPU, tier ${TIER}…`);
     await turn(3);       // drag, submit, Quill, refill
     await turn(5);       // Empty hand: the card, confetti and word seals
@@ -158,6 +167,14 @@ async function main() {
     console.log(`\n${ua}\nSaved ${out}`);
     process.exitCode = rows.every((r) => r.pass) ? 0 : 1;
   } finally {
+    if (setAside) {
+      try {
+        await send('Page.navigate', { url: `${URL_BASE}/icon.svg` });
+        await sleep(800);
+        await evaluate(`${PUT_BACK} true`);
+        console.log('Your Duel data on this device is back as it was.');
+      } catch { console.error('Your Duel data is set aside on this device; run this again to put it back.'); }
+    }
     try { await send('Emulation.setCPUThrottlingRate', { rate: 1 }); } catch {}
     try { await fetch(`${cdp}/json/close/${target.id}`); } catch {}
     ws.close();

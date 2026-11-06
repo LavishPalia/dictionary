@@ -41,6 +41,9 @@ async function saveShell(cache: Cache) {
   const res = await fetch('/play', { cache: 'no-cache' });
   if (!res.ok) return;
   const html = await res.clone().text();
+  const saved = await cache.match('/play');
+  if (saved && await saved.text() === html) return; // this deploy is saved already
+  await practice(); // its chunk loads now, so the file list below has it: practice is what plays past the schedule
   const loaded = [...performance.getEntriesByType('resource').map(e => e.name), ...[...document.scripts].map(s => s.src)]
     .flatMap(u => (u ? pathOf(u) ?? [] : []));
   if (!filesNamed(html).every(f => loaded.includes(f))) return;
@@ -55,7 +58,6 @@ async function saveShell(cache: Cache) {
 export function webOffline(storage: Storage, puzzles: PuzzleSource, extraFiles: () => string[] = () => []) {
   let running: Promise<void> | null = null;
   const prepare = async (today: string) => {
-    await practice(); // its chunk loads now, so the file list below has it: practice is what plays past the schedule
     const cache = await caches.open(DUEL_CACHE);
     await saveShell(cache);
     await saveMissing(cache, extraFiles());

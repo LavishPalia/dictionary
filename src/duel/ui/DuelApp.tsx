@@ -152,10 +152,10 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
     return () => { removeEventListener('online', flush); removeEventListener('focus', flush); document.removeEventListener('visibilitychange', onVisible); };
   }, [platform]);
 
-  // A moment after opening, and when the connection returns: what a game needs to start with no connection.
+  // Once the opening has settled, and when the connection returns: what a game needs to start with no connection.
   useEffect(() => {
     const prepare = () => { void platform.prepareOffline(istToday(new Date())); };
-    const t = setTimeout(prepare, 1500);
+    const t = setTimeout(prepare, 4000);
     addEventListener('online', prepare);
     return () => { clearTimeout(t); removeEventListener('online', prepare); };
   }, [platform]);
