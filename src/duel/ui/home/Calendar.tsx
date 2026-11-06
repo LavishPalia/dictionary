@@ -1,5 +1,6 @@
 import { addMonths, dayMonth, monthName } from '../dates';
 import type { DayCoin } from '../../progress';
+import { MonthSealArt } from '../end/SealArt';
 import { useMonthSwipe } from './useMonthSwipe';
 
 const WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -56,11 +57,13 @@ export function MonthSeal({ month, won, total, sealed, days }: { month: string; 
   const name = monthName(month), left = total - won, c = 2 * Math.PI * 21;
   return (
     <div className={`seal-row${sealed ? ' sealed' : ''}`}>
-      <svg viewBox="0 0 52 52" width="52" height="52" aria-hidden="true">
-        {sealed
-          ? <><circle cx="26" cy="26" r="23" className="seal-gold" /><text x="26" y="31" textAnchor="middle">{name.slice(0, 3)}</text></>
-          : <><circle cx="26" cy="26" r="21" className="seal-empty" /><circle cx="26" cy="26" r="21" className="seal-fill" strokeDasharray={`${c * (total ? won / total : 0)} ${c}`} /></>}
-      </svg>
+      {sealed
+        ? <MonthSealArt month={name.slice(0, 3)} />
+        : (
+          <svg viewBox="0 0 52 52" width="52" height="52" aria-hidden="true">
+            <circle cx="26" cy="26" r="21" className="seal-empty" /><circle cx="26" cy="26" r="21" className="seal-fill" strokeDasharray={`${c * (total ? won / total : 0)} ${c}`} />
+          </svg>
+        )}
       {sealed
         ? <p>The {name} seal is yours</p>
         : total === days

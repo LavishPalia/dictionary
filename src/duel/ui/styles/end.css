@@ -5,12 +5,17 @@
 .end-hero h2 { margin: 6px 0 2px; font: 30px var(--font-fell-sc); color: var(--binding); }
 .end-hero p { margin: 0; color: var(--pg-muted); }
 .end-seal { width: 74px; height: 74px; margin: 0 auto; border-radius: 50%; }
-.win .end-seal { background: radial-gradient(circle at 35% 30%, #a53a2e, #5b1f19); box-shadow: 0 2px 0 #2e0e0a, inset 0 0 0 4px rgba(244, 230, 197, .35); }
-.loss .end-seal { border: 2.5px dashed var(--pg-muted); }
-.tie .end-seal { background: linear-gradient(90deg, #7a2b22 50%, #1e4887 50%); box-shadow: inset 0 0 0 4px rgba(244, 230, 197, .35); }
+.seal-art { display: block; width: 100%; height: 100%; }
 .arriving.win .end-seal, .arriving.tie .end-seal { animation: end-stamp .36s var(--stamp) both; }
-.arriving.loss .end-seal { animation: duel-fade-in .7s ease-out both; }
+.arriving.loss .seal-art { animation: end-pencil .7s ease-out both; }
 @keyframes end-stamp { from { transform: scale(2.4) rotate(-18deg); opacity: 0; } }
+@keyframes end-pencil { from { transform: rotate(-120deg); opacity: 0; } }
+/* As the seal lands: a ring spreads from it, and the hero dips a little. */
+.end-seal { position: relative; }
+.arriving.win .end-seal::after, .arriving.tie .end-seal::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(122, 43, 34, .55); animation: end-ring .6s ease-out .3s both; }
+@keyframes end-ring { from { transform: scale(1); opacity: 1; } to { transform: scale(1.7); opacity: 0; } }
+.arriving.win .end-hero, .arriving.tie .end-hero { animation: end-dip .24s ease-out .3s; }
+@keyframes end-dip { 40% { transform: translateY(3px); } }
 .arriving .end-stats, .arriving .end-rewards, .arriving .end-score { animation: end-rise .5s var(--out) .35s both; }
 @keyframes end-rise { from { opacity: 0; transform: translateY(10px); } }
 .end-score { margin: 8px 0 0 !important; font: 700 30px var(--letters); color: var(--ink) !important; }
@@ -57,5 +62,8 @@
 .wl-more { display: block; width: 100%; min-height: 44px; color: var(--binding); border-top: 1px solid var(--pg-line); }
 
 @media (prefers-reduced-motion: reduce) {
+  .arriving.win .end-seal::after, .arriving.tie .end-seal::after { content: none; }
+  .arriving.win .end-hero, .arriving.tie .end-hero { animation: none; }
+  .arriving.loss .seal-art { animation: duel-fade-in .12s ease-out both; }
   .arriving .end-seal, .arriving .end-stats, .arriving .end-rewards, .arriving .end-score, .arriving .reward, .wl-star.on { animation: duel-fade-in .12s ease-out both; }
 }

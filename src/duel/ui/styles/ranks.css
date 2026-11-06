@@ -84,3 +84,13 @@ html[data-light="evening"] .rank-row.me { background: #d9bd77; }
 
 /* a row that is a button (the name in Settings) */
 button.set-row { width: 100%; text-align: left; }
+
+/* Reaching the top: your block rises, and at first place the crown drops in. */
+.rank-lead { margin: 2px 12px 6px; text-align: center; font: 700 16px var(--letters); color: var(--binding); }
+.rank-pod.raised { animation: rank-raise .7s var(--spring) both; }
+@keyframes rank-raise { from { transform: translateY(26px); } }
+.rank-crown.drop { animation: rank-crown .8s ease-out .3s backwards; }
+@keyframes rank-crown { from { transform: translateY(-30px) rotate(-30deg); opacity: 0; } 70% { transform: translateY(2px) rotate(6deg); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .rank-pod.raised, .rank-crown.drop { animation: duel-fade-in .12s ease-out both; }
+}

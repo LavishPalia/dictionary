@@ -28,7 +28,7 @@ import './styles/ranks.css';
 import './styles/lab.css';
 
 declare global {
-  interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[]; platform: Platform } }
+  interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[]; platform: Platform }; __duelSounds?: string[] }
 }
 
 function Game({ date, platform }: { date: string; platform: Platform }) {
@@ -94,6 +94,12 @@ function back() {
 
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {
   const [route, setRoute] = useState<Route | null>(null);
+  // With the test hook on, every sound asked for is noted (a browser test has no ears).
+  useMemo(() => {
+    if (!readFlags(location.search).test || window.__duelSounds) return;
+    const heard: string[] = window.__duelSounds = [], play = platform.sound.play;
+    platform.sound.play = (name, step) => { heard.push(name); play(name, step); };
+  }, [platform]);
   useEffect(() => { applyLabSounds(platform); }, [platform]);
 
   // Unsent scores go on opening, when the connection returns, and when the app comes back into view.

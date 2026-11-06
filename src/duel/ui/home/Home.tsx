@@ -5,6 +5,9 @@ import { dayHref, duelAction, duelLine, duelSubLine, matchingSave, todayDuel } f
 import { bestFor, calendarMonth, gameKey, istToday, monthRange, readResults, RESULTS_KEY, streak, wonDays, type DayCoin } from '../../progress';
 import { addMonths, dayMonth, longDate, monthName, type Nav } from '../dates';
 import { readFlags } from '../flags';
+import { MonthSealArt } from '../end/SealArt';
+import { FxLayer } from '../fx/layer';
+import { pickTier } from '../fx/tier';
 import { HelpSheet } from '../game/HelpSheet';
 import { LaterTip } from '../guide/CoachLayer';
 import { GUIDE_KEY, nextTip, readGuide } from '../guide/tips';
@@ -25,6 +28,31 @@ function MiniBoard({ p }: { p: Puzzle }) {
   return (
     <div className="mini" style={{ gridTemplateColumns: `repeat(${p.cols}, 1fr)` }} aria-hidden="true">
       {Array.from({ length: p.rows * p.cols }, (_, i) => <i key={i} className={clue.has(i) ? 'c' : given.has(i) ? 'g' : ''} />)}
+    </div>
+  );
+}
+
+/** The month seal arriving: paper from the seal as it finishes turning, and a rising chime (UI-DESIGN §3.2). */
+function SealMoment({ month, platform, titleId, onClose }: { month: string; platform: Platform; titleId: string; onClose: () => void }) {
+  const seal = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const reduced = platform.reducedMotion();
+    const layer = new FxLayer({ reduced, tier: pickTier(navigator as Navigator & { deviceMemory?: number }) });
+    const landed = setTimeout(() => {
+      platform.sound.play('seal');
+      const r = seal.current?.getBoundingClientRect();
+      if (r) layer.confetti({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }, reduced ? 0 : 500);
+    return () => { clearTimeout(landed); setTimeout(() => layer.destroy(), 2000); };
+    // Once, as it opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="seal-moment">
+      <div ref={seal}><MonthSealArt className="seal-flip" month={monthName(month).slice(0, 3)} size={112} /></div>
+      <h3 id={titleId}>The {monthName(month)} seal</h3>
+      <p>Every day of {monthName(month)} won. It’s yours to keep.</p>
+      <button type="button" className="bigbtn pri" onClick={onClose}>Lovely</button>
     </div>
   );
 }
@@ -200,16 +228,7 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
       )}
       {sheet?.k === 'seal' && (
         <Sheet kind="confirm" onClose={() => setSheet(null)}>
-          {(titleId) => (
-            <div className="seal-moment">
-              <svg className="seal-flip" viewBox="0 0 52 52" width="112" height="112" aria-hidden="true">
-                <circle cx="26" cy="26" r="23" className="seal-gold" /><text x="26" y="31" textAnchor="middle">{monthName(sheet.month).slice(0, 3)}</text>
-              </svg>
-              <h3 id={titleId}>The {monthName(sheet.month)} seal</h3>
-              <p>Every day of {monthName(sheet.month)} won. It’s yours to keep.</p>
-              <button type="button" className="bigbtn pri" onClick={() => setSheet(null)}>Lovely</button>
-            </div>
-          )}
+          {(titleId) => <SealMoment month={sheet.month} platform={platform} titleId={titleId} onClose={() => setSheet(null)} />}
         </Sheet>
       )}
     </div>

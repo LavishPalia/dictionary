@@ -109,6 +109,7 @@ await run('Duel home', async (t) => {
   setSchedule(fixture([...all, TODAY]));
   await home({ panna_duel_results: all.map((d) => win(d, 2, 1)) });
   check('a finished month: the seal moment', await waitFor(`document.querySelector('.seal-moment h3')?.textContent.startsWith('The ')`));
+  check('the seal moment has its art, a chime and paper', await exists('.seal-moment svg.seal-flip ellipse') && await waitFor(`(window.__duelSounds ?? []).includes('seal') && document.querySelectorAll('.confetto').length > 0`, 2000), await evaluate('window.__duelSounds'));
   await axe('the seal moment');
   await click('.seal-moment .bigbtn');
   await click('[aria-label="Previous month"]');

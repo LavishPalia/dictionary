@@ -26,6 +26,8 @@ function Avatar({ row }: { row: Row }) {
   return <span className="rank-av" style={{ background: colourOf(row.name) }} aria-hidden="true">{initials(row.name)}</span>;
 }
 
+const CROWN_DELAY = 300;
+
 const BotTag = () => <span className="rank-bot" data-bot>Bot</span>;
 
 /** The weekly leaderboard (UI-DESIGN §3.5). */
@@ -80,6 +82,8 @@ export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; b
 
   // ── Arriving with new points: your row glides up past the players you overtook, once ──
   const [gain, setGain] = useState<number | null>(null);
+  const [crowned, setCrowned] = useState(false);
+  const [raised, setRaised] = useState(false);
   const listRef = useRef<HTMLOListElement>(null);
   const glide = useCallback((from: number, to: number) => {
     const rowEls = [...(listRef.current?.children ?? [])] as HTMLElement[];
@@ -111,6 +115,12 @@ export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; b
     const seen = net.week()?.seen ?? null;
     const place = myPlace?.rank ?? state.me.rank;
     net.markSeen(place, state.me.points);
+    // Reaching first place drops the crown in; entering the top three raises your block. Once per climb.
+    if (place === 1 && seen?.rank !== 1) {
+      setCrowned(true);
+      setTimeout(() => platform.sound.play('crown'), platform.reducedMotion() ? 0 : CROWN_DELAY);
+    }
+    if (place <= 3 && (seen?.rank == null || seen.rank > 3)) setRaised(true);
     if (!seen) return;
     if (state.me.points > seen.points) setGain(state.me.points - seen.points);
     if (seen.rank !== null && place < seen.rank && !platform.reducedMotion()) glide(seen.rank, place);
@@ -169,10 +179,11 @@ export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; b
             </div>
           )}
 
+          {crowned && tab === 'this' && <p className="rank-lead" role="status">You lead the week!</p>}
           <div className="rank-podium">
             {[podium[1], podium[0], podium[2]].map((r, i) => r && (
-              <div className={`rank-pod p${r.rank}${r.me ? ' me' : ''}`} key={r.name} data-rank={r.rank}>
-                {r.rank === 1 && <span className="rank-crown" aria-hidden="true">♛</span>}
+              <div className={`rank-pod p${r.rank}${r.me ? ' me' : ''}${r.me && raised ? ' raised' : ''}`} key={r.name} data-rank={r.rank}>
+                {r.rank === 1 && <span className={`rank-crown${r.me && crowned ? ' drop' : ''}`} aria-hidden="true">♛</span>}
                 <Avatar row={r} />
                 <div className="rank-pod-name">{r.me ? 'You' : r.name}{r.bot && <BotTag />}</div>
                 <div className="rank-pod-pts">{r.points.toLocaleString('en-IN')}</div>
