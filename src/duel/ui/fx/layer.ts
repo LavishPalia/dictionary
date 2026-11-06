@@ -128,9 +128,17 @@ export class FxLayer {
     return c;
   }
 
+  /** Tells a screen reader, without cutting off what it was saying: each line is its own, and only the last few stay. */
+  say(text: string) {
+    const line = document.createElement('div');
+    line.textContent = text;
+    this.live.appendChild(line);
+    while (this.live.childElementCount > 6) this.live.firstElementChild?.remove();
+  }
+
   toast(text: string) {
     const t = this.add('fx-toast', text);
-    this.live.textContent = text;
+    this.say(text);
     void this.anim(t, [{ opacity: 0, transform: 'translate(-50%, 60%)' }, { opacity: 1, transform: 'translate(-50%, 0)' }], { duration: 250, easing: EASE.out });
     setTimeout(() => { void this.anim(t, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 }).then(() => t.remove()); }, T.toast);
   }

@@ -58,6 +58,9 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   }, []);
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
+  // It covers the whole screen, so reading starts here.
+  useEffect(() => { document.getElementById('duel-end-title')?.focus({ preventScroll: true }); }, []);
+
   useEffect(() => {
     let live = true;
     void platform.puzzles.schedule().then((s) => { if (live) setSchedule(s); }, () => {});
@@ -122,7 +125,7 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
 
       <div className="end-hero">
         <div className="end-seal" ref={seal} aria-hidden="true"><SealArt kind={copy.kind} /></div>
-        <h2 id="duel-end-title">{copy.title}</h2>
+        <h2 id="duel-end-title" tabIndex={-1}>{copy.title}</h2>
         <p>{copy.line}</p>
         <p className="end-score" aria-label={`You ${you}, Professor Quill ${quill}`}>
           <b className={you >= quill ? 'lead' : ''}><CountUp to={you} run={counting} /></b> <span>to</span> <b className={`q${quill >= you ? ' lead' : ''}`}><CountUp to={quill} run={counting} /></b>

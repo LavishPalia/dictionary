@@ -24,7 +24,7 @@ export function RenameSheet({ net, current, onClose }: { net: DuelNet; current: 
   };
 
   return (
-    <Sheet onClose={onClose}>
+    <Sheet focus="#rename-input" onClose={onClose}>
       {(titleId) => (
         <form className="rename" id="duel-rename" onSubmit={(e) => { e.preventDefault(); void save(); }}>
           <h3 id={titleId}>Your name on the board</h3>

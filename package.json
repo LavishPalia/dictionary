@@ -87,6 +87,7 @@
     "test:duel-ranks-ui": "tsx scripts/test-duel-ranks-browser.mts",
     "test:duel-guide-ui": "node scripts/test-duel-guide-browser.mjs",
     "test:duel-pace": "tsx scripts/test-duel-pace.ts",
+    "test:duel-a11y-ui": "tsx scripts/test-duel-a11y-browser.mts",
     "test:duel-pace-ui": "node scripts/test-duel-pace-browser.mjs",
     "test:duel-sound": "tsx scripts/test-duel-sound.mts",
     "test:duel-offline-ui": "node scripts/test-duel-offline-browser.mjs",

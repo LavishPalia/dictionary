@@ -1,8 +1,9 @@
 // The Duel's root: its own router on the History API, so the package can also mount outside Next.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Puzzle } from '../engine';
 import type { Platform } from '../platform/types';
 import { NotSaved } from '../platform/web/puzzles';
+import { screenTitle } from './announce';
 import { GameController } from './controller/controller';
 import { readFlags } from './flags';
 import { WebDirector } from './fx/director';
@@ -102,6 +103,33 @@ function back() {
   if ((entry()?.duelMoves ?? 0) > 0) history.back(); else nav('/play');
 }
 
+/**
+ * A new screen is named in the page title and takes focus at its heading, so a screen reader says where it is and
+ * reading starts there. Not on opening the app, where the browser has already done both. A game's heading comes once
+ * its puzzle has loaded, so this waits for it.
+ */
+function useScreenFocus(route: Route | null) {
+  const first = useRef(true);
+  useEffect(() => {
+    if (!route) return;
+    document.title = screenTitle(route);
+    if (first.current) { first.current = false; return; }
+    const heading = () => document.querySelector<HTMLElement>('main.duel h1');
+    const focus = () => {
+      const h = heading();
+      if (!h) return false;
+      h.tabIndex = -1;
+      h.focus({ preventScroll: true });
+      return true;
+    };
+    if (focus()) return;
+    const watch = new MutationObserver(() => { if (focus()) watch.disconnect(); });
+    watch.observe(document.querySelector('main.duel')!, { childList: true, subtree: true });
+    const give = setTimeout(() => watch.disconnect(), 5000);
+    return () => { watch.disconnect(); clearTimeout(give); };
+  }, [route]);
+}
+
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {
   const [route, setRoute] = useState<Route | null>(null);
   // With the test hook on, every sound asked for is noted (a browser test has no ears).
@@ -111,6 +139,7 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
     platform.sound.play = (name, step) => { heard.push(name); play(name, step); };
   }, [platform]);
   useEffect(() => { applyLabSounds(platform); }, [platform]);
+  useScreenFocus(route);
 
   // Unsent scores go on opening, when the connection returns, and when the app comes back into view.
   useEffect(() => {

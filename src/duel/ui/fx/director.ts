@@ -4,6 +4,7 @@
 import type { CellId, GameEvent, Puzzle, SlotId, Who } from '../../engine';
 import type { Platform } from '../../platform/types';
 import type { Director, Snapshot } from '../controller/types';
+import { turnSummary } from '../announce';
 import { arcFrames, centerOf, type FxLayer, type Motion, type Pt } from './layer';
 import { mark } from './perf';
 import type { Stage } from './stage';
@@ -55,6 +56,7 @@ export class WebDirector implements Director {
       const frames = this.monitor.stop();
       if (this.motion.tier === 'normal' && shouldStepDown(frames)) this.motion.tier = 'lite';
       mark(phase, 'end');
+      this.layer.say(turnSummary(this.p, who, events, before.state.scores));
     }
   }
 
