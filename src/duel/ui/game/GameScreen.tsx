@@ -8,6 +8,7 @@ import type { FxLayer, Motion } from '../fx/layer';
 import type { Stage } from '../fx/stage';
 import { longDate, type Nav } from '../dates';
 import { turnStats } from '../controller/selectors';
+import { readResults, RESULTS_KEY } from '../../progress';
 import { CoachLayer, LaterTip } from '../guide/CoachLayer';
 import { GUIDE_KEY, nextTip, readGuide } from '../guide/tips';
 import { ActionRow } from './ActionRow';
@@ -70,7 +71,8 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   const finishedAtOpen = useRef(snap.state.over);
   if (!snap.state.over) finishedAtOpen.current = false;
   const [seen, setSeen] = useState(() => readGuide(platform.storage.get(GUIDE_KEY)));
-  const [wantCoach, setCoach] = useState(() => guide || (tips && !seen.coach));
+  // Someone with results already knows the game (a backup restored without its guide state, say).
+  const [wantCoach, setCoach] = useState(() => guide || (tips && !seen.coach && readResults(platform.storage.get(RESULTS_KEY)).length === 0));
   // Over a finished game's end screen it would have nothing to point at, so it waits for the next game.
   const coach = wantCoach && !snap.state.over;
   const endCoach = () => {

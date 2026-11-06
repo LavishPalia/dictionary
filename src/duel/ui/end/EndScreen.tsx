@@ -8,6 +8,7 @@ import type { Snapshot } from '../controller/types';
 import { dayMonth, type Nav } from '../dates';
 import type { FxLayer } from '../fx/layer';
 import { useNet } from '../ranks/WeekCard';
+import { weekOf } from '../../week';
 import { endCopy } from './copy';
 import { SealArt } from './SealArt';
 import { WordList } from './WordList';
@@ -41,8 +42,8 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
 }) {
   const { you, quill } = snap.state.scores;
   const today = istToday(new Date()), isToday = date === today;
-  const copy = endCopy({ you, quill, practice, isToday });
   const won = wonDays(readResults(platform.storage.get(RESULTS_KEY)));
+  const copy = endCopy({ you, quill, practice, isToday, starred: won.has(date) });
   const [arriving, setArriving] = useState(!instant);
   const counting = arriving && !platform.reducedMotion();
   const [schedule, setSchedule] = useState<ClientSchedule | null>(null);
@@ -101,7 +102,10 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   const sending = platform.net.statusOf(`${p.id}.v${p.version}`, snap.state.seed);
   const waiting = platform.net.unsent().reduce((n, g) => n + g.claimedScore, 0);
   const weekPoints = (week?.points ?? 0) + waiting;
+  const credit = platform.net.creditOf(`${p.id}.v${p.version}`, snap.state.seed);
   const weekLine = sending === 'rejected' ? 'This game couldn’t be counted'
+    : sending === 'unsaved' ? 'Your phone is full, so this score may not be kept'
+    : credit && credit !== weekOf(new Date()) ? 'counted for last week'
     : sending === 'waiting' ? (flushed ? 'will count when you’re online' : 'counting…')
       : `this week${week?.rank ? ` · #${week.rank}` : ''}`;
 

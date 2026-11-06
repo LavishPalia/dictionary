@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { collectDuel, restoreDuel } from '../src/duel/backup';
 import { OUTBOX_KEY, PLAYER_KEY, readOutbox, readPlayer, WEEK_KEY, withMe } from '../src/duel/net-rules';
 import { webNet } from '../src/duel/platform/web/net';
+import { webPanna } from '../src/duel/platform/web/panna';
 import type { Storage } from '../src/duel/platform/types';
 import { getBoard, getMe } from '../src/duel/server/board';
 import { query, setDb } from '../src/duel/server/db';
@@ -312,6 +313,60 @@ async function main() {
   const netC2 = webNet(phoneC, srv.fetch);
   await netC2.flush();
   check('a score unsent on the phone goes out as the backup\'s player', netC2.player()?.id === netA.player()?.id && await total() === before + unsentOnC.claimedScore && netC2.unsent().length === 0, await total());
+
+  // ── A full disk ──
+  {
+    const fullDisk = memory();
+    const set = fullDisk.set;
+    let full = true;
+    fullDisk.set = (k, v) => { if (!(full && k === OUTBOX_KEY)) set(k, v); };
+    const srv = server();
+    srv.mode = 'down';
+    const net = webNet(fullDisk, srv.fetch);
+    const g = game(7071);
+    net.enqueue(g);
+    await net.flush();
+    check('full disk: a game that couldn\'t be stored isn\'t reported as waiting or sent', net.statusOf(g.puzzle, g.seed) === 'unsaved', net.statusOf(g.puzzle, g.seed));
+    srv.mode = 'up';
+    await net.flush();
+    check('full disk: it\'s still sent while the page is open', net.statusOf(g.puzzle, g.seed) === 'sent' && net.unsent().length === 0, net.unsent().length);
+    full = false;
+    srv.mode = 'down';
+    const g2 = game(7072);
+    net.enqueue(g2);
+    check('full disk: with room again, games are stored as usual', net.statusOf(g2.puzzle, g2.seed) === 'waiting' && readOutbox(fullDisk.get(OUTBOX_KEY)).length === 1);
+  }
+
+  // ── A game counted for last week ──
+  {
+    const store = memory();
+    const replies: Record<string, unknown>[] = [];
+    const fake = (async (url: string) => {
+      if (String(url).endsWith('/players')) return new Response(JSON.stringify({ name: 'Quiet Folio', created: true }), { status: 200 });
+      replies.push({});
+      return new Response(JSON.stringify({ status: 'ok', score: 50, quillScore: 40, week: '2026-10-26', weekTotal: 900, rank: 3 }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const net = webNet(store, fake, () => new Date('2026-11-02T10:00:00Z'));
+    const g = game(7073);
+    net.enqueue(g);
+    await net.flush();
+    check('a game counted for last week doesn\'t become this week\'s total', net.week() === null, net.week());
+    check('and the device knows which week it counted for', net.creditOf(g.puzzle, g.seed) === '2026-10-26');
+  }
+
+  // ── Saving a word ──
+  {
+    const store = memory();
+    const reply = (status: number, body: unknown) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+    const entry = { entry: { normalized: 'camel', headword: 'camel' } };
+    check('a saved list with a hole in it is read safely', (() => { store.set('panna_saved_words', [null, { normalized: 'apple', headword: 'apple' }]); return webPanna(store).isSaved('apple') && !webPanna(store).isSaved('camel'); })());
+    check('saving: a word saved', (await webPanna(store, reply(200, entry)).save('camel')) === 'saved');
+    check('saving: a word Panna hasn\'t got', (await webPanna(store, reply(404, {})).save('zzz')) === 'unknown');
+    check('saving: no connection', (await webPanna(store, (async () => { throw new TypeError('offline'); }) as unknown as typeof fetch).save('moth')) === 'offline');
+    const full = memory();
+    full.set = () => {};
+    check('saving: a full disk', (await webPanna(full, reply(200, entry)).save('camel')) === 'full');
+  }
 
   // ── The service worker keeps out ──
   const worker = { self: { addEventListener() {}, location: { origin: 'http://t' } } as unknown, URL, found: null as null | ((u: URL) => string | null) };

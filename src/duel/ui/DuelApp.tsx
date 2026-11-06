@@ -76,20 +76,30 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
   return <GameScreen p={game.p} date={date} practice={game.practice} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} nav={nav} guide={flags.guide} tips={!flags.test || flags.guide} />;
 }
 
-let moves = 0;
+/** What each history entry remembers: how many moves inside the Duel led here, and from where. */
+type Entry = { duelMoves?: number; duelFrom?: string } | null;
+const entry = () => history.state as Entry;
 
-/** Moves within the Duel; the address's test flags stay on it. */
+/**
+ * Moves within the Duel; the address's test flags stay on it. Going to the home never adds a step, so system Back
+ * from there leaves the game rather than returning to the screen just closed.
+ */
 function nav(path: string) {
   const u = new URL(path, location.href);
   new URLSearchParams(location.search).forEach((v, k) => { if (k !== 'fresh' && k !== 'guide' && !u.searchParams.has(k)) u.searchParams.set(k, v); });
-  history.pushState(null, '', u.pathname + u.search);
-  moves++;
+  const moves = entry()?.duelMoves ?? 0;
+  if (u.pathname === '/play') {
+    if (entry()?.duelFrom === '/play') { history.back(); return; }
+    history.replaceState({ ...entry(), duelMoves: moves, duelFrom: undefined }, '', u.pathname + u.search);
+  } else {
+    history.pushState({ duelMoves: moves + 1, duelFrom: location.pathname }, '', u.pathname + u.search);
+  }
   dispatchEvent(new PopStateEvent('popstate'));
 }
 
 /** Back to the screen you came from; an address opened directly has none, so the home. */
 function back() {
-  if (moves > 0) { moves--; history.back(); } else nav('/play');
+  if ((entry()?.duelMoves ?? 0) > 0) history.back(); else nav('/play');
 }
 
 export default function DuelApp({ platform }: { basePath: string; platform: Platform }) {

@@ -87,7 +87,21 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
     changed();
   }
 
-  const removeFromOutbox = (key: string) => storage.set(OUTBOX_KEY, readOutbox(storage.get(OUTBOX_KEY)).filter(g => outboxKey(g) !== key));
+  /** Games a full disk wouldn't take: held here, so they can still be sent while this page is open. */
+  let held: OutboxGame[] = [];
+  /** Which week the server counted a game for, this session. */
+  const credited = new Map<string, string>();
+  const stored = () => readOutbox(storage.get(OUTBOX_KEY));
+  const queue = () => mergeOutbox(stored(), held);
+
+  /** Writes the queue and reads it back, since a full disk fails silently; what didn't stick stays held. */
+  function saveQueue(games: OutboxGame[]) {
+    storage.set(OUTBOX_KEY, games);
+    const there = new Set(stored().map(outboxKey));
+    held = games.filter(g => !there.has(outboxKey(g)));
+  }
+
+  const removeFromOutbox = (key: string) => saveQueue(queue().filter(g => outboxKey(g) !== key));
 
   function markRejected(key: string) {
     const list = storage.get<string[]>(REJECTED_KEY);
@@ -96,11 +110,12 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
 
   /** Oldest first. A game the server refused leaves the queue, so it can't block the ones behind it. */
   async function sendAll() {
-    if (!readOutbox(storage.get(OUTBOX_KEY)).length) return;
+    if (held.length) saveQueue(queue()); // there may be room now
+    if (!queue().length) return;
     let p = player();
     if (!p?.name) p = await register();
     for (;;) {
-      const game = readOutbox(storage.get(OUTBOX_KEY))[0];
+      const game = queue()[0];
       if (!game) return;
       const post = () => call('games', sendJson('POST', game, auth(p!)));
       let res = await post();
@@ -112,10 +127,13 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
         continue;
       }
       if (!res.ok) throw new TryLater();
-      const body = await res.json() as { status: string; weekTotal: number; rank: number | null };
+      const body = await res.json() as { status: string; week: string; weekTotal: number; rank: number | null };
       removeFromOutbox(outboxKey(game));
       if (body.status !== 'ok') markRejected(outboxKey(game));
-      setWeek(body.weekTotal, body.rank);
+      credited.set(outboxKey(game), body.week);
+      // A game finished on Sunday and sent on Monday counts for last week: its total isn't this week's.
+      if (body.week === weekOf(now())) setWeek(body.weekTotal, body.rank);
+      else changed();
     }
   }
 
@@ -148,17 +166,19 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
 
   return {
     enqueue(game: OutboxGame) {
-      storage.set(OUTBOX_KEY, mergeOutbox(readOutbox(storage.get(OUTBOX_KEY)), [game]));
+      saveQueue(mergeOutbox(queue(), [game]));
       changed();
       void flush();
     },
     flush,
     player,
     week: readWeek,
-    unsent: () => readOutbox(storage.get(OUTBOX_KEY)),
+    unsent: queue,
+    creditOf: (puzzle, seed) => credited.get(outboxKey({ puzzle, seed })) ?? null,
     statusOf(puzzle, seed) {
       const key = outboxKey({ puzzle, seed });
-      if (readOutbox(storage.get(OUTBOX_KEY)).some(g => outboxKey(g) === key)) return 'waiting';
+      if (held.some(g => outboxKey(g) === key)) return 'unsaved';
+      if (stored().some(g => outboxKey(g) === key)) return 'waiting';
       const rejected = storage.get<string[]>(REJECTED_KEY);
       return Array.isArray(rejected) && rejected.includes(key) ? 'rejected' : 'sent';
     },

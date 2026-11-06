@@ -44,12 +44,14 @@ export interface HelpWallet {
   earn(gain: { hint: number; word: number }): void;
 }
 
+export type SaveResult = 'saved' | 'unknown' | 'offline' | 'full';
+
 /** Panna's word pages and review deck. */
 export interface PannaBridge {
   wordHref(word: string): string;
   isSaved(word: string): boolean;
-  /** Adds it to the review deck; false when Panna doesn't know the word or can't be reached. */
-  save(word: string): Promise<boolean>;
+  /** Adds it to the review deck, or says why not. */
+  save(word: string): Promise<SaveResult>;
   remove(word: string): void;
 }
 
@@ -63,7 +65,10 @@ export interface DuelNet {
   /** The last known total and rank for the current week. */
   week(): CachedWeek | null;
   unsent(): OutboxGame[];
-  statusOf(puzzle: string, seed: number): 'sent' | 'waiting' | 'rejected';
+  /** `unsaved`: the device is too full to keep it, so it lasts only while this page is open. */
+  statusOf(puzzle: string, seed: number): 'sent' | 'waiting' | 'unsaved' | 'rejected';
+  /** The week the server counted this game for, if it answered during this visit. */
+  creditOf(puzzle: string, seed: number): string | null;
   /** The copy on this device, to show at once. */
   lastBoard(week: WeekPick): Board | null;
   /** `stale`: this is the last copy, because the server couldn't be reached. */

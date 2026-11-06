@@ -33,7 +33,7 @@ export function HelpSheet({ balance, want, onClose, closeLabel = 'Back to the ga
           <p className="free">1 Hint and 1 Word, fresh at midnight · in {untilMidnightIst(now)}</p>
           <p className="lbl2">Earn more</p>
           <ul className="earn">
-            <li>Win any game <b>+1 Hint</b></li>
+            <li>Win a daily game <b>+1 Hint</b></li>
             <li>Win today’s daily <b>+1 Word</b></li>
             <li>Every 7-day streak <b>+3 Hints</b></li>
             <li>Finish a review session <b>+1 Hint</b></li>

@@ -163,7 +163,8 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
     nav(dayHref(c.date, schedule, storage));
   };
 
-  const action = duel ? duelAction(duel) : null;
+  // Nothing left to play: every open day won. The ranks are what's left to look at.
+  const action = duel ? duelAction(duel) ?? { href: '/play/ranks', label: 'See this week’s ranks' } : null;
   const sub = duel ? duelSubLine(duel) : null;
   const heroShare = duel?.state === 'playing' ? inProgress(today) : null;
 

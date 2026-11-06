@@ -140,6 +140,35 @@ await run('Duel home', async (t) => {
   check('desktop: a centred column', w > 400 && w <= 560, w);
   await axe('home, desktop');
 
+  // ── Going back ──
+  setSchedule(sched);
+  await home();
+  await click('#duel-hero-btn');
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Back to the game home"]');
+  check('the game’s arrow returns to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
+  const stepped = await evaluate('history.length');
+  await click('#duel-hero-btn');
+  await waitFor(`location.pathname.startsWith('/play/game/')`, 10000);
+  await click('[aria-label="Settings"]');
+  await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
+  await evaluate('history.back(); true');
+  await waitFor(`location.pathname.startsWith('/play/game/')`, 10000);
+  await click('[aria-label="Settings"]');
+  await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
+  await click('#duel-settings [aria-label="Back"]');
+  check('browser Back then the arrow: one screen at a time, inside the Duel', await waitFor(`location.pathname.startsWith('/play/game/')`, 10000), await evaluate('location.pathname'));
+  check('(no extra entries were left behind)', (await evaluate('history.length')) >= stepped);
+  await open('/play/settings?seed=7');
+  await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
+  await click('#duel-settings [aria-label="Back"]');
+  check('an address opened directly goes back to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
+
+  // ── Everything won ──
+  setSchedule(fixture([TODAY]));
+  await home({ panna_duel_results: [{ date: TODAY, you: 60, quill: 40, puzzle: 'p0000.v1', at: new Date().toISOString() }] });
+  check('all won: the hero offers the ranks, not a dead end', (await text('#duel-hero-btn')) === 'See this week’s ranks', await text('#duel-hero'));
+
   // ── Swiping the month ──
   await setSize(PHONE);
   await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });

@@ -79,7 +79,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
   };
   const quiet = { enabled: true, play() {}, unlock() {}, choose() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
-  return { mem, net: webNet(storage, (async () => { throw new TypeError('offline'); }) as unknown as typeof fetch), storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => false, remove() {} }, reducedMotion: () => true, prepareOffline: async () => {}, exitHref: '/' };
+  return { mem, net: webNet(storage, (async () => { throw new TypeError('offline'); }) as unknown as typeof fetch), storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => 'offline' as const, remove() {} }, reducedMotion: () => true, prepareOffline: async () => {}, exitHref: '/' };
 }
 
 /** A correct cell for every tile in your rack (the bag invariant guarantees one each). */
@@ -340,6 +340,8 @@ async function controllerChecks() {
   check('end copy: a win', JSON.stringify(endCopy({ you: 55, quill: 41, practice: false, isToday: true })) === JSON.stringify({ kind: 'win', title: 'You win!', line: 'Professor Quill tips his hat.' }));
   check('end copy: a loss today', endCopy({ you: 41, quill: 45, practice: false, isToday: true }).line === 'Professor Quill wins by 4. Replay to earn today’s star.');
   check('end copy: a loss on a past day', endCopy({ you: 41, quill: 45, practice: false, isToday: false }).line === 'Professor Quill wins by 4. Replay to earn this day’s star.');
+  check('end copy: a replay lost on a day already won keeps its star', endCopy({ you: 41, quill: 45, practice: false, isToday: true, starred: true }).line === 'Professor Quill wins by 4. Your star is safe.');
+  check('end copy: a replay tied on a day already won keeps its star', !/Replay/.test(endCopy({ you: 41, quill: 41, practice: false, isToday: true, starred: true }).line));
   check('end copy: a tie', JSON.stringify(endCopy({ you: 46, quill: 46, practice: false, isToday: true })) === JSON.stringify({ kind: 'tie', title: 'A dead heat', line: '46 all. Replay to break the tie and win the star.' }));
   check('end copy: practice promises no star', !/star/.test(endCopy({ you: 41, quill: 45, practice: true, isToday: true }).line) && !/star/.test(endCopy({ you: 4, quill: 4, practice: true, isToday: true }).line));
 
