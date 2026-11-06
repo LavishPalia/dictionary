@@ -21,7 +21,7 @@ export const T = {
  * so a turn finishing many words doesn't keep the player waiting.
  */
 export interface Pace { pace: number; ramp: number }
-export const SCORING: Pace = { pace: 1, ramp: 1 };
+export const SCORING: Pace = { pace: 0.5, ramp: 0.7 };
 /** How much a duration shrinks for the Nth word (the tiles count as 0). Never so quick it can't be read. */
 export const scoringScale = (word: number, s: Pace = SCORING) => Math.max(0.35, s.pace * Math.pow(s.ramp, word));
 

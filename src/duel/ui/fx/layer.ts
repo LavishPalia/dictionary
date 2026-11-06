@@ -4,7 +4,7 @@
 import { CONFETTI, EASE, T, type Pace } from './timings';
 
 export interface Pt { x: number; y: number }
-export interface Motion { reduced: boolean; tier: 'normal' | 'lite'; pacing?: Pace }
+export interface Motion { reduced: boolean; tier: 'normal' | 'lite' }
 
 export const centerOf = (r: DOMRect): Pt => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 

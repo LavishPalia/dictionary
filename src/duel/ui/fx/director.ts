@@ -68,11 +68,11 @@ export class WebDirector implements Director {
       return;
     }
     let words = 0;
-    this.scale = scoringScale(0, this.motion.pacing);
+    this.scale = scoringScale(0);
     await this.wait(this.sc(T.submitPause));
     this.shown = before.state.scores.you;
     for (const ev of events) {
-      if (ev.e === 'word') this.scale = scoringScale(words++, this.motion.pacing);
+      if (ev.e === 'word') this.scale = scoringScale(words++);
       switch (ev.e) {
         case 'emptyHand': this.note('you:emptyHand'); await this.emptyHand(); break;
         case 'judged': this.note('you:judged'); await this.judge(ev); break;
@@ -257,7 +257,6 @@ export class WebDirector implements Director {
   private async resolveQuill(events: GameEvent[]) {
     const pill = this.stage.el('pill', 'quill');
     pill?.setAttribute('data-fx-thinking', '');
-    this.platform.sound.play('think');
     await this.wait(this.motion.reduced ? T.thinkReduced : T.thinkMin + Math.random() * (T.thinkMax - T.thinkMin));
     pill?.removeAttribute('data-fx-thinking');
 

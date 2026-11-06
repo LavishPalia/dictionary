@@ -11,12 +11,10 @@ import { FxLayer, type Motion } from './fx/layer';
 import { setPerf } from './fx/perf';
 import { Stage } from './fx/stage';
 import { pickTier } from './fx/tier';
-import { SCORING } from './fx/timings';
 import { GameScreen } from './game/GameScreen';
 import { gameKey } from '../progress';
 import { Home } from './home/Home';
 import { HowToPlay } from './how/HowToPlay';
-import { applyLabSounds, Lab } from './lab/Lab';
 import { Ranks } from './ranks/Ranks';
 import { Settings } from './settings/Settings';
 import { istToday, landingPath, parsePath, type Route } from './router';
@@ -26,7 +24,6 @@ import './styles/end.css';
 import './styles/guide.css';
 import './styles/book.css';
 import './styles/ranks.css';
-import './styles/lab.css';
 
 declare global {
   interface Window { __duel?: { snapshot: () => unknown; puzzle: Puzzle; trace: string[]; platform: Platform }; __duelSounds?: string[] }
@@ -41,7 +38,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
   useEffect(() => {
     let live = true;
     setPerf(flags.perf);
-    const motion: Motion = { reduced: platform.reducedMotion(), tier: flags.tier ?? pickTier(navigator as Navigator & { deviceMemory?: number }), pacing: { pace: flags.pace ?? SCORING.pace, ramp: flags.ramp ?? SCORING.ramp } };
+    const motion: Motion = { reduced: platform.reducedMotion(), tier: flags.tier ?? pickTier(navigator as Navigator & { deviceMemory?: number }) };
     const layer = new FxLayer(motion);
     // No controller is built until the puzzle loads, so a failed load leaves the saved game as it was.
     void platform.puzzles.forDate(date).then(({ puzzle: p, practice }) => {
@@ -138,7 +135,6 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
     const heard: string[] = window.__duelSounds = [], play = platform.sound.play;
     platform.sound.play = (name, step) => { heard.push(name); play(name, step); };
   }, [platform]);
-  useEffect(() => { applyLabSounds(platform); }, [platform]);
   useScreenFocus(route);
 
   // Unsent scores go on opening, when the connection returns, and when the app comes back into view.
@@ -183,7 +179,6 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
       {route && 'screen' in route && route.screen === 'settings' && <Settings platform={platform} nav={nav} back={back} />}
       {route && 'screen' in route && route.screen === 'how' && <HowToPlay nav={nav} back={back} />}
       {route && 'screen' in route && route.screen === 'ranks' && <Ranks platform={platform} nav={nav} back={back} />}
-      {route && 'screen' in route && route.screen === 'lab' && <Lab platform={platform} nav={nav} back={back} />}
     </main>
   );
 }

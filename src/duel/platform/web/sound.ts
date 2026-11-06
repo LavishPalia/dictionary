@@ -7,7 +7,12 @@ type Tone = { type?: OscillatorType; vol?: number; at?: number; slide?: number }
 export interface SoundFile { src: string; gain?: number }
 
 /** The chosen files (Kenney's CC0 packs). Names carry a version, because they are cached forever. */
-export const SOUND_FILES: Partial<Record<SoundName, SoundFile>> = {};
+export const SOUND_FILES: Partial<Record<SoundName, SoundFile>> = {
+  drop: { src: '/duel/sounds/drop.v1.mp3' },
+  wrong: { src: '/duel/sounds/wrong.v1.mp3' },
+  rack: { src: '/duel/sounds/rack.v1.mp3' },
+  thud: { src: '/duel/sounds/thud.v1.mp3' },
+};
 
 export const soundFileList = (files = SOUND_FILES): string[] => Object.values(files).map(f => f.src);
 
@@ -49,7 +54,6 @@ export function webSound({ files = SOUND_FILES, audioContext, fetchFn = (...a) =
   };
   const rising = (notes: number[], step = 0.07, dur = 0.5) => notes.forEach((f, i) => tone(f, dur, { vol: 0.07, at: i * step }));
   const SND: Record<SoundName, (step: number) => void> = {
-    lift: () => knock(0.07, 1600),
     drop: () => knock(0.2, 850),
     chip: (i) => tone(740 * Math.pow(2, i / 12), 0.14, { vol: 0.07 }),
     coin: () => tone(1320, 0.08, { vol: 0.04 }),
@@ -57,14 +61,12 @@ export function webSound({ files = SOUND_FILES, audioContext, fetchFn = (...a) =
     wrong: () => { tone(140, 0.22, { type: 'square', vol: 0.05, slide: 0.6 }); knock(0.12, 300); },
     bonus: () => { rising([523, 659, 784, 1047, 1319, 1568]); tone(2093, 0.8, { vol: 0.03, at: 0.45 }); },
     rack: () => knock(0.1, 1200),
-    think: () => tone(330, 0.12, { vol: 0.03 }),
     thud: () => { tone(90, 0.3, { type: 'triangle', vol: 0.2, slide: 0.6 }); knock(0.2, 260); },
     chime: () => rising([784, 988, 1175], 0.09),
     seal: () => rising([523, 659, 784, 1047, 1319], 0.11, 0.7),
     crown: () => { rising([523, 659, 784, 1047, 1319, 1568], 0.09, 0.6); tone(2093, 1, { vol: 0.03, at: 0.6 }); },
   };
 
-  const chosen = new Map(Object.entries(files) as [SoundName, SoundFile][]);
   const buffers = new Map<string, Promise<AudioBuffer | null>>();
   const decoded = new Map<string, AudioBuffer>();
   const load = (a: AudioContext, src: string) => {
@@ -80,7 +82,7 @@ export function webSound({ files = SOUND_FILES, audioContext, fetchFn = (...a) =
     })());
   };
   const playFile = (a: AudioContext, name: SoundName, step: number): boolean => {
-    const file = chosen.get(name), buffer = file && decoded.get(file.src);
+    const file = files[name], buffer = file && decoded.get(file.src);
     if (!file || !buffer) return false;
     const n = a.createBufferSource(), g = a.createGain();
     n.buffer = buffer;
@@ -101,11 +103,7 @@ export function webSound({ files = SOUND_FILES, audioContext, fetchFn = (...a) =
     unlock() {
       const a = ctx();
       if (!a || !sound.enabled) return; // with Sound off, nothing is fetched
-      for (const f of chosen.values()) load(a, f.src);
-    },
-    choose(name, file) {
-      if (file) chosen.set(name, file); else chosen.delete(name);
-      if (ac && file) load(ac, file.src);
+      for (const f of Object.values(files)) load(a, f.src);
     },
   };
   return sound;

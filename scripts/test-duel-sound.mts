@@ -1,5 +1,6 @@
 // The Duel's sound adapter with a stand-in AudioContext: files where chosen, the synthesised sound otherwise.
-import { webSound } from '../src/duel/platform/web/sound';
+import { existsSync, statSync } from 'node:fs';
+import { SOUND_FILES, soundFileList, webSound } from '../src/duel/platform/web/sound';
 
 let failures = 0, total = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -94,6 +95,16 @@ const ok = (async () => new Response(new ArrayBuffer(8))) as unknown as typeof f
     s.play(name);
     check(`${name} has a synthesised sound`, log.oscillators > before);
   }
+}
+
+{
+  const files = soundFileList();
+  check('the chosen sounds are the landing, a wrong tile, a new tile and the seal', Object.keys(SOUND_FILES).sort().join() === 'drop,rack,thud,wrong', Object.keys(SOUND_FILES));
+  const missing = files.filter(f => !existsSync(`public${f}`));
+  check('every chosen file is there', missing.length === 0, missing);
+  check('each name carries a version, because it is cached forever', files.every(f => /\.v\d+\.mp3$/.test(f)), files);
+  const bytes = files.filter(f => existsSync(`public${f}`)).reduce((n, f) => n + statSync(`public${f}`).size, 0);
+  check('together they stay under 150 KB', bytes <= 150 * 1024, bytes);
 }
 
 if (failures) { console.error(`\n${failures} failed`); process.exit(1); }

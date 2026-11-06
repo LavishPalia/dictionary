@@ -93,7 +93,6 @@ export class Input {
     d.ghost = this.layer.tile(d.letter, d.rect, 'lifted');
     d.ghost.style.transformOrigin = '50% 50%';
     d.el.setAttribute('data-fx-hidden', '');
-    this.platform.sound.play('lift');
     this.platform.haptics.tick();
     const loop = () => {
       if (this.d !== d || !d.ghost) return;
@@ -196,7 +195,6 @@ export class Input {
     const to = cellRect(this.stage.rect('cell', cell)!);
     const g = this.layer.tile(letter, from, 'lifted');
     src.setAttribute('data-fx-hidden', '');
-    this.platform.sound.play('lift');
     const frames = this.motion.reduced
       ? [{ transform: `translate3d(${to.left}px,${to.top}px,0) scale(${to.width / from.width})` }]
       : arcFrames({ x: from.left, y: from.top }, { x: to.left, y: to.top }, 50, { s0: 1.12, s1: to.width / from.width });

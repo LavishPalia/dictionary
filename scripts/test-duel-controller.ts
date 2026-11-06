@@ -77,7 +77,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
     set(k: string, v: unknown) { mem.set(k, JSON.stringify(v)); },
     remove(k: string) { mem.delete(k); },
   };
-  const quiet = { enabled: true, play() {}, unlock() {}, choose() {} };
+  const quiet = { enabled: true, play() {}, unlock() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
   return { mem, net: webNet(storage, (async () => { throw new TypeError('offline'); }) as unknown as typeof fetch), storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => 'offline' as const, remove() {} }, reducedMotion: () => true, prepareOffline: async () => {}, exitHref: '/' };
 }

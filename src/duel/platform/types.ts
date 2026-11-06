@@ -12,14 +12,12 @@ export interface Storage {
   remove(key: string): void;
 }
 
-export type SoundName = 'lift' | 'drop' | 'chip' | 'coin' | 'word' | 'wrong' | 'bonus' | 'rack' | 'think' | 'thud' | 'chime' | 'seal' | 'crown';
+export type SoundName = 'drop' | 'chip' | 'coin' | 'word' | 'wrong' | 'bonus' | 'rack' | 'thud' | 'chime' | 'seal' | 'crown';
 export interface Sound {
   /** `step` raises a chip's note by that many semitones. */
   play(name: SoundName, step?: number): void;
   /** Browsers only start audio after a user activation: called on every pointerup and key press (cheap, idempotent). */
   unlock(): void;
-  /** For the lab: which file a sound uses, or null for the synthesised one. */
-  choose(name: SoundName, file: { src: string; gain?: number } | null): void;
   enabled: boolean;
 }
 
