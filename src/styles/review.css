@@ -71,6 +71,7 @@
 .review-muted { margin: 0 0 12px; font: 16px/1.5 var(--font-fell); color: var(--ink-soft); }
 .review-muted b { color: var(--ink); font-weight: normal; font-family: var(--font-fell-sc); }
 .review-note { margin: 8px 0 0; font: italic 13.5px var(--font-fell); color: var(--ink-soft); }
+.review-links { display: flex; flex-wrap: wrap; justify-content: center; column-gap: var(--space-4); }
 
 /* Learning / Mastered on saved words. */
 .review-status { flex: none; }

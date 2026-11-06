@@ -222,8 +222,10 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
               <p className="review-note">Practice doesn’t change when words come back.</p>
             </>
           )}
-          {howLink}
-          <button type="button" className="lookup-link tour-howlink" id="review-learn-link" onClick={onOpenGuide}>How to learn with Panna ›</button>
+          <div className="review-links">
+            {howLink}
+            <button type="button" className="lookup-link tour-howlink" id="review-learn-link" onClick={onOpenGuide}>How to learn with Panna ›</button>
+          </div>
         </div>
         <Button variant="desk" full onClick={saved.length ? onOpenSaved : onClose}>{saved.length ? 'See saved words' : 'Done'}</Button>
       </section>

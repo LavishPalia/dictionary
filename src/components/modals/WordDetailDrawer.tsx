@@ -128,7 +128,8 @@ export const WordDetailDrawer: React.FC<WordDetailDrawerProps> = ({
   );
 
   return (
-    <Sheet open={isOpen} onClose={onClose} labelledBy="word-sheet-title" id="word-sheet" scrimId="word-drawer-backdrop" variant="side">
+    <Sheet open={isOpen} onClose={onClose} labelledBy="word-sheet-title" id="word-sheet" scrimId="word-drawer-backdrop" variant="side"
+      backCloses={() => !window.location.pathname.startsWith('/word/')}>
       {heard && (
         <p className="word-heard" id="word-heard" role="status">
           <MicIcon />Heard <i>{heard.text}</i>

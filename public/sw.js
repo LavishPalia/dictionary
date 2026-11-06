@@ -14,6 +14,7 @@
 //                                             "Save the book for offline" has run, else the pages visited)
 //   Page visits (HTML)                        network first; offline, the cached copy of that address, else a
 //                                             redirect to Today (Next cannot run Today's page under another address)
+//                                             carrying the address in ?missing=, for Today to open it or say why not
 //
 // Cache names are shared with src/lib/offline.ts, which saves the whole book into BOOK.
 const STATIC = 'panna-static-v1';
@@ -203,7 +204,7 @@ async function page(request) {
     const hit = await caches.match(key, { cacheName: PAGES });
     if (hit) return hit;
     const url = new URL(request.url);
-    if (url.pathname !== '/' && await caches.match('/', { cacheName: PAGES })) return Response.redirect('/', 302);
+    if (url.pathname !== '/' && await caches.match('/', { cacheName: PAGES })) return Response.redirect(`/?missing=${encodeURIComponent(url.pathname)}`, 302);
     return new Response('<!doctype html><meta charset="utf-8"><title>Panna</title><p style="font:18px Georgia,serif;padding:2em">You’re offline, and Panna hasn’t been opened on this device before. Connect once, and it will work offline after that.</p>',
         { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }

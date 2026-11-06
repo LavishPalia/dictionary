@@ -96,9 +96,11 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 // when the opener is known: Safari does not focus a button when it is clicked, so "whatever had focus" is not it.
 // variant "side" docks to the right edge on wide screens (still a bottom sheet on phones). Pass labelledBy to
 // use a heading inside children as the dialog's name instead of the built-in title, or ariaLabel to name it without one.
-export function Sheet({ open, onClose, title, hideTitle, labelledBy, ariaLabel, children, id, scrimId, className, returnFocusTo, variant = 'center' }: {
+export function Sheet({ open, onClose, title, hideTitle, labelledBy, ariaLabel, children, id, scrimId, className, returnFocusTo, backCloses, variant = 'center' }: {
   open: boolean;
   onClose: () => void;
+  /** Asked on opening; false when the sheet has a history entry of its own, so the browser's Back already closes it. */
+  backCloses?: () => boolean;
   title?: string;
   hideTitle?: boolean;
   labelledBy?: string;
@@ -116,18 +118,25 @@ export function Sheet({ open, onClose, title, hideTitle, labelledBy, ariaLabel, 
   onCloseRef.current = onClose;
   const returnFocusRef = useRef(returnFocusTo);
   returnFocusRef.current = returnFocusTo;
+  const backClosesRef = useRef(backCloses);
+  backClosesRef.current = backCloses;
 
   useEffect(() => {
     if (!open) return;
     const opener = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    // Android's Back closes the sheet, instead of moving the page under it. This needs no history entry, so closing
+    // with a button spends no Back step. Browsers without CloseWatcher (Safari, Firefox) carry on as before.
+    const Watcher = (window as Window & { CloseWatcher?: new () => { onclose: (() => void) | null; destroy: () => void } }).CloseWatcher;
+    const watcher = Watcher && backClosesRef.current?.() !== false ? new Watcher() : null;
+    if (watcher) watcher.onclose = () => onCloseRef.current();
     // Focus the sheet itself: screen readers announce its name, and no button shows a focus ring
     // before the reader has pressed a key. Tab then reaches the first control.
     const node = panel.current;
     node?.focus();
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') { event.stopPropagation(); onCloseRef.current(); return; }
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onCloseRef.current(); return; } // preventDefault: the watcher would close it again
       if (event.key !== 'Tab' || !panel.current) return;
       const items = Array.from(panel.current.querySelectorAll<HTMLElement>(FOCUSABLE));
       if (!items.length) return;
@@ -137,6 +146,7 @@ export function Sheet({ open, onClose, title, hideTitle, labelledBy, ariaLabel, 
     };
     document.addEventListener('keydown', onKey, true);
     return () => {
+      watcher?.destroy();
       document.removeEventListener('keydown', onKey, true);
       document.body.style.overflow = overflow;
       // Focus already sent elsewhere (say, to the search box a voice result filled) stays where it is.

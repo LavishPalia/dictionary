@@ -103,7 +103,18 @@ async function main() {
       await openGoTo();
       check(`${sizeName}: clicking it opens #goto-sheet`, await sheetOpen());
       const field = await evaluate(`(() => { const i = document.querySelector('#goto-page-input'); return i && { value: i.value, focused: document.activeElement === i, selected: i.selectionStart === 0 && i.selectionEnd === i.value.length, mode: i.getAttribute('inputmode') }; })()`);
-      check(`${sizeName}: the field holds the current page, focused and selected`, field && field.value === String(START) && field.focused && field.selected && field.mode === 'numeric', field);
+      if (phone) {
+        // No keyboard until the reader asks for one: it would cover the last letters, with no way to scroll to them.
+        check('phone: the field holds the current page, without opening the keyboard', field && field.value === String(START) && !field.focused && field.mode === 'numeric', field);
+        const lastLetter = await evaluate(`(() => { const b = document.querySelector('#goto-sheet .goto-letter:last-of-type').getBoundingClientRect(); return { bottom: b.bottom, height: innerHeight }; })()`);
+        check('phone: every letter is on screen', lastLetter.bottom <= lastLetter.height, lastLetter);
+        await send('Emulation.setFocusEmulationEnabled', { enabled: true }); // a headless page gets no focus events otherwise
+        await evaluate(`document.querySelector('#goto-page-input').focus(); true`);
+        const tapped = await evaluate(`(() => { const i = document.querySelector('#goto-page-input'); return i.selectionStart === 0 && i.selectionEnd === i.value.length; })()`);
+        check('phone: tapping the field selects the page, so typing replaces it', tapped);
+      } else {
+        check('desktop: the field holds the current page, focused and selected', field && field.value === String(START) && field.focused && field.selected && field.mode === 'numeric', field);
+      }
       const texts = await evaluate(`(() => { const s = document.querySelector('#goto-sheet'); return s && { title: s.querySelector('h2')?.textContent, text: s.innerText }; })()`);
       check(`${sizeName}: titled "Go to", with the hint line`, texts?.title === 'Go to' && texts.text.includes(`of ${fmt(total)} pages · or pick a letter`), texts);
 
@@ -140,6 +151,38 @@ async function main() {
       check(`${sizeName}: the scrim closes it`, !(await sheetOpen()));
       await openGoTo();
       check(`${sizeName}: reopening clears the old error`, await evaluate(`!document.querySelector('#goto-error')`));
+      if (phone) {
+        // Android's Back reaches a close watcher through requestClose(): the sheet closes, and the page under it stays.
+        await evaluate(`(() => { const Real = window.CloseWatcher; window.__watchers = []; window.CloseWatcher = class extends Real { constructor(...a) { super(...a); window.__watchers.push(this); } }; return true; })()`);
+        await key('Escape');
+        await sleep(300);
+        const backCloses = async (label, isOpen, opener) => {
+          await evaluate(`(${opener})(); true`);
+          await sleep(400);
+          const made = await evaluate('window.__watchers.length');
+          const before = await where();
+          await evaluate('window.__watchers.at(-1)?.requestClose(); true');
+          await sleep(400);
+          check(`phone: Back closes ${label} and leaves the page`, made > 0 && !(await evaluate(isOpen)) && (await where()) === before, { made, path: await where(), before });
+        };
+        await backCloses('the Go to sheet', `Boolean(document.querySelector('#goto-sheet'))`, `() => document.querySelector('#page-number-btn').click()`);
+        await backCloses('the settings menu', `Boolean(document.querySelector('#reading-menu'))`, `() => document.querySelector('#menu-btn').click()`);
+        // The word sheet has its own history entry (/word/…), so Back already closes it: a watcher would spend a Back step.
+        const count = await evaluate('window.__watchers.length');
+        await evaluate(`document.querySelector('#mobile-page .entry-headword').click(); true`);
+        await sleep(600);
+        check('phone: the word sheet at its own address leaves Back to the browser', await evaluate(`Boolean(document.querySelector('#word-sheet')) && location.pathname.startsWith('/word/')`) && await evaluate('window.__watchers.length') === count,
+          await evaluate(`({ path: location.pathname, sheet: Boolean(document.querySelector('#word-sheet')), watchers: window.__watchers.length })`));
+        await evaluate('history.back(); true');
+        await sleep(500);
+        check('phone: Back from the word sheet returns to the page', !(await evaluate(`Boolean(document.querySelector('#word-sheet'))`)) && (await where()) === `/page/${START}`, await where());
+        // Held sideways, the bar is slim and the page uses the width.
+        check('phone landscape: app hydrates', await open(`/page/${START}`, { width: 844, height: 390, mobile: true }));
+        const wide = await evaluate(`({ bar: document.querySelector('.app-bottomnav').getBoundingClientRect().height, page: document.querySelector('#mobile-page').getBoundingClientRect().width, doc: document.documentElement.scrollWidth, width: innerWidth })`);
+        check('phone landscape: a slim bar and a wider page, with no sideways scroll', wide.bar <= 44 && wide.page > 500 && wide.doc <= wide.width, wide);
+        check('phone: upright again', await open(`/page/${START}`, size));
+        await openGoTo();
+      }
 
       // ── Typing a page and Enter ──
       await typePage('40');

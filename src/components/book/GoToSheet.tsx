@@ -38,7 +38,11 @@ export function GoToSheet({ open, onClose, currentPage, totalPages, thumbIndex, 
     setError(false);
     // After Sheet has focused itself (its effect runs first, as a child).
     const input = inputRef.current;
-    if (input) { input.value = String(currentPage); input.focus(); input.select(); }
+    if (input) {
+      input.value = String(currentPage);
+      // Phones wait for a tap on the field: the keyboard would cover the last letters, with no way to scroll to them.
+      if (window.matchMedia('(min-width: 1024px)').matches) { input.focus(); input.select(); }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on opening
   }, [open]);
 
@@ -67,6 +71,7 @@ export function GoToSheet({ open, onClose, currentPage, totalPages, thumbIndex, 
           aria-describedby={error ? 'goto-error goto-hint' : 'goto-hint'}
           aria-invalid={error || undefined}
           value={text}
+          onFocus={(e) => e.target.select()}
           onChange={(e) => { setText(e.target.value); if (error) setError(false); }}
         />
         <button type="submit" id="goto-go-btn" className="goto-go">Go</button>

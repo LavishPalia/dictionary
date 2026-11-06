@@ -986,10 +986,20 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // The iPhone Shortcut's link, found after mount (it depends on the browser); '' hides its rows.
   const [iosShortcut, setIosShortcut] = useState('');
   useEffect(() => { setIosShortcut(iosShortcutLink(navigator.userAgent)); }, []);
+  // On a fresh open the book is still at the front page's page 1, so it turns to the reader's place, as "Open book" does.
+  const openBook = () => {
+    if (lastReadPage && lastReadPage !== currentPage) {
+      window.scrollTo(0, 0);
+      showBookForNavigation();
+      setHighlightedWord('');
+      turnToPage(lastReadPage);
+    } else goTo('book');
+    if (!isBookOpen) setIsBookOpen(true);
+  };
   const handleLearnAction = (action: LearnAction) => {
     switch (action) {
       case 'review': goTo('review'); break;
-      case 'book': goTo('book'); if (!isBookOpen) setIsBookOpen(true); break;
+      case 'book': openBook(); break;
       case 'continue':
         // As Today's "Continue reading"; with no page read yet, the book where it is.
         if (lastReadPage) { showBookForNavigation(); setHighlightedWord(''); turnToPage(lastReadPage); } else goTo('book');
@@ -1163,6 +1173,20 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     goTo('saved');
   };
 
+  // A page the service worker sent back here (below). State, so the turn runs once isMobile is known: a turn that thinks
+  // it's on a desktop waits for a flip that a phone never draws.
+  const [missingPage, setMissingPage] = useState<number | null>(null);
+  useEffect(() => {
+    if (missingPage === null) return;
+    setMissingPage(null);
+    fetchPage(missingPage).then((found) => {
+      if (found) { showBookForNavigation(); setHighlightedWord(''); turnToPage(missingPage); }
+      else setShareNote(`Page ${missingPage.toLocaleString('en-IN')} isn’t saved on this device. Connect to open it.`);
+    });
+  // Once, when the launch sets it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missingPage]);
+
   // Opened from the share sheet or an icon shortcut (src/app/manifest.ts): act on it once, and give the address back.
   useEffect(() => {
     const launch = readLaunch(window.location.search);
@@ -1170,7 +1194,19 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     window.history.replaceState(window.history.state, '', window.location.pathname);
     if (launch.kind === 'voice') setVoiceReady(true);
     else if (launch.kind === 'open') goTo(launch.section);
-    else {
+    else if (launch.kind === 'missing') {
+      // Offline, at an address the service worker has no copy of. The book's pages may still be saved.
+      const page = /^\/page\/(\d+)$/.exec(launch.path);
+      const word = /^\/word\/(.+)$/.exec(launch.path);
+      if (page) setMissingPage(Number(page[1]));
+      else if (word) {
+        const name = (() => { try { return decodeURIComponent(word[1]); } catch { return word[1]; } })();
+        fetchWord(name).then((found) => {
+          if (found) { recordEntry(found.entry, 'other', found.pageNumber); setActiveWordEntry(found.entry); setShowWordDrawer(true); }
+          else setShareNote('That word isn’t saved on this device. Connect to look it up.');
+        });
+      } else setShareNote('That page isn’t saved on this device. Connect to open it.');
+    } else {
       const shared = cleanShared(launch);
       if (shared.kind === 'link') { setLookupFill({ text: '' }); setShareNote('Share a word or sentence, not a link'); }
       else if (shared.kind === 'empty') setShareNote('Share a word or sentence');
@@ -1223,12 +1259,16 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const canPrevMobile = currentPage > 1;
   const canNextMobile = currentPage < meta.total_pages;
 
-  // Remember the page being read, for "Continue reading" on Today.
+  // Remember the page being read, for "Continue reading" on Today. The front page loads the book at page 1, which the
+  // reader didn't choose: until the book has moved, it must not replace the place saved on an earlier visit.
+  const bookPlacedRef = useRef(initialSection === 'book');
   useEffect(() => {
     if (section !== 'book') return;
+    if (currentPage !== initialPage) bookPlacedRef.current = true;
+    if (!bookPlacedRef.current && lastReadPage !== null) return;
     setLastReadPage(currentPage);
     try { localStorage.setItem('panna_last_page', String(currentPage)); } catch {}
-  }, [section, currentPage]);
+  }, [section, currentPage, initialPage, lastReadPage]);
 
   // "tomorrow (4 words)" for Today when nothing is due.
   const nextReviewLabel = useMemo(() => {
@@ -1318,7 +1358,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         savedCount={savedCount}
         onOpenSaved={() => goTo(section === 'saved' ? homeSection : 'saved')}
         onOpenReview={() => goTo(section === 'review' ? homeSection : 'review')}
-        onOpenToday={() => goTo(section === 'today' ? 'book' : 'today')}
+        onOpenToday={() => (section === 'today' ? openBook() : goTo('today'))}
         section={section}
         dueCount={dueCount}
         onOpenMenu={() => setShowMenu(true)}
@@ -1618,7 +1658,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         active={section}
         savedCount={savedCount}
         dueCount={dueCount}
-        onBook={() => { goTo('book'); if (!isBookOpen) setIsBookOpen(true); }}
+        onBook={openBook}
         onSaved={() => goTo('saved')}
         onToday={() => goTo('today')}
         onReview={() => goTo('review')}
