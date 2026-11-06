@@ -125,7 +125,9 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
   }, [platform]);
 
   return (
-    <main className="duel">
+    // Browsers start audio only on a "user activation": on touch that is the finger lifting (pointerup), not
+    // pointerdown, so the sound unlocks here, for every screen (keys unlock in Input).
+    <main className="duel" onPointerUpCapture={() => platform.sound.unlock()}>
       {!route && <div className="duel-game" aria-busy="true" />}
       {route && 'date' in route && <Game key={route.date} date={route.date} platform={platform} />}
       {route && 'screen' in route && route.screen === 'home' && <Home platform={platform} nav={nav} />}

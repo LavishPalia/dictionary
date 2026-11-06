@@ -8,7 +8,7 @@ import { webNet } from './net';
 import { webOffline } from './offline';
 import { webPanna } from './panna';
 import { webPuzzles } from './puzzles';
-import { webSound } from './sound';
+import { soundFileList, webSound } from './sound';
 import { webStorage } from './storage';
 
 export function webPlatform(): Platform {
@@ -24,7 +24,7 @@ export function webPlatform(): Platform {
     sound,
     haptics,
     puzzles,
-    prepareOffline: webOffline(storage, puzzles),
+    prepareOffline: webOffline(storage, puzzles, soundFileList),
     help: webHelp(storage, () => istToday(new Date())),
     panna: webPanna(storage),
     reducedMotion: () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,

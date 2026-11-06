@@ -109,10 +109,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
   // While a sheet is open, everything behind it is out of reach (focus, taps, screen readers).
   const behind = snap.sheet !== null || coach || (snap.state.over && !snap.busy);
   return (
-    // Browsers start audio only on a "user activation": on touch that is the finger lifting (pointerup), not
-    // pointerdown, so the sound unlocks here (keys unlock in Input).
-    <div className={`duel-game${snap.busy ? ' busy' : ''}`} ref={root} onPointerDownCapture={onPointerDown}
-      onPointerUpCapture={() => platform.sound.unlock()}>
+    <div className={`duel-game${snap.busy ? ' busy' : ''}`} ref={root} onPointerDownCapture={onPointerDown}>
       <div className="duel-main" inert={behind}>
       <header className="duel-top">
         <a className="ib" href="/play" aria-label="Back to the game home" onClick={(e) => { e.preventDefault(); nav('/play'); }}>
