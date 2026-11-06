@@ -9,6 +9,7 @@ import { HelpSheet } from '../game/HelpSheet';
 import { LaterTip } from '../guide/CoachLayer';
 import { GUIDE_KEY, nextTip, readGuide } from '../guide/tips';
 import { Sheet } from '../game/Sheet';
+import { WeekCard } from '../ranks/WeekCard';
 import { Calendar, MonthSeal } from './Calendar';
 import { DaySheet } from './DaySheet';
 
@@ -173,6 +174,8 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
             <Calendar month={month} first={range.first} last={range.last} coins={cal.coins} won={cal.won} total={cal.total} stamp={stamp} onMonth={setMonth} onDay={onDay} />
             <MonthSeal month={month} won={cal.won} total={cal.total} sealed={cal.sealed} days={cal.coins.length} />
           </section>
+
+          <WeekCard net={platform.net} nav={nav} />
 
           <a className="page-link" href="/play/how" onClick={(e) => { e.preventDefault(); nav('/play/how'); }}>How to play</a>
         </>

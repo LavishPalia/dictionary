@@ -1,9 +1,11 @@
 // The Duel UI's logic that runs without a browser: the router, URL flags, tiers and the game controller.
 // Usage: npx tsx scripts/test-duel-controller.ts
 import { readFileSync } from 'node:fs';
-import { emptyCells, replay, RULES_ID, type CellId, type Puzzle } from '../src/duel/engine';
+import { emptyCells, replay, RULES_ID, type Action, type CellId, type Puzzle } from '../src/duel/engine';
 import type { Platform } from '../src/duel/platform/types';
 import { webHelp } from '../src/duel/platform/web/help';
+import { webNet } from '../src/duel/platform/web/net';
+import { OUTBOX_KEY, readOutbox } from '../src/duel/net-rules';
 import { turnStats, wordReview } from '../src/duel/ui/controller/selectors';
 import { nextTip } from '../src/duel/ui/guide/tips';
 import { endCopy } from '../src/duel/ui/end/copy';
@@ -29,8 +31,9 @@ async function main() {
   check('/play/ → the home', (parsePath('/play/', '2026-11-01') as any).screen === 'home');
   check('a past date opens', (parsePath('/play/game/2026-10-28', '2026-11-01') as any).date === '2026-10-28');
   check('today opens', (parsePath('/play/game/2026-11-01', '2026-11-01') as any).date === '2026-11-01');
-  for (const bad of ['/play/game/2026-11-02', '/play/game/banana', '/play/game/2026-02-30', '/play/ranks'])
+  for (const bad of ['/play/game/2026-11-02', '/play/game/banana', '/play/game/2026-02-30', '/play/nowhere'])
     check(`${bad} → today`, (parsePath(bad, '2026-11-01') as any).redirect === '/play/game/2026-11-01');
+  check('/play/ranks opens the ranks', JSON.stringify(parsePath('/play/ranks', '2026-11-01')) === JSON.stringify({ screen: 'ranks' }));
 
   // ── Flags ──
   check('seed flag', readFlags('?seed=7').seed === 7 && readFlags('?seed=7').test && !readFlags('').test);
@@ -67,7 +70,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
   };
   const quiet = { enabled: true, play() {}, unlock() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
-  return { mem, storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => false, remove() {} }, reducedMotion: () => true, exitHref: '/' };
+  return { mem, net: webNet(storage, (async () => { throw new TypeError('offline'); }) as unknown as typeof fetch), storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => false, remove() {} }, reducedMotion: () => true, exitHref: '/' };
 }
 
 /** A correct cell for every tile in your rack (the bag invariant guarantees one each). */
@@ -220,10 +223,14 @@ async function controllerChecks() {
 
   // n. a game to the end, then Play again
   pf = memoryPlatform(); d = new NullDirector(); c = new GameController(p0, DATE, pf, d, { seed: 123 });
+  let queuedByEnd: boolean | null = null;
+  const unwatch = c.subscribe(() => { if (queuedByEnd === null && c.snapshot().state.over) queuedByEnd = readOutbox(pf.storage.get(OUTBOX_KEY)).length === 1; });
   for (let turns = 0; turns < 80 && !c.snapshot().state.over; turns++) {
     for (const t of correctPlacements(c)) c.place(t.rackSlot, t.cell);
     if (c.snapshot().pending.length) await c.submit(); else await c.pass();
   }
+  unwatch();
+  check('n: the game is queued before the end shows', queuedByEnd === true, queuedByEnd);
   check('n: the game ends', c.snapshot().state.over && !c.snapshot().busy);
   {
     const fin = c.snapshot().state.scores, sv = pf.storage.get<SavedGame>(KEY);
@@ -233,6 +240,10 @@ async function controllerChecks() {
       && rows[0].you === fin.you && rows[0].quill === fin.quill, rows);
     new GameController(p0, DATE, pf, new NullDirector());
     check('n: a reload records nothing more', readResults(pf.storage.get(RESULTS_KEY)).length === 1);
+    const queue = readOutbox(pf.storage.get(OUTBOX_KEY));
+    check('n: the finished game waits in the outbox once', queue.length === 1 && queue[0].date === DATE && queue[0].puzzle === 'p0000.v1' && queue[0].seed === 123 && queue[0].claimedScore === fin.you, queue);
+    check('n: its moves replay to its score', replay(p0, queue[0].seed, queue[0].actions as Action[]).scores.you === fin.you);
+    check('n: it carries the rules and its times', queue[0].rules === RULES_ID && Date.parse(queue[0].startedAt) <= Date.parse(queue[0].finishedAt));
   }
   const endLog = c.snapshot().state.log.length;
   await c.pass();
@@ -252,6 +263,7 @@ async function controllerChecks() {
       if (cp.snapshot().pending.length) await cp.submit(); else await cp.pass();
     }
     check('n: a finished practice game records nothing', cp.snapshot().state.over && !pp.storage.has(RESULTS_KEY));
+    check('n: a finished practice game is not sent', !pp.storage.has(OUTBOX_KEY));
     check('n: a finished practice game earns nothing', cp.snapshot().rewards === null && pp.help.balance().hint === 1 && pp.help.balance().word === 1, cp.snapshot().rewards);
   }
   // rewards: a win earns once; a reload earns nothing more

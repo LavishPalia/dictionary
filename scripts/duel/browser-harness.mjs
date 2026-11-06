@@ -63,10 +63,22 @@ export async function run(name, body) {
 
     // The schedule is always a stand-in, so a run doesn't depend on today's date in the real one.
     let schedule = fixture([]);
+    // The Duel's server: left alone until a test sets a handler, or 'fail' for no connection.
+    let api = null;
+    const answerApi = async (requestId, request) => {
+      const res = await api(new Request(request.url, { method: request.method, headers: request.headers, body: request.postData }));
+      await send('Fetch.fulfillRequest', { requestId, responseCode: res.status, responseHeaders: [...res.headers].map(([name, value]) => ({ name, value })),
+        body: Buffer.from(await res.text()).toString('base64') });
+    };
     socket.addEventListener('message', (event) => {
       const m = JSON.parse(event.data);
       if (m.method !== 'Fetch.requestPaused') return;
       const { requestId, request } = m.params;
+      if (request.url.includes('/api/duel/') && api) {
+        if (api === 'fail') void send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' });
+        else void answerApi(requestId, request).catch((e) => { console.error(e); void send('Fetch.failRequest', { requestId, errorReason: 'Failed' }); });
+        return;
+      }
       const ok = (body) => send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }],
         body: Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)).toString('base64') });
       if (request.url.includes('/duel/schedule.json')) void (schedule === 'fail' ? send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' }) : ok(schedule));
@@ -78,6 +90,8 @@ export async function run(name, body) {
     const t = {
       send, evaluate, waitFor, check,
       setSchedule: (s) => { schedule = s; },
+      /** A function from Request to Response, 'fail' for no connection, or null for the real server. */
+      setApi: (a) => { api = a; },
       setSize: (s) => send('Emulation.setDeviceMetricsOverride', { width: s.width, height: s.height, deviceScaleFactor: 1, mobile: s.mobile }),
       reduceMotion: (on) => send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: on ? 'reduce' : '' }] }),
       /** Opens a path with exactly this storage (values are JSON-encoded; `raw` ones are stored as they are). */

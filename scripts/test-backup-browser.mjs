@@ -86,7 +86,17 @@ async function main() {
       dogEars: localStorage.getItem('panna_dog_ears'),
       notes: JSON.parse(localStorage.getItem('panna_marginalia') || '[]').length,
       settings: localStorage.getItem('panna_settings'),
+      duelPlayer: JSON.parse(localStorage.getItem('panna_duel_player') || 'null')?.token ?? null,
+      duelWon: JSON.parse(localStorage.getItem('panna_duel_results') || '[]').length,
+      duelGame: localStorage.getItem('panna_duel_game:2026-11-03'),
+      duelWeek: localStorage.getItem('panna_duel_week'),
     })`);
+    const DUEL = {
+      panna_duel_player: { id: '11111111-1111-4111-8111-111111111111', token: 'a'.repeat(64), name: 'Curious Inkwell' },
+      panna_duel_results: [{ date: '2026-11-01', puzzle: 'p0002.v1', you: 60, quill: 40, at: '2026-11-01T10:00:00Z' }],
+      'panna_duel_game:2026-11-03': { seed: 3 },
+      panna_duel_week: { week: 'cached' },
+    };
     const seed = (words, extra = {}) => evaluate(`(async () => {
       localStorage.clear();
       const list = [];
@@ -110,6 +120,7 @@ async function main() {
         panna_dog_ears: [23],
         panna_marginalia: [{ id: 'n1', page_number: 18, text: 'remember this', color: 'blue', created_at: 1, anchor: 'ceremony' }],
         panna_settings: { lighting: 'evening', speed: 'instant', sounds: false },
+        ...DUEL,
       });
       await open(`/page/${CAMEL_PAGE}`, size);
       const before = await state();
@@ -127,6 +138,8 @@ async function main() {
       check(`${sizeName}: the backup holds words, review progress, marks, notes and settings`,
         saved?.app === 'panna' && saved.data.panna_saved_words.length === 2 && saved.data.panna_review.camel && saved.data.panna_dog_ears[0] === 23
         && saved.data.panna_marginalia.length === 1 && saved.data.panna_settings.speed === 'instant', saved && Object.keys(saved.data));
+      check(`${sizeName}: the backup holds the Duel, player included, without its caches`,
+        saved?.data.panna_duel?.panna_duel_player?.token === DUEL.panna_duel_player.token && saved.data.panna_duel['panna_duel_game:2026-11-03']?.seed === 3 && !saved.data.panna_duel.panna_duel_week, saved?.data.panna_duel);
       await evaluate(`document.querySelector('#menu-btn').click(); true`);
       await sleep(250);
       check(`${sizeName}: the menu now shows the backup date`, await evaluate(`document.querySelector('#backup-label')?.textContent === 'Last backup today'`));
@@ -142,7 +155,8 @@ async function main() {
       await sleep(250);
       await chooseFile(path.join(DOWNLOADS, file));
       const sheet = await evaluate(`document.querySelector('#restore-sheet')?.innerText ?? ''`);
-      check(`${sizeName}: choosing the file shows what it contains`, sheet.includes('2 saved words · 1 in review · 1 marked page · 1 note'), sheet);
+      check(`${sizeName}: choosing the file shows what it contains`, sheet.includes('2 saved words · 1 in review · 1 marked page · 1 note · 1 Duel day won'), sheet);
+      check(`${sizeName}: and who you'll play as in the Duel`, sheet.includes('you’ll play as Curious Inkwell'), sheet);
       if (sizeName === 'phone') {
         const box = await evaluate(`(() => { const r = document.querySelector('#restore-sheet').getBoundingClientRect(); return { left: r.left, right: r.right, bottom: Math.round(r.bottom), h: innerHeight }; })()`);
         check('phone: the restore sheet fits the screen', box.left === 0 && box.right === 390 && box.bottom === box.h, box);
@@ -153,6 +167,8 @@ async function main() {
       const after = await state();
       check(`${sizeName}: restoring brings back words, review progress, marks, notes and settings`,
         after.words === before.words && after.review === 'camel' && after.dogEars === '[23]' && after.notes === 1 && after.settings === before.settings, { before, after });
+      check(`${sizeName}: restoring brings back the Duel, on a cleared browser`,
+        after.duelPlayer === DUEL.panna_duel_player.token && after.duelWon === 1 && after.duelGame === '{"seed":3}' && after.duelWeek === null, after);
       const shown = await evaluate(`(async () => { document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#nav-saved-btn' : '#open-bookmarks-btn')}).click(); await new Promise((r) => setTimeout(r, 300)); return document.querySelector('#saved-screen')?.innerText ?? ''; })()`);
       check(`${sizeName}: the restored words appear on the Saved screen`, shown.includes('Camel') && shown.includes('Ceremony'), shown);
 
@@ -177,6 +193,22 @@ async function main() {
       await sleep(1500);
       await waitHydrated();
       check(`${sizeName}: replacing makes this device match the backup`, (await state()).words === 'camel,ceremony', await state());
+
+      // A file from before the Duel leaves the Duel alone, even with "Replace everything".
+      const oldFile = path.join(DOWNLOADS, 'old-backup.json');
+      fs.writeFileSync(oldFile, JSON.stringify({ app: 'panna', format: 1, created_at: '2026-10-01T00:00:00Z', data_version: '', data: { panna_saved_words: [] } }));
+      await seed(['Abandon'], DUEL);
+      await open(`/page/${CAMEL_PAGE}`, size);
+      await evaluate(`document.querySelector('#menu-btn').click(); true`);
+      await sleep(250);
+      await evaluate(`document.querySelector('#restore-btn').click(); true`);
+      await chooseFile(oldFile);
+      await evaluate(`document.querySelector('#restore-replace-btn').click(); true`);
+      await sleep(1500);
+      await waitHydrated();
+      const afterOld = await state();
+      check(`${sizeName}: an old file with Replace everything leaves the Duel as it was`,
+        afterOld.words === '' && afterOld.duelPlayer === DUEL.panna_duel_player.token && afterOld.duelWon === 1 && afterOld.duelGame === '{"seed":3}', afterOld);
 
       // A file that is not a backup changes nothing.
       const bad = path.join(DOWNLOADS, 'not-a-backup.json');

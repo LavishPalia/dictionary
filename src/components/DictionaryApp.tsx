@@ -256,7 +256,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       dogEars: keepValid<number>(read<unknown>('panna_dog_ears', []), Number.isInteger),
       notes: keepValid<MarginNote>(read<unknown>('panna_marginalia', []), isMarginNote),
     };
-    const stored = read<MarkAnchors | null>(ANCHORS_KEY, null);
+    const raw = read<MarkAnchors | null>(ANCHORS_KEY, null);
+    const stored = Array.isArray(raw) ? null : raw; // an older restore could leave an empty list here
     const apply = (m: typeof marks, anchors: MarkAnchors) => {
       if (!live) return;
       setBookmarkedPages(m.ribbons);

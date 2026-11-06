@@ -2,9 +2,11 @@ import { useState } from 'react';
 import type { Platform } from '../../platform/types';
 import { readSettings, SETTINGS_KEY, type DuelSettings } from '../../settings';
 import type { Nav } from '../dates';
+import { RenameSheet } from '../ranks/RenameSheet';
+import { useNet } from '../ranks/WeekCard';
 import { BackBar } from './BackBar';
 
-/** Game settings (UI-DESIGN §3.6). No leaderboard name until M5, and no board style (the user dropped Ivory, 5 Nov). */
+/** Game settings (UI-DESIGN §3.6). No board style (the user dropped Ivory, 5 Nov). */
 export function Settings({ platform, nav, back }: { platform: Platform; nav: Nav; back: () => void }) {
   const [settings, setSettings] = useState(() => readSettings(platform.storage.get(SETTINGS_KEY)));
   const change = (patch: Partial<DuelSettings>) => {
@@ -15,6 +17,9 @@ export function Settings({ platform, nav, back }: { platform: Platform; nav: Nav
     platform.haptics.enabled = next.vibration;
   };
   const go = (path: string) => (e: React.MouseEvent) => { e.preventDefault(); nav(path); };
+  useNet(platform.net);
+  const [renaming, setRenaming] = useState(false);
+  const name = platform.net.player()?.name;
   return (
     <div className="duel-page duel-guide" id="duel-settings">
       <BackBar title="Settings" back={back} />
@@ -32,6 +37,12 @@ export function Settings({ platform, nav, back }: { platform: Platform; nav: Nav
           <span><b>Motion</b><small>Follows your phone’s reduced-motion setting</small></span>
         </div>
       </div>
+      <h2 className="set-label">You</h2>
+      <div className="page-card set-list">
+        {name
+          ? <button type="button" className="set-row" id="set-name" onClick={() => setRenaming(true)}><span><b>Name on the leaderboard</b><small>{name}</small></span><i aria-hidden="true">›</i></button>
+          : <div className="set-row" id="set-name"><span><b>Name on the leaderboard</b><small>You’ll get one after your first finished game</small></span></div>}
+      </div>
       <h2 className="set-label">Help</h2>
       <div className="page-card set-list">
         <a className="set-row" href="/play/how" onClick={go('/play/how')}>
@@ -44,7 +55,8 @@ export function Settings({ platform, nav, back }: { platform: Platform; nav: Nav
           <span><b>Picture credits</b><small>Clue pictures: Twemoji, <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer" target="_blank">CC BY 4.0</a></small></span>
         </div>
       </div>
-      <p className="set-note">Your games, streak and hints are kept on this device. Clearing the browser’s data starts you afresh.</p>
+      <p className="set-note">Your games, streak and hints are kept on this device, and your name and scores go to Panna’s server for the leaderboard. Clearing the browser’s data starts you afresh, unless you have a backup (Back up in Panna’s ⋯ menu).</p>
+      {renaming && name && <RenameSheet net={platform.net} current={name} onClose={() => setRenaming(false)} />}
     </div>
   );
 }

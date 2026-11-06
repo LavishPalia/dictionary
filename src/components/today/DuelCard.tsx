@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui';
 import { duelAction, duelEntryVisible, duelLine, duelSubLine, todayDuel, type TodayDuel } from '@/duel/platform/web/entry';
+import { OUTBOX_KEY, readOutbox } from '@/duel/net-rules';
+import { webNet } from '@/duel/platform/web/net';
 import { webPuzzles } from '@/duel/platform/web/puzzles';
 import { webStorage } from '@/duel/platform/web/storage';
 import { istToday } from '@/duel/progress';
@@ -24,6 +26,8 @@ function useTodayDuel(): TodayDuel | null {
     const read = () => webPuzzles().schedule().then((s) => s, () => null)
       .then((s) => { if (live) setDuel(todayDuel(istToday(new Date()), s, storage)); });
     void read();
+    // Someone who finished a game offline may next open Panna, not the Duel.
+    if (readOutbox(storage.get(OUTBOX_KEY)).length) void webNet(storage).flush();
     const onShow = (e: PageTransitionEvent) => { if (e.persisted) void read(); };
     const onVisible = () => { if (document.visibilityState === 'visible') void read(); };
     addEventListener('pageshow', onShow);
