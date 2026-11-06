@@ -10,8 +10,6 @@ import type { DuelNet, Storage } from '../types';
 
 const TIMEOUT_MS = 15_000;
 const KEEP_REJECTED = 50;
-/** How long the CDN may answer with an old board (s-maxage + stale-while-revalidate, src/duel/server/board.ts). */
-const CDN_STALE_MS = 330_000;
 
 /** The server can't take this now (offline, down, too many): stop, and try again at the next chance. */
 class TryLater extends Error {}
@@ -77,12 +75,13 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
     return w && typeof w === 'object' && w.week === weekOf(now()) && Number.isFinite(w.points) ? w : null;
   }
 
-  function setWeek(points: number, rank: number | null) {
+  function setWeek(points: number, rank: number | null, tag?: string) {
     const old = readWeek(), day = istToday(now());
     const next: CachedWeek = {
       week: weekOf(now()), points, rank, day,
       dayRank: old?.day === day ? old.dayRank : old?.rank ?? null,
       seen: old?.seen ?? null,
+      tag: tag ?? old?.tag,
     };
     storage.set(WEEK_KEY, next);
     changed();
@@ -126,7 +125,6 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
     return copy && copy.week === (week === 'this' ? weekOf(now()) : addWeeks(weekOf(now()), -1)) && Array.isArray(copy.rows) ? copy : null;
   }
 
-  let freshUntil = 0;
   let flushing: Promise<void> | null = null;
   let again = false;
 
@@ -168,10 +166,10 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
     async board(week: WeekPick) {
       const cached = lastBoard(week);
       const wanted = week === 'this' ? weekOf(now()) : addWeeks(weekOf(now()), -1);
-      // The CDN's copy can't be used just after a rename (it still has the old name) or just after Monday midnight.
+      // The CDN's copy can't be used just after Monday midnight: it may still be last week's.
       const ask = (fresh: boolean) => call(`leaderboard?week=${week}${fresh ? `&t=${now().getTime()}` : ''}`);
       try {
-        let res = await ask(now().getTime() < freshUntil);
+        let res = await ask(false);
         if (!res.ok) return { data: cached, stale: true };
         let data = await res.json() as Board;
         if (data.week !== wanted) {
@@ -193,7 +191,7 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
         if (!res.ok) return null;
         const me = await res.json() as Me;
         setName(me.name); // a new name given on another device comes through here
-        if (week === 'this') setWeek(me.points, me.rank);
+        if (week === 'this') setWeek(me.points, me.rank, me.tag);
         return me;
       } catch {
         return null;
@@ -207,7 +205,6 @@ export function webNet(storage: Storage, fetchFn: typeof fetch = (...a) => fetch
         const body = await res.json().catch(() => ({})) as { name?: string; error?: string };
         if (res.ok && body.name) {
           setName(body.name);
-          freshUntil = now().getTime() + CDN_STALE_MS;
           return { ok: true };
         }
         return { ok: false, error: body.error ?? 'offline' };

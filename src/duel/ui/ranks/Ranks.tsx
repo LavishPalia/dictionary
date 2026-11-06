@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Board, BoardRow, Me, WeekPick } from '../../net-rules';
+import { withMe, type Board, type Me, type PlacedRow as Row, type WeekPick } from '../../net-rules';
 import type { Platform } from '../../platform/types';
 import { addDays } from '../../progress';
 import { dayMonth, type Nav } from '../dates';
@@ -7,8 +7,6 @@ import { BackBar } from '../settings/BackBar';
 import { countdown, initials, ordinal, pointsWord } from './copy';
 import { RenameSheet } from './RenameSheet';
 import { useNet } from './WeekCard';
-
-type Row = BoardRow & { me?: boolean };
 
 const COLOURS = ['#7a2b22', '#3d5a2a', '#1e4887', '#6e5532', '#5b3a6b', '#2f6b6b', '#8a4b1f', '#4a4a6a'];
 const colourOf = (name: string) => COLOURS[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % COLOURS.length];
@@ -29,17 +27,6 @@ function Avatar({ row }: { row: Row }) {
 }
 
 const BotTag = () => <span className="rank-bot" data-bot>Bot</span>;
-
-/** The list with your own row in its place: the public list is cached, and carries no ids, so it's matched by name. */
-function withMe(rows: BoardRow[], me: Me | null): { rows: Row[]; mine: Row | null } {
-  if (!me || me.rank === null) return { rows, mine: null };
-  const others = rows.filter(r => r.bot || r.name !== me.name);
-  if (me.rank > 100) return { rows: others, mine: { rank: me.rank, name: me.name, points: me.points, bot: false, me: true } };
-  // Where the server says, so this screen and the end screen agree even on tied points.
-  const at = Math.min(me.rank - 1, others.length);
-  const merged = [...others.slice(0, at), { rank: 0, name: me.name, points: me.points, bot: false, me: true }, ...others.slice(at)].slice(0, 100);
-  return { rows: merged.map((r, i) => ({ ...r, rank: i + 1 })), mine: null };
-}
 
 /** The weekly leaderboard (UI-DESIGN §3.5). */
 export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; back: () => void }) {
@@ -73,7 +60,7 @@ export function Ranks({ platform, nav, back }: { platform: Platform; nav: Nav; b
   const player = net.player(), week = net.week();
   // Offline, your place comes from the last thing the server said.
   const me: Me | null = state?.me ?? (tab === 'this' && (state?.stale || !state?.shown) && player?.name && week && week.points > 0
-    ? { name: player.name, week: week.week, points: week.points, games: 0, rank: week.rank, of: 0 } : null);
+    ? { name: player.name, week: week.week, points: week.points, games: 0, rank: week.rank, of: 0, tag: week.tag } : null);
   const { rows, mine } = withMe(state?.board?.rows ?? [], me);
   const podium = rows.slice(0, 3), list = rows.slice(3);
   const myIndex = rows.findIndex(r => r.me);

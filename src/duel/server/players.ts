@@ -16,15 +16,18 @@ const RENAMES_PER_HOUR = 10;
 
 /**
  * A short word only counts as a whole word, so Kshitij, Shital and Grand India are fine; a long one, or one marked
- * with * in the list, counts anywhere in the name.
+ * with * in the list, counts anywhere in the name. A word marked with ! is innocent (Peacock), so it hides what's inside it.
  */
 const ANYWHERE_FROM = 6;
-let blocked: { word: string; anywhere: boolean }[] | null = null;
+let blocked: { words: { word: string; anywhere: boolean }[]; innocent: string[] } | null = null;
 function blockedWords() {
   if (blocked) return blocked;
   const read = (file: string) => readFileSync(path.join(process.cwd(), file), 'utf8').split(/\r?\n/).map(l => l.trim().toLowerCase()).filter(l => l && !l.startsWith('#'));
   const list = [...read('data/sources/blocklist.txt'), ...read('data/duel/names-blocked.txt'), ...BOT_NAMES.map(nameKey), 'quill', 'panna', 'admin'];
-  blocked = list.map(l => ({ word: l.replace(/\*$/, ''), anywhere: l.endsWith('*') || l.length >= ANYWHERE_FROM }));
+  blocked = {
+    words: list.filter(l => !l.startsWith('!')).map(l => ({ word: l.replace(/\*$/, ''), anywhere: l.endsWith('*') || l.length >= ANYWHERE_FROM })),
+    innocent: list.filter(l => l.startsWith('!')).map(l => l.slice(1)),
+  };
   return blocked;
 }
 
@@ -44,9 +47,10 @@ function readings(name: string): string[][] {
 }
 
 export function isBlockedName(name: string): boolean {
+  const { words, innocent } = blockedWords();
   return readings(name).some((tokens) => {
-    const whole = tokens.join('');
-    return blockedWords().some(({ word, anywhere }) => (anywhere ? whole.includes(word) : tokens.includes(word)));
+    const whole = tokens.map(t => innocent.reduce((left, w) => left.replaceAll(w, ''), t)).join('');
+    return words.some(({ word, anywhere }) => (anywhere ? whole.includes(word) : tokens.includes(word)));
   });
 }
 

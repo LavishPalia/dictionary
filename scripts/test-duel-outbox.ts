@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { collectDuel, restoreDuel } from '../src/duel/backup';
-import { OUTBOX_KEY, PLAYER_KEY, readOutbox, readPlayer, WEEK_KEY } from '../src/duel/net-rules';
+import { OUTBOX_KEY, PLAYER_KEY, readOutbox, readPlayer, WEEK_KEY, withMe } from '../src/duel/net-rules';
 import { webNet } from '../src/duel/platform/web/net';
 import type { Storage } from '../src/duel/platform/types';
 import { getBoard, getMe } from '../src/duel/server/board';
@@ -197,10 +197,14 @@ async function main() {
   srv.log.length = 0;
   await net.board('this');
   check('normally the CDN may answer', srv.log.some(l => /week=this$/.test(l)), srv.log);
+  const oldCopy = (await net.board('this')).data!; // what the CDN keeps answering with for a while
   await net.rename('Fresh Name');
-  srv.log.length = 0;
-  await net.board('this');
-  check('just after a rename it asks past the CDN', srv.log.some(l => /week=this&t=\d+$/.test(l)), srv.log);
+  const after = await net.me('this');
+  const place = withMe(oldCopy.rows, after).rows;
+  check('a cached board with your old name: you appear once', place.filter(r => !r.bot && r.points === after!.points).length === 1 && place.filter(r => r.me).length === 1 && place.find(r => r.me)?.name === 'Fresh Name', place);
+  check('the device remembers your tag for the offline view', net.week()?.tag === after!.tag && !!after!.tag);
+  const stranger = { rank: 1, name: 'Fresh Name', points: 9, bot: false, tag: 'someone-else' };
+  check('someone else\'s row is never taken for yours', withMe([stranger], after).rows.some(r => r.tag === 'someone-else'));
   const oldWeek = memory();
   const lastWeeksBoard = { week: '2020-01-06', endsAt: '', players: 0, rows: [] };
   oldWeek.set('panna_duel_board', { this: lastWeeksBoard });

@@ -21,13 +21,28 @@ export interface CachedWeek {
   week: string; points: number; rank: number | null;
   day: string; dayRank: number | null;
   seen: { rank: number | null; points: number } | null;
+  tag?: string;
 }
 
-export interface BoardRow { rank: number; name: string; points: number; bot: boolean }
+/** `tag`: a real player's mark for this week, so your own row is found even when a cached copy has your old name. */
+export interface BoardRow { rank: number; name: string; points: number; bot: boolean; tag?: string }
 export interface Board { week: string; endsAt: string; players: number; rows: BoardRow[] }
-export interface Me { name: string; week: string; points: number; games: number; rank: number | null; of: number }
+export interface Me { name: string; week: string; points: number; games: number; rank: number | null; of: number; tag?: string }
 
 export type WeekPick = 'this' | 'last';
+
+export type PlacedRow = BoardRow & { me?: boolean };
+
+/** The list with your own row in its place. The public list is cached, so it can still have your old name: the tag finds you. */
+export function withMe(rows: BoardRow[], me: Me | null): { rows: PlacedRow[]; mine: PlacedRow | null } {
+  if (!me || me.rank === null) return { rows, mine: null };
+  const others = rows.filter(r => r.bot || (me.tag && r.tag ? r.tag !== me.tag : r.name !== me.name));
+  if (me.rank > 100) return { rows: others, mine: { rank: me.rank, name: me.name, points: me.points, bot: false, me: true } };
+  // Where the server says, so this screen and the end screen agree even on tied points.
+  const at = Math.min(me.rank - 1, others.length);
+  const merged = [...others.slice(0, at), { rank: 0, name: me.name, points: me.points, bot: false, me: true }, ...others.slice(at)].slice(0, 100);
+  return { rows: merged.map((r, i) => ({ ...r, rank: i + 1 })), mine: null };
+}
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const TOKEN_RE = /^[0-9a-f]{64}$/;

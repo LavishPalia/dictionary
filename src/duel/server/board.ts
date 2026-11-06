@@ -1,4 +1,5 @@
 // The weekly leaderboard: real players and house bots together. Rows never carry a player id.
+import { createHash } from 'node:crypto';
 import { authenticate } from './auth';
 import { query } from './db';
 import { botsFor } from './housebots';
@@ -7,6 +8,9 @@ import { addWeeks, weekEnds, weekOf } from '../week';
 
 const TOP = 100;
 const BOARD_CACHE = 'public, s-maxage=30, stale-while-revalidate=300';
+
+/** Stands for a player on one week's board: can't be turned back into the id, and doesn't follow them to another week. */
+const rowTag = (playerId: string, week: string) => createHash('sha256').update(`${playerId}:${week}`).digest('hex').slice(0, 16);
 
 const realCount = async (week: string) => (await query<{ n: number }>(`select count(*)::int as n from weekly_totals where week = $1::text::date`, [week]))[0].n;
 
@@ -35,12 +39,12 @@ function weekParam(req: Request, now: Date): string | null {
 export const getBoard = (req: Request, now = new Date()) => guard(async () => {
   const week = weekParam(req, now);
   if (!week) return json({ error: 'bad_request' }, 400);
-  const real = await query<{ name: string; points: number }>(
-    `select p.name, t.points from weekly_totals t join players p on p.id = t.player_id
+  const real = await query<{ id: string; name: string; points: number }>(
+    `select p.id, p.name, t.points from weekly_totals t join players p on p.id = t.player_id
      where t.week = $1::text::date order by t.points desc, t.updated_at limit ${TOP}`, [week]);
   const bots = botsFor(week, now);
   // Sorting is stable and real players go first, so a bot on equal points sits below them.
-  const rows = [...real.map(r => ({ name: r.name, points: r.points, bot: false })), ...bots.map(b => ({ name: b.name, points: b.points, bot: true }))]
+  const rows = [...real.map(r => ({ name: r.name, points: r.points, bot: false, tag: rowTag(r.id, week) })), ...bots.map(b => ({ name: b.name, points: b.points, bot: true }))]
     .sort((a, b) => b.points - a.points).slice(0, TOP).map((r, i) => ({ rank: i + 1, ...r }));
   const players = (await realCount(week)) + bots.length;
   return json({ week, endsAt: weekEnds(week).toISOString(), players, rows }, 200, { 'Cache-Control': BOARD_CACHE });
@@ -53,5 +57,5 @@ export const getMe = (req: Request, now = new Date()) => guard(async () => {
   const week = weekParam(req, now);
   if (!week) return json({ error: 'bad_request' }, 400);
   const mine = await standing(me.id, week, now);
-  return json({ name: me.name, week, ...mine, of: (await realCount(week)) + botsFor(week, now).length });
+  return json({ name: me.name, week, tag: rowTag(me.id, week), ...mine, of: (await realCount(week)) + botsFor(week, now).length });
 });

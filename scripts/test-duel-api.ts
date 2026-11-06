@@ -70,7 +70,10 @@ async function testPlayers(db: TestDb) {
   check('a swear word with letter swaps', await errorOf(await rename(a, 'f u c k 3r')) === 'blocked' && await errorOf(await rename(a, 'sh1t lord')) === 'blocked'
     && await errorOf(await rename(a, 'f4ck')) === 'blocked' && await errorOf(await rename(a, 's1ut queen')) === 'blocked');
   check('a word inside a longer one', isBlockedName('fuckface') && isBlockedName('bullshit'));
-  const realNames = ['Kshitij Rao', 'Shital', 'Document', 'Tycoon', 'Spice Trader', 'Suspicious', 'Music Umbrella', 'Grand India', 'Analyst', 'Arsenal'];
+  const rudeNames = ['Thick Black Cock', 'BlackCock', 'Big D1ck', 'Sexy Boobs', 'p0rn king', 'Bigtits', 'Bhosdike', 'Teri Maa', 'Laude Lal'];
+  check('rude names are caught', rudeNames.every(isBlockedName), rudeNames.filter(n => !isBlockedName(n)));
+  const realNames = ['Kshitij Rao', 'Shital', 'Document', 'Tycoon', 'Spice Trader', 'Suspicious', 'Music Umbrella', 'Grand India', 'Analyst', 'Arsenal',
+    'Peacock', 'Hancock', 'Cocktail Hour', 'Dickens', 'Hitchcock', 'Gandhi', 'Therapist', 'Sussex', 'Assam', 'Pakistan', 'Randhir', 'Chaudhary'];
   check('real names and words aren\'t caught', realNames.every(n => !isBlockedName(n)), realNames.filter(isBlockedName));
   check('a bot\'s name with letter swaps', isBlockedName('Profess0r Qui11'));
   check('a Hinglish swear word', await errorOf(await rename(a, 'Ch0otiya Chutiya')) === 'blocked');
@@ -297,6 +300,10 @@ async function testBoard(db: TestDb) {
   check('your rank matches your row on the board', myBody.rank === 2 && myBody.points === 5000 && myBody.name === late.name, myBody);
   check('your row isn\'t cached', mine.headers.get('cache-control') === 'no-store');
   check('the count of players comes with it', myBody.of === 11, myBody.of);
+  const lateRow = body.rows.find((r: { name: string }) => r.name === late.name);
+  check('your tag finds your row, and no other', !!myBody.tag && lateRow.tag === myBody.tag && body.rows.filter((r: { tag?: string }) => r.tag === myBody.tag).length === 1, myBody.tag);
+  check('bots carry no tag', body.rows.filter((r: { bot: boolean }) => r.bot).every((r: { tag?: string }) => r.tag === undefined));
+  check('your tag changes from week to week', (await (await me(late, 'last')).json()).tag !== myBody.tag);
   const lowBody = await (await me(low)).json();
   check('rank counts bots above too', lowBody.rank === body.rows.find((r: { name: string }) => r.name === low.name).rank, lowBody);
   check('no token is 401', (await getMe(new Request('http://t/me'), NOW2)).status === 401);
