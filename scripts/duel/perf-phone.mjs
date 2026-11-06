@@ -21,8 +21,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const LIMITS = { dragP95: 17.5, dragMax: 33, slowShare: 0.02, slowFrame: 20, longTask: 50 };
 
 const SAVED = '__perfsave__';
-const SET_ASIDE = `Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => { localStorage.setItem('${SAVED}' + k, localStorage.getItem(k)); localStorage.removeItem(k); });`;
-const PUT_BACK = `if (Object.keys(localStorage).some((k) => k.startsWith('${SAVED}'))) { Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => localStorage.removeItem(k)); Object.keys(localStorage).filter((k) => k.startsWith('${SAVED}')).forEach((k) => { localStorage.setItem(k.slice(${'__perfsave__'.length}), localStorage.getItem(k)); localStorage.removeItem(k); }); }`;
+const RUNNING = '__perfrunning__'; // set for the length of a run, so the next one knows there is something to clean up
+const SET_ASIDE = `localStorage.setItem('${RUNNING}', '1'); Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => { localStorage.setItem('${SAVED}' + k, localStorage.getItem(k)); localStorage.removeItem(k); });`;
+const PUT_BACK = `if (localStorage.getItem('${RUNNING}')) { Object.keys(localStorage).filter((k) => k.startsWith('panna_duel')).forEach((k) => localStorage.removeItem(k)); Object.keys(localStorage).filter((k) => k.startsWith('${SAVED}')).forEach((k) => { localStorage.setItem(k.slice(${'__perfsave__'.length}), localStorage.getItem(k)); localStorage.removeItem(k); }); localStorage.removeItem('${RUNNING}'); }`;
 
 function adb(...args) {
   const r = spawnSync('adb', args, { encoding: 'utf8' });
@@ -63,7 +64,10 @@ async function main() {
   };
   const waitFor = async (expr, ms) => { for (let t = 0; t < ms; t += 100) { try { if (await evaluate(expr)) return true; } catch {} await sleep(100); } return false; };
 
-  let setAside = false;
+  let setAside = false, finished = false;
+  const cutOff = () => { if (setAside && !finished) console.error('\nCut off. Your Duel data is set aside on this device: run this again before playing there, to put it back.'); };
+  ws.addEventListener('close', () => { cutOff(); if (!finished) process.exit(1); });
+  process.on('SIGINT', () => { cutOff(); process.exit(130); });
   try {
     await send('Page.enable');
     await send('Runtime.enable');
@@ -172,11 +176,13 @@ async function main() {
         await send('Page.navigate', { url: `${URL_BASE}/icon.svg` });
         await sleep(800);
         await evaluate(`${PUT_BACK} true`);
+        finished = true;
         console.log('Your Duel data on this device is back as it was.');
       } catch { console.error('Your Duel data is set aside on this device; run this again to put it back.'); }
     }
     try { await send('Emulation.setCPUThrottlingRate', { rate: 1 }); } catch {}
     try { await fetch(`${cdp}/json/close/${target.id}`); } catch {}
+    finished = true;
     ws.close();
   }
 }

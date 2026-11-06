@@ -219,5 +219,18 @@ await run("Duel end screens", async (t: any) => {
   await atEnd();
   check('reduced motion: the final numbers at once', (await evaluate(`document.querySelector('.end-score b').textContent`)) === String(final.you));
   check('reduced motion: sound stays', await waitFor(`(window.__duelSounds ?? []).includes('chime')`, 1000), await heard());
+
+  // A game finished on Sunday and sent on Monday: the card shows that game's points, not this week's empty total.
+  t.setApi(async (req: Request) => {
+    const path = new URL(req.url).pathname;
+    if (path.endsWith('/players')) return Response.json({ name: 'Wise Comma' });
+    if (path.endsWith('/games')) return Response.json({ status: 'ok', week: '2000-01-03', weekTotal: 999, rank: 1 });
+    return Response.json({ week: '2000-01-03', points: 0, rank: null });
+  });
+  await open(url(TODAY, WIN), { [gameKey(TODAY)]: WIN.save });
+  await lastMove(WIN);
+  check('counted for last week: says so', await waitFor(`document.querySelector('[data-stat="week"]')?.innerText.includes('counted for last week')`, 8000), await text('[data-stat="week"]'));
+  check('and shows the game\'s own points', (await text('[data-stat="week"] b')) === final.you.toLocaleString('en-IN'), await text('[data-stat="week"]'));
+  t.setApi(null);
   await reduceMotion(false);
 });

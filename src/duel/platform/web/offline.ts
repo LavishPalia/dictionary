@@ -49,10 +49,12 @@ async function saveShell(cache: Cache) {
   if (!filesNamed(html).every(f => loaded.includes(f))) return;
   const files = [...new Set(loaded.filter(f => f.startsWith('/_next/static/') || f.startsWith('/duel/fonts/')))];
   if (!await saveMissing(cache, files)) return;
+  // In this order, so that however far it gets, the saved shell's files are all there.
   const old = await cache.match(SHELL_LIST);
-  if (old) for (const f of await old.json() as string[]) if (!files.includes(f)) await cache.delete(f);
-  await cache.put(SHELL_LIST, new Response(JSON.stringify(files), { headers: { 'Content-Type': 'application/json' } }));
+  const oldFiles = old ? await old.json() as string[] : [];
   await cache.put('/play', res);
+  await cache.put(SHELL_LIST, new Response(JSON.stringify(files), { headers: { 'Content-Type': 'application/json' } }));
+  for (const f of oldFiles) if (!files.includes(f)) await cache.delete(f);
 }
 
 export function webOffline(storage: Storage, puzzles: PuzzleSource, extraFiles: () => string[] = () => []) {
@@ -61,6 +63,7 @@ export function webOffline(storage: Storage, puzzles: PuzzleSource, extraFiles: 
     const cache = await caches.open(DUEL_CACHE);
     await saveShell(cache);
     await saveMissing(cache, extraFiles());
+    await saveMissing(cache, picturesOf(await practice())); // it plays past the schedule's end, with no connection too
     const schedule = await puzzles.schedule();
     const won = wonDays(readResults(storage.get(RESULTS_KEY)));
     await cache.put('/duel/schedule.json', new Response(JSON.stringify(schedule), { headers: { 'Content-Type': 'application/json' } }));

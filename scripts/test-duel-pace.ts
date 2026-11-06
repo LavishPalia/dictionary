@@ -10,8 +10,8 @@ function check(label: string, ok: boolean, detail?: unknown) {
 const close = (a: number, b: number) => Math.abs(a - b) < 1e-4;
 
 check('the game plays at the chosen speed: half, much quicker each word', SCORING.pace === 0.5 && SCORING.ramp === 0.7, SCORING);
-check('the tiles play at half speed', scoringScale(0) === 0.5);
-check('the first word is quicker', close(scoringScale(1), 0.35));
+check('the tiles and the first word play at half speed', scoringScale(0) === 0.5);
+check('the next word is quicker', close(scoringScale(1), 0.35));
 check('and it stays readable however many words', scoringScale(20) === 0.35);
 
 const s = { pace: 0.65, ramp: 0.85 };

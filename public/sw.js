@@ -49,7 +49,7 @@ self.addEventListener('message', (event) => {
 async function warm(url) {
   const request = new Request(url);
   const u = new URL(request.url);
-  if (isPlay(u)) return; // the game saves its own shell
+  if (isPlay(u) || u.pathname.startsWith('/api/duel/')) return; // the game saves its own shell, and server replies are never kept
   // The address the page was opened at is an HTML page visit.
   const name = cacheFor(u) ?? (u.origin === self.location.origin && !u.pathname.startsWith('/_next/') ? PAGES : null);
   if (!name) return;
@@ -130,13 +130,19 @@ async function cacheFirst(name, request) {
   return res;
 }
 
+// A connection that shows signal but carries nothing never fails by itself: past this, what's saved will do.
+const STALLED = 4000;
+const inTime = (reply) => Promise.race([reply, new Promise((_, reject) => setTimeout(() => reject(new Error('stalled')), STALLED))]);
+
 async function duelSchedule(request) {
-  try {
-    const res = await fetch(request);
+  const hit = await caches.match(request, { cacheName: DUEL });
+  const reply = fetch(request).then(async (res) => {
     if (res.ok) await put(DUEL, request, res.clone());
     return res;
+  });
+  try {
+    return await (hit ? inTime(reply) : reply);
   } catch (error) {
-    const hit = await caches.match(request, { cacheName: DUEL });
     if (hit) return hit;
     throw error;
   }
@@ -146,10 +152,10 @@ async function duelSchedule(request) {
 // itself in ?to=, because a page only runs under the address it was built for. Nothing is stored per address, so
 // playing many days can't push book pages out of PAGES.
 async function playPage(request, url) {
+  const shell = await caches.match('/play', { cacheName: DUEL });
   try {
-    return await fetch(request);
+    return await (shell ? inTime(fetch(request)) : fetch(request));
   } catch {
-    const shell = await caches.match('/play', { cacheName: DUEL });
     if (shell) return /^\/play\/?$/.test(url.pathname) ? shell : Response.redirect(`/play?to=${encodeURIComponent(url.pathname + url.search)}`, 302);
     return page(request);
   }

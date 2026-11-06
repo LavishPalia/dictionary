@@ -120,6 +120,12 @@ export async function run(name, body, { serviceWorker = false } = {}) {
         for (const s of workers) { await sendTo(s, 'Network.enable'); await sendTo(s, 'Network.emulateNetworkConditions', conditions); }
         await sleep(300);
       },
+      /** A connection that shows signal but carries nothing, for the service worker. */
+      stalled: async (on) => {
+        const conditions = { offline: false, latency: on ? 60000 : 0, downloadThroughput: -1, uploadThroughput: -1 };
+        for (const s of workers) { await sendTo(s, 'Network.enable'); await sendTo(s, 'Network.emulateNetworkConditions', conditions); }
+        await sleep(300);
+      },
       setSize: (s) => send('Emulation.setDeviceMetricsOverride', { width: s.width, height: s.height, deviceScaleFactor: 1, mobile: s.mobile }),
       reduceMotion: (on) => send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: on ? 'reduce' : '' }] }),
       /** Opens a path with exactly this storage (values are JSON-encoded; `raw` ones are stored as they are). */

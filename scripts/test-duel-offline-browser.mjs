@@ -8,7 +8,7 @@ const saved = (path) => `caches.open('panna-duel-v1').then((c) => c.match(${JSON
 const keys = (name) => `caches.open(${JSON.stringify(name)}).then((c) => c.keys()).then((ks) => ks.map((k) => new URL(k.url).pathname + new URL(k.url).search))`;
 
 await run('Duel offline', async (t) => {
-  const { check, waitFor, evaluate, setSize, offline, go, click, exists, text } = t;
+  const { check, waitFor, evaluate, setSize, offline, stalled, go, click, exists, text } = t;
   await setSize(PHONE);
 
   // ── A device that has only ever opened /play ──
@@ -27,6 +27,14 @@ await run('Duel offline', async (t) => {
   await go('/play');
   check('the worker is in charge after a reload', await waitFor(`Boolean(navigator.serviceWorker.controller)`, 20000));
   await sleep(2500);
+
+  check('the practice game\'s pictures are saved too', (await evaluate(saved('/duel/pics/1f350.svg'))) && (await evaluate(saved('/duel/pics/1f6f7.svg'))));
+
+  // ── A connection that carries nothing ──
+  await stalled(true);
+  await go('/play');
+  check('stalled: the home still opens, from what is saved', await waitFor(`Boolean(document.querySelector('#duel-hero'))`, 15000), await evaluate('document.body.innerText.slice(0, 200)'));
+  await stalled(false);
 
   // ── Offline ──
   await offline(true);
@@ -75,6 +83,9 @@ await run('Duel offline', async (t) => {
 
   await offline(false);
   const duelKeys = await evaluate(keys('panna-duel-v1')), dataKeys = await evaluate(keys('panna-data-v1'));
+  await evaluate(`navigator.serviceWorker.controller.postMessage({ type: 'warm', urls: ['/api/duel/leaderboard?week=this'] }); true`);
+  await sleep(1500);
+  check('warming doesn\'t keep a server reply in the page cache', !(await evaluate(keys('panna-pages-v1'))).some((k) => k.includes('/api/duel')));
   check('/api/duel is never cached', !duelKeys.some((k) => k.includes('/api/')) && !dataKeys.some((k) => k.includes('/api/duel')), dataKeys);
 
   // ── Many days don't push book pages out ──

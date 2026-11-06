@@ -106,9 +106,11 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
   const waiting = platform.net.unsent().reduce((n, g) => n + g.claimedScore, 0);
   const weekPoints = (week?.points ?? 0) + waiting;
   const credit = platform.net.creditOf(`${p.id}.v${p.version}`, snap.state.seed);
+  // Counted for last week, this week's total says nothing about it: the card shows what the game itself brought.
+  const lastWeek = Boolean(credit && credit !== weekOf(new Date()));
   const weekLine = sending === 'rejected' ? 'This game couldn’t be counted'
     : sending === 'unsaved' ? 'Your phone is full, so this score may not be kept'
-    : credit && credit !== weekOf(new Date()) ? 'counted for last week'
+    : lastWeek ? 'counted for last week'
     : sending === 'waiting' ? (flushed ? 'will count when you’re online' : 'counting…')
       : `this week${week?.rank ? ` · #${week.rank}` : ''}`;
 
@@ -143,7 +145,7 @@ export function EndScreen({ p, date, practice, snap, ctl, platform, layer, insta
             <small>{flame === 1 ? 'day in a row' : 'days in a row'}{!dayWon && isToday && flame > 0 ? ' · safe till midnight' : ''}</small>
           </div>
           <div className="page-card stat" data-stat="week">
-            <b>{weekPoints.toLocaleString('en-IN')}</b>
+            <b>{(lastWeek ? you : weekPoints).toLocaleString('en-IN')}</b>
             <small>{weekLine}</small>
           </div>
         </div>

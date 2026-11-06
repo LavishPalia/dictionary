@@ -52,7 +52,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
         platform.storage.remove(gameKey(date));
         const q = new URLSearchParams(location.search);
         q.delete('fresh');
-        history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : ''));
+        history.replaceState(history.state, '', location.pathname + (q.size ? `?${q}` : ''));
       }
       const ctl = new GameController(p, date, platform, director, { seed: flags.seed, practice });
       if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace, platform };
@@ -74,23 +74,31 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
   return <GameScreen p={game.p} date={date} practice={game.practice} ctl={game.ctl} stage={game.stage} layer={game.layer} motion={game.motion} platform={platform} nav={nav} guide={flags.guide} tips={!flags.test || flags.guide} />;
 }
 
-/** What each history entry remembers: how many moves inside the Duel led here, and from where. */
-type Entry = { duelMoves?: number; duelFrom?: string } | null;
+/** What each history entry remembers: how many moves inside the Duel led here. */
+type Entry = { duelMoves?: number } | null;
 const entry = () => history.state as Entry;
 
+/** The home's address while stepping back to the first entry, which may be a game opened directly: it becomes the home. */
+let unwindingTo: string | null = null;
+
 /**
- * Moves within the Duel; the address's test flags stay on it. Going to the home never adds a step, so system Back
- * from there leaves the game rather than returning to the screen just closed.
+ * Moves within the Duel; the address's test flags stay on it. Going to the home unwinds every step that led here, so
+ * system Back from there leaves the game rather than returning to a screen just closed.
  */
 function nav(path: string) {
   const u = new URL(path, location.href);
   new URLSearchParams(location.search).forEach((v, k) => { if (k !== 'fresh' && k !== 'guide' && !u.searchParams.has(k)) u.searchParams.set(k, v); });
   const moves = entry()?.duelMoves ?? 0;
+  const to = u.pathname + u.search;
   if (u.pathname === '/play') {
-    if (entry()?.duelFrom === '/play') { history.back(); return; }
-    history.replaceState({ ...entry(), duelMoves: moves, duelFrom: undefined }, '', u.pathname + u.search);
+    if (moves > 0) {
+      unwindingTo = to;
+      history.go(-moves);
+      return;
+    }
+    history.replaceState({ duelMoves: 0 }, '', to);
   } else {
-    history.pushState({ duelMoves: moves + 1, duelFrom: location.pathname }, '', u.pathname + u.search);
+    history.pushState({ duelMoves: moves + 1 }, '', to);
   }
   dispatchEvent(new PopStateEvent('popstate'));
 }
@@ -160,8 +168,10 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
     const to = landingPath(location.search, location.origin);
     if (to) history.replaceState(null, '', to);
     const read = () => {
+      if (unwindingTo && location.pathname + location.search !== unwindingTo) history.replaceState({ duelMoves: 0 }, '', unwindingTo);
+      unwindingTo = null;
       const r = parsePath(location.pathname, istToday(new Date()));
-      if ('redirect' in r) { history.replaceState(null, '', r.redirect + location.search); return read(); }
+      if ('redirect' in r) { history.replaceState(history.state, '', r.redirect + location.search); return read(); }
       setRoute(r);
     };
     read();

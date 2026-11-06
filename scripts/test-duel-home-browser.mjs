@@ -164,6 +164,32 @@ await run('Duel home', async (t) => {
   await click('#duel-settings [aria-label="Back"]');
   check('an address opened directly goes back to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
 
+  // A win, Next puzzle, then the close arrow: system Back must leave, not reopen a finished game.
+  setSchedule(sched);
+  await home();
+  const internal = (path) => evaluate(`(() => { history.pushState({ duelMoves: (history.state?.duelMoves ?? 0) + 1 }, '', ${JSON.stringify(path)}); dispatchEvent(new PopStateEvent('popstate')); return true; })()`);
+  await click('#duel-hero-btn');
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await internal(`/play/game/${YESTERDAY}?seed=7`);
+  await waitFor(`location.pathname === '/play/game/${YESTERDAY}' && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Back to the game home"]');
+  check('two games deep, the arrow returns to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
+  check('and it is the first entry, with no game behind it', (await evaluate('history.state?.duelMoves ?? 0')) === 0, await evaluate('history.state'));
+  await evaluate('history.forward(); true');
+  check('(the games were stepped back over, not left underneath)', await waitFor(`location.pathname.startsWith('/play/game/')`, 5000), await evaluate('location.href'));
+  // A game opened directly, one more on top: the arrow makes the first entry the home.
+  await open(`/play/game/${TODAY}?seed=7`);
+  await waitFor(`Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await internal(`/play/game/${YESTERDAY}?seed=7`);
+  await waitFor(`location.pathname === '/play/game/${YESTERDAY}' && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
+  await click('[aria-label="Back to the game home"]');
+  check('from a game opened directly, too', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000), await evaluate('location.href'));
+  // A new deal's address is tidied without losing how it was reached.
+  await home();
+  await internal(`/play/game/${TODAY}?seed=7&fresh=1`);
+  await waitFor(`Boolean(document.querySelector('.duel-board [data-cell]')) && !location.search.includes('fresh')`, 20000);
+  check('tidying ?fresh keeps the history entry\'s count', (await evaluate('history.state?.duelMoves')) === 1, await evaluate('history.state'));
+
   // ── Everything won ──
   setSchedule(fixture([TODAY]));
   await home({ panna_duel_results: [{ date: TODAY, you: 60, quill: 40, puzzle: 'p0000.v1', at: new Date().toISOString() }] });
@@ -187,6 +213,20 @@ await run('Duel home', async (t) => {
     await sleep(60);
   };
   check('swipe: starts on the current month', (await shown()) === MONTH);
+  // A second finger during a swipe: the first still finishes it, and the page comes to rest.
+  {
+    const c = await evaluate(`(() => { const r = document.querySelector('.cal-grid').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    const one = (dx) => ({ x: c.x + dx, y: c.y, id: 1 });
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [one(0)] });
+    for (const dx of [8, 16, 24, 30]) { await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [one(dx)] }); await sleep(30); }
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [one(30), { x: c.x - 60, y: c.y + 30, id: 2 }] });
+    await sleep(30);
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [{ x: c.x - 60, y: c.y + 30, id: 2 }] });
+    await sleep(30);
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(350);
+    check('a second finger doesn\'t leave the calendar off-centre', (await evaluate(`document.querySelector('.cal-grid').style.transform`)) === '', await evaluate(`document.querySelector('.cal-grid').style.transform`));
+  }
   await swipe('.cal-grid', 120);
   check('swipe right: the month before', (await shown()) === months[1], await shown());
   check('the new month slides in, by transform', await evaluate(`document.querySelector('.cal-grid').getAnimations().some((a) => a.effect.getKeyframes().some((k) => k.transform && k.transform.includes('translateX')))`));

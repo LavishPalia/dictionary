@@ -35,6 +35,7 @@ export function useMonthSwipe({ month, canPrev, canNext, reduced, onMonth }: {
 
   const bind = {
     onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+      if (gesture.current?.swiping) return; // a second finger joins nothing
       swallowClick.current = false;
       if (e.pointerType === 'mouse') return;
       gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, at: e.timeStamp, swiping: false, done: false, lastDx: 0 };
@@ -56,8 +57,9 @@ export function useMonthSwipe({ month, canPrev, canNext, reduced, onMonth }: {
     },
     onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
       const g = gesture.current;
+      if (!g || g.id !== e.pointerId) return;
       gesture.current = null;
-      if (!g || g.id !== e.pointerId || !g.swiping) return;
+      if (!g.swiping) return;
       swallowClick.current = true; // a swipe that started on a day doesn't open it
       const dx = e.clientX - g.x, fast = Math.abs(dx) / Math.max(1, e.timeStamp - g.at) > FLICK;
       const step: -1 | 1 = dx < 0 ? 1 : -1;
@@ -68,7 +70,8 @@ export function useMonthSwipe({ month, canPrev, canNext, reduced, onMonth }: {
       gesture.current = null;
     },
     onPointerCancel(e: React.PointerEvent<HTMLDivElement>) {
-      if (gesture.current?.swiping) settle(e.currentTarget);
+      if (gesture.current?.id !== e.pointerId) return;
+      if (gesture.current.swiping) settle(e.currentTarget);
       gesture.current = null;
     },
     onClickCapture(e: React.MouseEvent) {

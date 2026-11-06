@@ -81,7 +81,7 @@ export function GameScreen({ p, date, practice, ctl, stage, layer, motion, platf
     platform.storage.set(GUIDE_KEY, next);
     setCoach(false);
     const q = new URLSearchParams(location.search);
-    if (q.has('guide')) { q.delete('guide'); history.replaceState(null, '', location.pathname + (q.size ? `?${q}` : '')); }
+    if (q.has('guide')) { q.delete('guide'); history.replaceState(history.state, '', location.pathname + (q.size ? `?${q}` : '')); }
   };
   const logLength = snap.state.log.length;
   const tip = useMemo(() => (tips && !snap.state.over ? nextTip(new Set(seen.tips), { ...turnStats(p, snap.state), finished: 0 }) : null),

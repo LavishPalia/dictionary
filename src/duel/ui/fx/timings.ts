@@ -17,12 +17,12 @@ export const T = {
 } as const;
 
 /**
- * How fast the scoring of your turn plays. `pace` scales all of it, and each next word is `ramp` times quicker again,
- * so a turn finishing many words doesn't keep the player waiting.
+ * How fast the scoring of your turn plays. `pace` scales all of it, and each word after the first is `ramp` times
+ * quicker again, so a turn finishing many words doesn't keep the player waiting.
  */
 export interface Pace { pace: number; ramp: number }
 export const SCORING: Pace = { pace: 0.5, ramp: 0.7 };
-/** How much a duration shrinks for the Nth word (the tiles count as 0). Never so quick it can't be read. */
+/** How much a duration shrinks for the Nth word, from 0 (the tiles play as word 0). Never so quick it can't be read. */
 export const scoringScale = (word: number, s: Pace = SCORING) => Math.max(0.35, s.pace * Math.pow(s.ramp, word));
 
 /** How long a score takes to count from one number to another. */
