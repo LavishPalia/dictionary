@@ -18,7 +18,7 @@ export const fixture = (dates) => ({ dates: Object.fromEntries(dates.map((d) => 
 const P0000 = fs.readFileSync('data/duel/puzzles/p0000.json', 'utf8');
 
 /** Runs `body(t)` against a fresh headless Edge, then prints the result and exits non-zero on any failure. */
-export async function run(name, body) {
+export async function run(name, body, { serviceWorker = false } = {}) {
   const userData = path.join(process.cwd(), 'scratch', `panna-duel-test-edge-${process.pid}-${Date.now()}`);
   const edge = spawn(EDGE_PATH, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${userData}`,
     '--disable-gpu', '--window-size=1280,800', 'about:blank'], { stdio: 'ignore' });
@@ -60,9 +60,29 @@ export async function run(name, body) {
     };
     await send('Page.enable');
     await send('Runtime.enable');
+    await send('Network.enable');
+    // The stand-in schedule below only reaches requests the page itself makes, not ones a service worker makes for it.
+    await send('Network.setBypassServiceWorker', { bypass: !serviceWorker });
+    // "Offline" must cover the service worker as well as the page.
+    const workers = new Set();
+    socket.addEventListener('message', (event) => {
+      const m = JSON.parse(event.data);
+      if (m.method === 'Target.attachedToTarget' && m.params.targetInfo.type === 'service_worker') workers.add(m.params.sessionId);
+      if (m.method === 'Target.detachedFromTarget') workers.delete(m.params.sessionId);
+    });
+    const sendTo = (sessionId, method, params = {}) => new Promise((resolve) => {
+      const id = 500000 + Math.floor(Math.random() * 400000);
+      const done = (result) => { clearTimeout(timer); socket.removeEventListener('message', onMessage); resolve(result); };
+      const onMessage = (event) => { const m = JSON.parse(event.data); if (m.id === id) done(m.result ?? null); };
+      const timer = setTimeout(() => { workers.delete(sessionId); done(null); }, 2000);
+      socket.addEventListener('message', onMessage);
+      socket.send(JSON.stringify({ id, method, params, sessionId }));
+    });
+    if (serviceWorker) await send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true });
 
     // The schedule is always a stand-in, so a run doesn't depend on today's date in the real one.
-    let schedule = fixture([]);
+    // With the service worker on, a test runs on the real schedule (null: leave the request alone).
+    let schedule = serviceWorker ? null : fixture([]);
     // The Duel's server: left alone until a test sets a handler, or 'fail' for no connection.
     let api = null;
     const answerApi = async (requestId, request) => {
@@ -81,7 +101,8 @@ export async function run(name, body) {
       }
       const ok = (body) => send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }],
         body: Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)).toString('base64') });
-      if (request.url.includes('/duel/schedule.json')) void (schedule === 'fail' ? send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' }) : ok(schedule));
+      if (request.url.includes('/duel/schedule.json') && schedule === null) void send('Fetch.continueRequest', { requestId });
+      else if (request.url.includes('/duel/schedule.json')) void (schedule === 'fail' ? send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' }) : ok(schedule));
       else if (request.url.includes('/duel/p/p0000.v1.test0000.json')) void ok(P0000);
       else void send('Fetch.continueRequest', { requestId });
     });
@@ -92,6 +113,13 @@ export async function run(name, body) {
       setSchedule: (s) => { schedule = s; },
       /** A function from Request to Response, 'fail' for no connection, or null for the real server. */
       setApi: (a) => { api = a; },
+      /** No connection, for the page and the service worker both. */
+      offline: async (on) => {
+        const conditions = { offline: on, latency: 0, downloadThroughput: -1, uploadThroughput: -1 };
+        await send('Network.emulateNetworkConditions', conditions);
+        for (const s of workers) { await sendTo(s, 'Network.enable'); await sendTo(s, 'Network.emulateNetworkConditions', conditions); }
+        await sleep(300);
+      },
       setSize: (s) => send('Emulation.setDeviceMetricsOverride', { width: s.width, height: s.height, deviceScaleFactor: 1, mobile: s.mobile }),
       reduceMotion: (on) => send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: on ? 'reduce' : '' }] }),
       /** Opens a path with exactly this storage (values are JSON-encoded; `raw` ones are stored as they are). */

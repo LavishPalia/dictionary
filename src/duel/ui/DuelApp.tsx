@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Puzzle } from '../engine';
 import type { Platform } from '../platform/types';
+import { NotSaved } from '../platform/web/puzzles';
 import { GameController } from './controller/controller';
 import { readFlags } from './flags';
 import { WebDirector } from './fx/director';
@@ -15,7 +16,7 @@ import { Home } from './home/Home';
 import { HowToPlay } from './how/HowToPlay';
 import { Ranks } from './ranks/Ranks';
 import { Settings } from './settings/Settings';
-import { istToday, parsePath, type Route } from './router';
+import { istToday, landingPath, parsePath, type Route } from './router';
 import './styles/game.css';
 import './styles/home.css';
 import './styles/end.css';
@@ -29,7 +30,7 @@ declare global {
 
 function Game({ date, platform }: { date: string; platform: Platform }) {
   const [game, setGame] = useState<{ p: Puzzle; practice: boolean; ctl: GameController; stage: Stage; layer: FxLayer; motion: Motion } | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<'load' | 'not-saved' | null>(null);
   const [attempt, setAttempt] = useState(0);
   const flags = useMemo(() => readFlags(location.search), []);
 
@@ -55,15 +56,15 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
       const ctl = new GameController(p, date, platform, director, { seed: flags.seed, practice });
       if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace, platform };
       setGame({ p, practice, ctl, stage, layer, motion });
-    }, () => { if (live) setFailed(true); });
+    }, (e) => { if (live) setFailed(e instanceof NotSaved ? 'not-saved' : 'load'); });
     return () => { live = false; layer.destroy(); };
   }, [date, platform, flags, attempt]);
 
   if (failed) {
     return (
       <div className="duel-load-error" role="alert">
-        <p>Couldn’t load this puzzle. Check your connection.</p>
-        <button type="button" className="bigbtn pri" onClick={() => { setFailed(false); setAttempt(n => n + 1); }}>Try again</button>
+        <p>{failed === 'not-saved' ? 'This day isn’t saved on this phone yet. Connect once and it will be.' : 'Couldn’t load this puzzle. Check your connection.'}</p>
+        <button type="button" className="bigbtn pri" onClick={() => { setFailed(null); setAttempt(n => n + 1); }}>Try again</button>
         <a href={platform.exitHref}>Back to Panna</a>
       </div>
     );
@@ -102,7 +103,17 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
     return () => { removeEventListener('online', flush); removeEventListener('focus', flush); document.removeEventListener('visibilitychange', onVisible); };
   }, [platform]);
 
+  // A moment after opening, and when the connection returns: what a game needs to start with no connection.
   useEffect(() => {
+    const prepare = () => { void platform.prepareOffline(istToday(new Date())); };
+    const t = setTimeout(prepare, 1500);
+    addEventListener('online', prepare);
+    return () => { clearTimeout(t); removeEventListener('online', prepare); };
+  }, [platform]);
+
+  useEffect(() => {
+    const to = landingPath(location.search, location.origin);
+    if (to) history.replaceState(null, '', to);
     const read = () => {
       const r = parsePath(location.pathname, istToday(new Date()));
       if ('redirect' in r) { history.replaceState(null, '', r.redirect + location.search); return read(); }

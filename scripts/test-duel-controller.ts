@@ -16,7 +16,8 @@ import type { Director, SavedGame } from '../src/duel/ui/controller/types';
 import { readFlags } from '../src/duel/ui/flags';
 import { pickTier, shouldStepDown } from '../src/duel/ui/fx/tier';
 import { readResults, RESULTS_KEY } from '../src/duel/progress';
-import { istToday, parsePath } from '../src/duel/ui/router';
+import { daysToSave, filesNamed } from '../src/duel/platform/web/offline';
+import { istToday, landingPath, parsePath } from '../src/duel/ui/router';
 
 let failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -28,6 +29,14 @@ async function main() {
   // ── Router ──
   check('IST today rolls over at 18:30 UTC', istToday(new Date('2026-11-01T18:29:59Z')) === '2026-11-01' && istToday(new Date('2026-11-01T18:30:00Z')) === '2026-11-02');
   check('/play → the home', (parsePath('/play', '2026-11-01') as any).screen === 'home');
+  const O = 'https://x.test';
+  check('an offline landing keeps its path and flags', landingPath('?to=%2Fplay%2Fgame%2F2026-11-01%3Fseed%3D7', O) === '/play/game/2026-11-01?seed=7');
+  check('an offline landing can only be a /play path here', [ '?to=https%3A%2F%2Fevil.test%2Fplay', '?to=%2F%2Fevil.test%2Fplay', '?to=%2Fword%2Fx', '?to=%2Fplayground', '' ].every(s => landingPath(s, O) === null));
+  const days = Array.from({ length: 20 }, (_, i) => `2026-11-${String(i + 1).padStart(2, '0')}`);
+  const saved = daysToSave(days, '2026-11-10', new Set(['2026-11-09', '2026-11-07']));
+  check('offline saves today, the next 6 days, and the 3 latest open past days', saved.join() === ['10', '11', '12', '13', '14', '15', '16', '05', '06', '08'].map(d => `2026-11-${d}`).join(), saved);
+  check('offline saves what exists past the schedule\'s end', daysToSave(days, '2026-11-30', new Set()).join() === ['18', '19', '20'].map(d => `2026-11-${d}`).join());
+  check('a page\'s chunks are found, escaped or not', filesNamed('<script src="/_next/static/chunks/a-1.js"></script>self.__next_f.push("static/chunks/b-2.js\\")').join() === '/_next/static/chunks/a-1.js,/_next/static/chunks/b-2.js');
   check('/play/ → the home', (parsePath('/play/', '2026-11-01') as any).screen === 'home');
   check('a past date opens', (parsePath('/play/game/2026-10-28', '2026-11-01') as any).date === '2026-10-28');
   check('today opens', (parsePath('/play/game/2026-11-01', '2026-11-01') as any).date === '2026-11-01');
@@ -70,7 +79,7 @@ function memoryPlatform(): Platform & { mem: Map<string, string> } {
   };
   const quiet = { enabled: true, play() {}, unlock() {} };
   const still = { enabled: true, tick() {}, drop() {}, wrong() {}, celebrate() {} };
-  return { mem, net: webNet(storage, (async () => { throw new TypeError('offline'); }) as unknown as typeof fetch), storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => false, remove() {} }, reducedMotion: () => true, exitHref: '/' };
+  return { mem, net: webNet(storage, (async () => { throw new TypeError('offline'); }) as unknown as typeof fetch), storage, sound: quiet, haptics: still, puzzles: { schedule: async () => ({ dates: {}, files: {} }), forDate: async () => ({ puzzle: p0, practice: false }) }, help: webHelp(storage, () => '2026-11-05'), panna: { wordHref: (w: string) => `/word/${w}`, isSaved: () => false, save: async () => false, remove() {} }, reducedMotion: () => true, prepareOffline: async () => {}, exitHref: '/' };
 }
 
 /** A correct cell for every tile in your rack (the bag invariant guarantees one each). */

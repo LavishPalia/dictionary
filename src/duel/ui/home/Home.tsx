@@ -148,7 +148,7 @@ export function Home({ platform, nav }: { platform: Platform; nav: Nav }) {
 
       {failed && (
         <div className="duel-load-error" role="alert">
-          <p>Couldn’t load the puzzles. Check your connection.</p>
+          <p>{navigator.onLine ? 'Couldn’t load the puzzles. Check your connection.' : 'You’re offline, and the puzzles aren’t saved on this phone yet.'}</p>
           <button type="button" className="bigbtn pri" onClick={() => { setFailed(false); setAttempt(n => n + 1); }}>Try again</button>
           <a href={platform.exitHref}>Back to Panna</a>
         </div>

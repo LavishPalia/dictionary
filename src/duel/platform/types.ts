@@ -82,6 +82,8 @@ export interface Platform {
   help: HelpWallet;
   panna: PannaBridge;
   reducedMotion(): boolean;
+  /** Saves what a game needs to start with no connection. Never rejects; does nothing where it can't. */
+  prepareOffline(today: string): Promise<void>;
   /** Where the back arrow goes. */
   exitHref: string;
 }

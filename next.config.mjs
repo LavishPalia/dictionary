@@ -36,6 +36,8 @@ const nextConfig = {
       { source: '/:path*', headers: securityHeaders },
       // Duel puzzles are published under their hash, so a name never changes content.
       { source: '/duel/p/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+      // So are the sounds: a new sound gets a new version in its name.
+      { source: '/duel/sounds/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
     ];
   },
   // better-sqlite3 is a native module: load it from node_modules at runtime instead of bundling it.

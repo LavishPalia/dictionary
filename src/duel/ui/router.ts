@@ -28,3 +28,13 @@ export function parsePath(path: string, today: string): Route {
   if (!isDate(date) || date > today) return toToday;
   return { screen: 'game', date };
 }
+
+/** The address an offline visit asked for (the service worker's /play?to=…): a /play path on this site, or null. */
+export function landingPath(search: string, origin: string): string | null {
+  const to = new URLSearchParams(search).get('to');
+  if (!to) return null;
+  try {
+    const u = new URL(to, origin);
+    return u.origin === origin && /^\/play(\/|$)/.test(u.pathname) ? u.pathname + u.search : null;
+  } catch { return null; }
+}
