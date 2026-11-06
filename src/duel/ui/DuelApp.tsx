@@ -52,7 +52,7 @@ function Game({ date, platform }: { date: string; platform: Platform }) {
         platform.storage.remove(gameKey(date));
         const q = new URLSearchParams(location.search);
         q.delete('fresh');
-        history.replaceState(history.state, '', location.pathname + (q.size ? `?${q}` : ''));
+        history.replaceState({ duelMoves: history.state?.duelMoves }, '', location.pathname + (q.size ? `?${q}` : ''));
       }
       const ctl = new GameController(p, date, platform, director, { seed: flags.seed, practice });
       if (flags.test) window.__duel = { snapshot: ctl.snapshot, puzzle: p, trace, platform };
@@ -171,7 +171,7 @@ export default function DuelApp({ platform }: { basePath: string; platform: Plat
       if (unwindingTo && location.pathname + location.search !== unwindingTo) history.replaceState({ duelMoves: 0 }, '', unwindingTo);
       unwindingTo = null;
       const r = parsePath(location.pathname, istToday(new Date()));
-      if ('redirect' in r) { history.replaceState(history.state, '', r.redirect + location.search); return read(); }
+      if ('redirect' in r) { history.replaceState({ duelMoves: history.state?.duelMoves }, '', r.redirect + location.search); return read(); }
       setRoute(r);
     };
     read();

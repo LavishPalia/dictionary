@@ -149,11 +149,11 @@ await run('Duel home', async (t) => {
   check('the game’s arrow returns to the home', await waitFor(`location.pathname === '/play' && Boolean(document.querySelector('#duel-hero'))`, 10000));
   const stepped = await evaluate('history.length');
   await click('#duel-hero-btn');
-  await waitFor(`location.pathname.startsWith('/play/game/')`, 10000);
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
   await click('[aria-label="Settings"]');
   await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
   await evaluate('history.back(); true');
-  await waitFor(`location.pathname.startsWith('/play/game/')`, 10000);
+  await waitFor(`location.pathname.startsWith('/play/game/') && Boolean(document.querySelector('.duel-board [data-cell]'))`, 20000);
   await click('[aria-label="Settings"]');
   await waitFor(`Boolean(document.querySelector('#duel-settings'))`, 10000);
   await click('#duel-settings [aria-label="Back"]');
