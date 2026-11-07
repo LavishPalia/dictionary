@@ -98,9 +98,17 @@ export function TodayScreen(props: TodayScreenProps) {
   }, []);
   useEffect(() => hideNote, [hideNote]);
   // The note waits while it is pointed at or has focus (it holds a button), then goes after NOTE_MS.
+  const noteRef = useRef<HTMLDivElement>(null);
   const startNoteTimer = useCallback(() => {
     if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
-    noteTimer.current = window.setTimeout(() => { noteTimer.current = null; setNote(null); }, NOTE_MS);
+    const tick = () => {
+      // Still pointed at, or holding focus: wait another round (focus events alone aren't reliable).
+      const el = noteRef.current;
+      if (el && (el.matches(':hover') || el.contains(document.activeElement))) { noteTimer.current = window.setTimeout(tick, 1000); return; }
+      noteTimer.current = null;
+      setNote(null);
+    };
+    noteTimer.current = window.setTimeout(tick, NOTE_MS);
   }, []);
   const holdNote = () => { if (noteTimer.current !== null) window.clearTimeout(noteTimer.current); noteTimer.current = null; };
   const { light, onSetLight } = props;
@@ -166,7 +174,7 @@ export function TodayScreen(props: TodayScreenProps) {
         )} />
       <p className="ui-visually-hidden" id="desk-live" aria-live="polite">{said}</p>
       {note && (
-        <div className="desk-note" id="desk-note" onMouseEnter={holdNote} onMouseLeave={startNoteTimer} onFocus={holdNote}
+        <div className="desk-note" id="desk-note" ref={noteRef} onMouseEnter={holdNote} onMouseLeave={startNoteTimer} onFocus={holdNote}
           onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) startNoteTimer(); }}>
           <span>{note === 'evening' ? 'Lamp on.' : 'Lamp off.'} It stays this way until you switch it, or choose Auto to follow the clock again.</span>
           <button type="button" id="desk-note-auto" onClick={() => {

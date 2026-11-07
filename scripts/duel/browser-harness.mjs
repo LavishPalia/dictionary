@@ -49,6 +49,8 @@ export async function run(name, body, { serviceWorker = false } = {}) {
       socket.addEventListener('message', onMessage);
       socket.send(JSON.stringify({ id, method, params }));
     });
+    // A paused request can be gone by the time we answer it (the page navigated away): that is not a test failure.
+    const quiet = (promise) => promise.catch((e) => { if (!/Invalid InterceptionId/.test(String(e?.message))) throw e; });
     const evaluate = async (expression) => {
       const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
       if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);
@@ -95,16 +97,16 @@ export async function run(name, body, { serviceWorker = false } = {}) {
       if (m.method !== 'Fetch.requestPaused') return;
       const { requestId, request } = m.params;
       if (request.url.includes('/api/duel/') && api) {
-        if (api === 'fail') void send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' });
-        else void answerApi(requestId, request).catch((e) => { console.error(e); void send('Fetch.failRequest', { requestId, errorReason: 'Failed' }); });
+        if (api === 'fail') void quiet(send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' }));
+        else void answerApi(requestId, request).catch((e) => { console.error(e); void quiet(send('Fetch.failRequest', { requestId, errorReason: 'Failed' })); });
         return;
       }
-      const ok = (body) => send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }],
-        body: Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)).toString('base64') });
-      if (request.url.includes('/duel/schedule.json') && schedule === null) void send('Fetch.continueRequest', { requestId });
-      else if (request.url.includes('/duel/schedule.json')) void (schedule === 'fail' ? send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' }) : ok(schedule));
+      const ok = (body) => quiet(send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }],
+        body: Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)).toString('base64') }));
+      if (request.url.includes('/duel/schedule.json') && schedule === null) void quiet(send('Fetch.continueRequest', { requestId }));
+      else if (request.url.includes('/duel/schedule.json')) void (schedule === 'fail' ? quiet(send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' })) : ok(schedule));
       else if (request.url.includes('/duel/p/p0000.v1.test0000.json')) void ok(P0000);
-      else void send('Fetch.continueRequest', { requestId });
+      else void quiet(send('Fetch.continueRequest', { requestId }));
     });
     await send('Fetch.enable', { patterns: [{ urlPattern: '*/duel/*' }] });
 
@@ -156,6 +158,13 @@ export async function run(name, body, { serviceWorker = false } = {}) {
   } finally {
     try { socket?.close(); } catch {}
     edge.kill();
+    // On Windows that ends only the process we started: headless Edge relaunches itself, and its other processes lived
+    // on (keeping the debugging port, so a later run could talk to the old browser). End every Edge using this run's
+    // own profile folder; nothing else has it.
+    if (process.platform === 'win32') {
+      const dir = path.basename(userData).replace(/'/g, '');
+      spawnSync('powershell', ['-NoProfile', '-Command', `Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*${dir}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`], { stdio: 'ignore' });
+    }
     await sleep(500);
     spawnSync('cmd', ['/c', 'rmdir', '/s', '/q', userData], { stdio: 'ignore' });
   }

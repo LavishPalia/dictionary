@@ -580,7 +580,9 @@ await run('Desk film and the service worker', async (t: any) => {
   await t.setSize(DESKTOP);
   await open('/', { panna_desk: { noted: true } });
   await waitFor(`navigator.serviceWorker?.controller !== null && navigator.serviceWorker?.controller !== undefined`, 15000) || (await go('/'), await waitFor(`Boolean(navigator.serviceWorker?.controller)`, 15000));
-  await waitFor(`Boolean(document.querySelector('#desk-film-play'))`);
+  const ready = await waitFor(`Boolean(document.querySelector('#desk-film-play'))`, 20000);
+  check('sw: the first-visit film shows with the service worker in charge', ready, await evaluate(`document.querySelector('#today-screen')?.innerText.slice(0, 200) ?? location.href`));
+  if (!ready) return;
   const c = await evaluate(`(() => { const r = document.querySelector('#desk-film-play').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
   await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: c.x, y: c.y, button: 'left', buttons: 1, clickCount: 1 });
   await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: c.x, y: c.y, button: 'left', buttons: 0, clickCount: 1 });
