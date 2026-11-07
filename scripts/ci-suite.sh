@@ -13,7 +13,7 @@ export REPORTS_FILE=$PWD/scratch/reports-test.jsonl
 export NEXT_PUBLIC_REPORTS=1
 
 # Parts of about 6.5 minutes each on a GitHub runner (seconds in brackets, from a CI log, 2026-10-31).
-PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:saved test:word"  # 139 82 70 55 23 19
+PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:saved test:word test:desk-ui"  # 139 82 70 55 23 19
 PART_2="test:learn-ui test:reach-ui test:history-ui test:goto-ui test:review-ui test:book-fit-ui test:backup-ui"  # 116 78 69 44 27 25 24
 # The Duel's own part (from 4 Nov): it had made part 2 the slowest by about 3 minutes.
 PART_4="test:duel-ui test:duel-sim test:duel-entry-ui test:duel-home-ui test:duel-end-ui test:duel-ranks-ui test:duel-guide-ui test:duel-offline-ui test:duel-sound test:duel-pace test:duel-pace-ui test:duel-a11y-ui test:duel-content test:duel-purity test:duel-engine test:duel-controller test:duel-help test:duel-progress test:duel-schedule test:duel-api test:duel-outbox"  # duel-ui ~230 locally, sim ~60

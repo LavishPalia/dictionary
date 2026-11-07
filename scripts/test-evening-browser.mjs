@@ -266,6 +266,7 @@ async function main() {
           const box = el.getBoundingClientRect();
           const s = getComputedStyle(el);
           if (!box.width || !box.height || s.visibility === 'hidden' || s.display === 'none') continue;
+          if (el.closest('[data-glow]')) continue; // a light source on purpose (the desk lamp's bulb), not a surface
           for (const pseudo of [null, '::before', '::after']) {
             const p = pseudo ? getComputedStyle(el, pseudo) : s;
             if (pseudo && (p.content === 'none' || p.content === 'normal' || p.display === 'none' || p.visibility === 'hidden')) continue;

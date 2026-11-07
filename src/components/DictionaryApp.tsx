@@ -25,7 +25,7 @@ import { BookMeta, BookPage, DictionaryEntry, MarginNote, RelatedWord } from '@/
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
 import { useReducedMotion, visibleElement } from '@/lib/motion';
-import { applyLight, readLighting, resolveLight, storedSettings, type Lighting } from '@/lib/lighting';
+import { applyLight, readLighting, resolveLight, storedSettings, type Light, type Lighting } from '@/lib/lighting';
 import type { PageTurnSpeed } from '@/components/shell/ReadingMenu';
 import { TourLayer } from '@/components/tour/TourLayer';
 import { ToursSheet } from '@/components/tour/ToursSheet';
@@ -535,9 +535,18 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [clockTick, setClockTick] = useState(0);
   const manualPickRef = useRef(false);
   const fadeTimerRef = useRef<number | null>(null);
-  const pickLighting = useCallback((next: Lighting) => {
+  // The light on <html> now, for the desk lamp (which shows what is applied, not the stored preference).
+  const [appliedLight, setAppliedLight] = useState<Light>('day');
+  useEffect(() => { // the head script already set it before first paint
+    const set = document.documentElement.getAttribute('data-light');
+    if (set === 'day' || set === 'evening') setAppliedLight(set);
+  }, []);
+  // A switch of the desk lamp fades the tokens in 0.7 s (html.light-fading--quick), quicker than the clock's fade.
+  const quickPickRef = useRef(false);
+  const pickLighting = useCallback((next: Lighting, opts?: { quick?: boolean }) => {
     if (next === lighting) return; // re-picking the current option must not leave a stale "manual" flag behind
     manualPickRef.current = true;
+    quickPickRef.current = Boolean(opts?.quick);
     setLighting(next);
   }, [lighting]);
   useEffect(() => {
@@ -549,26 +558,29 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   }, []);
   useEffect(() => {
     if (!settingsLoaded) return;
-    const manual = manualPickRef.current;
+    const manual = manualPickRef.current, quick = quickPickRef.current;
     manualPickRef.current = false;
+    quickPickRef.current = false;
     const html = document.documentElement;
     const endFade = () => {
       if (fadeTimerRef.current !== null) { window.clearTimeout(fadeTimerRef.current); fadeTimerRef.current = null; }
-      html.classList.remove('light-fading');
+      html.classList.remove('light-fading', 'light-fading--quick');
     };
     const want = resolveLight(lighting, new Date());
-    if (html.getAttribute('data-light') === want) return;
+    if (html.getAttribute('data-light') === want) { setAppliedLight(want); return; }
     if (!manual && (isFlipping || loadingPage !== null)) return; // runs again when the turn lands
     endFade();
-    if (!manual && !reducedMotion) {
+    if ((!manual || quick) && !reducedMotion) {
       html.classList.add('light-fading');
-      fadeTimerRef.current = window.setTimeout(endFade, 2100);
+      if (quick) html.classList.add('light-fading--quick');
+      fadeTimerRef.current = window.setTimeout(endFade, quick ? 700 : 2100);
     }
     applyLight(want);
+    setAppliedLight(want);
   }, [settingsLoaded, lighting, clockTick, isFlipping, loadingPage, reducedMotion]);
   useEffect(() => () => {
     if (fadeTimerRef.current !== null) window.clearTimeout(fadeTimerRef.current);
-    document.documentElement.classList.remove('light-fading');
+    document.documentElement.classList.remove('light-fading', 'light-fading--quick');
   }, []);
 
   // Popstate listener for browser Back/Forward buttons
@@ -1531,6 +1543,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onOpenGuide={() => goTo('learn')}
           lookedUpToday={lookedUpToday}
           onOpenHistory={() => openSaved('history')}
+          light={appliedLight}
+          onSetLight={(next) => pickLighting(next, { quick: true })}
+          onUseAuto={() => pickLighting('auto', { quick: true })}
         />
       )}
 

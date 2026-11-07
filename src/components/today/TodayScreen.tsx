@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { Light } from '@/lib/lighting';
+import { readDesk, writeDesk } from '@/lib/desk';
 import type { BookPage, DictionaryEntry } from '@/lib/types';
 import { describePos } from '@/lib/pos';
 import { localDate, SECONDS_PER_CARD } from '@/lib/review';
@@ -9,6 +11,9 @@ import { StarIcon } from '@/components/ui/icons';
 import { ProgressBar, ReviewCalendar } from '@/components/progress/Progress';
 import type { CalendarDay, Progress } from '@/lib/progress';
 import { DuelCard } from './DuelCard';
+import { DeskScene } from './desk/DeskScene';
+import { DeskStrip } from './desk/DeskStrip';
+import { useWide } from './desk/useWide';
 
 interface TodayScreenProps {
   dueCount: number;
@@ -38,7 +43,15 @@ interface TodayScreenProps {
   lookedUpToday: { total: number; unsaved: number };
   /** Opens Saved on the History tab. */
   onOpenHistory: () => void;
+  /** The desk lighting applied now (the lamp shows this, not the stored preference). */
+  light: Light;
+  /** The lamp was switched: pin this light. */
+  onSetLight: (light: Light) => void;
+  /** Back to Auto (the clock), from the first-switch note. */
+  onUseAuto: () => void;
 }
+
+const NOTE_MS = 6000;
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
 export function TodayScreen(props: TodayScreenProps) {
@@ -62,6 +75,30 @@ export function TodayScreen(props: TodayScreenProps) {
     return () => { live = false; };
   }, [page, loadPage]);
 
+  // The lamp. A switch pins the opposite of the light applied now; the first one on a device explains that.
+  const wide = useWide();
+  const [said, setSaid] = useState('');
+  const [note, setNote] = useState<Light | null>(null);
+  const noteTimer = useRef<number | null>(null);
+  const hideNote = useCallback(() => {
+    if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
+    noteTimer.current = null;
+    setNote(null);
+  }, []);
+  useEffect(() => hideNote, [hideNote]);
+  const { light, onSetLight } = props;
+  const toggleLamp = useCallback(() => {
+    const next: Light = light === 'evening' ? 'day' : 'evening';
+    onSetLight(next);
+    setSaid(next === 'evening' ? 'Lamp on: Evening lighting.' : 'Lamp off: Day lighting.');
+    if (!readDesk().noted) {
+      writeDesk({ noted: true });
+      setNote(next);
+      if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
+      noteTimer.current = window.setTimeout(() => { noteTimer.current = null; setNote(null); }, NOTE_MS);
+    }
+  }, [light, onSetLight]);
+
   const minutes = Math.max(1, Math.round((dueCount * SECONDS_PER_CARD) / 60));
   const pos = word ? describePos(word.pos) : null;
   const saved = word ? props.isSaved(word.normalized) : false;
@@ -70,6 +107,16 @@ export function TodayScreen(props: TodayScreenProps) {
     <section className="today" id="today-screen" aria-labelledby="today-title">
       <h1 id="today-title" className="ui-visually-hidden">Today</h1>
       <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
+
+      <DeskScene wide={wide} light={light} onToggleLamp={toggleLamp} />
+      <DeskStrip wide={wide} light={light} onToggleLamp={toggleLamp} />
+      <p className="ui-visually-hidden" id="desk-live" aria-live="polite">{said}</p>
+      {note && (
+        <div className="desk-note" id="desk-note">
+          <span>{note === 'evening' ? 'Lamp on.' : 'Lamp off.'} It stays this way until you switch it, or choose Auto to follow the clock again.</span>
+          <button type="button" id="desk-note-auto" onClick={() => { hideNote(); props.onUseAuto(); }}>Use Auto</button>
+        </div>
+      )}
 
       {props.showWelcome && (
         <Card className="today-card today-welcome" id="today-welcome" aria-labelledby="today-welcome-title">

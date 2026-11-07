@@ -288,6 +288,8 @@ html[data-light="evening"] {
       --switch-off 2s, --progress-new 2s, --badge-ink 2s, --desk-label 2s,
       --nav-ink 2s, --cover-cta 2s, --green-desk 2s, --switch-knob 2s !important;
   }
+  /* A switch of Today's desk lamp: the same tokens, quicker (DictionaryApp adds this class for 0.7 s). */
+  html.light-fading.light-fading--quick { transition-duration: .7s !important; }
 }
 
 * {
