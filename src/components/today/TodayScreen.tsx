@@ -17,6 +17,7 @@ import { useWide } from './desk/useWide';
 import { GoalNotebook } from './desk/GoalNotebook';
 import { GoalChip } from './desk/GoalChip';
 import { GoalEditor } from './desk/GoalEditor';
+import { DeskBook } from './desk/DeskBook';
 import type { TodayWord } from '@/lib/today-words';
 
 interface TodayScreenProps {
@@ -65,7 +66,8 @@ const NOTE_MS = 6000;
 export function TodayScreen(props: TodayScreenProps) {
   const { dueCount, savedWords, lastPage, loadPage } = props;
   const [word, setWord] = useState<DictionaryEntry | null>(null);
-  const [lastLabel, setLastLabel] = useState<string | null>(null);
+  // The page left off on (or page 1): the Continue card's label, and the desk book's miniature.
+  const [pageData, setPageData] = useState<BookPage | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -79,7 +81,7 @@ export function TodayScreen(props: TodayScreenProps) {
   const page = lastPage ?? 1;
   useEffect(() => {
     let live = true;
-    loadPage(page).then((p) => { if (live && p) setLastLabel(`${p.first_headword} – ${p.last_headword}`); });
+    loadPage(page).then((p) => { if (live && p) setPageData(p); });
     return () => { live = false; };
   }, [page, loadPage]);
 
@@ -113,7 +115,22 @@ export function TodayScreen(props: TodayScreenProps) {
   const closePhoneEditor = () => { setEditing(false); window.setTimeout(() => chip.current?.focus(), 0); };
   const goalCount = props.todaysWords.length;
 
+  // First visit: the welcome. On the desk it is the book's left page; elsewhere a card.
+  const welcomeBody = (
+    <>
+      <span className="ui-label">New here?</span>
+      <p className="today-big" id="today-welcome-title">Take the one-minute tour</p>
+      <p className="tour-hi" lang="hi">नए हैं? एक मिनट का टूर देखें।</p>
+      <p className="today-muted">Find words, save them, and remember them. Any time later: ⋯ → Guided tours.</p>
+      <div className="today-actions">
+        <Button variant="primary" id="today-take-tour" onClick={props.onTakeTour}>Take the tour</Button>
+        <Button id="today-not-now" onClick={props.onDismissWelcome}>Not now</Button>
+      </div>
+    </>
+  );
+
   const minutes = Math.max(1, Math.round((dueCount * SECONDS_PER_CARD) / 60));
+  const lastLabel = pageData?.page_number === page ? `${pageData.first_headword} – ${pageData.last_headword}` : null;
   const pos = word ? describePos(word.pos) : null;
   const saved = word ? props.isSaved(word.normalized) : false;
 
@@ -123,6 +140,9 @@ export function TodayScreen(props: TodayScreenProps) {
       <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
 
       <DeskScene wide={wide} light={light} onToggleLamp={toggleLamp}
+        book={<DeskBook page={pageData?.page_number === page ? pageData : null} pageNumber={page} started={lastPage !== null}
+          onOpen={() => props.onContinueReading(page)}
+          welcome={props.showWelcome ? <div className="desk-welcome" id="today-welcome" role="group" aria-labelledby="today-welcome-title">{welcomeBody}</div> : undefined} />}
         notebook={<GoalNotebook words={props.todaysWords} goal={props.dailyGoal} editing={editing}
           onEdit={() => setEditing(true)} onClose={() => setEditing(false)} onSave={props.onSetGoal} />} />
       <DeskStrip wide={wide} light={light} onToggleLamp={toggleLamp}
@@ -141,16 +161,9 @@ export function TodayScreen(props: TodayScreenProps) {
         </div>
       )}
 
-      {props.showWelcome && (
+      {props.showWelcome && wide === false && (
         <Card className="today-card today-welcome" id="today-welcome" aria-labelledby="today-welcome-title">
-          <span className="ui-label">New to Panna?</span>
-          <p className="today-big" id="today-welcome-title">Take the one-minute tour</p>
-          <p className="tour-hi" lang="hi">पन्ना में नए हैं? एक मिनट का टूर देखें।</p>
-          <p className="today-muted">Find words, save them, and remember them. Any time later: ⋯ → Guided tours.</p>
-          <div className="today-actions">
-            <Button variant="primary" id="today-take-tour" onClick={props.onTakeTour}>Take the tour</Button>
-            <Button id="today-not-now" onClick={props.onDismissWelcome}>Not now</Button>
-          </div>
+          {welcomeBody}
         </Card>
       )}
 
@@ -180,7 +193,8 @@ export function TodayScreen(props: TodayScreenProps) {
         )}
       </Card>
 
-      <Card className="today-card" id="today-continue">
+      {wide !== true && (
+      <Card className="today-card today-continue-card" id="today-continue">
         <span className="ui-label">{lastPage ? 'Continue reading' : 'Start reading'}</span>
         <div className="today-row">
           <div>
@@ -190,6 +204,7 @@ export function TodayScreen(props: TodayScreenProps) {
           <Button id="today-continue-btn" onClick={() => props.onContinueReading(page)}>Open book ›</Button>
         </div>
       </Card>
+      )}
 
       {props.lookedUpToday.total > 0 && (
         // On the desk, like the study guide's link.

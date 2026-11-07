@@ -12,10 +12,11 @@ export const GoalChip = forwardRef<HTMLButtonElement, { count: number; goal: num
     const lit = Math.min(marks, Math.floor((Math.min(count, goal) / goal) * marks));
     return (
       <button type="button" ref={ref} className="desk-goal-chip" id="desk-goal-chip" aria-expanded={open} aria-controls="desk-goal-editor"
-        aria-label={`Today’s words: ${count} of ${goal}. Change the goal`} onClick={onToggle}>
+        onClick={onToggle}>
         <span>
           <span className="desk-goal-chip-label">Today’s words</span>
           <span className="desk-goal-chip-count">{count}<small> of {goal}</small></span>
+          <span className="ui-visually-hidden">, change the goal</span>
         </span>
         <span className="desk-goal-tally" aria-hidden="true">
           {Array.from({ length: marks }, (_, i) => <i key={i} className={`${i < lit ? 'on' : ''}${i % 5 === 4 ? ' five' : ''}`} />)}

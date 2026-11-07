@@ -100,14 +100,18 @@ async function main() {
       const todayBtn = sizeName === 'phone' ? '#nav-today-btn' : '#open-today-btn';
       const bookBtn = sizeName === 'phone' ? '#nav-book-btn' : '#open-today-btn'; // desktop: the Today button toggles back
       check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
-      await seed({ words: ['Camel', 'Ceremony', 'Abandon'], raw: { panna_last_page: '40', panna_review_days: [await day(-2), await day(-1)] } });
+      // A returning reader (the welcome done, else the desk's book would be the welcome card).
+      await seed({ words: ['Camel', 'Ceremony', 'Abandon'], raw: { panna_last_page: '40', panna_review_days: [await day(-2), await day(-1)], panna_tours: { welcomeDone: true } } });
       check(`${sizeName}: the front page opens`, await open('/', size));
       let w = await where();
       check(`${sizeName}: the front page is Today`, w.screen === 'today' && w.path === '/', w);
       const text = await evaluate(`document.querySelector('#today-screen').innerText`);
       check(`${sizeName}: Today shows the due review with a time estimate`, text.includes('3 words are due') && text.includes('About 1 minute'), text);
       check(`${sizeName}: Today shows the streak`, text.includes('2 days in a row'), text);
-      check(`${sizeName}: Today offers to continue at the last page read`, text.includes('Continue reading') && text.includes('Page 40'), text);
+      // On the desk the book itself is the Continue reading button, with "Page 40 · … · Open book ›" under it.
+      const continueName = await evaluate(`document.querySelector('#today-continue-btn')?.getAttribute('aria-label') ?? ''`);
+      check(`${sizeName}: Today offers to continue at the last page read`, sizeName === 'phone' ? text.includes('Continue reading') && text.includes('Page 40')
+        : continueName.startsWith('Continue reading: page 40') && text.includes('Page 40'), sizeName === 'phone' ? text : continueName);
       // A fresh open: going to the book reaches the reader's place, and the page 1 the front page loaded doesn't replace it.
       w = await go(`document.querySelector(${JSON.stringify(bookBtn)}).click()`);
       await sleep(sizeName === 'phone' ? 0 : 1500); // the desktop page turn
@@ -203,7 +207,9 @@ async function main() {
       await seed({ raw: { panna_history: [{ normalized: "calm", headword: "Calm", meaning_hi: "शांत", first_at: old, last_at: old, count: 1, lookups: [old], source: "search", page: null }] } });
       await open('/', size);
       const first = await evaluate(`document.querySelector('#today-screen')?.innerText ?? ''`);
-      check(`${sizeName}: a first visit explains Review and starts reading at page 1`, first.includes('Nothing to review yet') && first.includes('Start reading') && first.includes('Page 1'), first);
+      check(`${sizeName}: a first visit explains Review and starts reading at page 1`, first.includes('Nothing to review yet')
+        // on the desk, a first visit's book is the welcome card; "Start reading · Page 1" comes once it is dismissed
+        && (sizeName === 'phone' ? first.includes('Start reading') && first.includes('Page 1') : first.includes('New here?')), first);
       check(`${sizeName}: no streak is shown without one`, !first.includes('in a row'));
       check(`${sizeName}: no Today line without lookups today`, !(await evaluate(`Boolean(document.querySelector('#today-lookups'))`)));
     }

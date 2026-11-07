@@ -1,6 +1,10 @@
 // The desk scene on Today: the lamp (switching and aiming), Today's words, the open book, the intro film and
 // close-the-book, at desktop and phone sizes. Usage: npx tsx scripts/test-desk-browser.mts (needs the app on :3000)
+import Database from 'better-sqlite3';
 import { DESKTOP, PHONE, run, sleep } from './duel/browser-harness.mjs';
+
+// The page Camel is on (page numbers change when the book grows).
+const CAMEL_PAGE = (new Database('data/dictionary.db', { readonly: true }).prepare("SELECT page_number FROM entries WHERE normalized = 'camel'").get() as { page_number: number }).page_number;
 
 const settings = (extra: Record<string, unknown> = {}) => ({ speed: 'realistic', sounds: true, ...extra });
 // A visitor who has seen the welcome, so it doesn't stand in for the book.
@@ -217,4 +221,44 @@ await run('Desk scene', async (t: any) => {
   await waitFor(`Boolean(document.querySelector('#desk-goal-chip'))`);
   check('phone: a goal of 25 still shows 10 marks', (await evaluate(`document.querySelectorAll('.desk-goal-tally i').length`)) === 10);
   await fixClock(null);
+
+  // ── The open book ──
+  {
+    const html = await (await fetch('http://localhost:3000/')).text();
+    check('book: the server page already holds the scene box and the strip (sizes reserved before paint)', html.includes('desk-scene-box') && html.includes('desk-strip'));
+    const page = await (await fetch(`http://localhost:3000/api/page/${CAMEL_PAGE}`)).json();
+    const left = page.column1.map((e: any) => e.headword), right = page.column2.map((e: any) => e.headword);
+    await setSize(DESKTOP);
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'day' }) }, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`document.querySelectorAll('.desk-book .desk-mini-entry').length > 0`);
+    const shownWords = await evaluate(`[...document.querySelectorAll('.desk-book .desk-mini-entry b')].map((b) => b.textContent)`);
+    check('book: the miniature is the page left off on, as real text', left.slice(0, 4).every((w: string) => shownWords.includes(w)) && right.slice(0, 4).every((w: string) => shownWords.includes(w)), { shownWords, left, right });
+    check('book: the Hindi in the miniature is marked as Hindi', await evaluate(`document.querySelectorAll('.desk-book .desk-mini-entry [lang="hi"]').length > 0`));
+    check('book: the tag names the page and its words', (await t.text('#desk-book-tag')) === `Page ${CAMEL_PAGE.toLocaleString('en-IN')} · ${page.first_headword} – ${page.last_headword} · Open book ›`, await t.text('#desk-book-tag'));
+    check('book: the book is the Continue reading button', (await attr('#today-continue-btn', 'aria-label')) === `Continue reading: page ${CAMEL_PAGE}, ${page.first_headword} to ${page.last_headword}` && await evaluate(`Boolean(document.querySelector('.desk-book #today-continue-btn'))`), await attr('#today-continue-btn', 'aria-label'));
+    check('book: no Continue reading card while the scene shows', !(await shown('#today-continue')));
+    check('book: the scene box keeps its size', await evaluate(`(() => { const r = document.querySelector('#desk-scene').getBoundingClientRect(); return Math.abs(r.width / r.height - 940 / 400) < 0.01; })()`));
+    await click('#today-continue-btn');
+    check('book: clicking the book opens the page', await waitFor(`location.pathname === '/page/${CAMEL_PAGE}'`, 5000), await evaluate('location.pathname'));
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'day' }) });
+    await waitFor(`Boolean(document.querySelector('#desk-book-tag'))`);
+    check('book: a reader who never opened a page gets page 1', (await t.text('#desk-book-tag')) === 'Start reading · Page 1 ›', await t.text('#desk-book-tag'));
+    // First visit: the book is the welcome card.
+    await open('/', { panna_desk: { noted: true }, panna_settings: settings({ lighting: 'day' }) });
+    await waitFor(`Boolean(document.querySelector('#today-welcome'))`);
+    check('book: on a first visit the welcome is on the book’s left page', await evaluate(`Boolean(document.querySelector('.desk-book #today-welcome'))`) && (await t.text('#today-welcome')).includes('New here?')
+      && (await t.text('#today-welcome')).includes('Take the one-minute tour') && await exists('#today-take-tour') && await exists('#today-not-now'));
+    check('book: the welcome has its Hindi line', (await evaluate(`document.querySelector('#today-welcome [lang="hi"]')?.textContent`)) === 'नए हैं? एक मिनट का टूर देखें।');
+    check('book: there is no separate welcome card on the desktop', (await evaluate(`document.querySelectorAll('#today-welcome').length`)) === 1);
+    await click('#today-not-now');
+    check('book: Not now turns the book back to the page', await waitFor(`Boolean(document.querySelector('#desk-book-tag')) && !document.querySelector('#today-welcome')`, 3000));
+    // Phone: the Continue card stays, and the welcome card says New here?
+    await setSize(PHONE);
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'day' }) }, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-cord'))`);
+    check('phone: the Continue reading card stays', await shown('#today-continue') && !(await exists('.desk-book')));
+    await open('/', { panna_desk: { noted: true }, panna_settings: settings({ lighting: 'day' }) });
+    await waitFor(`Boolean(document.querySelector('#today-welcome'))`);
+    check('phone: the welcome card says New here?', (await t.text('#today-welcome')).includes('New here?') && !(await t.text('#today-welcome')).includes('New to'));
+  }
 });
