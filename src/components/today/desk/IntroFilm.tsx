@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 type FilmLang = 'english' | 'hindi';
 const LANG_KEY = 'panna_film_lang';
+/** In the files' names (public/intro), which are cached for good: a new cut of the film gets a new version. */
+const FILM_VERSION = 'v1';
 
 // The 37-second intro film, for first visits. Only the poster loads with the page (preload="none"); the film loads
 // when ▶ is pressed. The service worker never keeps it (public/sw.js caches nothing under /intro/). The film has
@@ -33,9 +35,19 @@ export function IntroFilm({ onPlayingChange }: { onPlayingChange?: (playing: boo
     restart.current = playing;
     setLang(next);
   };
+  // A film that fails to start (a dropped connection, a half-cached copy) gets one fresh try.
+  const retried = useRef(false);
   const play = () => {
     for (const other of document.querySelectorAll('video')) if (other !== video.current) other.pause();
+    retried.current = false;
     void video.current?.play().catch(() => setPlaying(false));
+  };
+  const onError = () => {
+    const v = video.current;
+    if (!v || retried.current || !v.error) return;
+    retried.current = true;
+    v.load();
+    void v.play().catch(() => setPlaying(false));
   };
   const fullScreen = () => {
     const v = video.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
@@ -47,10 +59,10 @@ export function IntroFilm({ onPlayingChange }: { onPlayingChange?: (playing: boo
   return (
     <div className={`desk-film${playing ? ' desk-film--playing' : ''}`} id="desk-film">
       <div className="desk-film-frame">
-        <video ref={video} src={`/intro/${lang}.mp4`} preload="none" playsInline poster="/intro/poster.jpg"
-          onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}>
-          <track kind="captions" src="/intro/english.vtt" srcLang="en" label="English" />
-          <track kind="captions" src="/intro/hindi.vtt" srcLang="hi" label="हिंदी" />
+        <video ref={video} src={`/intro/${lang}.${FILM_VERSION}.mp4`} preload="none" playsInline poster={`/intro/poster.${FILM_VERSION}.jpg`}
+          onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onError={onError}>
+          <track kind="captions" src={`/intro/english.${FILM_VERSION}.vtt`} srcLang="en" label="English" />
+          <track kind="captions" src={`/intro/hindi.${FILM_VERSION}.vtt`} srcLang="hi" label="हिंदी" />
         </video>
         {playing ? (
           <div className="desk-film-tools">

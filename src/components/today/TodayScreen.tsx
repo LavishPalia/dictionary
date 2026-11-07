@@ -145,7 +145,7 @@ export function TodayScreen(props: TodayScreenProps) {
 
       <DeskScene wide={wide} light={light} onToggleLamp={toggleLamp}
         book={<DeskBook page={pageData?.page_number === page ? pageData : null} pageNumber={page} started={lastPage !== null}
-          onOpen={() => props.onContinueReading(page)}
+          onOpen={() => props.onContinueReading(page)} onAnnounce={setSaid}
           welcome={props.showWelcome ? <div className="desk-welcome" id="today-welcome" role="group" aria-labelledby="today-welcome-title">{welcomeBody}</div> : undefined}
           film={props.showWelcome ? <IntroFilm /> : undefined} />}
         notebook={<GoalNotebook words={props.todaysWords} goal={props.dailyGoal} editing={editing}

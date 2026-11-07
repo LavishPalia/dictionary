@@ -279,7 +279,7 @@ await run('Desk scene', async (t: any) => {
         && a('#desk-spot', 'limitingConeAngle') === 42 && a('#desk-spot', 'z') === 230 && a('#desk-amb', 'k4') === 0.45; })()`));
     check('light: the darkness sits under the book and the notebook, so their text keeps its contrast', await evaluate(`(() => {
       const z = (s) => Number(getComputedStyle(document.querySelector(s)).zIndex);
-      const shade = getComputedStyle(document.querySelector('.desk-book-shade'));
+      const shade = getComputedStyle(document.querySelector('.desk-page-shade'));
       return z('#desk-light-b') < z('.desk-book') && z('.desk-beam') < z('.desk-book') && z('#desk-light-b') < z('.desk-notebook')
         && shade.mixBlendMode === 'multiply' && shade.backgroundImage.endsWith('rgb(217, 217, 217) 90%)')
         && getComputedStyle(document.querySelector('.desk-warm')).mixBlendMode === 'soft-light'; })()`));
@@ -371,25 +371,25 @@ await run('Desk scene', async (t: any) => {
     check('film: on a first visit it sits on the book’s right page', await evaluate(`Boolean(document.querySelector('.desk-book-half--right #desk-film'))`));
     check('film: nothing but the poster loads before play', (await attr('#desk-film video', 'preload')) === 'none' && (await mp4Loads()) === 0
       && await evaluate(`(() => { const v = document.querySelector('#desk-film video'); return v.readyState === 0 && v.buffered.length === 0; })()`)
-      && (await attr('#desk-film video', 'poster')) === '/intro/poster.jpg');
+      && (await attr('#desk-film video', 'poster')) === '/intro/poster.v1.jpg');
     check('film: the play button says what it plays', (await attr('#desk-film-play', 'aria-label')) === 'Play the 37-second film');
     check('film: its size is shown', (await t.text('#desk-film')).includes('37 s · about 2 MB'));
     check('film: captions in both languages, off by default (the film has them burned in)', await evaluate(`(() => { const tr = [...document.querySelectorAll('#desk-film track')];
       return tr.length === 2 && tr.every((x) => x.kind === 'captions' && !x.default) && tr.some((x) => x.srclang === 'en') && tr.some((x) => x.srclang === 'hi'); })()`));
-    check('film: English by default', (await attr('#desk-film video', 'src')) === '/intro/english.mp4' && (await attr('#desk-film [data-lang="english"]', 'aria-pressed')) === 'true');
+    check('film: English by default', (await attr('#desk-film video', 'src')) === '/intro/english.v1.mp4' && (await attr('#desk-film [data-lang="english"]', 'aria-pressed')) === 'true');
     await click('#desk-film [data-lang="hindi"]');
     await sleep(100);
-    check('film: हिंदी switches the film and the button', (await attr('#desk-film video', 'src')) === '/intro/hindi.mp4' && (await attr('#desk-film-play', 'aria-label')) === 'Play the 37-second film in Hindi');
+    check('film: हिंदी switches the film and the button', (await attr('#desk-film video', 'src')) === '/intro/hindi.v1.mp4' && (await attr('#desk-film-play', 'aria-label')) === 'Play the 37-second film in Hindi');
     check('film: switching language loads nothing either', (await mp4Loads()) === 0);
     await go('/');
     await waitFor(`Boolean(document.querySelector('#desk-film video'))`);
-    check('film: the language is remembered on this device', (await attr('#desk-film video', 'src')) === '/intro/hindi.mp4');
+    check('film: the language is remembered on this device', (await attr('#desk-film video', 'src')) === '/intro/hindi.v1.mp4');
     await realClick('#desk-film-play');
     check('film: ▶ plays it', await waitFor(`(() => { const v = document.querySelector('#desk-film video'); return v && !v.paused && v.currentTime > 0; })()`, 8000),
       await evaluate(`(() => { const v = document.querySelector('#desk-film video'); return { paused: v.paused, t: v.currentTime, err: v.error?.code, rs: v.readyState }; })()`));
     check('film: pause and full-screen buttons while it plays', await exists('#desk-film [aria-label="Pause the film"]') && await exists('#desk-film [aria-label="Full screen"]'));
     await click('#desk-film [data-lang="english"]');
-    check('film: switching language while it plays restarts it in the other language', await waitFor(`(() => { const v = document.querySelector('#desk-film video'); return v.getAttribute('src') === '/intro/english.mp4' && !v.paused && v.currentTime < 3; })()`, 8000));
+    check('film: switching language while it plays restarts it in the other language', await waitFor(`(() => { const v = document.querySelector('#desk-film video'); return v.getAttribute('src') === '/intro/english.v1.mp4' && !v.paused && v.currentTime < 3; })()`, 8000));
     await click('#desk-film [aria-label="Pause the film"]');
     await sleep(200);
     check('film: pause stops it and brings back ▶', await evaluate(`document.querySelector('#desk-film video').paused`) && await exists('#desk-film-play'));
@@ -405,6 +405,61 @@ await run('Desk scene', async (t: any) => {
     check('phone: playing lifts it to the card’s full width', wideFilm[0] > wideFilm[1] - 48, wideFilm);
     check('phone: nothing overflows sideways with the film open', await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
     check('phone: Take the tour and Not now stay', await exists('#today-take-tour') && await exists('#today-not-now'));
+  }
+
+  // ── Close the book ──
+  {
+    const RET = { ...QUIET, panna_settings: settings({ lighting: 'day' }) };
+    const closed = () => evaluate(`document.querySelector('.desk-book').classList.contains('desk-book--closed')`);
+    const holdAt = async (sel: string, ms: number) => { const c = await center(sel); await mouse('mousePressed', c.x, c.y); await sleep(ms); await mouse('mouseReleased', c.x, c.y); };
+    await reduceMotion(false);
+    await setSize(DESKTOP);
+    await open('/', RET, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-clasp'))`);
+    check('close: the clasp is a button that says to hold it', (await attr('#desk-clasp', 'aria-label')) === 'Close the book (press and hold)' && (await t.text('.desk-clasp-tip')) === 'Hold to close');
+    check('close: the clasp is at least 36 × 52', await evaluate(`(() => { const r = document.querySelector('#desk-clasp').getBoundingClientRect(); return r.width >= 36 && r.height >= 52; })()`));
+    await holdAt('#desk-clasp', 300);
+    await sleep(600);
+    check('close: letting go early cancels', !(await closed()));
+    const c = await center('#desk-clasp');
+    await mouse('mousePressed', c.x, c.y);
+    check('close: holding fills the ring', await waitFor(`document.querySelector('#desk-clasp').classList.contains('desk-clasp--holding')`, 500));
+    await sleep(850);
+    await mouse('mouseReleased', c.x, c.y);
+    check('close: a 0.85 s hold closes the book', await closed());
+    check('close: it says so', (await t.text('#desk-live')) === 'The book closes, and opens again.', await t.text('#desk-live'));
+    await sleep(900);
+    check('close: a puff of dust', (await evaluate(`document.querySelectorAll('.desk-dust').length`)) > 0);
+    await click('#today-continue-btn');
+    await sleep(300);
+    check('close: the book does not open while it is closed', await evaluate(`location.pathname === '/'`));
+    check('close: it reopens by itself', await waitFor(`!document.querySelector('.desk-book').classList.contains('desk-book--closed')`, 4000));
+    await sleep(1200);
+    check('close: the dust is gone again', (await evaluate(`document.querySelectorAll('.desk-dust').length`)) === 0);
+    // The keyboard: Space held down.
+    await evaluate(`document.querySelector('#desk-clasp').focus(); true`);
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    await sleep(850);
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    check('close: holding Space closes it too', await closed());
+    await waitFor(`!document.querySelector('.desk-book').classList.contains('desk-book--closed')`, 4000);
+    await sleep(1000);
+    // Reduced motion: a fade to the cover and back, no turn and no dust.
+    await reduceMotion(true);
+    await open('/', RET, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-clasp'))`);
+    await holdAt('#desk-clasp', 850);
+    await sleep(500);
+    check('reduced motion: the book fades to its cover without turning', await closed()
+      && await evaluate(`getComputedStyle(document.querySelector('.desk-book-half--left')).transform === 'none' && getComputedStyle(document.querySelector('.desk-book-cover')).opacity === '1'`));
+    await sleep(600);
+    check('reduced motion: no dust', (await evaluate(`document.querySelectorAll('.desk-dust').length`)) === 0);
+    check('reduced motion: it opens again', await waitFor(`!document.querySelector('.desk-book').classList.contains('desk-book--closed')`, 3000));
+    await reduceMotion(false);
+    // The welcome book has no clasp: nothing may hide the tour's buttons.
+    await open('/', { panna_desk: { noted: true }, panna_settings: settings({ lighting: 'day' }) });
+    await waitFor(`Boolean(document.querySelector('#today-welcome'))`);
+    check('close: no clasp on the welcome book', !(await exists('#desk-clasp')));
   }
 });
 
