@@ -38,7 +38,8 @@ await run('Desk scene', async (t: any) => {
       window.Date = D; })();` })).identifier;
   };
   const press = async (key: string, code = key, vk?: number) => {
-    await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: vk });
+    // Enter needs its text ('\r'), or it does not activate a focused button.
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: vk, ...(key === 'Enter' ? { text: '\r' } : {}) });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: vk });
   };
   const today = (h: number, m = 0) => { const d = new Date(); d.setHours(h, m, 0, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`; };
@@ -473,6 +474,103 @@ await run('Desk scene', async (t: any) => {
         await t.axe(`${sizeName} ${first ? 'first visit' : 'returning'} ${mode === 'evening' ? 'Evening' : 'Day'}`);
       }
     }
+  }
+
+  // ── Final review fixes ──
+  {
+    const RET = { ...QUIET, panna_settings: settings({ lighting: 'evening' }), panna_desk: { noted: true, light: 'B' } };
+    const touch = (type: string, x: number, y: number) => send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+    const desk = async () => JSON.parse((await evaluate(`localStorage.getItem('panna_desk')`)) ?? '{}');
+    await reduceMotion(false);
+    await setSize(DESKTOP);
+    await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await open('/', RET, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-spot'))`);
+    await sleep(500);
+    // A finger drags the shade, then taps it: the tap must switch the lamp (no click follows a touch drag).
+    let c = await center('#desk-lamp');
+    await touch('touchStart', c.x, c.y);
+    for (let i = 1; i <= 6; i++) { await touch('touchMove', c.x - 10 * i, c.y + 12 * i); await sleep(20); }
+    await touch('touchEnd', c.x - 60, c.y + 72);
+    await sleep(600);
+    c = await center('#desk-lamp');
+    await touch('touchStart', c.x, c.y);
+    await touch('touchEnd', c.x, c.y);
+    await sleep(300);
+    check('fix: after a finger drags the shade, a tap still switches the lamp', (await stored())?.lighting === 'day', await stored());
+    await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+
+    // Double-clicking the shade no longer resets the aim (the pool's double-click and Home do).
+    await open('/', { ...RET, panna_desk: { noted: true, light: 'B', aim: { x: 0.7, y: 0.6 } } }, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-spot'))`);
+    await evaluate(`document.querySelector('#desk-lamp').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); true`);
+    await sleep(400);
+    check('fix: a double-click on the shade does not reset the aim', (await desk()).aim?.x === 0.7, await desk());
+
+    // The warm pool stays under the book and the notebook too (soft-light lifts dark ink more than paper).
+    check('fix: the warm pool is under the book and the notebook', await evaluate(`(() => { const z = (s) => Number(getComputedStyle(document.querySelector(s)).zIndex);
+      return z('.desk-warm') < z('.desk-book') && z('.desk-warm') < z('.desk-notebook'); })()`));
+
+    // A tap through the pool reaches an icon button under it (the notebook's pencil is drawn with an SVG).
+    await open('/', { ...RET, panna_desk: { noted: true, light: 'B', aim: { x: 0.92, y: 0.2 } } }, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-spot'))`);
+    await sleep(500);
+    const pencil = await center('#desk-goal-edit svg');
+    const onHandle = await evaluate(`document.elementFromPoint(${pencil.x}, ${pencil.y})?.classList.contains('desk-pool-handle')`);
+    await evaluate(`window.__errors = []; window.addEventListener('error', (e) => window.__errors.push(String(e.message))); true`);
+    await mouse('mousePressed', pencil.x, pencil.y);
+    await mouse('mouseReleased', pencil.x, pencil.y);
+    await sleep(300);
+    check('fix: a tap through the pool on the pencil opens the goal editor', onHandle && await exists('#desk-goal-editor') && (await evaluate(`window.__errors.length`)) === 0,
+      { onHandle, errors: await evaluate(`window.__errors`) });
+
+    // Every control in the scene is at least 44 px (the clasp is the spec's exception), at full scale.
+    await open('/', RET, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-goal-edit'))`);
+    await click('#desk-goal-edit');
+    await waitFor(`Boolean(document.querySelector('#desk-goal-editor'))`);
+    const small = await evaluate(`[...document.querySelectorAll('.desk-scene button, .desk-scene input')].filter((b) => b.id !== 'desk-clasp')
+      .map((b) => { const r = b.getBoundingClientRect(); return { id: b.id || b.className || b.textContent, w: Math.round(r.width), h: Math.round(r.height) }; }).filter((r) => r.w < 44 || r.h < 44)`);
+    check('fix: every control in the scene is at least 44 px', small.length === 0, small);
+
+    // An emptied goal field keeps the goal.
+    await evaluate(`(() => { const i = document.querySelector('#desk-goal-editor input'); i.focus(); i.select(); return true; })()`);
+    await press('Backspace', 'Backspace', 8);
+    await click('#desk-goal-editor .desk-goal-save');
+    await sleep(150);
+    check('fix: saving an empty field keeps the goal', (await t.text('#desk-goal-count')).replace(/\s+/g, ' ').endsWith('of 10'), await t.text('#desk-goal-count'));
+
+    // The scene's text can be selected.
+    check('fix: the miniature and the notebook text can be selected', await evaluate(`['.desk-mini-entry', '.desk-goal-words', '.desk-goal-count'].every((s) => getComputedStyle(document.querySelector(s)).userSelect !== 'none')`));
+
+    // The first-switch note stays while it has focus, and Use Auto hands focus back to the lamp.
+    await open('/', { ...RETURNING, panna_settings: settings({ lighting: 'evening' }) }, { panna_last_page: String(CAMEL_PAGE) });
+    await waitFor(`Boolean(document.querySelector('#desk-lamp'))`);
+    await click('#desk-lamp');
+    await waitFor(`Boolean(document.querySelector('#desk-note-auto'))`);
+    await evaluate(`document.querySelector('#desk-note-auto').focus(); true`);
+    await sleep(6600);
+    check('fix: the note stays while its button has focus', await exists('#desk-note-auto'));
+    await press('Enter', 'Enter', 13);
+    await sleep(200);
+    check('fix: Use Auto returns focus to the lamp', (await stored())?.lighting === 'auto' && await evaluate(`document.activeElement?.id === 'desk-lamp'`), await evaluate(`document.activeElement?.id`));
+
+    // Phone: after a finger pulls the cord, the keyboard still switches it.
+    await setSize(PHONE);
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'evening' }) });
+    await waitFor(`Boolean(document.querySelector('#desk-cord'))`);
+    await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    const b = await center('#desk-cord .desk-cord-bead');
+    await touch('touchStart', b.x, b.y);
+    for (let i = 1; i <= 5; i++) { await touch('touchMove', b.x, b.y + 4 * i); await sleep(20); }
+    await touch('touchEnd', b.x, b.y + 20);
+    await sleep(300);
+    await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+    const afterPull = (await stored())?.lighting;
+    await evaluate(`document.querySelector('#desk-cord').focus(); true`);
+    await press('Enter', 'Enter', 13);
+    await sleep(200);
+    check('fix: after a touch pull, Enter still switches the cord', afterPull === 'day' && (await stored())?.lighting === 'evening', [afterPull, await stored()]);
   }
 });
 

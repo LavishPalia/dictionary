@@ -14,7 +14,7 @@
 
 .desk-scene {
   position: absolute; left: 0; top: 0; width: 940px; height: 400px; transform-origin: 0 0; overflow: hidden;
-  border-radius: 14px; user-select: none; -webkit-user-select: none;
+  border-radius: 14px;
   background:
     repeating-linear-gradient(92deg, rgba(0, 0, 0, .06) 0 2px, transparent 2px 9px, rgba(255, 255, 255, .02) 9px 11px, transparent 11px 23px),
     linear-gradient(180deg, var(--desk-center) 26%, var(--desk-edge) 100%);
@@ -37,7 +37,8 @@
               linear-gradient(115deg, transparent 55%, rgba(236, 244, 255, .07) 55% 62%, transparent 62% 66%, rgba(236, 244, 255, .06) 66% 72%, transparent 72%); }
 .desk-dark { z-index: 2; opacity: 0;
   background: radial-gradient(ellipse var(--rx) var(--ry) at var(--tx) var(--ty), rgba(4, 2, 1, 0) 0%, rgba(4, 2, 1, .14) 55%, rgba(4, 2, 1, .55) 100%); }
-.desk-warm { z-index: 6; opacity: 0; mix-blend-mode: soft-light;
+/* the warm pool stays under the book and notebook too: soft-light lifts dark ink more than paper (AA) */
+.desk-warm { z-index: 2; opacity: 0; mix-blend-mode: soft-light;
   background: radial-gradient(ellipse var(--rx) var(--ry) at var(--tx) var(--ty), rgba(255, 205, 130, .75) 0%, rgba(255, 190, 110, .25) 50%, transparent 100%); }
 /* Light B: the spotlight on paper grain, multiplied into the desk (deskLight.ts aims it). */
 .desk-light-b { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; mix-blend-mode: multiply; opacity: 0; }
@@ -51,7 +52,8 @@ html[data-light="evening"] .desk-beam { opacity: .32; }
 }
 
 /* The pool's handle: drag it to aim the light (a tap passes through to the book under it). */
-.desk-pool-handle { position: absolute; z-index: 8; width: 74px; height: 74px; margin: -37px 0 0 -37px; border-radius: 50%; cursor: grab; touch-action: none; }
+.desk-pool-handle { position: absolute; z-index: 8; width: 74px; height: 74px; margin: -37px 0 0 -37px; border-radius: 50%; cursor: grab; touch-action: none;
+  user-select: none; -webkit-user-select: none; }
 .desk-pool-handle:hover::after, .desk-scene[data-dragging] .desk-pool-handle::after {
   content: ''; position: absolute; inset: 22px; border-radius: 50%; border: 1.5px dashed rgba(255, 226, 170, .7); }
 .desk-scene[data-dragging], .desk-scene[data-dragging] * { cursor: grabbing !important; }
@@ -74,7 +76,7 @@ html[data-light="evening"] .desk-lamp-inner { opacity: .85; }
 /* The shade's button: placed at the shade's hinge and turned with it (DeskLamp's shadeHitStyle). */
 .desk-lamp-hit {
   position: absolute; z-index: 9; width: 96px; height: 92px; margin: -46px 0 0 -16px; transform-origin: 16px 46px;
-  padding: 0; border: 0; border-radius: 22px; background: none; cursor: pointer; touch-action: none;
+  padding: 0; border: 0; border-radius: 22px; background: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .desk-lamp-hit:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: 0; }
 
@@ -133,7 +135,7 @@ html[data-light="evening"] .desk-cord-bead { background: radial-gradient(circle 
 .desk-goal-label { display: block; font: 12.5px var(--font-fell-sc); letter-spacing: .04em; color: var(--ink-soft); }
 .desk-goal-count { font: 700 34px/1 var(--font-hand); margin: 2px 0; color: var(--ink); }
 .desk-goal-count small { font-size: 22px; font-weight: 500; color: var(--ink-soft); }
-.desk-goal-pencil { position: absolute; right: 4px; top: 4px; width: 36px; height: 36px; display: grid; place-items: center; padding: 0;
+.desk-goal-pencil { position: absolute; right: 2px; top: 2px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
   border-radius: 50%; border: 1px solid var(--rule); background: rgba(255, 255, 255, .22); color: var(--ink); cursor: pointer; }
 .desk-goal-pencil:hover { background: rgba(255, 255, 255, .4); }
 .desk-goal-words { list-style: none; margin: 10px 0 0; padding: 0; min-height: 52px; font: 600 21px/26px var(--font-hand); color: var(--pencil-blue); }
@@ -146,18 +148,18 @@ html[data-light="evening"] .desk-cord-bead { background: radial-gradient(circle 
 /* the editor (in the notebook, and in the phone's card) */
 .desk-goal-editor .desk-goal-label { margin-bottom: 8px; }
 .desk-goal-stepper { display: flex; align-items: center; gap: 6px; }
-.desk-goal-stepper button { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--sepia); background: rgba(255, 255, 255, .25);
+.desk-goal-stepper button { width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--sepia); background: rgba(255, 255, 255, .25);
   color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
 .desk-goal-stepper button:disabled { opacity: .45; cursor: default; }
-.desk-goal-stepper input { width: 58px; height: 40px; text-align: center; font: 700 28px var(--font-hand); color: var(--ink);
+.desk-goal-stepper input { width: 48px; height: 44px; text-align: center; font: 700 28px var(--font-hand); color: var(--ink);
   background: rgba(255, 255, 255, .35); border: 1px solid var(--rule); border-radius: 6px; }
 .desk-goal-presets { display: flex; gap: 4px; margin: 8px 0 6px; }
-.desk-goal-presets button { flex: 1; height: 32px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--ink);
+.desk-goal-presets button { flex: 1; height: 44px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--ink);
   font: 14px var(--font-fell); cursor: pointer; }
 .desk-goal-presets button[aria-pressed="true"] { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
 .desk-goal-help { margin: 6px 0 8px; font: italic 13px/1.35 var(--font-fell); color: var(--ink-soft); }
 .desk-goal-actions { display: flex; gap: 6px; }
-.desk-goal-actions button { flex: 1; height: 38px; border-radius: 999px; border: 1px solid var(--sepia); background: transparent; color: var(--ink);
+.desk-goal-actions button { flex: 1; height: 44px; border-radius: 999px; border: 1px solid var(--sepia); background: transparent; color: var(--ink);
   font: 14px var(--font-fell-sc); cursor: pointer; }
 .desk-goal-actions .desk-goal-save { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
 .desk-goal-pencil:focus-visible, .desk-goal-editor button:focus-visible, .desk-goal-editor input:focus-visible, .desk-goal-chip:focus-visible {

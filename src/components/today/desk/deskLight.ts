@@ -84,6 +84,7 @@ export function createDeskLight(scene: HTMLElement, opts: {
     if (e.button !== 0) return;
     if (!shade) e.preventDefault();
     start = local(e); moved = false; fromShade = shade; dragging = true; frames = []; last = 0;
+    swallowClick = false; // a touch drag is followed by no click, so a flag left from one must not eat this press
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
   };
   const move = (e: PointerEvent) => {
@@ -102,18 +103,23 @@ export function createDeskLight(scene: HTMLElement, opts: {
     start = null; dragging = false; delete scene.dataset.dragging;
     if (wasMoved) {
       writeDesk({ aim: sceneToAim(aim) });
-      if (shade) swallowClick = true; // the click that ends a drag must not switch the lamp
+      if (shade) { // the click that ends a mouse drag must not switch the lamp (it comes in this same input event)
+        swallowClick = true;
+        window.setTimeout(() => { swallowClick = false; }, 0);
+      }
       if (timing() && frames.length >= 8) {
         const avg = frames.reduce((a, b) => a + b, 0) / frames.length;
         writeDesk({ light: avg > SLOW_FRAME_MS ? 'A' : 'B' });
         if (avg > SLOW_FRAME_MS) opts.onSlow();
       }
     } else if (!shade && handle) {
-      // A tap on the pool is meant for whatever lies under it (the book).
+      // A tap on the pool is meant for whatever lies under it (the book, the notebook's pencil, an input…).
       handle.style.pointerEvents = 'none';
-      const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+      const under = document.elementFromPoint(e.clientX, e.clientY);
       handle.style.pointerEvents = '';
-      under?.click();
+      const target = under?.closest('button, a, input, select, textarea, label, [role="button"]') ?? under;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) target.focus();
+      else target?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window, clientX: e.clientX, clientY: e.clientY }));
     }
     go();
   };
@@ -131,7 +137,6 @@ export function createDeskLight(scene: HTMLElement, opts: {
   handle?.addEventListener('pointerdown', poolDown);
   lamp?.addEventListener('click', onLampClick, true);
   lamp?.addEventListener('keydown', onKey);
-  lamp?.addEventListener('dblclick', reset);
   handle?.addEventListener('dblclick', reset);
   window.addEventListener('pointermove', move);
   window.addEventListener('pointerup', up);
@@ -145,7 +150,6 @@ export function createDeskLight(scene: HTMLElement, opts: {
       handle?.removeEventListener('pointerdown', poolDown);
       lamp?.removeEventListener('click', onLampClick, true);
       lamp?.removeEventListener('keydown', onKey);
-      lamp?.removeEventListener('dblclick', reset);
       handle?.removeEventListener('dblclick', reset);
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);

@@ -37,6 +37,7 @@ export function LampCord({ light, onToggle }: { light: Light; onToggle: () => vo
       aria-label={lampLabel(light)} aria-pressed={light === 'evening'}
       style={{ '--pull': `${pull}px` } as React.CSSProperties}
       onPointerDown={(e) => {
+        handled.current = false;
         drag.current = { y0: e.clientY, moved: false, pulled: 0 };
         e.currentTarget.setPointerCapture?.(e.pointerId);
         setDragging(true);
@@ -50,9 +51,11 @@ export function LampCord({ light, onToggle }: { light: Light; onToggle: () => vo
       }}
       onPointerUp={end}
       onPointerCancel={() => { drag.current = null; setDragging(false); setPull(0); }}
-      onClick={() => {
-        // Keyboard (Enter/Space) and assistive tech arrive here without a pointer press.
-        if (handled.current) { handled.current = false; return; }
+      onClick={(e) => {
+        // Keyboard (Enter/Space) and assistive tech arrive here without a pointer press (detail 0): always switch.
+        // A pointer press switched on its own already, unless no click follows it (a touch pull).
+        if (e.detail !== 0 && handled.current) { handled.current = false; return; }
+        handled.current = false;
         onToggle();
       }}>
       <span className="desk-cord-shade" aria-hidden="true" />

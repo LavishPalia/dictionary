@@ -97,6 +97,12 @@ export function TodayScreen(props: TodayScreenProps) {
     setNote(null);
   }, []);
   useEffect(() => hideNote, [hideNote]);
+  // The note waits while it is pointed at or has focus (it holds a button), then goes after NOTE_MS.
+  const startNoteTimer = useCallback(() => {
+    if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
+    noteTimer.current = window.setTimeout(() => { noteTimer.current = null; setNote(null); }, NOTE_MS);
+  }, []);
+  const holdNote = () => { if (noteTimer.current !== null) window.clearTimeout(noteTimer.current); noteTimer.current = null; };
   const { light, onSetLight } = props;
   const toggleLamp = useCallback(() => {
     const next: Light = light === 'evening' ? 'day' : 'evening';
@@ -106,9 +112,9 @@ export function TodayScreen(props: TodayScreenProps) {
       writeDesk({ noted: true });
       setNote(next);
       if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
-      noteTimer.current = window.setTimeout(() => { noteTimer.current = null; setNote(null); }, NOTE_MS);
+      startNoteTimer();
     }
-  }, [light, onSetLight]);
+  }, [light, onSetLight, startNoteTimer]);
 
   // The goal editor: open in the notebook (desk) or as a card under the strip (phone).
   const [editing, setEditing] = useState(false);
@@ -160,9 +166,13 @@ export function TodayScreen(props: TodayScreenProps) {
         )} />
       <p className="ui-visually-hidden" id="desk-live" aria-live="polite">{said}</p>
       {note && (
-        <div className="desk-note" id="desk-note">
+        <div className="desk-note" id="desk-note" onMouseEnter={holdNote} onMouseLeave={startNoteTimer} onFocus={holdNote}
+          onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) startNoteTimer(); }}>
           <span>{note === 'evening' ? 'Lamp on.' : 'Lamp off.'} It stays this way until you switch it, or choose Auto to follow the clock again.</span>
-          <button type="button" id="desk-note-auto" onClick={() => { hideNote(); props.onUseAuto(); }}>Use Auto</button>
+          <button type="button" id="desk-note-auto" onClick={() => {
+            hideNote(); props.onUseAuto();
+            document.getElementById(wide ? 'desk-lamp' : 'desk-cord')?.focus(); // the note goes; focus goes back to the lamp
+          }}>Use Auto</button>
         </div>
       )}
 

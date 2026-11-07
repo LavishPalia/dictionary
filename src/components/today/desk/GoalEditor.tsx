@@ -12,7 +12,8 @@ export function GoalEditor({ goal, onSave, onCancel, id }: { goal: number; onSav
   const input = useRef<HTMLInputElement>(null);
   const labelId = useId();
   useEffect(() => { input.current?.focus(); input.current?.select(); }, []);
-  const value = clampGoal(Number(draft));
+  // An emptied field keeps the goal it had.
+  const value = draft.trim() === '' ? goal : clampGoal(Number(draft));
   const step = (d: number) => setDraft(String(clampGoal(value + d)));
   const save = () => onSave(value);
 
