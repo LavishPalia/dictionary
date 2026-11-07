@@ -211,10 +211,16 @@ export const LookupBar: React.FC<LookupBarProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
+  // Phones: put the keyboard away, or it covers the word just chosen. Desktop: the box stays ready for the next word.
+  const closeKeyboard = () => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) inputRef.current?.blur();
+  };
+
   const handleSelect = (item: SearchResult) => {
     justSelectedRef.current = item.headword;
     setQuery(item.headword);
     setIsOpen(false);
+    closeKeyboard();
     onSelectWord(item.headword, item.page_number, item.meaning_hi);
   };
 
@@ -222,6 +228,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({
     justSelectedRef.current = item.headword;
     setQuery(item.headword);
     setIsOpen(false);
+    closeKeyboard();
     onSelectRecent(item.headword, item.page);
   };
 

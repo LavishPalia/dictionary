@@ -108,6 +108,13 @@ async function main() {
       check(`${sizeName}: Today shows the due review with a time estimate`, text.includes('3 words are due') && text.includes('About 1 minute'), text);
       check(`${sizeName}: Today shows the streak`, text.includes('2 days in a row'), text);
       check(`${sizeName}: Today offers to continue at the last page read`, text.includes('Continue reading') && text.includes('Page 40'), text);
+      // A fresh open: going to the book reaches the reader's place, and the page 1 the front page loaded doesn't replace it.
+      w = await go(`document.querySelector(${JSON.stringify(bookBtn)}).click()`);
+      await sleep(sizeName === 'phone' ? 0 : 1500); // the desktop page turn
+      w = await where();
+      check(`${sizeName}: on a fresh open the Book button goes to the last page read`, w.screen === 'book' && w.path === '/page/40', w);
+      check(`${sizeName}: the place is still saved`, await evaluate(`localStorage.getItem('panna_last_page')`) === '40', await evaluate(`localStorage.getItem('panna_last_page')`));
+      check(`${sizeName}: back on the front page`, await open('/', size));
       await sleep(400);
       const wod = await evaluate(`(async () => { const d = new Date(); const date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); return (await (await fetch('/api/today?date=' + date)).json()).word.headword; })()`);
       check(`${sizeName}: Today shows the word of the day`, (await evaluate(`document.querySelector('#today-word')?.innerText ?? ''`)).includes(wod), wod);

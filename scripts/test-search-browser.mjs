@@ -129,6 +129,9 @@ async function main() {
       await key('Enter', 'Enter', '\r');
       await sleep(2000);
       check(`${sizeName}: Enter opens the chosen word`, await evaluate(`location.pathname === '/word/' + encodeURIComponent(${JSON.stringify(activeText)})`), await evaluate('location.pathname'));
+      // On a phone the keyboard would stay up, covering the word just chosen. On a desktop the box stays ready for the next word.
+      const inBox = await evaluate(`document.activeElement?.id === 'lookup-input'`);
+      check(`${sizeName}: choosing a word ${sizeName === 'phone' ? 'closes the keyboard' : 'keeps the search box focused'}`, inBox === (sizeName !== 'phone'), await evaluate('document.activeElement?.id'));
       check(`${sizeName}: the word is remembered in lookup history`, await evaluate(`JSON.parse(localStorage.getItem('panna_history') || '[]')[0]?.headword === ${JSON.stringify(activeText)}`));
 
       await evaluate(`document.querySelector('.lookup-clear').click(); true`);

@@ -20,7 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
     // Android: "Share → Panna" opens /?share_text=… (src/lib/launch.ts), and a long press on the icon offers these.
-    share_target: { action: '/', method: 'GET', params: { title: 'share_title', text: 'share_text', url: 'share_url' } },
+    share_target: { action: '/', method: 'GET', enctype: 'application/x-www-form-urlencoded', params: { title: 'share_title', text: 'share_text', url: 'share_url' } },
     shortcuts: [
       { name: 'Speak a word', short_name: 'Speak', url: '/?voice=1', icons: [{ src: '/icons/shortcut-voice-96.png', sizes: '96x96', type: 'image/png' }] },
       { name: 'Review', short_name: 'Review', url: '/?open=review', icons: [{ src: '/icons/shortcut-review-96.png', sizes: '96x96', type: 'image/png' }] },

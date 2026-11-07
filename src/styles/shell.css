@@ -57,6 +57,15 @@
   .app-main { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
 }
 
+/* A phone held sideways: a slim bar and a wider page, as there is so little height. (The page sets its width inline.) */
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 500px) {
+  .app-bottomnav { height: calc(44px + env(safe-area-inset-bottom)); }
+  .app-bottomnav button, .app-bottomnav a { flex-direction: row; gap: 6px; }
+  .app-bottomnav .app-count, .app-bottomnav .ui-badge { position: static; }
+  .app-main { padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important; }
+  #mobile-page { max-width: 640px !important; }
+}
+
 /* ⋯ menu rows */
 .menu-row {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap;

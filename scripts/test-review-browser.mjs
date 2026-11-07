@@ -203,6 +203,8 @@ async function main() {
       await waitForCard();
       s = await screen();
       check(`${sizeName}: with everything done, Review says when the next one is`, s?.text.includes('All caught up') && s.text.includes('tomorrow (3 words)'), s?.text);
+      const links = await evaluate(`(() => { const [a, b] = ['#review-how-btn', '#review-learn-link'].map((id) => document.querySelector(id).getBoundingClientRect()); return { gap: b.left - a.right, sameLine: Math.abs(a.top - b.top) < 4 }; })()`);
+      check(`${sizeName}: the two guide links don't run together`, !links.sameLine || links.gap >= 12, links);
       const before = JSON.stringify(await records());
       await evaluate(`document.querySelector('#practice-btn').click(); true`);
       await waitForCard();

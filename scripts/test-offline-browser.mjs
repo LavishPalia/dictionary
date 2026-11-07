@@ -146,6 +146,7 @@ async function main() {
         // Installable: a manifest with the right icons, an iOS icon and a theme colour (the Day or Evening one: Auto follows the clock).
         const m = await evaluate(`fetch('/manifest.webmanifest').then((r) => r.json())`);
         check('the manifest names the app and opens it full screen at Today', m.short_name === 'Panna' && m.start_url === '/' && m.display === 'standalone', m);
+        check('the share target states its encoding (Chrome warns without it)', m.share_target?.enctype === 'application/x-www-form-urlencoded', m.share_target);
         const icons = await evaluate(`Promise.all(${JSON.stringify(m.icons)}.map((i) => new Promise((ok) => { const img = new Image(); img.onload = () => ok(i.sizes === img.naturalWidth + 'x' + img.naturalHeight); img.onerror = () => ok(false); img.src = i.src; })))`);
         check('every manifest icon loads at its stated size, including a maskable one', icons.length === 3 && icons.every(Boolean) && m.icons.some((i) => i.purpose === 'maskable'), { icons, m: m.icons });
         // Android: Panna is a share target, and the icon's long-press menu has "Speak a word" and "Review".
@@ -224,6 +225,8 @@ async function main() {
       check(`${sizeName}: a page never opened falls back to Today offline`, await evaluate(`Boolean(document.querySelector('#today-screen')) && Boolean(document.querySelector('#offline-notice'))`),
         await evaluate(`(async () => ({ title: document.title, path: location.pathname, today: Boolean(document.querySelector('#today-screen')), notice: Boolean(document.querySelector('#offline-notice')),
           body: document.body.innerText.slice(0, 120), pages: (await (await caches.open('panna-pages-v1')).keys()).map((k) => k.url) }))()`));
+      check(`${sizeName}: Today says that page isn't saved, and gives the address back`, await evaluate(`(document.querySelector('#share-note')?.textContent ?? '').includes('Page 80') && location.search === ''`),
+        await evaluate(`({ note: document.querySelector('#share-note')?.textContent ?? null, search: location.search })`));
 
       // The study guide, visited before, opens offline; unvisited (its cached copy removed), it falls back to Today like any other address.
       check(`${sizeName}: the study guide opens offline once visited`, await openLearn(), await evaluate(`({ path: location.pathname, title: document.querySelector('#learn-title')?.textContent ?? null })`));
@@ -260,6 +263,11 @@ async function main() {
 
       // ── Offline with the book saved ──
       await setOffline(true);
+      // An address never visited still opens its page, though the service worker has no copy of it.
+      await send('Page.navigate', { url: `${BASE}/page/80` });
+      await sleep(3000);
+      check(`${sizeName}: a saved page opens offline from an address never visited`, await evaluate(`location.pathname === '/page/80' && !document.querySelector('#today-screen') && !document.querySelector('#share-note')`),
+        await evaluate(`({ path: location.pathname, today: Boolean(document.querySelector('#today-screen')), note: document.querySelector('#share-note')?.textContent ?? null })`));
       await open(`/page/${CALM_PAGE}`, size);
       // The notice learns that the book is saved a moment after the page opens.
       let notice = '';
