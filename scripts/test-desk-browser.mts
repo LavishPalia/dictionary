@@ -19,10 +19,10 @@ await run('Desk scene', async (t: any) => {
   const center = (sel: string) => evaluate(`(() => { const r = document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
   const mouse = (type: string, x: number, y: number) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1 });
   /** Presses at the element's centre, moves by (dx, dy) in steps, and lets go. */
-  const drag = async (sel: string, dx: number, dy: number) => {
+  const drag = async (sel: string, dx: number, dy: number, steps = 6) => {
     const c = await center(sel);
     await mouse('mousePressed', c.x, c.y);
-    for (let i = 1; i <= 6; i++) { await mouse('mouseMoved', c.x + (dx * i) / 6, c.y + (dy * i) / 6); await sleep(16); }
+    for (let i = 1; i <= steps; i++) { await mouse('mouseMoved', c.x + (dx * i) / steps, c.y + (dy * i) / steps); await sleep(16); }
     await mouse('mouseReleased', c.x + dx, c.y + dy);
     await sleep(150);
   };
@@ -260,5 +260,102 @@ await run('Desk scene', async (t: any) => {
     await open('/', { panna_desk: { noted: true }, panna_settings: settings({ lighting: 'day' }) });
     await waitFor(`Boolean(document.querySelector('#today-welcome'))`);
     check('phone: the welcome card says New here?', (await t.text('#today-welcome')).includes('New here?') && !(await t.text('#today-welcome')).includes('New to'));
+  }
+
+  // ── Aiming the light ──
+  {
+    await setSize(DESKTOP);
+    await reduceMotion(false);
+    const desk = async () => JSON.parse((await evaluate(`localStorage.getItem('panna_desk')`)) ?? '{}');
+    const spot = (a: string) => evaluate(`Number(document.querySelector('#desk-spot')?.getAttribute(${JSON.stringify(a)}))`);
+    const settle = async () => { await sleep(50); return waitFor(`!document.querySelector('.desk-scene')?.dataset.moving`, 6000); };
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'evening' }), panna_desk: { noted: true, light: 'B' } });
+    await waitFor(`Boolean(document.querySelector('#desk-spot'))`);
+    check('light: the spotlight (B) is used by default', await evaluate(`document.querySelector('.desk-scene').classList.contains('desk-scene--b')`));
+    check('light: the tuned spotlight values', await evaluate(`(() => {
+      const q = (s) => document.querySelector(s), a = (s, n) => Number(q(s).getAttribute(n));
+      return a('#desk-light-b feTurbulence', 'baseFrequency') === 1.3 && a('#desk-light-b feDiffuseLighting', 'surfaceScale') === 0.7
+        && a('#desk-light-b feDiffuseLighting', 'diffuseConstant') === 1.4 && a('#desk-spot', 'specularExponent') === 16
+        && a('#desk-spot', 'limitingConeAngle') === 42 && a('#desk-spot', 'z') === 230 && a('#desk-amb', 'k4') === 0.45; })()`));
+    check('light: the darkness sits under the book and the notebook, so their text keeps its contrast', await evaluate(`(() => {
+      const z = (s) => Number(getComputedStyle(document.querySelector(s)).zIndex);
+      const shade = getComputedStyle(document.querySelector('.desk-book-shade'));
+      return z('#desk-light-b') < z('.desk-book') && z('.desk-beam') < z('.desk-book') && z('#desk-light-b') < z('.desk-notebook')
+        && shade.mixBlendMode === 'multiply' && shade.backgroundImage.endsWith('rgb(217, 217, 217) 90%)')
+        && getComputedStyle(document.querySelector('.desk-warm')).mixBlendMode === 'soft-light'; })()`));
+    check('light: only the pool handle and the shade take the drag (the rest of the scene scrolls the page)', await evaluate(`getComputedStyle(document.querySelector('.desk-scene')).touchAction === 'auto'
+      && getComputedStyle(document.querySelector('.desk-pool-handle')).touchAction === 'none' && getComputedStyle(document.querySelector('#desk-lamp')).touchAction === 'none'`));
+    const x0 = await spot('pointsAtX');
+    await drag('.desk-pool-handle', 150, 40);
+    await settle();
+    const x1 = await spot('pointsAtX');
+    check('light: dragging the pool moves the light', x1 - x0 > 120, { x0, x1 });
+    check('light: the aim is remembered on this device', Math.abs((await desk()).aim?.x - x1 / 940) < 0.01, { x1, desk: await desk() });
+    check('light: dragging the pool does not switch the lamp', (await stored())?.lighting === 'evening');
+    const lightBefore = (await stored())?.lighting;
+    await drag('#desk-lamp', 4, 3);
+    await sleep(200);
+    check('light: a press on the shade that hardly moves switches the lamp', (await stored())?.lighting !== lightBefore, await stored());
+    await click('#desk-lamp');
+    await sleep(200);
+    const ax = (await desk()).aim?.x;
+    await drag('#desk-lamp', -60, 90);
+    await settle();
+    check('light: dragging the shade aims it without switching', (await stored())?.lighting === 'evening' && (await desk()).aim?.x !== ax, [await stored(), await desk()]);
+    // Keyboard.
+    await evaluate(`document.querySelector('#desk-lamp').focus(); true`);
+    const k0 = await spot('pointsAtX');
+    await press('ArrowRight', 'ArrowRight', 39);
+    await settle();
+    check('light: → moves the aim 20', Math.round((await spot('pointsAtX')) - k0) === 20, [k0, await spot('pointsAtX')]);
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37, modifiers: 8 });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37, modifiers: 8 });
+    await settle();
+    check('light: Shift+← moves it 60', Math.round(k0 + 20 - (await spot('pointsAtX'))) === 60, await spot('pointsAtX'));
+    await press('Home', 'Home', 36);
+    await settle();
+    check('light: Home puts it back', Math.round(await spot('pointsAtX')) === Math.round(0.53 * 940) && (await desk()).aim?.x === 0.53, [await spot('pointsAtX'), await desk()]);
+    check('light: the keys did not switch the lamp', (await stored())?.lighting === 'evening');
+    check('light: the lamp says how to aim it', (await evaluate(`document.getElementById(document.querySelector('#desk-lamp').getAttribute('aria-describedby'))?.textContent ?? ''`)).includes('Arrow keys'));
+    await press('ArrowDown', 'ArrowDown', 40);
+    await settle();
+    await evaluate(`document.querySelector('.desk-pool-handle').dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); true`);
+    await settle();
+    check('light: a double-click on the pool resets the aim', Math.round(await spot('pointsAtY')) === 200, await spot('pointsAtY'));
+    // A tap on the pool handle reaches the book under it.
+    await drag('.desk-pool-handle', 0, 0);
+    check('light: a tap on the pool still opens the book under it', await waitFor(`location.pathname.startsWith('/page/')`, 4000), await evaluate('location.pathname'));
+    // Day: no pool, no beam; the window light instead.
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'day' }), panna_desk: { noted: true, light: 'B' } });
+    await waitFor(`Boolean(document.querySelector('#desk-spot'))`);
+    await sleep(900);
+    check('light: in Day there is no pool or beam, and the window light shows', await evaluate(`['#desk-light-b', '.desk-beam', '.desk-warm'].every((s) => getComputedStyle(document.querySelector(s)).opacity === '0')
+      && getComputedStyle(document.querySelector('.desk-daylight')).opacity === '1'`));
+    // The fallback (A): a device remembered as slow, and reduced motion.
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'evening' }), panna_desk: { noted: true, light: 'A' } });
+    await waitFor(`Boolean(document.querySelector('.desk-scene'))`);
+    check('light: a device found slow uses the CSS light (A)', !(await exists('#desk-light-b')) && await evaluate(`getComputedStyle(document.querySelector('.desk-dark')).opacity === '1'`));
+    check('light: A’s darkness also stays under the book and the notebook', await evaluate(`(() => { const z = (s) => Number(getComputedStyle(document.querySelector(s)).zIndex);
+      return z('.desk-dark') < z('.desk-book') && z('.desk-dark') < z('.desk-notebook'); })()`));
+    await reduceMotion(true);
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'evening' }), panna_desk: { noted: true } });
+    await waitFor(`Boolean(document.querySelector('.desk-scene'))`);
+    await sleep(300);
+    check('reduced motion: the CSS light (A)', !(await exists('#desk-light-b')));
+    const r0 = await evaluate(`getComputedStyle(document.querySelector('.desk-scene')).getPropertyValue('--tx')`);
+    await evaluate(`document.querySelector('#desk-lamp').focus(); true`);
+    await press('ArrowRight', 'ArrowRight', 39);
+    await sleep(50);
+    check('reduced motion: the light snaps to the new aim', parseFloat(await evaluate(`getComputedStyle(document.querySelector('.desk-scene')).getPropertyValue('--tx')`)) - parseFloat(r0) === 20, r0);
+    await reduceMotion(false);
+    // The first drag on a slow device switches it to A for good.
+    await open('/', { ...QUIET, panna_settings: settings({ lighting: 'evening' }), panna_desk: { noted: true } });
+    await waitFor(`Boolean(document.querySelector('#desk-spot'))`);
+    await send('Emulation.setCPUThrottlingRate', { rate: 40 });
+    await drag('.desk-pool-handle', 200, 0, 30);
+    await sleep(800);
+    await send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    await settle();
+    check('light: a slow first drag (over 24 ms a frame) switches this device to A', (await desk()).light === 'A' && !(await exists('#desk-light-b')), await desk());
   }
 });

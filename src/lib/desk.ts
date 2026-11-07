@@ -19,7 +19,7 @@ export interface DeskState {
 
 const KEY = 'panna_desk';
 /** The middle of the open book. */
-export const DEFAULT_AIM: Aim = { x: 0.46, y: 0.5 };
+export const DEFAULT_AIM: Aim = { x: 0.53, y: 0.5 };
 
 const fraction = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1;
 
@@ -63,10 +63,14 @@ export interface LampGeometry {
   r: number;
 }
 
-/** Where the lamp's head goes for a target point in scene units: the pivot leans a little toward the target, like a real arm. */
+/**
+ * Where the lamp's head goes for a target point in scene units: the pivot leans a little toward the target, like a
+ * real arm, but stays within x 130–205 and y 45–100, so the shade (74 units long) never covers the book's text
+ * (its cloth starts at x 288).
+ */
 export function lampGeometry(t: Aim): LampGeometry {
-  const px = Math.max(150, Math.min(260, 190 + (t.x - 430) * 0.14));
-  const py = Math.max(55, Math.min(110, 78 + (t.y - 200) * 0.08));
+  const px = Math.max(130, Math.min(205, 175 + (t.x - 430) * 0.12));
+  const py = Math.max(45, Math.min(100, 72 + (t.y - 200) * 0.08));
   const ang = Math.atan2(t.y - py, t.x - px);
   const mx = px + Math.cos(ang) * 66, my = py + Math.sin(ang) * 66;
   const r = Math.max(90, Math.hypot(t.x - mx, t.y - my) * 0.55);

@@ -21,7 +21,7 @@ PART_3="test:tour-ui test:quiz test:search test:motion test:related-ui test:repo
   test:progress-ui test:phase4 test:phase3 test:shell test:marks-ui test:phase5 verify:determinism
   test:learn test:highlight test:pos test:review test:related test:hinglish test:report test:progress
   test:marks test:backup test:pagination test:phonetics test:search-distance test:phase4-pipeline test:sentence test:quick
-  test:history test:saved-search test:letters test:lighting test:today-words test:related-gemini test:examples test:gemini-client
+  test:history test:saved-search test:letters test:lighting test:today-words test:desk test:related-gemini test:examples test:gemini-client
   test:corrections test:api"  # 112 61, the rest under 25 each
 
 # Every test:* script in package.json must be in a part, so a new test can't be left out of CI by accident.

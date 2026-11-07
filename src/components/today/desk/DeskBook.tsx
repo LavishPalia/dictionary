@@ -59,6 +59,7 @@ export function DeskBook({ page, pageNumber, started, welcome, film, onOpen }: {
           {welcome ? film : page && <MiniPage entries={page.column2} />}
         </div>
       </div>
+      <div className="desk-book-shade" aria-hidden="true" />
       {!welcome && (
         <>
           <button type="button" className="desk-book-open" id="today-continue-btn" aria-label={label} onClick={onOpen} />
