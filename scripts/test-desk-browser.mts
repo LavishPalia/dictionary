@@ -358,4 +358,68 @@ await run('Desk scene', async (t: any) => {
     await settle();
     check('light: a slow first drag (over 24 ms a frame) switches this device to A', (await desk()).light === 'A' && !(await exists('#desk-light-b')), await desk());
   }
+
+  // ── The intro film ──
+  {
+    const FIRST = { panna_desk: { noted: true }, panna_settings: settings({ lighting: 'day' }) };
+    const mp4Loads = () => evaluate(`performance.getEntriesByType('resource').filter((e) => /\\/intro\\/.*\\.mp4/.test(e.name)).length`);
+    const realClick = async (sel: string) => { const c = await center(sel); await mouse('mousePressed', c.x, c.y); await mouse('mouseReleased', c.x, c.y); };
+    await setSize(DESKTOP);
+    await open('/', FIRST);
+    await waitFor(`Boolean(document.querySelector('.desk-book #desk-film video'))`);
+    await sleep(800);
+    check('film: on a first visit it sits on the book’s right page', await evaluate(`Boolean(document.querySelector('.desk-book-half--right #desk-film'))`));
+    check('film: nothing but the poster loads before play', (await attr('#desk-film video', 'preload')) === 'none' && (await mp4Loads()) === 0
+      && await evaluate(`(() => { const v = document.querySelector('#desk-film video'); return v.readyState === 0 && v.buffered.length === 0; })()`)
+      && (await attr('#desk-film video', 'poster')) === '/intro/poster.jpg');
+    check('film: the play button says what it plays', (await attr('#desk-film-play', 'aria-label')) === 'Play the 37-second film');
+    check('film: its size is shown', (await t.text('#desk-film')).includes('37 s · about 2 MB'));
+    check('film: captions in both languages, off by default (the film has them burned in)', await evaluate(`(() => { const tr = [...document.querySelectorAll('#desk-film track')];
+      return tr.length === 2 && tr.every((x) => x.kind === 'captions' && !x.default) && tr.some((x) => x.srclang === 'en') && tr.some((x) => x.srclang === 'hi'); })()`));
+    check('film: English by default', (await attr('#desk-film video', 'src')) === '/intro/english.mp4' && (await attr('#desk-film [data-lang="english"]', 'aria-pressed')) === 'true');
+    await click('#desk-film [data-lang="hindi"]');
+    await sleep(100);
+    check('film: हिंदी switches the film and the button', (await attr('#desk-film video', 'src')) === '/intro/hindi.mp4' && (await attr('#desk-film-play', 'aria-label')) === 'Play the 37-second film in Hindi');
+    check('film: switching language loads nothing either', (await mp4Loads()) === 0);
+    await go('/');
+    await waitFor(`Boolean(document.querySelector('#desk-film video'))`);
+    check('film: the language is remembered on this device', (await attr('#desk-film video', 'src')) === '/intro/hindi.mp4');
+    await realClick('#desk-film-play');
+    check('film: ▶ plays it', await waitFor(`(() => { const v = document.querySelector('#desk-film video'); return v && !v.paused && v.currentTime > 0; })()`, 8000),
+      await evaluate(`(() => { const v = document.querySelector('#desk-film video'); return { paused: v.paused, t: v.currentTime, err: v.error?.code, rs: v.readyState }; })()`));
+    check('film: pause and full-screen buttons while it plays', await exists('#desk-film [aria-label="Pause the film"]') && await exists('#desk-film [aria-label="Full screen"]'));
+    await click('#desk-film [data-lang="english"]');
+    check('film: switching language while it plays restarts it in the other language', await waitFor(`(() => { const v = document.querySelector('#desk-film video'); return v.getAttribute('src') === '/intro/english.mp4' && !v.paused && v.currentTime < 3; })()`, 8000));
+    await click('#desk-film [aria-label="Pause the film"]');
+    await sleep(200);
+    check('film: pause stops it and brings back ▶', await evaluate(`document.querySelector('#desk-film video').paused`) && await exists('#desk-film-play'));
+    // Phone: beside the welcome text, growing to the card's width as it plays.
+    await setSize(PHONE);
+    await open('/', FIRST);
+    await waitFor(`Boolean(document.querySelector('#today-welcome #desk-film video'))`);
+    const narrow = await evaluate(`document.querySelector('#desk-film .desk-film-frame').getBoundingClientRect().width`);
+    check('phone: the film sits in the welcome card as a small page', narrow > 80 && narrow < 140, narrow);
+    await realClick('#desk-film-play');
+    await sleep(700);
+    const wideFilm = await evaluate(`[document.querySelector('#desk-film .desk-film-frame').getBoundingClientRect().width, document.querySelector('#today-welcome').getBoundingClientRect().width]`);
+    check('phone: playing lifts it to the card’s full width', wideFilm[0] > wideFilm[1] - 48, wideFilm);
+    check('phone: nothing overflows sideways with the film open', await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
+    check('phone: Take the tour and Not now stay', await exists('#today-take-tour') && await exists('#today-not-now'));
+  }
 });
+
+// With the service worker: the film is never kept, not even after it has played.
+await run('Desk film and the service worker', async (t: any) => {
+  const { check, evaluate, waitFor, open, go, send } = t;
+  await t.setSize(DESKTOP);
+  await open('/', { panna_desk: { noted: true } });
+  await waitFor(`navigator.serviceWorker?.controller !== null && navigator.serviceWorker?.controller !== undefined`, 15000) || (await go('/'), await waitFor(`Boolean(navigator.serviceWorker?.controller)`, 15000));
+  await waitFor(`Boolean(document.querySelector('#desk-film-play'))`);
+  const c = await evaluate(`(() => { const r = document.querySelector('#desk-film-play').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: c.x, y: c.y, button: 'left', buttons: 1, clickCount: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: c.x, y: c.y, button: 'left', buttons: 0, clickCount: 1 });
+  check('sw: the film plays with the service worker in charge', await waitFor(`(() => { const v = document.querySelector('#desk-film video'); return v && !v.paused && v.currentTime > 1; })()`, 10000)
+    && await evaluate(`Boolean(navigator.serviceWorker.controller)`));
+  const kept = await evaluate(`(async () => (await Promise.all((await caches.keys()).map(async (n) => (await (await caches.open(n)).keys()).map((r) => r.url)))).flat().filter((u) => u.includes('/intro/')))()`);
+  check('sw: no cache holds the film or its captions', Array.isArray(kept) && kept.filter((u: string) => /\.(mp4|vtt)$/.test(u)).length === 0, kept);
+}, { serviceWorker: true });

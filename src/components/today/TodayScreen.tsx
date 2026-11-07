@@ -18,6 +18,7 @@ import { GoalNotebook } from './desk/GoalNotebook';
 import { GoalChip } from './desk/GoalChip';
 import { GoalEditor } from './desk/GoalEditor';
 import { DeskBook } from './desk/DeskBook';
+import { IntroFilm } from './desk/IntroFilm';
 import type { TodayWord } from '@/lib/today-words';
 
 interface TodayScreenProps {
@@ -115,6 +116,9 @@ export function TodayScreen(props: TodayScreenProps) {
   const closePhoneEditor = () => { setEditing(false); window.setTimeout(() => chip.current?.focus(), 0); };
   const goalCount = props.todaysWords.length;
 
+  // On a phone the film grows to the card's width once played (and stays so: the "lifted page").
+  const [filmLifted, setFilmLifted] = useState(false);
+  const liftFilm = useCallback((playing: boolean) => { if (playing) setFilmLifted(true); }, []);
   // First visit: the welcome. On the desk it is the book's left page; elsewhere a card.
   const welcomeBody = (
     <>
@@ -142,7 +146,8 @@ export function TodayScreen(props: TodayScreenProps) {
       <DeskScene wide={wide} light={light} onToggleLamp={toggleLamp}
         book={<DeskBook page={pageData?.page_number === page ? pageData : null} pageNumber={page} started={lastPage !== null}
           onOpen={() => props.onContinueReading(page)}
-          welcome={props.showWelcome ? <div className="desk-welcome" id="today-welcome" role="group" aria-labelledby="today-welcome-title">{welcomeBody}</div> : undefined} />}
+          welcome={props.showWelcome ? <div className="desk-welcome" id="today-welcome" role="group" aria-labelledby="today-welcome-title">{welcomeBody}</div> : undefined}
+          film={props.showWelcome ? <IntroFilm /> : undefined} />}
         notebook={<GoalNotebook words={props.todaysWords} goal={props.dailyGoal} editing={editing}
           onEdit={() => setEditing(true)} onClose={() => setEditing(false)} onSave={props.onSetGoal} />} />
       <DeskStrip wide={wide} light={light} onToggleLamp={toggleLamp}
@@ -162,8 +167,11 @@ export function TodayScreen(props: TodayScreenProps) {
       )}
 
       {props.showWelcome && wide === false && (
-        <Card className="today-card today-welcome" id="today-welcome" aria-labelledby="today-welcome-title">
-          {welcomeBody}
+        <Card className={`today-card today-welcome${filmLifted ? ' today-welcome--lifted' : ''}`} id="today-welcome" aria-labelledby="today-welcome-title">
+          <div className="today-welcome-row">
+            <div className="today-welcome-text">{welcomeBody}</div>
+            <IntroFilm onPlayingChange={liftFilm} />
+          </div>
         </Card>
       )}
 

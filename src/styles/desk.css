@@ -234,3 +234,37 @@ html[data-light="evening"] .desk-book-shade { opacity: 1; }
 
 /* Wide screens: the book replaces the Continue reading card (hidden from the first paint, before the width is known). */
 @media (min-width: 900px) { .today-continue-card { display: none; } }
+
+/* ── The intro film (first visits) ── */
+.desk-film { display: flex; flex-direction: column; align-items: center; }
+.desk-film-frame { position: relative; width: 120px; aspect-ratio: 540 / 960; border-radius: 3px; overflow: hidden; background: #120a06;
+  box-shadow: 0 0 0 1px var(--rule), 0 3px 8px rgba(0, 0, 0, .3); }
+.desk-film video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.desk-film-play { position: absolute; inset: 0; display: grid; place-items: center; padding: 0; border: 0; background: rgba(0, 0, 0, .18); color: #f0e2c0; cursor: pointer; }
+.desk-film-play span { display: grid; place-items: center; width: 56px; height: 56px; padding-left: 4px; border-radius: 50%;
+  background: rgba(20, 12, 6, .72); border: 1.5px solid #e8d3a0; }
+.desk-film-play:focus-visible span { outline: 2px solid #e8d3a0; outline-offset: 3px; }
+.desk-film-tools { position: absolute; right: 0; top: 0; display: flex; }
+.desk-film-tools button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: #f0e2c0; cursor: pointer; }
+.desk-film-tools button::before { content: ''; position: absolute; width: 30px; height: 30px; border-radius: 50%; background: rgba(20, 12, 6, .65); z-index: -1; }
+.desk-film-tools button { position: relative; z-index: 0; }
+.desk-film-tools button:focus-visible { outline: 2px solid #e8d3a0; outline-offset: -6px; border-radius: 50%; }
+.desk-film-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; margin-top: 4px; font: 12px var(--font-fell); color: var(--ink-soft); }
+.desk-film-lang { display: inline-flex; flex: none; }
+.desk-film-lang button { min-width: 40px; min-height: 44px; padding: 0 6px; border: 0; background: none; cursor: pointer; font: 13px var(--font-fell); color: var(--ink); }
+.desk-film-lang button span, .desk-film-lang button { text-decoration: none; }
+.desk-film-lang button[aria-pressed="true"] { color: var(--crimson); font-weight: bold; text-decoration: underline; text-underline-offset: 3px; }
+.desk-film-lang button:lang(hi) { font-family: var(--font-deva); }
+.desk-film-lang button:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: -6px; border-radius: 8px; }
+/* on the desk: the book's right page */
+.desk-book .desk-film { padding-top: 4px; }
+
+/* on a phone: beside the welcome text, then the card's full width once played */
+.today-welcome-row { display: flex; gap: 12px; align-items: flex-start; }
+.today-welcome-text { flex: 1; min-width: 0; }
+.today-welcome-row .desk-film-frame { width: 104px; }
+.today-welcome-row .desk-film-meta { flex-direction: column; align-items: center; gap: 0; width: 104px; }
+.today-welcome--lifted .today-welcome-row { flex-direction: column-reverse; }
+.today-welcome--lifted .desk-film, .today-welcome--lifted .desk-film-frame { width: 100%; }
+.today-welcome--lifted .today-welcome-row .desk-film-meta { flex-direction: row; justify-content: space-between; width: 100%; }
+@media (prefers-reduced-motion: no-preference) { .today-welcome-row .desk-film-frame { transition: width .45s ease; } }

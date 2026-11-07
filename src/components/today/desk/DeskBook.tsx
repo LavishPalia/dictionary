@@ -60,6 +60,7 @@ export function DeskBook({ page, pageNumber, started, welcome, film, onOpen }: {
         </div>
       </div>
       <div className="desk-book-shade" aria-hidden="true" />
+      {welcome && <span className="desk-book-tag" aria-hidden="true">The 37-second film · tap ▶ to play</span>}
       {!welcome && (
         <>
           <button type="button" className="desk-book-open" id="today-continue-btn" aria-label={label} onClick={onOpen} />
