@@ -101,3 +101,68 @@ html[data-light="evening"] .desk-cord-bead { background: radial-gradient(circle 
 .desk-note button { flex: none; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--brass-line); background: rgba(201, 162, 74, .12);
   color: #e8d3a0; font: 14px var(--font-fell-sc); cursor: pointer; }
 .desk-note button:focus-visible { outline: 2px solid #e8d3a0; outline-offset: 2px; }
+
+/* ── Today's words: the notebook on the desk ── */
+.desk-notebook {
+  position: absolute; right: 26px; top: 60px; z-index: 4; width: 184px; min-height: 240px; transform: rotate(3deg);
+  padding: 12px 12px 10px 24px; border-radius: 3px 8px 8px 3px; color: var(--ink);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(74, 106, 154, .3) 25px 26px) 0 70px / 100% calc(100% - 70px) no-repeat,
+    var(--paper-gradient);
+  box-shadow: 0 14px 18px rgba(0, 0, 0, .45), inset 10px 0 0 rgba(122, 43, 34, .16);
+}
+.desk-notebook::before { content: ''; position: absolute; left: 17px; top: 0; bottom: 0; width: 1px; background: rgba(122, 43, 34, .4); }
+@media (prefers-reduced-motion: no-preference) { .desk-notebook { transition: transform .25s ease; } }
+.desk-notebook--editing { transform: rotate(0deg) translateY(-6px); }
+.desk-goal-label { display: block; font: 12.5px var(--font-fell-sc); letter-spacing: .04em; color: var(--ink-soft); }
+.desk-goal-count { font: 700 34px/1 var(--font-hand); margin: 2px 0; color: var(--ink); }
+.desk-goal-count small { font-size: 22px; font-weight: 500; color: var(--ink-soft); }
+.desk-goal-pencil { position: absolute; right: 4px; top: 4px; width: 36px; height: 36px; display: grid; place-items: center; padding: 0;
+  border-radius: 50%; border: 1px solid var(--rule); background: rgba(255, 255, 255, .22); color: var(--ink); cursor: pointer; }
+.desk-goal-pencil:hover { background: rgba(255, 255, 255, .4); }
+.desk-goal-words { list-style: none; margin: 10px 0 0; padding: 0; min-height: 52px; font: 600 21px/26px var(--font-hand); color: var(--pencil-blue); }
+.desk-goal-words li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desk-goal-words .desk-goal-more { font-size: 18px; color: var(--ink-soft); }
+.desk-goal-words .desk-goal-empty { padding-top: 4px; white-space: normal; font: italic 14px/19px var(--font-fell); color: var(--ink-soft); }
+.desk-goal-full { margin: 6px 0 0; font: italic 14px/1.3 var(--font-fell); color: var(--crimson); }
+.desk-goal-full span { display: block; font: normal 14px/1.5 var(--font-deva); }
+
+/* the editor (in the notebook, and in the phone's card) */
+.desk-goal-editor .desk-goal-label { margin-bottom: 8px; }
+.desk-goal-stepper { display: flex; align-items: center; gap: 6px; }
+.desk-goal-stepper button { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--sepia); background: rgba(255, 255, 255, .25);
+  color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+.desk-goal-stepper button:disabled { opacity: .45; cursor: default; }
+.desk-goal-stepper input { width: 58px; height: 40px; text-align: center; font: 700 28px var(--font-hand); color: var(--ink);
+  background: rgba(255, 255, 255, .35); border: 1px solid var(--rule); border-radius: 6px; }
+.desk-goal-presets { display: flex; gap: 4px; margin: 8px 0 6px; }
+.desk-goal-presets button { flex: 1; height: 32px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--ink);
+  font: 14px var(--font-fell); cursor: pointer; }
+.desk-goal-presets button[aria-pressed="true"] { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
+.desk-goal-help { margin: 6px 0 8px; font: italic 13px/1.35 var(--font-fell); color: var(--ink-soft); }
+.desk-goal-actions { display: flex; gap: 6px; }
+.desk-goal-actions button { flex: 1; height: 38px; border-radius: 999px; border: 1px solid var(--sepia); background: transparent; color: var(--ink);
+  font: 14px var(--font-fell-sc); cursor: pointer; }
+.desk-goal-actions .desk-goal-save { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
+.desk-goal-pencil:focus-visible, .desk-goal-editor button:focus-visible, .desk-goal-editor input:focus-visible, .desk-goal-chip:focus-visible {
+  outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+
+/* ── Phone: the goal chip and its editor card ── */
+.desk-goal-chip {
+  flex: 1; display: flex; align-items: center; gap: 12px; min-width: 0; margin: 10px 0; padding: 8px 12px 8px 18px; text-align: left; cursor: pointer;
+  border-radius: 4px 10px 10px 4px; border: 1px solid var(--rule); color: var(--ink);
+  background: repeating-linear-gradient(180deg, transparent 0 19px, rgba(74, 106, 154, .22) 19px 20px), var(--paper-gradient);
+  box-shadow: var(--lift), inset 6px 0 0 rgba(122, 43, 34, .2);
+}
+.desk-goal-chip-label { display: block; font: 12px var(--font-fell-sc); letter-spacing: .03em; color: var(--ink-soft); }
+.desk-goal-chip-count { font: 700 28px/1 var(--font-hand); }
+.desk-goal-chip-count small { font-size: 19px; font-weight: 500; color: var(--ink-soft); }
+.desk-goal-tally { display: flex; gap: 3px; margin-left: auto; align-items: flex-end; height: 26px; }
+.desk-goal-tally i { width: 3px; height: 20px; border-radius: 2px; background: rgba(94, 74, 51, .28); transform: rotate(8deg); }
+.desk-goal-tally i.on { background: var(--pencil-blue); }
+.desk-goal-tally i.five { height: 26px; }
+.desk-goal-card .desk-goal-stepper { justify-content: center; margin: 4px 0 2px; }
+.desk-goal-card .desk-goal-stepper button, .desk-goal-card .desk-goal-stepper input { width: 48px; height: 48px; }
+.desk-goal-card .desk-goal-stepper input { width: 64px; }
+.desk-goal-card .desk-goal-presets button { height: 44px; }
+.desk-goal-card .desk-goal-actions button { height: 44px; }

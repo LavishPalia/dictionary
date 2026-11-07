@@ -47,6 +47,7 @@
     "test:backup": "tsx scripts/test-backup.ts",
     "test:letters": "tsx scripts/test-letters.ts",
     "test:lighting": "tsx scripts/test-lighting.ts",
+    "test:today-words": "tsx scripts/test-today-words.ts",
     "test:history": "tsx scripts/test-history.ts",
     "test:saved-search": "tsx scripts/test-saved-search.ts",
     "test:quiz": "tsx scripts/test-quiz.ts",

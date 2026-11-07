@@ -14,6 +14,10 @@ import { DuelCard } from './DuelCard';
 import { DeskScene } from './desk/DeskScene';
 import { DeskStrip } from './desk/DeskStrip';
 import { useWide } from './desk/useWide';
+import { GoalNotebook } from './desk/GoalNotebook';
+import { GoalChip } from './desk/GoalChip';
+import { GoalEditor } from './desk/GoalEditor';
+import type { TodayWord } from '@/lib/today-words';
 
 interface TodayScreenProps {
   dueCount: number;
@@ -49,6 +53,10 @@ interface TodayScreenProps {
   onSetLight: (light: Light) => void;
   /** Back to Auto (the clock), from the first-switch note. */
   onUseAuto: () => void;
+  /** Words saved or reviewed today, in the order they were met; and the daily goal. */
+  todaysWords: TodayWord[];
+  dailyGoal: number;
+  onSetGoal: (goal: number) => void;
 }
 
 const NOTE_MS = 6000;
@@ -99,6 +107,12 @@ export function TodayScreen(props: TodayScreenProps) {
     }
   }, [light, onSetLight]);
 
+  // The goal editor: open in the notebook (desk) or as a card under the strip (phone).
+  const [editing, setEditing] = useState(false);
+  const chip = useRef<HTMLButtonElement>(null);
+  const closePhoneEditor = () => { setEditing(false); window.setTimeout(() => chip.current?.focus(), 0); };
+  const goalCount = props.todaysWords.length;
+
   const minutes = Math.max(1, Math.round((dueCount * SECONDS_PER_CARD) / 60));
   const pos = word ? describePos(word.pos) : null;
   const saved = word ? props.isSaved(word.normalized) : false;
@@ -108,8 +122,17 @@ export function TodayScreen(props: TodayScreenProps) {
       <h1 id="today-title" className="ui-visually-hidden">Today</h1>
       <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
 
-      <DeskScene wide={wide} light={light} onToggleLamp={toggleLamp} />
-      <DeskStrip wide={wide} light={light} onToggleLamp={toggleLamp} />
+      <DeskScene wide={wide} light={light} onToggleLamp={toggleLamp}
+        notebook={<GoalNotebook words={props.todaysWords} goal={props.dailyGoal} editing={editing}
+          onEdit={() => setEditing(true)} onClose={() => setEditing(false)} onSave={props.onSetGoal} />} />
+      <DeskStrip wide={wide} light={light} onToggleLamp={toggleLamp}
+        goal={<GoalChip ref={chip} count={goalCount} goal={props.dailyGoal} open={editing} onToggle={() => (editing ? closePhoneEditor() : setEditing(true))} />}
+        editor={editing && (
+          <Card className="desk-goal-card">
+            <GoalEditor id="desk-goal-editor" goal={props.dailyGoal} onCancel={closePhoneEditor}
+              onSave={(g) => { props.onSetGoal(g); closePhoneEditor(); }} />
+          </Card>
+        )} />
       <p className="ui-visually-hidden" id="desk-live" aria-live="polite">{said}</p>
       {note && (
         <div className="desk-note" id="desk-note">

@@ -28,9 +28,14 @@ await run('Desk scene', async (t: any) => {
     if (clockScript) { await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: clockScript }); clockScript = null; }
     if (!local) return;
     clockScript = (await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
-      const R = Date, off = new R(${JSON.stringify(local)}).getTime() - R.now();
+      const R = Date; let off = new R(${JSON.stringify(local)}).getTime() - R.now();
+      window.__shiftClock = (ms) => { off += ms; };
       class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off); } static now() { return R.now() + off; } }
       window.Date = D; })();` })).identifier;
+  };
+  const press = async (key: string, code = key, vk?: number) => {
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: vk });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: vk });
   };
   const today = (h: number, m = 0) => { const d = new Date(); d.setHours(h, m, 0, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`; };
 
@@ -113,4 +118,103 @@ await run('Desk scene', async (t: any) => {
   await drag('#desk-cord .desk-cord-bead', 0, 6);
   check('phone: a 6 px pull does nothing', (await stored())?.lighting === 'evening', await stored());
   check('phone: nothing overflows sideways', await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
+
+  // ── Today's words ──
+  const ms = (local: string) => new Date(local).getTime();
+  const yesterday = (h: number, m = 0) => ms(today(h, m)) - 86_400_000;
+  const word = (headword: string, saved_at?: number) => ({ normalized: headword.toLowerCase(), headword, ...(saved_at ? { saved_at } : {}) });
+  const rec = (last_at: number) => ({ box: 1, due_at: last_at + 86_400_000, right: 1, wrong: 0, last_at });
+  const QUIET = { ...RETURNING, panna_desk: { noted: true } };
+  const count = () => t.text('#desk-goal-count');
+  const listed = () => evaluate(`[...document.querySelectorAll('.desk-goal-words li')].map((li) => li.textContent)`);
+  await setSize(DESKTOP);
+  await fixClock(today(15));
+  await open('/', { ...QUIET, panna_settings: settings({ lighting: 'day' }) });
+  await waitFor(`Boolean(document.querySelector('#desk-goal-count'))`);
+  check('goal: nothing yet reads 0 of 10', (await count()).replace(/\s+/g, ' ') === '0 of 10' && (await attr('#desk-goal-count', 'aria-label')) === '0 of 10 words today', await count());
+  check('goal: the empty notebook says how to fill it', (await t.text('.desk-goal-words')).includes('Save or review a word and it is written here.'));
+  const seeded = {
+    ...QUIET, panna_settings: settings({ lighting: 'day' }),
+    panna_saved_words: [word('Abandon', ms(today(9))), word('Rigour', ms(today(11))), word('Yester', yesterday(23, 59)), word('Undated')],
+    panna_review: { gone: rec(ms(today(10))), rigour: rec(ms(today(8))), yester: rec(yesterday(20)) },
+  };
+  await open('/', seeded);
+  await waitFor(`document.querySelector('#desk-goal-count')?.textContent.startsWith('3')`);
+  check('goal: saved today, reviewed today, once each: 3 of 10', (await attr('#desk-goal-count', 'aria-label')) === '3 of 10 words today', await attr('#desk-goal-count', 'aria-label'));
+  check('goal: the words are written in the order they were met', JSON.stringify(await listed()) === JSON.stringify(['Rigour', 'Abandon', 'gone']), await listed());
+  check('goal: no full-page line before the goal', !(await exists('#desk-goal-full')));
+  // rigour (reviewed 8:00, no longer saved), One–Six (saved 9:00–9:05), gone (reviewed 10:00): 8 words.
+  await open('/', { ...seeded, panna_saved_words: ['One', 'Two', 'Three', 'Four', 'Five', 'Six'].map((w, i) => word(w, ms(today(9, i)))) });
+  await waitFor(`document.querySelector('#desk-goal-count')?.textContent.startsWith('8')`);
+  check('goal: more than 4 words shows "+ N more" above the latest 4', JSON.stringify(await listed()) === JSON.stringify(['+ 4 more', 'Four', 'Five', 'Six', 'gone']), await listed());
+  await open('/', { ...seeded, panna_settings: settings({ lighting: 'day', dailyGoal: 3 }) });
+  await waitFor(`Boolean(document.querySelector('#desk-goal-full'))`);
+  check('goal: reached says the page is full, in English and Hindi', (await t.text('#desk-goal-full')).includes('Today’s page is full.') && (await t.text('#desk-goal-full')).includes('आज के 3 शब्द पूरे।'), await t.text('#desk-goal-full'));
+
+  // The editor.
+  await click('#desk-goal-edit');
+  await waitFor(`Boolean(document.querySelector('#desk-goal-editor'))`);
+  check('editor: opens in the notebook with focus in the field', await evaluate(`document.activeElement?.matches('#desk-goal-editor input')`));
+  check('editor: has its label, quick picks and help line', (await t.text('#desk-goal-editor')).includes('Words a day') && (await t.text('#desk-goal-editor')).includes('Every word you save or review today counts once.')
+    && JSON.stringify(await evaluate(`[...document.querySelectorAll('.desk-goal-presets button')].map((b) => b.textContent)`)) === '["5","10","20"]');
+  await click('#desk-goal-editor [aria-label="One more"]');
+  check('editor: + steps up', (await evaluate(`document.querySelector('#desk-goal-editor input').value`)) === '4');
+  await evaluate(`document.querySelector('#desk-goal-editor input').focus(); true`);
+  await press('Escape', 'Escape', 27);
+  await sleep(150);
+  check('editor: Esc cancels and focus returns to the pencil', !(await exists('#desk-goal-editor')) && (await stored())?.dailyGoal === 3 && await evaluate(`document.activeElement?.id === 'desk-goal-edit'`));
+  await click('#desk-goal-edit');
+  await waitFor(`Boolean(document.querySelector('#desk-goal-editor'))`);
+  await click('#desk-goal-editor .desk-goal-presets button:nth-child(3)');
+  await click('#desk-goal-editor .desk-goal-cancel');
+  await sleep(100);
+  check('editor: Cancel keeps the old goal', (await stored())?.dailyGoal === 3);
+  await click('#desk-goal-edit');
+  await waitFor(`document.activeElement?.matches('#desk-goal-editor input')`);
+  await send('Input.insertText', { text: '7' });
+  await press('Enter', 'Enter', 13);
+  await sleep(150);
+  check('editor: Enter saves the typed goal', (await stored())?.dailyGoal === 7 && (await count()).replace(/\s+/g, ' ') === '3 of 7', [await stored(), await count()]);
+  check('editor: the other settings are kept', (await stored())?.lighting === 'day' && (await stored())?.speed === 'realistic' && (await stored())?.sounds === true, await stored());
+  await click('#desk-goal-edit');
+  await waitFor(`Boolean(document.querySelector('#desk-goal-editor'))`);
+  await click('#desk-goal-editor .desk-goal-presets button:nth-child(3)');
+  await click('#desk-goal-editor .desk-goal-save');
+  await sleep(150);
+  check('editor: a quick pick and Save set 20', (await stored())?.dailyGoal === 20 && await evaluate(`document.activeElement?.id === 'desk-goal-edit'`));
+  await click('#desk-lamp');
+  await sleep(150);
+  check('goal: a lamp switch keeps the goal', (await stored())?.dailyGoal === 20 && (await stored())?.lighting === 'evening');
+
+  // A save from Today counts at once.
+  await waitFor(`Boolean(document.querySelector('#today-word-save[aria-pressed="false"]'))`);
+  await click('#today-word-save');
+  await waitFor(`document.querySelector('#desk-goal-count')?.textContent.startsWith('4')`, 3000);
+  check('goal: saving the word of the day counts at once', (await attr('#desk-goal-count', 'aria-label')) === '4 of 20 words today', await attr('#desk-goal-count', 'aria-label'));
+
+  // Midnight empties it while Today is open.
+  await fixClock(today(23, 59));
+  await open('/', { ...QUIET, panna_settings: settings({ lighting: 'day' }), panna_saved_words: [word('Late', ms(today(23)))] });
+  await waitFor(`document.querySelector('#desk-goal-count')?.textContent.startsWith('1')`);
+  await evaluate(`window.__shiftClock(120000); document.dispatchEvent(new Event('visibilitychange')); true`);
+  check('goal: after midnight the count starts again at 0', await waitFor(`document.querySelector('#desk-goal-count')?.textContent.startsWith('0')`, 3000), await count());
+
+  // Phone: the chip and its editor card.
+  await fixClock(today(15));
+  await setSize(PHONE);
+  await open('/', seeded);
+  await waitFor(`Boolean(document.querySelector('#desk-goal-chip'))`);
+  check('phone: the chip says Today’s words 3 of 10', (await t.text('#desk-goal-chip')).replace(/\s+/g, ' ').includes('Today’s words 3 of 10'), await t.text('#desk-goal-chip'));
+  check('phone: 10 tally marks, 3 inked', (await evaluate(`document.querySelectorAll('.desk-goal-tally i').length`)) === 10 && (await evaluate(`document.querySelectorAll('.desk-goal-tally i.on').length`)) === 3);
+  await click('#desk-goal-chip');
+  await waitFor(`Boolean(document.querySelector('.desk-goal-card #desk-goal-editor'))`);
+  check('phone: a tap opens the editor as a card under the strip', (await attr('#desk-goal-chip', 'aria-expanded')) === 'true' && await evaluate(`document.activeElement?.matches('#desk-goal-editor input')`));
+  check('phone: the editor’s controls are at least 44 px', await evaluate(`[...document.querySelectorAll('#desk-goal-editor button, #desk-goal-editor input')].every((b) => { const r = b.getBoundingClientRect(); return r.height >= 44 && r.width >= 44; })`));
+  await click('#desk-goal-editor .desk-goal-cancel');
+  await sleep(100);
+  check('phone: Cancel closes it and focus returns to the chip', !(await exists('#desk-goal-editor')) && await evaluate(`document.activeElement?.id === 'desk-goal-chip'`));
+  await open('/', { ...seeded, panna_settings: settings({ lighting: 'day', dailyGoal: 25 }) });
+  await waitFor(`Boolean(document.querySelector('#desk-goal-chip'))`);
+  check('phone: a goal of 25 still shows 10 marks', (await evaluate(`document.querySelectorAll('.desk-goal-tally i').length`)) === 10);
+  await fixClock(null);
 });

@@ -25,6 +25,7 @@ import { BookMeta, BookPage, DictionaryEntry, MarginNote, RelatedWord } from '@/
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
 import { useReducedMotion, visibleElement } from '@/lib/motion';
+import { clampGoal, readGoal, todaysWords } from '@/lib/today-words';
 import { applyLight, readLighting, resolveLight, storedSettings, type Light, type Lighting } from '@/lib/lighting';
 import type { PageTurnSpeed } from '@/components/shell/ReadingMenu';
 import { TourLayer } from '@/components/tour/TourLayer';
@@ -35,7 +36,7 @@ import { bestStreak, calendar, progressOf } from '@/lib/progress';
 import { useOffline } from '@/components/shell/useOffline';
 import { REPORTS_ENABLED, flushQueue } from '@/lib/report';
 import { LearnScreen } from '@/components/learn/LearnScreen';
-import { nextStep } from '@/lib/learn';
+import { NEW_WORDS_PER_DAY, nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
@@ -74,6 +75,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // head script (src/lib/lighting.ts) and kept up to date by the effect further down.
   const [lighting, setLighting] = useState<Lighting>('auto');
   const [speedMode, setSpeedMode] = useState<PageTurnSpeed>('realistic');
+  // Today's words: how many a day (in panna_settings, so the backup carries it).
+  const [dailyGoal, setDailyGoal] = useState<number>(NEW_WORDS_PER_DAY);
   const reducedMotion = useReducedMotion();
   // Turn pages without the 3D flip: phones (no flip engine), the "Instant" speed, or a reduce-motion setting.
   const instantTurns = isMobile || speedMode === 'instant' || reducedMotion;
@@ -87,6 +90,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       setLighting(readLighting(saved)); // old { evening: true } reads as Evening
       if (['slow', 'realistic', 'brisk', 'instant'].includes(saved.speed)) setSpeedMode(saved.speed);
       if (typeof saved.sounds === 'boolean') { setIsMuted(!saved.sounds); soundEngine.setMuted(!saved.sounds); }
+      setDailyGoal(readGoal(saved));
     } catch {}
     setSettingsLoaded(true);
   }, []);
@@ -95,11 +99,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     try {
       // Nothing to remember until the reader changes something: a browser that has never been set up must not
       // look as if it chose the defaults (a restored backup's settings would otherwise lose to them).
-      const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted;
+      const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted && dailyGoal === NEW_WORDS_PER_DAY;
       if (untouched && localStorage.getItem('panna_settings') === null) return;
-      localStorage.setItem('panna_settings', JSON.stringify(storedSettings(lighting, { speed: speedMode, sounds: !isMuted })));
+      localStorage.setItem('panna_settings', JSON.stringify(storedSettings(lighting, {
+        speed: speedMode, sounds: !isMuted, ...(dailyGoal === NEW_WORDS_PER_DAY ? {} : { dailyGoal }) })));
     } catch {}
-  }, [settingsLoaded, lighting, speedMode, isMuted]);
+  }, [settingsLoaded, lighting, speedMode, isMuted, dailyGoal]);
 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
   const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
@@ -582,6 +587,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     if (fadeTimerRef.current !== null) window.clearTimeout(fadeTimerRef.current);
     document.documentElement.classList.remove('light-fading', 'light-fading--quick');
   }, []);
+
+  // Today's words for the daily goal: re-read with the minute clock and when the app is shown again, so midnight
+  // empties it without a reload.
+  const todaysWordsNow = useMemo(() => todaysWords(bookmarkedWords, reviewRecords, Date.now()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bookmarkedWords, reviewRecords, clock, clockTick]);
 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
@@ -1546,6 +1557,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           light={appliedLight}
           onSetLight={(next) => pickLighting(next, { quick: true })}
           onUseAuto={() => pickLighting('auto', { quick: true })}
+          todaysWords={todaysWordsNow}
+          dailyGoal={dailyGoal}
+          onSetGoal={(g) => setDailyGoal(clampGoal(g))}
         />
       )}
 
