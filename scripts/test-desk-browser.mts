@@ -461,6 +461,19 @@ await run('Desk scene', async (t: any) => {
     await waitFor(`Boolean(document.querySelector('#today-welcome'))`);
     check('close: no clasp on the welcome book', !(await exists('#desk-clasp')));
   }
+
+  // ── Accessibility: Today with the desk, in both lights ──
+  for (const [sizeName, size] of [['desktop', DESKTOP], ['phone', PHONE]] as const) {
+    await setSize(size);
+    for (const first of [false, true]) {
+      for (const mode of ['day', 'evening']) {
+        await open('/', { ...(first ? {} : RETURNING), panna_desk: { noted: true }, panna_settings: settings({ lighting: mode }) }, { panna_last_page: String(CAMEL_PAGE) });
+        await waitFor(`Boolean(document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#desk-cord' : '#desk-lamp')}))`);
+        await sleep(900);
+        await t.axe(`${sizeName} ${first ? 'first visit' : 'returning'} ${mode === 'evening' ? 'Evening' : 'Day'}`);
+      }
+    }
+  }
 });
 
 // With the service worker: the film is never kept, not even after it has played.
