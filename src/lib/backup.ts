@@ -145,6 +145,17 @@ function mergeTours(current: unknown, backup: unknown): ToursLike {
  * notes are combined, for review progress the more recently studied copy of each word wins, and this browser's
  * settings stay. Marks from another book build are first moved using `located` (anchor word → current page).
  */
+/**
+ * Merging keeps this browser's settings, but a bookplate only the backup has comes across, unshared: sharing the name is
+ * asked for on each device, as the tick sends it from this device's profile.
+ */
+function mergeSettings(current: unknown, backup: unknown): unknown {
+  const here = (current ?? backup ?? {}) as Record<string, unknown>;
+  const theirs = (backup as { bookplate?: unknown } | undefined)?.bookplate;
+  if (!current || here.bookplate || !theirs || typeof theirs !== 'object') return here;
+  return { ...here, bookplate: { ...theirs, share: false } };
+}
+
 export function restoreData(
   current: BackupData, backup: Backup, mode: 'merge' | 'replace',
   book: { dataVersion: string; totalPages: number }, located: Record<string, number> = {},
@@ -167,7 +178,12 @@ export function restoreData(
     out.panna_history = b.panna_history ?? foldRecent(b.panna_recent_searches, madeAt);
     // Usage counts switched off on this device stay off: an older backup must not turn counting back on.
     const here = current.panna_settings as { analytics?: unknown } | undefined;
-    if (here?.analytics === false) out.panna_settings = { ...(out.panna_settings as object), analytics: false };
+    if (here?.analytics === false) {
+      out.panna_settings = { ...(out.panna_settings as object), analytics: false };
+      // …and with counting off, a restored bookplate keeps its name but isn't shared (the box is unticked).
+      const plate = (out.panna_settings as { bookplate?: unknown }).bookplate;
+      if (plate && typeof plate === 'object') (out.panna_settings as Record<string, unknown>).bookplate = { ...plate, share: false };
+    }
     // A file with no anchors leaves none: the app makes them when it next opens, and an empty list would crash it.
     if (b.panna_mark_anchors) out.panna_mark_anchors = b.panna_mark_anchors;
     return out;
@@ -201,7 +217,7 @@ export function restoreData(
       ribbons: { ...(bAnchors?.ribbons ?? {}), ...(curAnchors?.ribbons ?? {}) },
       dogEars: { ...(bAnchors?.dogEars ?? {}), ...(curAnchors?.dogEars ?? {}) },
     },
-    panna_settings: current.panna_settings ?? b.panna_settings ?? {},
+    panna_settings: mergeSettings(current.panna_settings, b.panna_settings),
     panna_history: mergeHistory(historyOf(current), historyOf(b)),
     panna_tours: mergeTours(current.panna_tours, b.panna_tours),
   };

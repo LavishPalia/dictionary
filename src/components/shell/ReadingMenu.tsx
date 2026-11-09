@@ -3,6 +3,8 @@
 import { Segmented, Sheet, Switch } from '@/components/ui';
 import { BookIcon, ChevronIcon, CompassIcon, DiceIcon } from '@/components/ui/icons';
 import type { Lighting } from '@/lib/lighting';
+import type { Bookplate } from '@/lib/bookplate';
+import { MiniPlate } from '@/components/bookplate/Bookplate';
 
 export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk' | 'instant';
 
@@ -40,6 +42,9 @@ interface ReadingMenuProps {
   usageCounts: boolean;
   usageCountsBlocked: boolean;
   onUsageCountsChange: (on: boolean) => void;
+  /** The reader's bookplate, or null before one is written. */
+  bookplate: Bookplate | null;
+  onOpenBookplate: () => void;
 }
 
 // Everything that used to crowd the top of the screen: reading preferences and the less frequent actions.
@@ -50,7 +55,19 @@ export function ReadingMenu(props: ReadingMenuProps) {
   const thenClose = (action: () => void) => () => { onClose(); action(); };
 
   return (
-    <Sheet open={open} onClose={onClose} title="Reading settings" id="reading-menu" returnFocusTo={() => document.getElementById('menu-btn')}>
+    <Sheet open={open} onClose={onClose} labelledBy="reading-menu-title" id="reading-menu" returnFocusTo={() => document.getElementById('menu-btn')}>
+      {/* The title shares its line with the bookplate, so the whole menu still fits on a phone screen. */}
+      <div className="menu-head">
+        <h2 id="reading-menu-title" className="ui-sheet-title">Reading settings</h2>
+        <button type="button" className="menu-plate-chip" id="bookplate-btn" onClick={thenClose(props.onOpenBookplate)}
+          aria-label={props.bookplate
+            ? `Your bookplate: ${props.bookplate.name}, ${props.bookplate.share && props.usageCounts ? 'shared' : 'not shared'}`
+            : 'Your bookplate: write your name in the book'}>
+          <MiniPlate plate={props.bookplate} />
+          <span className="menu-plate-chip-name" id="bookplate-sub" aria-hidden="true">{props.bookplate ? props.bookplate.name : 'Your bookplate'}</span>
+          <ChevronIcon />
+        </button>
+      </div>
       {/* First, so anyone opening the menu finds the tours. */}
       <button type="button" className="menu-row menu-link menu-tours" id="guided-tours-btn" onClick={thenClose(props.onOpenTours)}>
         <span className="menu-tours-icon" aria-hidden="true"><CompassIcon /></span>

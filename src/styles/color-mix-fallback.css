@@ -48,4 +48,13 @@
   .review-option--wrong { background: rgba(122, 43, 34, 0.1); }
   .tour-btn--primary { background: var(--binding); }
   .tour-btn--primary:hover { background: var(--crimson); }
+  /* The bookplate (bookplate.css) */
+  .bp-plate { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28), inset 0 0 24px rgba(120, 80, 30, 0.16); }
+  .bp-plate::after { border: 1px solid rgba(122, 43, 34, 0.55); }
+  .bp-medallion { box-shadow: inset 0 0 0 3px #f3e8c9, inset 0 0 0 4px rgba(122, 43, 34, 0.45); }
+  .bp-emblem { background: rgba(255, 255, 255, 0.3); }
+  .bp-emblem:hover { background: rgba(255, 255, 255, 0.5); }
+  .bp-share { background: rgba(255, 255, 255, 0.18); }
+  .bp-share input { background: rgba(255, 255, 255, 0.45); }
+  .bp-mini { outline: 1px solid rgba(122, 43, 34, 0.45); }
 }

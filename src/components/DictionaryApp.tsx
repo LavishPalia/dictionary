@@ -39,7 +39,9 @@ import { nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
-import { browserBlocksCounting, pageview, setUsageCounts, startAnalytics, track, usageCountsChosen } from '@/lib/analytics';
+import { browserBlocksCounting, pageview, setUsageCounts, startAnalytics, syncBookplate, track, usageCountsChosen } from '@/lib/analytics';
+import { bookplateOfferDone, endBookplateOffer, loadBookplate, offerBookplate, storeBookplate, type Bookplate } from '@/lib/bookplate';
+import { BookplateSheet } from '@/components/bookplate/Bookplate';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
 import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, clearHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
@@ -115,7 +117,26 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setUsageCountsState(usageCountsChosen());
     setCountingBlocked(browserBlocksCounting());
   }, []);
-  const changeUsageCounts = (on: boolean) => { setUsageCounts(on); setUsageCountsState(on); };
+  // The bookplate (src/lib/bookplate.ts): read after the first render, like the other settings. Switching Usage counts
+  // off unticks its "Share my name" too, so the plate is read again after the switch.
+  const [bookplate, setBookplate] = useState<Bookplate | null>(null);
+  const [bookplateLoaded, setBookplateLoaded] = useState(false);
+  const [showBookplate, setShowBookplate] = useState(false);
+  useEffect(() => { setBookplate(loadBookplate()); setBookplateLoaded(true); }, []);
+  const changeUsageCounts = (on: boolean) => { setUsageCounts(on); setUsageCountsState(on); setBookplate(loadBookplate()); };
+  const saveBookplate = (plate: Bookplate) => {
+    storeBookplate(plate);
+    setBookplate(loadBookplate());
+    setBookplateOffer(false);
+    setShowBookplate(false);
+    syncBookplate();
+  };
+  const removeBookplate = () => {
+    storeBookplate(null);
+    setBookplate(null);
+    setShowBookplate(false);
+    syncBookplate();
+  };
 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
   const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
@@ -989,6 +1010,14 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Opening it is remembered (Today then shows a small link instead of its card); wait for the saved state to load,
   // so this does not write over it.
   const { loaded: toursLoaded, markGuideOpened } = tours;
+  const [bookplateOffer, setBookplateOffer] = useState(false);
+  const savedCountRef = useRef(0);
+  savedCountRef.current = bookmarkedWords.length;
+  useEffect(() => {
+    if (section !== 'today' || !savedLoaded || !toursLoaded || !bookplateLoaded) return;
+    setBookplateOffer(offerBookplate({ savedWords: savedCountRef.current, plate: loadBookplate(), offerDone: bookplateOfferDone(), welcomeShowing: tours.showWelcome }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section, savedLoaded, toursLoaded, bookplateLoaded]);
   useEffect(() => {
     if (section === 'learn' && toursLoaded) markGuideOpened();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1556,6 +1585,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onOpenGuide={() => goTo('learn')}
           lookedUpToday={lookedUpToday}
           onOpenHistory={() => openSaved('history')}
+          bookplate={bookplate}
+          offerBookplate={bookplateOffer}
+          onWriteBookplate={() => setShowBookplate(true)}
+          onDismissBookplate={() => { endBookplateOffer(); setBookplateOffer(false); }}
         />
       )}
 
@@ -1667,6 +1700,18 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         usageCounts={usageCounts && !countingBlocked}
         usageCountsBlocked={countingBlocked}
         onUsageCountsChange={changeUsageCounts}
+        bookplate={bookplate}
+        onOpenBookplate={() => setShowBookplate(true)}
+      />
+
+      <BookplateSheet
+        open={showBookplate}
+        plate={bookplate}
+        canShare={usageCounts && !countingBlocked}
+        onSave={saveBookplate}
+        onRemove={removeBookplate}
+        onClose={() => setShowBookplate(false)}
+        returnFocusTo={() => document.getElementById('bookplate-write') ?? document.getElementById('menu-btn')}
       />
 
       <ToursSheet
