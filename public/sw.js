@@ -5,6 +5,7 @@
 //                                             installed app (share target, shortcuts) from what it is given
 //   Book pages (/api/page/N?v=<version>)      cache first: a rebuilt book has a new version, so new URLs
 //   The Duel's server (/api/duel/*)           never touched: straight to the network
+//   Usage counts (/relay/*)                   never touched: straight to the network, never cached or re-fetched
 //   The Duel's files (/duel/*)                cache first: puzzles are named by their hash, and pictures, fonts and
 //                                             sounds never change under one name. The schedule is network first
 //   The Duel's visits (/play...)              network first, kept nowhere; offline, the one shell the game saved
@@ -50,7 +51,7 @@ self.addEventListener('message', (event) => {
 async function warm(url) {
   const request = new Request(url);
   const u = new URL(request.url);
-  if (isPlay(u) || u.pathname.startsWith('/api/duel/')) return; // the game saves its own shell, and server replies are never kept
+  if (isPlay(u) || u.pathname.startsWith('/api/duel/') || isRelay(u)) return; // the game saves its own shell, and server replies are never kept
   // The address the page was opened at is an HTML page visit.
   const name = cacheFor(u) ?? (u.origin === self.location.origin && !u.pathname.startsWith('/_next/') ? PAGES : null);
   if (!name) return;
@@ -86,8 +87,12 @@ async function putPage(request, response) {
 
 const isPlay = (url) => url.origin === self.location.origin && /^\/play(\/|$)/.test(url.pathname);
 
+// Usage counts go to PostHog through /relay (next.config.mjs): never kept, so nothing counted is stored or sent twice.
+const isRelay = (url) => url.pathname === '/relay' || url.pathname.startsWith('/relay/');
+
 function cacheFor(url) {
   if (url.origin !== self.location.origin) return null;
+  if (isRelay(url)) return null;
   const p = url.pathname;
   if (p.startsWith('/duel/')) return DUEL;
   if (p.startsWith('/_next/static/') || p.startsWith('/icons/') || p === '/icon.svg' || p === '/manifest.webmanifest') return STATIC;
@@ -112,7 +117,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin || isRelay(url)) return;
 
   if (request.mode === 'navigate') { event.respondWith(isPlay(url) ? playPage(request, url) : page(request)); return; }
   const name = cacheFor(url);

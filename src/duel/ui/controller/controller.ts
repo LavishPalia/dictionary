@@ -336,7 +336,10 @@ export class GameController {
     for (let s = you.state; !s.over && s.turn === 'quill'; s = quill[quill.length - 1].state) quill.push(botTurn(this.p, s));
     const end = quill[quill.length - 1] ?? you;
     this.save(you.state, end.state);
-    if (end.state.over && !this.snap.state.over) this.record(end.state);
+    if (end.state.over && !this.snap.state.over) {
+      this.record(end.state);
+      this.platform.track?.('duel_finished', { mode: this.practice ? 'practice' : 'daily', result: end.state.scores.you > end.state.scores.quill ? 'won' : 'lost' });
+    }
 
     this.lastTap = null;
     this.publish({ busy: true, lastQuill: [], lifted: null, zoom: null, wordMode: false, sheet: null });

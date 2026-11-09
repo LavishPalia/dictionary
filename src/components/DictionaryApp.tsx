@@ -39,6 +39,7 @@ import { nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
+import { browserBlocksCounting, pageview, setUsageCounts, startAnalytics, track, usageCountsChosen } from '@/lib/analytics';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
 import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, clearHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
@@ -97,9 +98,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // look as if it chose the defaults (a restored backup's settings would otherwise lose to them).
       const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted;
       if (untouched && localStorage.getItem('panna_settings') === null) return;
-      localStorage.setItem('panna_settings', JSON.stringify(storedSettings(lighting, { speed: speedMode, sounds: !isMuted })));
+      // Keys this effect doesn't own (the Usage counts choice) are kept as they are.
+      const stored = JSON.parse(localStorage.getItem('panna_settings') || '{}');
+      const others = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+      localStorage.setItem('panna_settings', JSON.stringify({ ...others, ...storedSettings(lighting, { speed: speedMode, sounds: !isMuted }) }));
     } catch {}
   }, [settingsLoaded, lighting, speedMode, isMuted]);
+
+  // Usage counts (src/lib/analytics.ts): started here, before the launch effect below gives the address back, so the
+  // launch kind is still readable. The switch shows off, and can't be turned on, while the browser asks not to be tracked.
+  const [usageCounts, setUsageCountsState] = useState(true);
+  const [countingBlocked, setCountingBlocked] = useState(false);
+  useEffect(() => {
+    startAnalytics();
+    setUsageCountsState(usageCountsChosen());
+    setCountingBlocked(browserBlocksCounting());
+  }, []);
+  const changeUsageCounts = (on: boolean) => { setUsageCounts(on); setUsageCountsState(on); };
 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
   const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
@@ -457,7 +472,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const searchRecents = useMemo(() => recentWords(history), [history]);
   // The most recent card open, and whether it was a lookup that counts (read by the repeat-lookup nudge).
   const lastLookupRef = useRef<{ normalized: string; counted: boolean } | null>(null);
-  const recordShown = useCallback((word: LookupWord, source: LookupSource) => {
+  const recordShown = useCallback((word: LookupWord, source: LookupSource, via: string = source) => {
+    // Counted by how it was looked up, never which word.
+    track('word_looked_up', { via, found: true });
     // Read the stored list, not state: another tab (or a restored backup) may have changed it.
     const next = saveHistory(recordLookup(loadHistory(), word, source, Date.now()));
     lastLookupRef.current = { normalized: word.normalized, counted: true };
@@ -617,8 +634,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   };
 
   // Search selection handler: a result picked in the search box.
-  const handleSelectWord = (headword: string, destPage: number, meaning_hi?: string) => {
-    recordShown({ normalized: headword.toLowerCase().trim(), headword, meaning_hi, page: destPage }, 'search');
+  const handleSelectWord = (headword: string, destPage: number, meaning_hi?: string, match?: string) => {
+    const via = match === 'hindi' || match === 'hinglish' ? 'hindi' : 'search';
+    recordShown({ normalized: headword.toLowerCase().trim(), headword, meaning_hi, page: destPage }, 'search', via);
     showBookForSearch();
     turnToPage(destPage, headword);
   };
@@ -716,6 +734,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const handleToggleWordBookmark = (entry: DictionaryEntry) => {
     // The very first save gets a one-time tip saying when the word comes back.
     if (bookmarkedWords.length === 0) tours.offerTip('first-save', true);
+    track(bookmarkedWords.some(w => w.normalized === entry.normalized) ? 'word_unsaved' : 'word_saved');
     setBookmarkedWords(prev => {
       const exists = prev.some(w => w.normalized === entry.normalized);
       const updated = exists
@@ -913,6 +932,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     reducedMotion: reducedMotion || speedMode === 'instant',
   });
   const { offerTip } = tours;
+  // Page views: one per screen opened (and per word card opened), never per page turn. A tour walking through screens
+  // is not the reader opening them.
+  useEffect(() => { if (!tours.active) pageview(section); }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cardOpen = showWordDrawer && activeWordEntry !== null;
+  useEffect(() => { if (cardOpen && !tours.active) pageview('word'); }, [cardOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   // One-time tips, the first time each thing is used (never during a tour; the layer waits for its target).
   useEffect(() => {
     if (section !== 'book' || showWordDrawer || showMenu || !isBookOpen) return;
@@ -1096,7 +1120,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const id = lookupRef.current;
     const found = await fetchWord(word);
     if (!current()) return false;
-    if (!found) { setLookupFill({ text: word }); return false; }
+    if (!found) { track('word_looked_up', { via: 'voice', found: false }); setLookupFill({ text: word }); return false; }
     const at = found.entry.normalized;
     recordEntry(found.entry, 'voice', found.pageNumber);
     setHeard({ text: word, alternates: [], at });
@@ -1218,7 +1242,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           fetchWord(only.key!).then((found) => {
             if (!current()) return;
             if (found) { recordEntry(found.entry, 'share', found.pageNumber); setActiveWordEntry(found.entry); setShowWordDrawer(true); }
-            else setLookupFill({ text: only.text, show: 'closest' }); // not a book word: its closest matches, as for voice
+            else { track('word_looked_up', { via: 'share', found: false }); setLookupFill({ text: only.text, show: 'closest' }); } // not a book word: its closest matches, as for voice
           });
         } else if (words.length > 1) {
           setShareText(cutText(launch.text ?? '')); // as shared: /api/sentence cleans it and says if it was cut
@@ -1639,6 +1663,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         installHint={offline.installHint}
         iosShortcut={iosShortcut}
         backupLabel={lastBackupLabel(lastBackupAt)}
+        usageCounts={usageCounts && !countingBlocked}
+        usageCountsBlocked={countingBlocked}
+        onUsageCountsChange={changeUsageCounts}
       />
 
       <ToursSheet
