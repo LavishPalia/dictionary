@@ -95,7 +95,7 @@ const STACK_JS = `
   const label = (el) => (el.id ? '#' + el.id : el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(' ')[0] : '')) + ' "' + el.textContent.trim().slice(0, 20) + '"';`;
 
 await run('Book lamp', async (t: any) => {
-  const { check, evaluate, waitFor, open, setSize, reduceMotion, send } = t;
+  const { check, evaluate, waitFor, open, setSize, reduceMotion } = t;
 
   /** Opens a Book page at a size and lighting, and waits for its text and fonts. */
   const load = async (size: any, page: number, lighting: string, desk: Record<string, unknown> | null = { noted: true }) => {
@@ -259,6 +259,55 @@ await run('Book lamp', async (t: any) => {
   await waitFor(`Boolean(document.querySelector('#desk-lamp'))`, 15000);
   check('Today: no Book light, filter or desk layer while Today shows', await evaluate(`!document.querySelector('.book-light, #book-spot-filter, .book-desk-dark, #book-live')`));
 
+  // ── A phone page that comes back: "Page not available" (no #mobile-page), then a real page ──
+  // The controller must be made again on the live page, in both versions. The version changes (reduced motion on or
+  // off) while no page shows, so the light is set up when there is no frame to find, and must catch up once there is.
+  for (const v of ['B', 'A'] as const) {
+    await reduceMotion(v === 'B');
+    await load(P412, 400, 'evening');
+    await evaluate(`(() => { window.__fetch = window.fetch; window.fetch = (u, ...a) => String(u).includes('/api/page/')
+      ? Promise.resolve(new Response('{}', { status: 503 })) : window.__fetch(u, ...a); return true; })()`);
+    await evaluate(`document.querySelector('#page-number-btn').click(); true`);
+    await waitFor(`Boolean(document.querySelector('#goto-page-input'))`);
+    const goTo = async (n: number) => {
+      await evaluate(`(() => { const i = document.querySelector('#goto-page-input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(i, '${n}');
+        i.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('#goto-go-btn').click(); return true; })()`);
+    };
+    await goTo(3000);
+    const missing = await waitFor(`!document.querySelector('#mobile-page') && document.querySelector('#page-number-btn')?.textContent.trim() === 'Go to another page'`, 8000);
+    check(`phone (${v}): an unloadable page shows "Page not available" (no #mobile-page)`, missing);
+    await reduceMotion(v === 'A');
+    await sleep(300);
+    await evaluate(`window.fetch = window.__fetch; document.querySelector('#page-number-btn').click(); true`);
+    await waitFor(`Boolean(document.querySelector('#goto-page-input'))`);
+    await goTo(TALL);
+    await waitFor(`document.querySelector('#mobile-page .entry-text') && !document.querySelector('#goto-sheet')`, 10000);
+    await sleep(600);
+    const back = await evaluate(`(() => { const p = document.querySelector('#mobile-page'); const s = document.querySelector('#book-spot');
+      return { w: p.offsetWidth, h: p.offsetHeight, px: parseFloat(p.style.getPropertyValue('--pool-x')), py: parseFloat(p.style.getPropertyValue('--pool-y')),
+        sx: s ? Number(s.getAttribute('pointsAtX')) : null, sy: s ? Number(s.getAttribute('pointsAtY')) : null,
+        layer: Boolean(p.querySelector(':scope > .book-light')), gradient: getComputedStyle(p.querySelector('.book-light')).backgroundImage }; })()`);
+    const pool = BOOK_LIGHT.pool.phone;
+    const ok = back && back.layer && near(back.px, PHONE_POOL.x * back.w + pool.dx) && near(back.py, PHONE_POOL.y * back.h + pool.dy)
+      && (v === 'B' ? near(back.sx, PHONE_POOL.x * back.w) && near(back.sy, PHONE_POOL.y * back.h) : back.sx === null && back.gradient.includes('radial-gradient'));
+    check(`phone (${v}): back on a page, the pool sits at PHONE_POOL on the live #mobile-page`, ok, back);
+  }
+  await reduceMotion(false);
+
+  // ── A desktop flip: the base-layer copies carry the light while it runs, the leaves never do ──
+  await load(D1440, 400, 'evening');
+  await evaluate(`document.querySelector('button[aria-label="Next spread"]').click(); true`);
+  await waitFor(`Boolean(document.querySelector('[data-book-base][data-flipping]'))`, 3000);
+  await sleep(150);
+  const during = await evaluate(`(() => { const base = [...document.querySelectorAll('[data-book-base] .book-light')];
+    return { flipping: Boolean(document.querySelector('[data-book-base][data-flipping]')), base: base.length, shown: base.every((l) => getComputedStyle(l).visibility === 'visible'),
+      onLeaf: document.querySelectorAll('[style*="preserve-3d"] .book-light').length }; })()`);
+  check('desktop flip: the base-layer light shows while it runs, and no light is on a turning leaf', during?.flipping && during.base === 2 && during.shown && during.onLeaf === 0, during);
+  await waitFor(`!document.querySelector('[data-book-base][data-flipping]')`, 5000);
+  await sleep(200);
+  check('desktop flip: afterwards the base-layer copies are hidden again', await evaluate(`(() => { const base = [...document.querySelectorAll('[data-book-base] .book-light')];
+    return base.length === 2 && base.every((l) => getComputedStyle(l).visibility === 'hidden'); })()`));
+
   // ── AA on unlit paper, and axe ──
   for (const lighting of ['day', 'evening']) {
     for (const [where, size, page, frame] of [['desktop', D1440, 400, '#book-spread-container'], ['phone', P412, TALL, '#mobile-page']] as const) {
@@ -282,5 +331,4 @@ await run('Book lamp', async (t: any) => {
   };
   cmp('page', base, now);
   check('the page doesn\'t change (every baseline rect within 0.5 px, every entry style equal)', diffs.length === 0, diffs.slice(0, 10));
-  void send;
 });

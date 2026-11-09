@@ -1434,7 +1434,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       {bookLampOn && (
         <BookLamp phone={isMobile} light={appliedLight} sw={bookSw} onUseAuto={() => pickLighting('auto', { quick: true })}
           version={bookLightVersion} onSlow={bookLightSlow} reduced={reducedMotion}
-          focusEntry={null} turning={isFlipping || loadingPage !== null} />
+          focusEntry={null} turning={isFlipping || loadingPage !== null}
+          frameKey={isMobile ? (singleMobilePage ? 'page' : 'missing') : 'spread'} />
       )}
 
       {/* Main Reading Canvas */}

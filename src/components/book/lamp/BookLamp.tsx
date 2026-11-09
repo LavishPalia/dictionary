@@ -40,13 +40,16 @@ interface BookLampProps {
   focusEntry: string | null;
   /** A flip, riffle, page load or phone turn is running: the light holds still. */
   turning: boolean;
+  /** Changes whenever the frame element is replaced (a phone shows "Page not available" with no #mobile-page, then a
+   *  page again), so the controller is made again on the live frame instead of staying on a detached one. */
+  frameKey: string;
 }
 
 /**
  * The lamp on the Book page: the filter, the desk around the book, the live region and the one-time note. It owns the
  * light's controller, which finds the frame, the desk and #book-spot by id. Mounted only while the open book shows.
  */
-export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced, focusEntry, turning }: BookLampProps) {
+export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced, focusEntry, turning, frameKey }: BookLampProps) {
   const ctl = useRef<BookLight | null>(null);
   const turningRef = useRef(turning);
   turningRef.current = turning;
@@ -71,7 +74,7 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
     ro.observe(desk);
     window.addEventListener('resize', refresh);
     return () => { ro.disconnect(); window.removeEventListener('resize', refresh); c.destroy(); ctl.current = null; };
-  }, [phone, version, reduced]);
+  }, [phone, version, reduced, frameKey]);
 
   useEffect(() => { ctl.current?.hold(turning); }, [turning]);
 
