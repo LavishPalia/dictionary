@@ -1,6 +1,6 @@
 // Checks the desk scene's pure parts (src/lib/desk.ts): the lamp's geometry and what a device remembers.
 // Usage: npx tsx scripts/test-desk.ts
-import { aimToScene, BOOK_DEFAULT_AIM, BOOK_REACH, bookLampFits, clampScene, DEFAULT_AIM, lampGeometry, parseDesk, PHONE_POOL, sceneToAim, SCENE_H, SCENE_W, TODAY_REACH, type LampReach } from '../src/lib/desk';
+import { aimToScene, BOOK_DEFAULT_AIM, BOOK_HEAD_MIN, BOOK_REACH, bookLampFits, fitBookReach, shadeBox, shadeReachBox, clampScene, DEFAULT_AIM, lampGeometry, parseDesk, PHONE_POOL, sceneToAim, SCENE_H, SCENE_W, TODAY_REACH, type LampReach } from '../src/lib/desk';
 
 let checks = 0, failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -62,6 +62,29 @@ const bad = aims.map((t) => ({ t, b: shadeOf(t) })).filter(({ b }) => hits(b, SP
 check('the Book lamp’s shade stays off the spread and the left arrow at every corner', Boolean(BOOK_REACH) && bad.length === 0, bad);
 const g0 = BOOK_REACH && lampGeometry({ x: 280, y: 179 }, BOOK_REACH);
 check('the Book lamp’s light comes from the left of the spread and slants down-right', Boolean(g0) && g0.px < 0 && g0.mx < 0 && g0.ang > 0 && g0.ang < Math.PI / 2, g0);
+
+// ── fitting the Book lamp to the gutter (spread units; the cover reaches 14 units left of the spread) ──
+const within = (b: Box, r: Box) => b.left >= r.left - 0.06 && b.right <= r.right + 0.06 && b.top >= r.top - 0.06 && b.bottom <= r.bottom + 0.06;
+// Measured gutters: [name, spread scale k, the spread's left edge in px, the left arrow's top in px]; the header ends 28 px above the spread.
+for (const [name, k, left, arrowTop] of [['1440 × 900', 1, 133, 388], ['1430 × 900', 1, 128, 388], ['1400 × 900', 1, 113, 388], ['1280 × 800', 0.977, 67, 381], ['1024 × 768', 0.776, 56, 324]] as const) {
+  const free = { left: -left / k, right: -14, top: -28 / k, bottom: (arrowTop - 100) / k };
+  const f = fitBookReach(free, [8 / k, 4 / k]);
+  const u = f && shadeReachBox(1120, 640, f.reach);
+  const inset = f && { left: free.left + f.margin, right: free.right - f.margin, top: free.top + f.margin, bottom: free.bottom - f.margin };
+  check(`${name}: the lamp fits the gutter (head ${f?.scale}, margin ${f ? (f.margin * k).toFixed(0) : '-'} px)`, Boolean(f && u && inset && within(u, inset) && f.scale >= BOOK_HEAD_MIN && f.scale <= 1), { free, f, u });
+  const m = f && lampGeometry({ x: 280, y: 179.2 }, f.reach);
+  check(`${name}: its light comes from up and to the left of the resting pool`, Boolean(m && m.mx < 0 && m.my < 179.2), m);
+  if (k === 1 && left >= 128) check(`${name}: at least 8 px from the book and the header`, (f?.margin ?? 0) * k >= 8, f?.margin);
+}
+const wide = fitBookReach({ left: -373, right: -14, top: -28, bottom: 288 }, [8, 4]);
+check('a wide gutter gets the full-size head, turning freely', wide?.scale === 1 && wide.angle === null && wide.squash === 1, wide);
+check('no room at all: no lamp', fitBookReach({ left: -30, right: -14, top: -28, bottom: 288 }, [8, 4]) === null);
+const half = shadeBox({ x: 600, y: 300 }, { ...BOOK_REACH, scale: 0.5 }), full = shadeBox({ x: 600, y: 300 }, BOOK_REACH);
+check('a half-size head has a box half as big', Math.abs((half.right - half.left) * 2 - (full.right - full.left)) < 2 && Math.abs((half.bottom - half.top) * 2 - (full.bottom - full.top)) < 2, { half, full });
+const gHalf = lampGeometry({ x: 600, y: 300 }, { ...BOOK_REACH, scale: 0.5 });
+check('a half-size head has its mouth half as far from the hinge', Math.abs(Math.hypot(gHalf.mx - gHalf.px, gHalf.my - gHalf.py) - 33) < 1e-9);
+const steep = lampGeometry({ x: 1120, y: 0 }, { ...BOOK_REACH, angle: [Math.PI / 3, Math.PI] });
+check('an angle floor keeps the head steep', Math.abs(steep.ang - Math.PI / 3) < 1e-9);
 
 console.log(`\nDesk: ${checks - failures}/${checks} checks passed.`);
 if (failures) process.exit(1);

@@ -3,8 +3,9 @@
 // (#book-spread-container on desktop, #mobile-page on a phone), the darkness's centre on the desk and, on desktop, the
 // drawn lamp's head. It writes only what changed, so the filter redraws only while the light moves. On desktop the
 // lamp's shade is also handled here, as Today's is in deskLight.ts: a click switches, a drag or the arrow keys aim.
-import { BOOK_DEFAULT_AIM, BOOK_REACH, bookLampFits, lampGeometry, PHONE_POOL, readDesk, shadeReachBox, writeDesk, type Aim, type Rect } from '@/lib/desk';
+import { BOOK_DEFAULT_AIM, BOOK_REACH, bookElbow, bookLampFits, fitBookReach, lampGeometry, PHONE_POOL, readDesk, shadeReachBox, writeDesk, type Aim, type LampReach, type Rect } from '@/lib/desk';
 import { createLightLoop, EASE_GLIDE, SLOW_FRAME_MS } from '@/components/desk/lightLoop';
+import { ELBOW, headScale } from '@/components/desk/LampArt';
 
 /** The tuned light, in one place (the browser test reads it too). Frame units: spread units on desktop, px on a phone. */
 export const BOOK_LIGHT = {
@@ -26,6 +27,10 @@ export const BOOK_LIGHT = {
 const TAP_PX = 6;
 /** The arrow keys aim the light this far (spread units), or the big step with Shift. */
 const KEY_STEP = 20, KEY_STEP_BIG = 60;
+/** The book's leather cover shows this far around the spread (spread units): it is part of the book, so the lamp keeps off it. */
+const COVER = 14;
+/** The clearance the lamp keeps from the book, the header and the arrow (screen px): this much where there is room, else the smaller. */
+const MARGINS_PX = [8, 4];
 const deg = (rad: number) => (rad * 180) / Math.PI;
 
 export interface BookLight {
@@ -71,9 +76,12 @@ export function createBookLight(opts: {
   const clampFrame = (p: Aim): Aim => ({ x: Math.max(0, Math.min(size.w, p.x)), y: Math.max(0, Math.min(size.h, p.y)) });
   const toStored = (p: Aim): Aim => ({ x: Math.round((p.x / size.w) * 1000) / 1000, y: Math.round((p.y / size.h) * 1000) / 1000 });
 
+  /** The drawn lamp's reach, fitted to the gutter by fit() (its place, the head's size and how far it may turn). */
+  let reach: LampReach = BOOK_REACH;
+
   function draw(cur: Aim) {
     // The light comes from the lamp's mouth: the drawn lamp's on desktop (it turns toward the aim), a fixed one on a phone.
-    const g = phone ? null : lampGeometry(cur, BOOK_REACH);
+    const g = phone ? null : lampGeometry(cur, reach);
     const src = g ? { x: g.mx, y: g.my } : BOOK_LIGHT.source.phone;
     const spot = document.getElementById('book-spot');
     if (spot && spot.isConnected) {
@@ -85,8 +93,8 @@ export function createBookLight(opts: {
       const arm = lamp.art.querySelector('[data-lamp="arm2"]'), head = lamp.art.querySelector('[data-lamp="head"]');
       put('arm.x2', at(g.px), () => arm?.setAttribute('x2', at(g.px)));
       put('arm.y2', at(g.py), () => arm?.setAttribute('y2', at(g.py)));
-      const turn = `translate(${at(g.px)} ${at(g.py)}) rotate(${at(deg(g.ang))})`;
-      put('head', turn, () => head?.setAttribute('transform', turn));
+      const turn = `translate(${at(g.px)} ${at(g.py)}) rotate(${at(deg(g.ang))})`, scaled = turn + headScale(reach);
+      put('head', scaled, () => head?.setAttribute('transform', scaled));
       const b = lamp.button.style;
       put('hit', turn, () => { b.left = `${at(g.px)}px`; b.top = `${at(g.py)}px`; b.transform = `rotate(${at(deg(g.ang))}deg)`; });
     }
@@ -109,20 +117,49 @@ export function createBookLight(opts: {
     onMoving: (moving) => { if (moving) frame.dataset.lightMoving = 'true'; else delete frame.dataset.lightMoving; },
   });
 
-  // ── Does the lamp fit? Everywhere its shade can go (at both ends of its reach), in page px, against what it must
-  // never cover: the spread, the left page-turn arrow, the header and the page count. If not, it is hidden; the ⋯ menu
-  // still switches the light, and the pool stays at its resting aim. ──
-  const reach = shadeReachBox(size.w, size.h, BOOK_REACH);
+  // ── Fitting the lamp to the desk: the free space beside the book (from the window's left edge to the book's cover, under
+  // the header, above the left page-turn arrow) sets where the hinge goes, how big the head is and how far it may turn
+  // (fitBookReach). Where even the smallest head doesn't fit, the lamp is hidden: the ⋯ menu still switches the light, and
+  // the pool stays at its resting aim. Run on creation and on every refresh (resize, scale change). ──
+  let fitKey = '';
+  function applyReach() {
+    if (!lamp) return;
+    const s = reach.scale ?? 1, el = bookElbow(reach);
+    const arm = lamp.art.querySelector('[data-lamp="arm2"]'), lower = lamp.art.querySelector('[data-lamp="lower"]');
+    arm?.setAttribute('x1', el.x.toFixed(2)); arm?.setAttribute('y1', el.y.toFixed(2)); arm?.setAttribute('stroke-width', (7 * s).toFixed(2));
+    lower?.setAttribute('transform', `translate(${(el.x - ELBOW.x).toFixed(2)} ${(el.y - ELBOW.y).toFixed(2)})`);
+    lamp.button.style.setProperty('--lamp-s', String(s));
+    lamp.button.style.setProperty('--lamp-q', String(reach.squash ?? 1));
+  }
   function fit() {
     if (!lamp) return;
-    const sx = window.scrollX, sy = window.scrollY;
-    const page = (r: DOMRect): Rect => ({ left: r.left + sx, top: r.top + sy, right: r.right + sx, bottom: r.bottom + sy });
     const f = frame.getBoundingClientRect(), k = f.width / size.w || 1;
-    const box: Rect = { left: f.left + sx + reach.left * k, top: f.top + sy + reach.top * k, right: f.left + sx + reach.right * k, bottom: f.top + sy + reach.bottom * k };
-    const avoid = [frame, frame.querySelector('button[aria-label="Previous spread"]'), document.querySelector('.app-header'), document.getElementById('page-number-btn')]
-      .filter((el): el is Element => Boolean(el)).map((el) => page(el.getBoundingClientRect()));
-    const root = document.documentElement;
-    const fits = bookLampFits(box, avoid, { w: root.clientWidth, h: Math.max(root.scrollHeight, window.innerHeight) });
+    const R = (el: Element | null) => (el ? el.getBoundingClientRect() : null);
+    const arrow = R(frame.querySelector('button[aria-label="Previous spread"]')), header = R(document.querySelector('.app-header')), count = R(document.getElementById('page-number-btn'));
+    const root = document.documentElement, sx = window.scrollX, sy = window.scrollY;
+    // In spread units: the page's left edge, the cover, the header's bottom, the arrow's top (all from viewport px).
+    const u = (x: number) => (x - f.left) / k, v = (y: number) => (y - f.top) / k;
+    const free: Rect = {
+      left: u(-sx), right: -COVER,
+      top: v(header ? header.bottom : -sy),
+      bottom: v(Math.min(arrow ? arrow.top : Infinity, count ? count.top : Infinity, root.scrollHeight - sy)),
+    };
+    const key = [free.left, free.top, free.bottom, k].map((n) => n.toFixed(2)).join(' ');
+    if (key === fitKey) return;
+    fitKey = key;
+    const found = fitBookReach(free, MARGINS_PX.map((m) => m / k), size.w, size.h);
+    let fits = false;
+    if (found) {
+      // Check the result against what it must never cover, in page px (as a guard; fitBookReach placed it clear of them).
+      const box = shadeReachBox(size.w, size.h, found.reach);
+      const pg = (r: DOMRect): Rect => ({ left: r.left + sx, top: r.top + sy, right: r.right + sx, bottom: r.bottom + sy });
+      const c = COVER * k;
+      const avoid: Rect[] = [{ left: f.left + sx - c, top: f.top + sy - c, right: f.right + sx + c, bottom: f.bottom + sy + c },
+        ...[arrow, header, count].filter((r): r is DOMRect => Boolean(r)).map(pg)];
+      fits = bookLampFits({ left: f.left + sx + box.left * k, top: f.top + sy + box.top * k, right: f.left + sx + box.right * k, bottom: f.top + sy + box.bottom * k },
+        avoid, { w: root.clientWidth, h: Math.max(root.scrollHeight, window.innerHeight) });
+      if (fits) { reach = found.reach; applyReach(); }
+    }
     lamp.art.toggleAttribute('hidden', !fits);
     lamp.button.toggleAttribute('hidden', !fits);
   }
@@ -184,8 +221,8 @@ export function createBookLight(opts: {
     window.addEventListener('pointercancel', cancel);
   }
 
+  fit(); // first, so the first drawing is of the fitted lamp
   loop.jump(restAim());
-  fit();
 
   return {
     glideTo(t) {

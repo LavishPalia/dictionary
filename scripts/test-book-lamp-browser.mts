@@ -359,12 +359,17 @@ await run('Book lamp', async (t: any) => {
     return [...seen].filter(([, n]) => n > 1).map(([id]) => id); })()`);
   const watchErrors = () => evaluate(`(() => { window.__errs = []; addEventListener('error', (e) => window.__errs.push(String(e.message)));
     const ce = console.error; console.error = (...a) => { window.__errs.push(String(a[0]).slice(0, 200)); ce.apply(console, a); }; return true; })()`);
-  // The shade's box against what it must never cover (viewport px).
-  const clearOfAll = () => evaluate(`(() => { const R = (el) => el && el.getBoundingClientRect(); const lamp = R(document.querySelector('#book-lamp'));
-    const avoid = { spread: R(document.querySelector('#book-spread-container')), arrow: R(document.querySelector('button[aria-label="Previous spread"]')),
-      header: R(document.querySelector('.app-header')), count: R(document.querySelector('#page-number-btn')) };
-    const hit = Object.entries(avoid).filter(([, a]) => a && lamp.left <= a.right && lamp.right >= a.left && lamp.top <= a.bottom && lamp.bottom >= a.top).map(([k]) => k);
-    return { hit, lamp: [lamp.left, lamp.top, lamp.right, lamp.bottom].map(Math.round) }; })()`);
+  // The shade's real box (its drawn head: shade, rim, glow and hinge) against what it must never cover, in viewport px:
+  // the spread, its leather cover (14 units round it), the left arrow, the header and the page count. `gap` is the
+  // smallest clearance to any of them (negative or 0 = touching).
+  const clearOfAll = () => evaluate(`(() => { const R = (el) => el && el.getBoundingClientRect(); const lamp = R(document.querySelector('.book-lamp-art [data-lamp="head"]'));
+    const sp = R(document.querySelector('#book-spread-container')), c = 14 * sp.width / 1120;
+    const avoid = { spread: sp, cover: { left: sp.left - c, top: sp.top - c, right: sp.right + c, bottom: sp.bottom + c },
+      arrow: R(document.querySelector('button[aria-label="Previous spread"]')), header: R(document.querySelector('.app-header')), count: R(document.querySelector('#page-number-btn')) };
+    const sep = (a) => Math.max(a.left - lamp.right, lamp.left - a.right, a.top - lamp.bottom, lamp.top - a.bottom);
+    const gaps = Object.fromEntries(Object.entries(avoid).filter(([, a]) => a).map(([k, a]) => [k, +sep(a).toFixed(1)]));
+    return { hit: Object.keys(gaps).filter((k) => gaps[k] <= 0), gap: Math.min(...Object.values(gaps)), gaps, inView: lamp.left >= 0 && lamp.top >= 0,
+      lamp: [lamp.left, lamp.top, lamp.right, lamp.bottom].map(Math.round), s: getComputedStyle(document.querySelector('#book-lamp')).getPropertyValue('--lamp-s').trim() }; })()`);
   const LAMP_B = { noted: true, light: 'B' };
 
   await load(D1440, 400, 'evening', LAMP_B);
@@ -485,35 +490,53 @@ await run('Book lamp', async (t: any) => {
   check('a mouse drag across two entries still selects text', typeof picked === 'string' && picked.trim().length > 10, picked);
   await evaluate(`getSelection().removeAllRanges(); true`);
 
-  // Review Focus 3: where the lamp fits.
+  // Review Focus 3: the lamp is fitted to the space from 1024 px up, clear of the book, its cover, the left arrow, the header
+  // and the page count wherever it is aimed (the default aim and the spread's four corners); 8 px clear at 1430 and 1440.
+  const settle = () => waitFor(`!document.querySelector('#book-spread-container').dataset.lightMoving`, 8000);
+  for (const [w, h] of [[1024, 768], [1280, 800], [1366, 768], [1400, 900], [1430, 900], [1440, 900], [1920, 1080]]) {
+    await load({ width: w, height: h, mobile: false }, 400, 'evening', { noted: true, light: 'A' });
+    const shown = await lampShown();
+    const seen: any[] = [];
+    if (shown) {
+      await evaluate(`document.querySelector('#book-lamp').focus(); true`);
+      await press('Home', 'Home', 36); await settle(); seen.push({ at: 'rest', ...(await clearOfAll()) });
+      for (const [tx, ty, at] of [[1, 1, 'top left'], [w - 2, 1, 'top right'], [1, h - 2, 'bottom left'], [w - 2, h - 2, 'bottom right']] as const) {
+        const c = await center('#book-lamp');
+        await dragAt(c.x, c.y, tx - c.x, ty - c.y);
+        await settle();
+        seen.push({ at, aim: (await deskStore())?.bookAim, ...(await clearOfAll()) });
+      }
+    }
+    const worst = seen.reduce((m, x) => Math.min(m, x.gap), Infinity);
+    const need = w >= 1430 ? 8 : 0;
+    console.log(`  ${w} × ${h}: head scale ${seen[0]?.s || '-'}, smallest clearance ${worst.toFixed(1)} px`);
+    check(`${w} × ${h}: the lamp shows, its shade clear of the spread, cover, arrow, header and page count at every aim${need ? ' by 8 px or more' : ''}`,
+      shown && seen.length === 5 && seen.every((x) => x.hit.length === 0 && x.inView && (need ? x.gap >= need : x.gap > 0)), seen.map((x) => ({ at: x.at, gap: x.gap, hit: x.hit, lamp: x.lamp, s: x.s })));
+  }
   await load(D1440, 400, 'evening', { ...LAMP_B, bookAim: { x: 0.4, y: 0.5 } });
   await watchErrors();
-  const clear1440 = await clearOfAll();
-  check('1440 × 900: the lamp shows, clear of the spread, the arrow, the header and the page count', (await lampShown()) && clear1440.hit.length === 0, clear1440);
   await setSize({ width: 1100, height: 800, mobile: false });
   await sleep(500);
-  const at1100 = (await lampShown()) ? await clearOfAll() : null;
-  check('1100 × 800: the lamp is hidden or still clear', at1100 === null || at1100.hit.length === 0, at1100);
+  const at1100 = await clearOfAll();
+  check('1440 → 1100: the lamp refits (smaller head) and stays clear', (await lampShown()) && at1100.hit.length === 0 && Number(at1100.s) < 1, at1100);
   await setSize(D1440);
   await sleep(500);
   check('1440 → 1100 → 1440: the lamp comes back, bookAim kept, no console errors', (await lampShown()) && JSON.stringify((await deskStore())?.bookAim) === JSON.stringify({ x: 0.4, y: 0.5 })
-    && (await evaluate(`window.__errs.length`)) === 0, await evaluate(`window.__errs`));
+    && (await evaluate(`window.__errs.length`)) === 0 && (await clearOfAll()).gap >= 8, await evaluate(`window.__errs`));
   await setSize({ width: 800, height: 900, mobile: false });
   check('1440 → 800: the phone page, no lamp', await waitFor(`Boolean(document.querySelector('#mobile-page')) && !document.querySelector('#book-lamp, .book-lamp-art')`, 5000));
   await setSize(D1440);
   check('800 → 1440: the spread and the lamp come back cleanly', await waitFor(`Boolean(document.querySelector('#book-spread-container')) && Boolean(document.querySelector('#book-lamp'))`, 5000)
     && (await lampShown()) && (await evaluate(`window.__errs.length`)) === 0 && (await dupIds()).length === 0, { errs: await evaluate(`window.__errs`), dup: await dupIds() });
   await sleep(600);
-  await waitFor(`!document.querySelector('#book-spread-container').dataset.lightMoving`, 8000);
+  await settle();
   const back = await spot();
   check('800 → 1440: the light rests at the stored aim', near(back.x, 0.4 * SPREAD.w) && near(back.y, 0.5 * SPREAD.h), back);
-  await load({ width: 1024, height: 768, mobile: false }, 400, 'evening', LAMP_B);
-  const at1024 = (await lampShown()) ? await clearOfAll() : null;
-  check('1024 × 768: the lamp is hidden or still clear of everything', at1024 === null || at1024.hit.length === 0, at1024);
-  if (at1024 === null) {
-    const s = await spot();
-    check('1024 × 768: the hidden lamp leaves the light at its resting aim', near(s.x, BOOK_DEFAULT_AIM.x * SPREAD.w) && near(s.y, BOOK_DEFAULT_AIM.y * SPREAD.h), s);
-  }
+  check('the light comes from the shade’s mouth (the spotlight’s source is inside the drawn head)', await evaluate(`(() => { const s = document.querySelector('#book-spot');
+    const sp = document.querySelector('#book-spread-container').getBoundingClientRect(), k = sp.width / 1120;
+    const x = sp.left + Number(s.getAttribute('x')) * k, y = sp.top + Number(s.getAttribute('y')) * k;
+    const h = document.querySelector('.book-lamp-art [data-lamp="head"]').getBoundingClientRect();
+    return x >= h.left && x <= h.right && y >= h.top && y <= h.bottom; })()`));
 
   // No lamp over the cover.
   await load(D1440, 400, 'evening', LAMP_B);

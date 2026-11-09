@@ -1,16 +1,16 @@
 'use client';
 
 import type { Light } from '@/lib/lighting';
-import { BOOK_DEFAULT_AIM, BOOK_REACH } from '@/lib/desk';
+import { BOOK_DEFAULT_AIM, BOOK_REACH, bookElbow } from '@/lib/desk';
 import { LampArt, lampLabel, shadeHitStyle } from '@/components/desk/LampArt';
 
 /** The spread's own size: the lamp is drawn in its units, beside it. */
 const W = 1120, H = 640;
 /** The part of the desk the art covers (spread units): the gutter left of the spread, up past the top of the screen. */
-const VIEW = { x: -320, y: -640, w: 320, h: 800 };
-/** The elbow, far up and to the left, so the base and the lower arm are off the top of the screen and only the upper
- *  arm, the hinge and the shade lean in (the arm stays left of the header). */
-const ELBOW_AT = { x: -240, y: -560 };
+const VIEW = { x: -700, y: -800, w: 700, h: 1000 };
+/** The elbow (bookLight.ts moves it with the fitted reach): far up and to the left, so the base and the lower arm are off
+ *  the top of the screen and only the upper arm, the hinge and the shade lean in (the arm stays left of the header). */
+const ELBOW_AT = bookElbow(BOOK_REACH);
 // Drawn for the resting aim; bookLight.ts moves the head and the button to the stored aim before the first paint.
 const AT = { x: BOOK_DEFAULT_AIM.x * W, y: BOOK_DEFAULT_AIM.y * H };
 const ART_STYLE = { left: VIEW.x, top: VIEW.y };
@@ -19,7 +19,8 @@ const HIT_STYLE = shadeHitStyle(AT, BOOK_REACH);
 /**
  * The desk lamp on the Book page (desktop): it leans in from the top-left corner of the desk, beside the spread. Its
  * shade is the switch, and dragging it aims the light (bookLight.ts). A second child of ScaledSpread, so it is drawn in
- * the spread's units and shrinks with it. bookLight.ts hides it (the `hidden` attribute) where it doesn't fit.
+ * the spread's units and shrinks with it. bookLight.ts fits it to the gutter beside the book (its place, its head's size and
+ * how far it turns) and hides it (the `hidden` attribute) only where even the smallest head doesn't fit.
  */
 export function BookLampArt({ light, onToggle }: { light: Light; onToggle: () => void }) {
   return (

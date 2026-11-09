@@ -43,10 +43,10 @@ export function LampArt({ target, reach = TODAY_REACH, idPrefix, viewBox = '0 0 
           <stop offset="0" stopColor="#000" stopOpacity=".55" /><stop offset="1" stopColor="#000" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {dx || dy ? <g transform={`translate(${dx} ${dy})`}><LowerLamp url={url} /></g> : <LowerLamp url={url} />}
+      {dx || dy ? <g data-lamp="lower" transform={`translate(${dx} ${dy})`}><LowerLamp url={url} /></g> : <LowerLamp url={url} />}
       {/* arm 2, out to the shade's hinge */}
       <line data-lamp="arm2" x1={elbow.x} y1={elbow.y} x2={g.px} y2={g.py} stroke={url('brass')} strokeWidth="7" strokeLinecap="round" />
-      <g data-lamp="head" transform={`translate(${g.px} ${g.py}) rotate(${deg(g.ang)})`}>
+      <g data-lamp="head" transform={`translate(${g.px} ${g.py}) rotate(${deg(g.ang)})${headScale(reach)}`}>
         <g className="desk-lamp-nudge">
           {/* the shade, drawn pointing along +x */}
           <path d="M-6 -15 Q4 -24 22 -26 L66 -38 Q74 0 66 38 L22 26 Q4 24 -6 15 Z" fill={url('shade')} stroke="#0a1a10" strokeWidth="1.2" />
@@ -87,8 +87,12 @@ function LowerLamp({ url }: { url: (name: string) => string }) {
   );
 }
 
-/** Where the shade's button sits for `target` (scene units), as inline style. */
+/** The head's scale as a transform suffix (none for a head drawn at its own size, as on Today). */
+export const headScale = (reach: LampReach) => (reach.scale === undefined && reach.squash === undefined ? '' : ` scale(${reach.scale ?? 1} ${(reach.scale ?? 1) * (reach.squash ?? 1)})`);
+
+/** Where the shade's button sits for `target` (scene units), as inline style; a scaled head also sets --lamp-s / --lamp-q (its size). */
 export function shadeHitStyle(target: Aim, reach: LampReach = TODAY_REACH): React.CSSProperties {
   const g = lampGeometry(target, reach);
-  return { left: g.px, top: g.py, transform: `rotate(${deg(g.ang)}deg)` };
+  const size = reach.scale === undefined && reach.squash === undefined ? {} : { '--lamp-s': reach.scale ?? 1, '--lamp-q': reach.squash ?? 1 };
+  return { left: g.px, top: g.py, transform: `rotate(${deg(g.ang)}deg)`, ...size } as React.CSSProperties;
 }

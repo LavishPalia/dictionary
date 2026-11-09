@@ -48,11 +48,15 @@ html[data-light="evening"] .book-light { opacity: 1; visibility: visible; }
 
 /* ── The desk lamp (desktop): drawn in the spread's units beside it, leaning in from the top-left ── */
 /* The art never takes a pointer; the shade's button (placed and turned by bookLight.ts, as on Today) is the switch.
-   Its box is a little smaller than Today's, so it stays in the gutter and off the spread at every angle. */
+   Its box is a little smaller than Today's, so it stays in the gutter, and it shrinks with the head: --lamp-s is the
+   head's scale and --lamp-q its mouth's squash (bookLight.ts sets both to fit the gutter). */
 .book-lamp-art { position: absolute; z-index: 3; pointer-events: none; }
 .book-lamp-hit {
-  position: absolute; z-index: 4; width: 86px; height: 80px; margin: -40px 0 0 -10px; transform-origin: 10px 40px;
-  padding: 0; border: 0; border-radius: 22px; background: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+  /* never smaller than 40 × 34 (at least 24 px on screen at 1024 px, where the spread's scale is 0.776) */
+  --s: var(--lamp-s, 1); --w: max(calc(86px * var(--s)), 40px); --h: max(calc(80px * var(--s) * var(--lamp-q, 1)), 34px);
+  position: absolute; z-index: 4; width: var(--w); height: var(--h);
+  margin: calc(var(--h) / -2) 0 0 calc(-10px * var(--s)); transform-origin: calc(10px * var(--s)) calc(var(--h) / 2);
+  padding: 0; border: 0; border-radius: calc(22px * var(--s)); background: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .book-lamp-hit:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: 0; }
 /* Where it doesn't fit, bookLight.ts sets `hidden` on both (an SVG ignores the attribute without this). */

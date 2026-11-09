@@ -76,6 +76,11 @@ export interface LampReach {
   /** The pivot when the target is at `origin`. */
   rest: Aim; origin: Aim;
   lean: number; leanY: number;
+  /** The head's size (1 = as drawn on Today), and how wide its mouth is as a share of that (1 = as drawn). The Book page
+   *  shrinks the head to fit narrow gutters, and narrows the mouth when shrinking alone isn't enough. */
+  scale?: number; squash?: number;
+  /** The head's angle is kept within this range (radians): on a narrow gutter it can't turn flat toward the far right. */
+  angle?: [number, number];
 }
 
 /** Today's lamp: the pivot stays within x 130-205 and y 45-100, so the shade (74 units long) never covers the book's text (its cloth starts at x 288). */
@@ -85,8 +90,10 @@ export const TODAY_REACH: LampReach = { x: [130, 205], y: [45, 100], rest: { x: 
 export function lampGeometry(t: Aim, reach: LampReach = TODAY_REACH): LampGeometry {
   const px = Math.max(reach.x[0], Math.min(reach.x[1], reach.rest.x + (t.x - reach.origin.x) * reach.lean));
   const py = Math.max(reach.y[0], Math.min(reach.y[1], reach.rest.y + (t.y - reach.origin.y) * reach.leanY));
-  const ang = Math.atan2(t.y - py, t.x - px);
-  const mx = px + Math.cos(ang) * 66, my = py + Math.sin(ang) * 66;
+  const free = Math.atan2(t.y - py, t.x - px);
+  const ang = reach.angle ? Math.max(reach.angle[0], Math.min(reach.angle[1], free)) : free;
+  const mouth = 66 * (reach.scale ?? 1);
+  const mx = px + Math.cos(ang) * mouth, my = py + Math.sin(ang) * mouth;
   const r = Math.max(90, Math.hypot(t.x - mx, t.y - my) * 0.55);
   return { px, py, ang, mx, my, r };
 }
@@ -108,12 +115,14 @@ export function bookLampFits(lamp: Rect, avoid: Rect[], view: { w: number; h: nu
  */
 export const BOOK_REACH: LampReach = { x: [-91, -89], y: [40, 62], rest: { x: -90, y: 50 }, origin: { x: 560, y: 320 }, lean: 0.004, leanY: 0.04 };
 
-/** The shade's box for a target (the shade runs from just behind its hinge, `back` units, to 74 units along it, ± 38 across). */
+/** The shade's box for a target, as drawn: from just behind its hinge (`back` units) to its rim, 75 units along it, and
+ *  ± 40 across (the mouth is ± 38, plus its rim's stroke); all times the head's scale, and across also times its squash. */
 export function shadeBox(t: Aim, reach: LampReach, back = 8): Rect {
   const g = lampGeometry(t, reach);
   const c = Math.cos(g.ang), s = Math.sin(g.ang);
+  const k1 = reach.scale ?? 1, w = 40 * k1 * (reach.squash ?? 1);
   const xs: number[] = [], ys: number[] = [];
-  for (const a of [-back, 74]) for (const k of [-38, 38]) { xs.push(g.px + a * c - k * s); ys.push(g.py + a * s + k * c); }
+  for (const a of [-back * k1, 75 * k1]) for (const k of [-w, w]) { xs.push(g.px + a * c - k * s); ys.push(g.py + a * s + k * c); }
   return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
 }
 
@@ -126,4 +135,63 @@ export function shadeReachBox(w: number, h: number, reach: LampReach, steps = 8)
     out.right = Math.max(out.right, b.right); out.bottom = Math.max(out.bottom, b.bottom);
   }
   return out;
+}
+
+/** The smallest head the Book page draws; below it the lamp is hidden. */
+export const BOOK_HEAD_MIN = 0.5;
+/** Where the lamp's elbow is, for a reach: far up and to the left of the hinge, so the base and the lower arm are off the
+ *  top of the screen and the upper arm leaves the screen left of the header. */
+export const bookElbow = (r: LampReach): Aim => ({ x: r.rest.x - 360, y: r.rest.y - 480 });
+
+/** The Book lamp's reach for a head of scale `s` (mouth squash `q`, angle floor `a0`), with its pivot near (x, y). */
+function bookReachAt(x: number, y: number, s: number, q: number, a0: number | null): LampReach {
+  return { x: [x - s, x + s], y: [y, y + 22 * s], rest: { x, y: y + 11 * s }, origin: { x: 560, y: 320 }, lean: 0.004, leanY: 0.04,
+    scale: s, squash: q, ...(a0 === null ? {} : { angle: [a0, Math.PI] as [number, number] }) };
+}
+
+/** The reach placed as high and as close to the book as `free` allows (its shade box's top-right at free's top-right), or null. */
+function placeIn(free: Rect, w: number, h: number, s: number, q: number, a0: number | null): LampReach | null {
+  let x = free.right - 90 * s, y = free.top + 40 * s;
+  for (let i = 0; i < 30; i++) { // the angles change a little as the pivot moves, so settle it
+    const u = shadeReachBox(w, h, bookReachAt(x, y, s, q, a0));
+    const dx = free.right - u.right, dy = free.top - u.top;
+    x += dx; y += dy;
+    if (Math.abs(dx) < 0.02 && Math.abs(dy) < 0.02) break;
+  }
+  const r = bookReachAt(x, y, s, q, a0), u = shadeReachBox(w, h, r);
+  const e = 0.05;
+  return u.left >= free.left - e && u.right <= free.right + e && u.top >= free.top - e && u.bottom <= free.bottom + e ? r : null;
+}
+
+export interface BookLampFit { reach: LampReach; scale: number; squash: number; angle: number | null; margin: number }
+
+/**
+ * Fits the Book page's lamp into the free desk beside the spread (`free`, in spread units: from the window's left edge to
+ * the book's cover, under the header, above the left arrow). In order of preference, each with the larger margin first:
+ * the full head, shrunk as needed down to BOOK_HEAD_MIN; then the smallest head with its angle kept as little steeper as
+ * will do (it can't turn flat toward the far right), with a narrower mouth where that keeps it less steep. null when even that doesn't fit: the lamp is hidden.
+ */
+export function fitBookReach(free: Rect, margins: number[], w = 1120, h = 640): BookLampFit | null {
+  const inset = (m: number): Rect => ({ left: free.left + m, top: free.top + m, right: free.right - m, bottom: free.bottom - m });
+  // The largest head that fits (in steps of 0.02), with the larger margin if it allows the same head.
+  for (const m of margins) {
+    const at = (s: number) => placeIn(inset(m), w, h, s, 1, null);
+    if (!at(BOOK_HEAD_MIN)) continue;
+    let lo = BOOK_HEAD_MIN, hi = 1;
+    if (!at(1)) { while (hi - lo > 0.02 + 1e-9) { const mid = Math.round(((lo + hi) / 2) * 100) / 100; if (at(mid)) lo = mid; else hi = mid; } } else lo = 1;
+    const best = Math.floor(lo * 50) / 50;
+    const other = margins.find((m2) => m2 !== m && m2 > m && placeIn(inset(m2), w, h, best, 1, null));
+    if (other === undefined) return { reach: at(best)!, scale: best, squash: 1, angle: null, margin: m };
+    return { reach: placeIn(inset(other), w, h, best, 1, null)!, scale: best, squash: 1, angle: null, margin: other };
+  }
+  for (let deg = 0; deg <= 80; deg += 5) {
+    const a0 = (deg * Math.PI) / 180;
+    for (const q of [1, 0.7]) {
+      for (const m of margins) {
+        const r = placeIn(inset(m), w, h, BOOK_HEAD_MIN, q, a0);
+        if (r) return { reach: r, scale: BOOK_HEAD_MIN, squash: q, angle: a0, margin: m };
+      }
+    }
+  }
+  return null;
 }
