@@ -100,17 +100,17 @@ export function loadBookplate(): Bookplate | null {
   return readBookplate(readSettings());
 }
 
-/** Saves the plate (and ends the offer), or removes it with null. */
+/** Saves the plate, or removes it with null. Either way the Today offer has had its answer. */
 export function storeBookplate(plate: Bookplate | null): void {
   writeSettings((s) => {
     if (plate) {
       const name = cleanName(plate.name);
       if (!name) return;
       s.bookplate = { name, emblem: isEmblem(plate.emblem) ? plate.emblem : DEFAULT_EMBLEM, share: plate.share === true };
-      s.bookplateOffer = 'done';
     } else {
       delete s.bookplate;
     }
+    s.bookplateOffer = 'done';
   });
 }
 

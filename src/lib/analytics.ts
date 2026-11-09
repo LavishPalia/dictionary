@@ -234,6 +234,8 @@ export function setUsageCounts(on: boolean): void {
     posthog?.opt_out_capturing();
     return;
   }
+  // A share tick can't be set while counting is off: one stored as ticked is stale, and must not send the name now.
+  unshareBookplate();
   if (!allowed()) return;
   if (posthog) { posthog.opt_in_capturing({ captureEventName: false }); return; }
   if (started) {

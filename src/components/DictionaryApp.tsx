@@ -122,6 +122,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [bookplate, setBookplate] = useState<Bookplate | null>(null);
   const [bookplateLoaded, setBookplateLoaded] = useState(false);
   const [showBookplate, setShowBookplate] = useState(false);
+  // The control that opened the sheet (the offer's button, or the ⋯ button behind the menu's chip) gets focus back.
+  const bookplateOpenerRef = useRef<string>('menu-btn');
+  const openBookplate = (opener: string) => { bookplateOpenerRef.current = opener; setShowBookplate(true); };
   useEffect(() => { setBookplate(loadBookplate()); setBookplateLoaded(true); }, []);
   const changeUsageCounts = (on: boolean) => { setUsageCounts(on); setUsageCountsState(on); setBookplate(loadBookplate()); };
   const saveBookplate = (plate: Bookplate) => {
@@ -1587,7 +1590,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onOpenHistory={() => openSaved('history')}
           bookplate={bookplate}
           offerBookplate={bookplateOffer}
-          onWriteBookplate={() => setShowBookplate(true)}
+          onWriteBookplate={() => openBookplate('bookplate-write')}
           onDismissBookplate={() => { endBookplateOffer(); setBookplateOffer(false); }}
         />
       )}
@@ -1701,7 +1704,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         usageCountsBlocked={countingBlocked}
         onUsageCountsChange={changeUsageCounts}
         bookplate={bookplate}
-        onOpenBookplate={() => setShowBookplate(true)}
+        onOpenBookplate={() => openBookplate('menu-btn')}
       />
 
       <BookplateSheet
@@ -1711,7 +1714,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         onSave={saveBookplate}
         onRemove={removeBookplate}
         onClose={() => setShowBookplate(false)}
-        returnFocusTo={() => document.getElementById('bookplate-write') ?? document.getElementById('menu-btn')}
+        returnFocusTo={() => document.getElementById(bookplateOpenerRef.current) ?? document.getElementById('menu-btn')}
       />
 
       <ToursSheet

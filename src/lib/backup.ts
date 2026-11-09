@@ -152,7 +152,8 @@ function mergeTours(current: unknown, backup: unknown): ToursLike {
 function mergeSettings(current: unknown, backup: unknown): unknown {
   const here = (current ?? backup ?? {}) as Record<string, unknown>;
   const theirs = (backup as { bookplate?: unknown } | undefined)?.bookplate;
-  if (!current || here.bookplate || !theirs || typeof theirs !== 'object') return here;
+  // This device has its own plate (or the backup has none): nothing to bring.
+  if ((current && here.bookplate) || !theirs || typeof theirs !== 'object') return here;
   return { ...here, bookplate: { ...theirs, share: false } };
 }
 
@@ -178,11 +179,12 @@ export function restoreData(
     out.panna_history = b.panna_history ?? foldRecent(b.panna_recent_searches, madeAt);
     // Usage counts switched off on this device stay off: an older backup must not turn counting back on.
     const here = current.panna_settings as { analytics?: unknown } | undefined;
-    if (here?.analytics === false) {
-      out.panna_settings = { ...(out.panna_settings as object), analytics: false };
-      // …and with counting off, a restored bookplate keeps its name but isn't shared (the box is unticked).
-      const plate = (out.panna_settings as { bookplate?: unknown }).bookplate;
-      if (plate && typeof plate === 'object') (out.panna_settings as Record<string, unknown>).bookplate = { ...plate, share: false };
+    if (here?.analytics === false) out.panna_settings = { ...(out.panna_settings as object), analytics: false };
+    // With counting off (on this device, or in the backup), a restored bookplate keeps its name but isn't shared: the
+    // box shows unticked then, and switching counting back on must not send the name by itself.
+    const settings = out.panna_settings as Record<string, unknown>;
+    if (settings.analytics === false && settings.bookplate && typeof settings.bookplate === 'object') {
+      out.panna_settings = { ...settings, bookplate: { ...(settings.bookplate as object), share: false } };
     }
     // A file with no anchors leaves none: the app makes them when it next opens, and an empty list would crash it.
     if (b.panna_mark_anchors) out.panna_mark_anchors = b.panna_mark_anchors;

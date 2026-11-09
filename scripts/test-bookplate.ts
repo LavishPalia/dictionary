@@ -72,8 +72,13 @@ if (file.ok) {
   check('merge onto a device with no plate: the plate comes, unshared, and this device keeps its settings', eq(readBookplate(merged), { name: 'रिया', emblem: 'initial', share: false }) && merged.lighting === 'day', merged);
   const mine = restoreData(empty({ bookplate: { name: 'Ankit', emblem: 'owl', share: false } }), file.backup, 'merge', book).panna_settings;
   check('merge keeps this device\'s own plate', readBookplate(mine)?.name === 'Ankit', mine);
-  const fresh = restoreData({} as BackupData, file.backup, 'merge', book).panna_settings;
-  check('merge onto a device with no settings at all takes the backup\'s, as before', eq(fresh, phone.panna_settings), fresh);
+  const fresh = restoreData({} as BackupData, file.backup, 'merge', book).panna_settings as Record<string, unknown>;
+  check('merge onto a device with no settings at all takes the backup\'s, with the plate unshared', fresh.lighting === 'evening' && eq(readBookplate(fresh), { name: 'रिया', emblem: 'initial', share: false }), fresh);
+  const offInFile = parseBackup(JSON.stringify(createBackup(empty({ analytics: false, bookplate: { name: 'Riya', emblem: 'owl', share: true } }), 'v1', new Date(2026, 10, 9))));
+  if (offInFile.ok) {
+    const out = restoreData(empty({}), offInFile.backup, 'replace', book).panna_settings as Record<string, unknown>;
+    check('replace from a backup made with Usage counts off: the plate comes unshared', out.analytics === false && readBookplate(out)?.share === false, out);
+  } else check('a backup made with counts off reads back', false, offInFile);
 }
 
 console.log(`\n${checks - failures}/${checks} checks passed`);
