@@ -170,6 +170,10 @@ async function main() {
     check('the profile gets a nickname like "Indigo Owl 3f2", also as its name', /^[A-Z][a-z]+ [A-Z][a-z]+ [0-9a-z]{3}$/.test(nick ?? '') && sets.some((s) => s.name === nick), sets);
     const distinct = events().find((e) => e.properties?.distinct_id)?.properties?.distinct_id ?? '';
     check('the nickname\'s tag is the device ID\'s last 3 characters', nick?.endsWith(distinct.replace(/[^0-9a-z]/gi, '').slice(-3).toLowerCase()), { nick, distinct });
+    const opening = events()[0];
+    check('the open\'s first event (a page view) carries the nickname and the profile, so the person is named from it',
+      opening?.event === '$pageview' && opening?.$set?.nickname === nick && 'saved_words' in (opening?.$set ?? {}), { event: opening?.event, $set: opening?.$set });
+    check('…and no separate "Set person properties" event is spent on the open', named('$set').length === 0, named('$set').length);
     const profile = sets.find((s) => 'saved_words' in s);
     check('the reading profile is counts only', profile && profile.installed === false && profile.saved_words === 0 && typeof profile.mastered_words === 'number'
       && typeof profile.review_streak === 'number' && typeof profile.duel_games === 'number' && profile.bookplate === false, profile);

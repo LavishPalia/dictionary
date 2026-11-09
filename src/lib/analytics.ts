@@ -157,12 +157,23 @@ async function load() {
     if (ph.has_opted_out_capturing()) ph.opt_in_capturing({ captureEventName: false });
     const launch = readLaunch(launchSearch);
     ph.register({ env: t.env, display_mode: displayMode(), launched_from: launchedFrom(launch?.kind) });
+    // The nickname and the reading profile ride on this open's first event as its $set: the person is named from their
+    // very first event (a separate $set is batched and lands seconds later), and no extra "Set person properties"
+    // events are spent. With no event waiting, they go as one $set.
     const nickname = nicknameFor(ph.get_distinct_id());
-    ph.setPersonProperties({ name: nickname, nickname });
+    let person: Props = {};
+    const events: Extract<Queued, { kind: 'event' }>[] = [];
+    for (const item of queue) {
+      if (item.kind === 'person') person = { ...person, ...item.props };
+      else events.push(item);
+    }
+    person = { ...person, name: nickname, nickname };
     posthog = ph;
-    const waiting = queue;
     queue = [];
-    waiting.forEach(send);
+    const [first, ...rest] = events;
+    if (first) ph.capture(first.name, first.props, { timestamp: new Date(first.at), $set: person });
+    else ph.setPersonProperties(person);
+    rest.forEach(send);
   } catch {
     // Offline or blocked: counting simply doesn't happen. Nothing is retried later.
     queue = [];
