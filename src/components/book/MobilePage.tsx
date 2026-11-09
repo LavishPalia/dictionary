@@ -7,6 +7,8 @@ import { PageColumn } from './PageColumn';
 import { PronunciationFooter } from './PronunciationFooter';
 import { InkLines } from './InkLines';
 import { LetterRail } from './LetterRail';
+import { BookLightLayer } from './lamp/BookLightLayer';
+import type { LightVersion } from '@/lib/desk';
 
 interface MobilePageProps {
   page: BookPage | null;
@@ -27,6 +29,8 @@ interface MobilePageProps {
   /** The A–Z rail at the page's right edge: each letter's first page, and the jump it makes. */
   thumbIndex?: Record<string, number>;
   onSelectLetter?: (letter: string, page: number) => void;
+  /** The lamp's light under the ink (Evening), in this version; none when the lamp isn't mounted. */
+  lampVersion?: LightVersion | null;
 }
 
 // A swipe turns the page past a quarter of the page's width, or as a quick flick.
@@ -51,6 +55,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   onOpenGoTo,
   thumbIndex,
   onSelectLetter,
+  lampVersion = null,
 }) => {
   // The page follows the finger sideways; vertical moves are left to the browser (touch-action: pan-y).
   const cardRef = useRef<HTMLDivElement>(null);
@@ -173,7 +178,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
     <div
       ref={cardRef}
       id="mobile-page"
-      className="page-inset--phone"
+      className={lampVersion ? 'page-inset--phone book-lit' : 'page-inset--phone'}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -194,6 +199,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         '--rail-top': `${ribbonHeight + 6}px`,
       } as React.CSSProperties}
     >
+      {/* The lamp's light: under everything on the page (book-lamp.css), and it moves with the page in a swipe. */}
+      {lampVersion && <BookLightLayer originX={0} version={lampVersion} />}
       {/* Hanging silk bookmark ribbon */}
       <button
         type="button"

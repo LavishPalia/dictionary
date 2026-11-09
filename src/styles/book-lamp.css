@@ -1,0 +1,47 @@
+/* The lamp on the Book page. Spec: docs/superpowers/specs/2026-11-09-book-lamp-design.md (§3, §4.4).
+   The light is a layer UNDER the ink: each lit page is isolated, and its light is its first child at z-index −1, so it
+   paints above the page's paper and below everything on it, and it only adds light (screen). The darkness is a
+   multiply layer on the desk alone, behind the book and every other thing on the Book page. */
+
+/* ── The desk ── */
+/* Isolated while the lamp is mounted, so the desk layer (z-index −1) paints above the desk's own background and below
+   everything else in the app. Each desk layer sits directly in it (a wrapper would isolate the multiply from the desk). */
+.app-main[data-book-lamp] { isolation: isolate; }
+.book-desk-day, .book-desk-dark { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+/* Day: a soft cool window light from the right, beside the book, away from the chrome's text. */
+.book-desk-day {
+  background: radial-gradient(ellipse 30% 46% at 100% 55%, rgba(232, 240, 255, .1) 0%, rgba(232, 240, 255, 0) 72%);
+}
+/* Evening: the lamp's darkness, centred on the pool (bookLight.ts writes --dark-*). Multiply: it can only darken desk. */
+.book-desk-dark {
+  opacity: 0; visibility: hidden; mix-blend-mode: multiply;
+  background: radial-gradient(ellipse var(--dark-rx, 1120px) var(--dark-ry, 800px) at var(--dark-x, 50%) var(--dark-y, 30%),
+    #fff 0%, #e8d6bc 26%, #9a8068 58%, #3a3029 100%);
+}
+html[data-light="evening"] .book-desk-day { opacity: 0; visibility: hidden; }
+html[data-light="evening"] .book-desk-dark { opacity: 1; visibility: visible; }
+
+/* ── The light on the paper ── */
+.book-lit { isolation: isolate; }
+.book-light {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
+  pointer-events: none; mix-blend-mode: screen; opacity: 0; visibility: hidden;
+}
+html[data-light="evening"] .book-light { opacity: 1; visibility: visible; }
+/* Light A: the same pool without the grain (--pool-* are on the frame, in its units; --light-origin is the page's left). */
+.book-light--a {
+  background: radial-gradient(ellipse var(--pool-rx, 380px) var(--pool-ry, 290px) at calc(var(--pool-x, 230px) - var(--light-origin, 0px)) var(--pool-y, 169px),
+    rgba(255, 214, 150, .56) 0%, rgba(255, 206, 138, .36) 30%, rgba(255, 198, 128, .12) 62%, rgba(255, 196, 128, 0) 100%);
+}
+/* The spread's base layer lies under the resting pages: its light is drawn only while a flip or riffle runs. */
+[data-book-base]:not([data-flipping]) .book-light { visibility: hidden; }
+
+/* Fades: 0.7 s, then hidden (so the filter costs nothing in Day); none under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .book-light, .book-desk-dark, html[data-light="evening"] .book-desk-day { transition: opacity .7s ease, visibility 0s linear .7s; }
+  html[data-light="evening"] .book-light, html[data-light="evening"] .book-desk-dark, .book-desk-day { transition: opacity .7s ease, visibility 0s; }
+  [data-book-base]:not([data-flipping]) .book-light { transition: none; }
+}
+
+/* The filter's own <svg>: present for the renderer, nothing on screen. */
+.book-light-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }

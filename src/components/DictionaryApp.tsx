@@ -16,6 +16,8 @@ import type { Section } from '@/components/shell/AppChrome';
 import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocateMarks, type MarkAnchors } from '@/lib/marks';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
+import { BookLamp, useBookLightVersion } from '@/components/book/lamp/BookLamp';
+import { useLampSwitch } from '@/components/desk/useLampSwitch';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { useDuelVisible } from '@/components/today/DuelCard';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
@@ -554,6 +556,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     quickPickRef.current = Boolean(opts?.quick);
     setLighting(next);
   }, [lighting]);
+  // The lamp on the Book page: its switch (the desktop lamp and the phone's push-switch both use it; one note, shared
+  // with Today through the `noted` flag) and the light it draws. It is mounted only while the open book shows.
+  const bookSw = useLampSwitch({ light: appliedLight, onSetLight: (next) => pickLighting(next, { quick: true }) });
+  const [bookLightVersion, bookLightSlow] = useBookLightVersion(reducedMotion, section);
+  const bookLampOn = section === 'book' && isBookOpen;
+  const lampVersion = bookLampOn ? bookLightVersion : null;
   useEffect(() => {
     const tick = () => setClockTick((n) => n + 1);
     const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
@@ -1348,6 +1356,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   return (
     <main
       className="app-main"
+      data-book-lamp={bookLampOn ? '' : undefined}
       style={{
         minHeight: '100vh',
         width: '100vw',
@@ -1422,6 +1431,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           </div>
         )}
 
+      {bookLampOn && (
+        <BookLamp phone={isMobile} light={appliedLight} sw={bookSw} onUseAuto={() => pickLighting('auto', { quick: true })}
+          version={bookLightVersion} onSlow={bookLightSlow} reduced={reducedMotion}
+          focusEntry={null} turning={isFlipping || loadingPage !== null} />
+      )}
+
       {/* Main Reading Canvas */}
       {!isBookOpen ? (
         /* VINTAGE HARDCOVER PRESENTATION WITH 3D OPENING CINEMATIC */
@@ -1435,6 +1450,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         <MobilePage
           page={singleMobilePage}
           loadingPage={loadingPage}
+          lampVersion={lampVersion}
           highlightedWord={highlightedWord}
           isBookmarked={isSpreadBookmarked}
           onToggleBookmark={handleToggleSpreadBookmark}
@@ -1458,6 +1474,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             targetLeftPage={targetLeftPage}
             targetRightPage={targetRightPage}
             loadingPage={loadingPage}
+            lampVersion={lampVersion}
             highlightedWord={highlightedWord}
             activeLetter={activeLetter}
             thumbMap={meta.thumb_index}
