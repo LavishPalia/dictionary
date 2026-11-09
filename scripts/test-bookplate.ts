@@ -65,7 +65,7 @@ const file = parseBackup(JSON.stringify(createBackup(phone, 'v1', new Date(2026,
 check('a backup with a bookplate reads back', file.ok);
 if (file.ok) {
   const replaced = restoreData(empty({}), file.backup, 'replace', book).panna_settings;
-  check('replace brings the plate back as it was, the tick included', eq(readBookplate(replaced), { name: 'रिया', emblem: 'initial', share: true }) && (replaced as Record<string, unknown>).bookplateOffer === 'done', replaced);
+  check('replace brings the plate back, unshared: the tick is asked for on each device', eq(readBookplate(replaced), { name: 'रिया', emblem: 'initial', share: false }) && (replaced as Record<string, unknown>).bookplateOffer === 'done', replaced);
   const off = restoreData(empty({ analytics: false }), file.backup, 'replace', book).panna_settings;
   check('replace on a device with Usage counts off: the plate comes, unshared', eq(readBookplate(off), { name: 'रिया', emblem: 'initial', share: false }) && (off as Record<string, unknown>).analytics === false, off);
   const merged = restoreData(empty({ lighting: 'day' }), file.backup, 'merge', book).panna_settings as Record<string, unknown>;

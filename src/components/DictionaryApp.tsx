@@ -40,7 +40,7 @@ import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { browserBlocksCounting, pageview, setUsageCounts, startAnalytics, syncBookplate, track, usageCountsChosen } from '@/lib/analytics';
-import { bookplateOfferDone, endBookplateOffer, loadBookplate, offerBookplate, storeBookplate, type Bookplate } from '@/lib/bookplate';
+import { bookplateOfferDone, endBookplateOffer, loadBookplate, offerBookplate, storeBookplate, unshareBookplate, type Bookplate } from '@/lib/bookplate';
 import { BookplateSheet } from '@/components/bookplate/Bookplate';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
@@ -115,7 +115,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   useEffect(() => {
     startAnalytics();
     setUsageCountsState(usageCountsChosen());
-    setCountingBlocked(browserBlocksCounting());
+    // A browser that asks not to be tracked can't share the bookplate name: a tick stored before is taken off, so the
+    // box and the menu chip show what is true, and the name isn't sent if the browser later stops asking.
+    const blocked = browserBlocksCounting();
+    setCountingBlocked(blocked);
+    if (blocked) { unshareBookplate(); setBookplate(loadBookplate()); }
   }, []);
   // The bookplate (src/lib/bookplate.ts): read after the first render, like the other settings. Switching Usage counts
   // off unticks its "Share my name" too, so the plate is read again after the switch.

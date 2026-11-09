@@ -140,23 +140,29 @@ function mergeTours(current: unknown, backup: unknown): ToursLike {
   };
 }
 
+/** The bookplate as a restore brings it: the name and emblem, never the share tick (see SHARE_PER_DEVICE). */
+function unshared(plate: unknown): unknown {
+  return plate && typeof plate === 'object' ? { ...plate, share: false } : plate;
+}
+
 /**
- * The data to write after restoring. "replace" makes this browser match the backup; "merge" keeps both: words and
- * notes are combined, for review progress the more recently studied copy of each word wins, and this browser's
- * settings stay. Marks from another book build are first moved using `located` (anchor word → current page).
- */
-/**
- * Merging keeps this browser's settings, but a bookplate only the backup has comes across, unshared: sharing the name is
- * asked for on each device, as the tick sends it from this device's profile.
+ * SHARE_PER_DEVICE: sharing the bookplate name is asked for on each device, because the tick sends it from this device's
+ * own PostHog profile. So a restore, merge or replace, never brings the tick: the reader ticks again here if they want.
+ * Merging keeps this browser's settings, but a bookplate only the backup has comes across.
  */
 function mergeSettings(current: unknown, backup: unknown): unknown {
   const here = (current ?? backup ?? {}) as Record<string, unknown>;
   const theirs = (backup as { bookplate?: unknown } | undefined)?.bookplate;
   // This device has its own plate (or the backup has none): nothing to bring.
   if ((current && here.bookplate) || !theirs || typeof theirs !== 'object') return here;
-  return { ...here, bookplate: { ...theirs, share: false } };
+  return { ...here, bookplate: unshared(theirs) };
 }
 
+/**
+ * The data to write after restoring. "replace" makes this browser match the backup; "merge" keeps both: words and
+ * notes are combined, for review progress the more recently studied copy of each word wins, and this browser's
+ * settings stay. Marks from another book build are first moved using `located` (anchor word → current page).
+ */
 export function restoreData(
   current: BackupData, backup: Backup, mode: 'merge' | 'replace',
   book: { dataVersion: string; totalPages: number }, located: Record<string, number> = {},
@@ -180,12 +186,9 @@ export function restoreData(
     // Usage counts switched off on this device stay off: an older backup must not turn counting back on.
     const here = current.panna_settings as { analytics?: unknown } | undefined;
     if (here?.analytics === false) out.panna_settings = { ...(out.panna_settings as object), analytics: false };
-    // With counting off (on this device, or in the backup), a restored bookplate keeps its name but isn't shared: the
-    // box shows unticked then, and switching counting back on must not send the name by itself.
+    // The bookplate comes back with its name and emblem, unshared (SHARE_PER_DEVICE).
     const settings = out.panna_settings as Record<string, unknown>;
-    if (settings.analytics === false && settings.bookplate && typeof settings.bookplate === 'object') {
-      out.panna_settings = { ...settings, bookplate: { ...(settings.bookplate as object), share: false } };
-    }
+    if (settings.bookplate) out.panna_settings = { ...settings, bookplate: unshared(settings.bookplate) };
     // A file with no anchors leaves none: the app makes them when it next opens, and an empty list would crash it.
     if (b.panna_mark_anchors) out.panna_mark_anchors = b.panna_mark_anchors;
     return out;

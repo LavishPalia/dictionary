@@ -286,6 +286,19 @@ async function main() {
     check('Remove clears the plate', !(await settings()).bookplate && !(await exists('#today-greeting')) && !(await exists('#bookplate-sheet')));
     check('…and the offer doesn\'t come back', (await settings()).bookplateOffer === 'done' && !(await exists('#today-bookplate')));
 
+    // ── 5b. Do Not Track takes a stored tick off, so the sheet and the chip tell the truth ──
+    await setSettings({ bookplate: { name: 'Riya', emblem: 'owl', share: true } });
+    const { identifier } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `Object.defineProperty(Navigator.prototype, 'doNotTrack', { get: () => '1' });` });
+    count = requests.length;
+    await open('/', DESKTOP);
+    await sleep(5000);
+    check('Do Not Track: a ticked plate is unticked on open', (await settings()).bookplate?.share === false, (await settings()).bookplate);
+    check('…and nothing is sent', requests.length === count, requests.slice(count).map((r) => r.url));
+    await click('#menu-btn'); await sleep(500);
+    check('…and the chip says not shared', (await chipLabel()) === 'Your bookplate: Riya, not shared', await chipLabel());
+    await key('Escape'); await sleep(300);
+    await send('Page.removeScriptToEvaluateOnNewDocument', { identifier });
+
     // ── 6. The notice ──
     await click('#menu-btn'); await sleep(500);
     await click('#open-credits-btn'); await sleep(500);

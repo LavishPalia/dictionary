@@ -57,4 +57,5 @@
   .bp-share { background: rgba(255, 255, 255, 0.18); }
   .bp-share input { background: rgba(255, 255, 255, 0.45); }
   .bp-mini { outline: 1px solid rgba(122, 43, 34, 0.45); }
+  .bp-mini--empty { outline: 0; }
 }
