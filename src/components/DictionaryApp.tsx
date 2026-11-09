@@ -101,7 +101,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // Keys this effect doesn't own (the Usage counts choice) are kept as they are.
       const stored = JSON.parse(localStorage.getItem('panna_settings') || '{}');
       const others = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
-      localStorage.setItem('panna_settings', JSON.stringify({ ...others, ...storedSettings(lighting, { speed: speedMode, sounds: !isMuted }) }));
+      const ours = storedSettings(lighting, { speed: speedMode, sounds: !isMuted });
+      localStorage.setItem('panna_settings', JSON.stringify({ ...ours, ...others, ...ours })); // ours first, and ours win
     } catch {}
   }, [settingsLoaded, lighting, speedMode, isMuted]);
 
