@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Light } from '@/lib/lighting';
 import { useReducedMotion } from '@/lib/motion';
 import { aimToScene, clampScene, DEFAULT_AIM, lampGeometry, readDesk, SCENE_W, type Aim, type LightVersion } from '@/lib/desk';
-import { DeskLampArt, lampLabel, shadeHitStyle } from './DeskLamp';
+import { LampArt, lampLabel, shadeHitStyle } from '@/components/desk/LampArt';
 import { createDeskLight } from './deskLight';
 
 interface DeskSceneProps {
@@ -107,7 +107,7 @@ export function DeskScene({ wide, light, onToggleLamp, book, notebook }: DeskSce
           {book}
           {notebook}
           <div className="desk-warm" aria-hidden="true" />
-          <DeskLampArt target={aim} />
+          <LampArt target={aim} idPrefix="desk" />
           {/* The lamp's base switches it too; the button below is the one keyboards and screen readers use. */}
           <div className="desk-lamp-base" aria-hidden="true" onClick={onToggleLamp} />
           <div className="desk-pool-handle" aria-hidden="true" style={{ left: aim.x, top: aim.y }} />

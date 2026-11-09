@@ -1,13 +1,12 @@
-// Moves the desk lamp's light, outside React (its flags are data-moving / data-dragging, which React leaves alone): a requestAnimationFrame loop eases the light toward its aim and
-// writes SVG attributes and CSS variables straight to the scene, and stops as soon as it settles (the filter
-// redraws only while the light moves). Pointer, keyboard and the slow-device check live here too.
+// Moves the desk lamp's light, outside React (its flags are data-moving / data-dragging, which React leaves alone): the
+// shared light loop eases the light toward its aim, and `draw` here writes SVG attributes and CSS variables straight
+// to the scene (the filter redraws only while the light moves). Pointer, keyboard and the slow-device check live here too.
 import { aimToScene, clampScene, DEFAULT_AIM, lampGeometry, readDesk, sceneToAim, writeDesk, type Aim } from '@/lib/desk';
+import { createLightLoop, SLOW_FRAME_MS } from '@/components/desk/lightLoop';
 
-/** A first drag slower than this per frame switches the device to the CSS light (A). */
-export const SLOW_FRAME_MS = 24;
+export { SLOW_FRAME_MS };
 const TAP_PX = 6;
 const KEY_STEP = 20, KEY_STEP_BIG = 60;
-const EASE = 0.22;
 const deg = (rad: number) => (rad * 180) / Math.PI;
 
 export interface DeskLight { destroy(): void }
@@ -23,11 +22,8 @@ export function createDeskLight(scene: HTMLElement, opts: {
   const $ = <T extends Element>(sel: string) => scene.querySelector<T>(sel);
   const lamp = $<HTMLButtonElement>('#desk-lamp');
   const handle = $<HTMLElement>('.desk-pool-handle');
-  const aim: Aim = clampScene(aimToScene(readDesk().aim ?? DEFAULT_AIM));
-  const cur: Aim = { ...aim };
-  let raf = 0;
 
-  function draw() {
+  function draw(cur: Aim) {
     const g = lampGeometry(cur);
     $('[data-lamp="arm2"]')?.setAttribute('x2', String(g.px));
     $('[data-lamp="arm2"]')?.setAttribute('y2', String(g.py));
@@ -52,24 +48,14 @@ export function createDeskLight(scene: HTMLElement, opts: {
   }
 
   // ── the loop, with the first drag's frame times ──
-  let dragging = false, frames: number[] = [], last = 0;
+  const loop = createLightLoop({
+    reduced: opts.reduced, draw,
+    onMoving: (moving) => { if (moving) scene.dataset.moving = 'true'; else delete scene.dataset.moving; },
+  });
+  const aim = loop.aim;
   const timing = () => opts.timed && readDesk().light === undefined;
-  function tick(t: number) {
-    if (dragging && timing()) { if (last) frames.push(t - last); last = t; }
-    const k = opts.reduced ? 1 : EASE;
-    cur.x += (aim.x - cur.x) * k; cur.y += (aim.y - cur.y) * k;
-    if (Math.abs(aim.x - cur.x) < 0.3 && Math.abs(aim.y - cur.y) < 0.3 && !dragging) {
-      cur.x = aim.x; cur.y = aim.y; draw();
-      raf = 0; delete scene.dataset.moving;
-      return;
-    }
-    draw();
-    raf = requestAnimationFrame(tick);
-  }
-  const go = () => { if (!raf) { scene.dataset.moving = 'true'; raf = requestAnimationFrame(tick); } };
   function setAim(p: Aim, save = true) {
-    Object.assign(aim, clampScene(p));
-    if (opts.reduced) { cur.x = aim.x; cur.y = aim.y; draw(); } else go();
+    loop.setAim(clampScene(p));
     if (save) writeDesk({ aim: sceneToAim(aim) });
   }
   const reset = () => setAim(aimToScene(DEFAULT_AIM));
@@ -83,7 +69,7 @@ export function createDeskLight(scene: HTMLElement, opts: {
   const down = (shade: boolean) => (e: PointerEvent) => {
     if (e.button !== 0) return;
     if (!shade) e.preventDefault();
-    start = local(e); moved = false; fromShade = shade; dragging = true; frames = []; last = 0;
+    start = local(e); moved = false; fromShade = shade; loop.startTiming();
     swallowClick = false; // a touch drag is followed by no click, so a flag left from one must not eat this press
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
   };
@@ -93,22 +79,22 @@ export function createDeskLight(scene: HTMLElement, opts: {
     if (!moved && Math.hypot(p.x - start.x, p.y - start.y) <= TAP_PX) return;
     if (!moved) { moved = true; scene.dataset.dragging = 'true'; }
     if (fromShade) { // aim along the pull, a little ahead of the pointer
-      const g = lampGeometry(cur);
+      const g = lampGeometry(loop.cur);
       setAim({ x: p.x + (p.x - g.px) * 0.6, y: p.y + (p.y - g.py) * 0.6 + 40 }, false);
     } else setAim(p, false);
   };
   const up = (e: PointerEvent) => {
     if (!start) return;
     const wasMoved = moved, shade = fromShade;
-    start = null; dragging = false; delete scene.dataset.dragging;
+    start = null; delete scene.dataset.dragging;
+    const avg = loop.stopTiming();
     if (wasMoved) {
       writeDesk({ aim: sceneToAim(aim) });
       if (shade) { // the click that ends a mouse drag must not switch the lamp (it comes in this same input event)
         swallowClick = true;
         window.setTimeout(() => { swallowClick = false; }, 0);
       }
-      if (timing() && frames.length >= 8) {
-        const avg = frames.reduce((a, b) => a + b, 0) / frames.length;
+      if (timing() && avg !== null) {
         writeDesk({ light: avg > SLOW_FRAME_MS ? 'A' : 'B' });
         if (avg > SLOW_FRAME_MS) opts.onSlow();
       }
@@ -121,9 +107,8 @@ export function createDeskLight(scene: HTMLElement, opts: {
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) target.focus();
       else target?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window, clientX: e.clientX, clientY: e.clientY }));
     }
-    go();
   };
-  const cancel = () => { start = null; dragging = false; delete scene.dataset.dragging; };
+  const cancel = () => { start = null; loop.stopTiming(); delete scene.dataset.dragging; };
   const onLampClick = (e: MouseEvent) => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } };
   const onKey = (e: KeyboardEvent) => {
     const d = e.shiftKey ? KEY_STEP_BIG : KEY_STEP;
@@ -141,11 +126,11 @@ export function createDeskLight(scene: HTMLElement, opts: {
   window.addEventListener('pointermove', move);
   window.addEventListener('pointerup', up);
   window.addEventListener('pointercancel', cancel);
-  draw();
+  loop.jump(clampScene(aimToScene(readDesk().aim ?? DEFAULT_AIM)));
 
   return {
     destroy() {
-      if (raf) cancelAnimationFrame(raf);
+      loop.destroy();
       lamp?.removeEventListener('pointerdown', shadeDown);
       handle?.removeEventListener('pointerdown', poolDown);
       lamp?.removeEventListener('click', onLampClick, true);

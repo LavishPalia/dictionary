@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Light } from '@/lib/lighting';
-import { readDesk, writeDesk } from '@/lib/desk';
 import type { BookPage, DictionaryEntry } from '@/lib/types';
 import { describePos } from '@/lib/pos';
 import { localDate, SECONDS_PER_CARD } from '@/lib/review';
@@ -10,6 +9,8 @@ import { Button, Card } from '@/components/ui';
 import { StarIcon } from '@/components/ui/icons';
 import { ProgressBar, ReviewCalendar } from '@/components/progress/Progress';
 import type { CalendarDay, Progress } from '@/lib/progress';
+import { useLampSwitch } from '@/components/desk/useLampSwitch';
+import { LampNote } from '@/components/desk/LampNote';
 import { DuelCard } from './DuelCard';
 import { DeskScene } from './desk/DeskScene';
 import { DeskStrip } from './desk/DeskStrip';
@@ -61,8 +62,6 @@ interface TodayScreenProps {
   onSetGoal: (goal: number) => void;
 }
 
-const NOTE_MS = 6000;
-
 // The first screen: today's review, where you left off in the book, and a word of the day.
 export function TodayScreen(props: TodayScreenProps) {
   const { dueCount, savedWords, lastPage, loadPage } = props;
@@ -88,41 +87,8 @@ export function TodayScreen(props: TodayScreenProps) {
 
   // The lamp. A switch pins the opposite of the light applied now; the first one on a device explains that.
   const wide = useWide();
-  const [said, setSaid] = useState('');
-  const [note, setNote] = useState<Light | null>(null);
-  const noteTimer = useRef<number | null>(null);
-  const hideNote = useCallback(() => {
-    if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
-    noteTimer.current = null;
-    setNote(null);
-  }, []);
-  useEffect(() => hideNote, [hideNote]);
-  // The note waits while it is pointed at or has focus (it holds a button), then goes after NOTE_MS.
-  const noteRef = useRef<HTMLDivElement>(null);
-  const startNoteTimer = useCallback(() => {
-    if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
-    const tick = () => {
-      // Still pointed at, or holding focus: wait another round (focus events alone aren't reliable).
-      const el = noteRef.current;
-      if (el && (el.matches(':hover') || el.contains(document.activeElement))) { noteTimer.current = window.setTimeout(tick, 1000); return; }
-      noteTimer.current = null;
-      setNote(null);
-    };
-    noteTimer.current = window.setTimeout(tick, NOTE_MS);
-  }, []);
-  const holdNote = () => { if (noteTimer.current !== null) window.clearTimeout(noteTimer.current); noteTimer.current = null; };
   const { light, onSetLight } = props;
-  const toggleLamp = useCallback(() => {
-    const next: Light = light === 'evening' ? 'day' : 'evening';
-    onSetLight(next);
-    setSaid(next === 'evening' ? 'Lamp on: Evening lighting.' : 'Lamp off: Day lighting.');
-    if (!readDesk().noted) {
-      writeDesk({ noted: true });
-      setNote(next);
-      if (noteTimer.current !== null) window.clearTimeout(noteTimer.current);
-      startNoteTimer();
-    }
-  }, [light, onSetLight, startNoteTimer]);
+  const sw = useLampSwitch({ light, onSetLight });
 
   // The goal editor: open in the notebook (desk) or as a card under the strip (phone).
   const [editing, setEditing] = useState(false);
@@ -157,14 +123,14 @@ export function TodayScreen(props: TodayScreenProps) {
       <h1 id="today-title" className="ui-visually-hidden">Today</h1>
       <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
 
-      <DeskScene wide={wide} light={light} onToggleLamp={toggleLamp}
+      <DeskScene wide={wide} light={light} onToggleLamp={sw.toggle}
         book={<DeskBook page={pageData?.page_number === page ? pageData : null} pageNumber={page} started={lastPage !== null}
-          onOpen={() => props.onContinueReading(page)} onAnnounce={setSaid}
+          onOpen={() => props.onContinueReading(page)} onAnnounce={sw.say}
           welcome={props.showWelcome ? <div className="desk-welcome" id="today-welcome" role="group" aria-labelledby="today-welcome-title">{welcomeBody}</div> : undefined}
           film={props.showWelcome ? <IntroFilm /> : undefined} />}
         notebook={<GoalNotebook words={props.todaysWords} goal={props.dailyGoal} editing={editing}
           onEdit={() => setEditing(true)} onClose={() => setEditing(false)} onSave={props.onSetGoal} />} />
-      <DeskStrip wide={wide} light={light} onToggleLamp={toggleLamp}
+      <DeskStrip wide={wide} light={light} onToggleLamp={sw.toggle}
         goal={<GoalChip ref={chip} count={goalCount} goal={props.dailyGoal} open={editing} onToggle={() => (editing ? closePhoneEditor() : setEditing(true))} />}
         editor={editing && (
           <Card className="desk-goal-card">
@@ -172,17 +138,8 @@ export function TodayScreen(props: TodayScreenProps) {
               onSave={(g) => { props.onSetGoal(g); closePhoneEditor(); }} />
           </Card>
         )} />
-      <p className="ui-visually-hidden" id="desk-live" aria-live="polite">{said}</p>
-      {note && (
-        <div className="desk-note" id="desk-note" ref={noteRef} onMouseEnter={holdNote} onMouseLeave={startNoteTimer} onFocus={holdNote}
-          onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) startNoteTimer(); }}>
-          <span>{note === 'evening' ? 'Lamp on.' : 'Lamp off.'} It stays this way until you switch it, or choose Auto to follow the clock again.</span>
-          <button type="button" id="desk-note-auto" onClick={() => {
-            hideNote(); props.onUseAuto();
-            document.getElementById(wide ? 'desk-lamp' : 'desk-cord')?.focus(); // the note goes; focus goes back to the lamp
-          }}>Use Auto</button>
-        </div>
-      )}
+      <p className="ui-visually-hidden" id="desk-live" aria-live="polite">{sw.said}</p>
+      <LampNote sw={sw} id="desk-note" returnFocusTo={wide ? 'desk-lamp' : 'desk-cord'} onUseAuto={props.onUseAuto} />
 
       {props.showWelcome && wide === false && (
         <Card className={`today-card today-welcome${filmLifted ? ' today-welcome--lifted' : ''}`} id="today-welcome" aria-labelledby="today-welcome-title">

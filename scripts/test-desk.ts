@@ -1,6 +1,6 @@
 // Checks the desk scene's pure parts (src/lib/desk.ts): the lamp's geometry and what a device remembers.
 // Usage: npx tsx scripts/test-desk.ts
-import { aimToScene, clampScene, DEFAULT_AIM, lampGeometry, parseDesk, sceneToAim, SCENE_H, SCENE_W } from '../src/lib/desk';
+import { aimToScene, BOOK_DEFAULT_AIM, bookLampFits, clampScene, DEFAULT_AIM, lampGeometry, parseDesk, PHONE_POOL, sceneToAim, SCENE_H, SCENE_W, TODAY_REACH, type LampReach } from '../src/lib/desk';
 
 let checks = 0, failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -28,6 +28,25 @@ check('a valid state reads back', JSON.stringify(parseDesk({ aim: { x: 0.5, y: 0
 check('an aim outside 0–1 or not numbers is dropped', parseDesk({ aim: { x: 1.5, y: 0.2 } }).aim === undefined && parseDesk({ aim: { x: '0.5', y: 0.2 } }).aim === undefined);
 check('an unknown light version is dropped', parseDesk({ light: 'C' }).light === undefined);
 check('noted must be true to count', parseDesk({ noted: 'yes' }).noted === undefined);
+
+// ── the Book page's lamp: bookAim, a custom reach, and where the lamp fits ──
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+check('bookAim reads back like aim', same(parseDesk({ bookAim: { x: 0.25, y: 0.28 } }).bookAim, { x: 0.25, y: 0.28 }));
+check('a bookAim outside 0–1 or not numbers is dropped', parseDesk({ bookAim: { x: 1.2, y: 0 } }).bookAim === undefined && parseDesk({ bookAim: { x: '0.5', y: '0.5' } }).bookAim === undefined);
+const both = parseDesk({ aim: { x: 0.5, y: 0.5 }, bookAim: { x: 0.1, y: 0.1 } });
+check('aim and bookAim are independent', same(both.aim, { x: 0.5, y: 0.5 }) && same(both.bookAim, { x: 0.1, y: 0.1 }));
+check('the Book defaults', same(BOOK_DEFAULT_AIM, { x: 0.25, y: 0.28 }) && same(PHONE_POOL, { x: 0.45, y: 0.23 }));
+check('lampGeometry(t) is lampGeometry(t, TODAY_REACH) on a grid', [0, 0.5, 1].every((fy) => [0, 0.5, 1].every((fx) => {
+  const t = { x: fx * 940, y: fy * 400 };
+  return same(lampGeometry(t), lampGeometry(t, TODAY_REACH));
+})));
+const reach: LampReach = { x: [-120, -40], y: [-80, -20], rest: { x: -80, y: -50 }, origin: { x: 0, y: 0 }, lean: 0.12, leanY: 0.08 };
+const rf = lampGeometry({ x: 5000, y: 5000 }, reach), rn = lampGeometry({ x: -5000, y: -5000 }, reach);
+check('a custom reach clamps the pivot', rf.px === -40 && rf.py === -20 && rn.px === -120 && rn.py === -80, { rf, rn });
+const view = { w: 400, h: 300 }, spread = { left: 100, top: 100, right: 300, bottom: 200 };
+check('a lamp inside the view and clear of the spread fits', bookLampFits({ left: 10, top: 10, right: 60, bottom: 90 }, [spread], view));
+check('a lamp touching the spread does not fit', !bookLampFits({ left: 60, top: 120, right: 100, bottom: 160 }, [spread], view));
+check('a lamp partly outside the view does not fit', !bookLampFits({ left: -5, top: 10, right: 40, bottom: 60 }, [spread], view) && !bookLampFits({ left: 350, top: 10, right: 410, bottom: 60 }, [spread], view));
 
 console.log(`\nDesk: ${checks - failures}/${checks} checks passed.`);
 if (failures) process.exit(1);

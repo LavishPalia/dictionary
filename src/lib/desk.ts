@@ -11,6 +11,8 @@ export interface Aim { x: number; y: number }
 export interface DeskState {
   /** Where the light points, as fractions of the scene (0–1). */
   aim?: Aim;
+  /** Where the light points on the Book page, as fractions of the page's lamp area (0–1). */
+  bookAim?: Aim;
   /** Set to 'A' once this device proved too slow for B. */
   light?: LightVersion;
   /** The one-time note after the first lamp switch has been shown. */
@@ -20,6 +22,9 @@ export interface DeskState {
 const KEY = 'panna_desk';
 /** The middle of the open book. */
 export const DEFAULT_AIM: Aim = { x: 0.53, y: 0.5 };
+/** Where the Book page's light rests, and its pool on a phone. */
+export const BOOK_DEFAULT_AIM: Aim = { x: 0.25, y: 0.28 };
+export const PHONE_POOL: Aim = { x: 0.45, y: 0.23 };
 
 const fraction = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1;
 
@@ -30,6 +35,8 @@ export function parseDesk(raw: unknown): DeskState {
   const out: DeskState = {};
   const aim = r.aim as Record<string, unknown> | undefined;
   if (aim && typeof aim === 'object' && fraction(aim.x) && fraction(aim.y)) out.aim = { x: aim.x as number, y: aim.y as number };
+  const bookAim = r.bookAim as Record<string, unknown> | undefined;
+  if (bookAim && typeof bookAim === 'object' && fraction(bookAim.x) && fraction(bookAim.y)) out.bookAim = { x: bookAim.x as number, y: bookAim.y as number };
   if (r.light === 'A' || r.light === 'B') out.light = r.light;
   if (r.noted === true) out.noted = true;
   return out;
@@ -63,16 +70,31 @@ export interface LampGeometry {
   r: number;
 }
 
-/**
- * Where the lamp's head goes for a target point in scene units: the pivot leans a little toward the target, like a
- * real arm, but stays within x 130–205 and y 45–100, so the shade (74 units long) never covers the book's text
- * (its cloth starts at x 288).
- */
-export function lampGeometry(t: Aim): LampGeometry {
-  const px = Math.max(130, Math.min(205, 175 + (t.x - 430) * 0.12));
-  const py = Math.max(45, Math.min(100, 72 + (t.y - 200) * 0.08));
+/** How far a lamp's pivot may travel, and how it leans toward the target (all in scene units). */
+export interface LampReach {
+  x: [number, number]; y: [number, number];
+  /** The pivot when the target is at `origin`. */
+  rest: Aim; origin: Aim;
+  lean: number; leanY: number;
+}
+
+/** Today's lamp: the pivot stays within x 130-205 and y 45-100, so the shade (74 units long) never covers the book's text (its cloth starts at x 288). */
+export const TODAY_REACH: LampReach = { x: [130, 205], y: [45, 100], rest: { x: 175, y: 72 }, origin: { x: 430, y: 200 }, lean: 0.12, leanY: 0.08 };
+
+/** Where the lamp's head goes for a target point in scene units: the pivot leans a little toward the target, like a real arm, within `reach`. */
+export function lampGeometry(t: Aim, reach: LampReach = TODAY_REACH): LampGeometry {
+  const px = Math.max(reach.x[0], Math.min(reach.x[1], reach.rest.x + (t.x - reach.origin.x) * reach.lean));
+  const py = Math.max(reach.y[0], Math.min(reach.y[1], reach.rest.y + (t.y - reach.origin.y) * reach.leanY));
   const ang = Math.atan2(t.y - py, t.x - px);
   const mx = px + Math.cos(ang) * 66, my = py + Math.sin(ang) * 66;
   const r = Math.max(90, Math.hypot(t.x - mx, t.y - my) * 0.55);
   return { px, py, ang, mx, my, r };
+}
+
+export interface Rect { left: number; top: number; right: number; bottom: number }
+
+/** True when `lamp` lies inside the view and overlaps none of the `avoid` rects (touching counts as overlapping). */
+export function bookLampFits(lamp: Rect, avoid: Rect[], view: { w: number; h: number }): boolean {
+  if (lamp.left < 0 || lamp.top < 0 || lamp.right > view.w || lamp.bottom > view.h) return false;
+  return !avoid.some((a) => lamp.left <= a.right && lamp.right >= a.left && lamp.top <= a.bottom && lamp.bottom >= a.top);
 }
