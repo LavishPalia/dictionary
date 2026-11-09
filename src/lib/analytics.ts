@@ -149,6 +149,8 @@ async function load() {
       save_campaign_params: false,
       persistence: 'localStorage', // no cookies
       respect_dnt: true,
+      // Headless browsers look like bots, which PostHog drops: only the local browser tests turn that filter off.
+      opt_out_useragent_filter: t.env === 'test',
       before_send: (event) => scrubEvent(event),
     });
     // A device switched off earlier, now on again: the reader's choice in panna_settings is what counts.
