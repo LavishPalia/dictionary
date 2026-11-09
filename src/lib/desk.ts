@@ -98,3 +98,32 @@ export function bookLampFits(lamp: Rect, avoid: Rect[], view: { w: number; h: nu
   if (lamp.left < 0 || lamp.top < 0 || lamp.right > view.w || lamp.bottom > view.h) return false;
   return !avoid.some((a) => lamp.left <= a.right && lamp.right >= a.left && lamp.top <= a.bottom && lamp.bottom >= a.top);
 }
+
+/**
+ * The Book page's lamp, in spread units (the spread is 1120 × 640; the left page-turn arrow sits at x −52…−12,
+ * y 288…352). The header ends 28 units above the spread and the left gutter is only about 133 units wide at
+ * 1440 px, so the hinge sits in the gutter beside the spread's top-left corner: x −91…−89 keeps the 74-unit
+ * shade (± 38 across) clear of the spread at every angle, and y 40…62 keeps it under the header even when it
+ * points up at the spread's top-left corner. It leans a little toward the aim (lower for lower aims).
+ */
+export const BOOK_REACH: LampReach = { x: [-91, -89], y: [40, 62], rest: { x: -90, y: 50 }, origin: { x: 560, y: 320 }, lean: 0.004, leanY: 0.04 };
+
+/** The shade's box for a target (the shade runs from just behind its hinge, `back` units, to 74 units along it, ± 38 across). */
+export function shadeBox(t: Aim, reach: LampReach, back = 8): Rect {
+  const g = lampGeometry(t, reach);
+  const c = Math.cos(g.ang), s = Math.sin(g.ang);
+  const xs: number[] = [], ys: number[] = [];
+  for (const a of [-back, 74]) for (const k of [-38, 38]) { xs.push(g.px + a * c - k * s); ys.push(g.py + a * s + k * c); }
+  return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
+}
+
+/** Every place the shade can be over an area of targets (w × h from 0, 0): the union of its boxes, sampled on a grid. */
+export function shadeReachBox(w: number, h: number, reach: LampReach, steps = 8): Rect {
+  const out: Rect = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+  for (let i = 0; i <= steps; i++) for (let j = 0; j <= steps; j++) {
+    const b = shadeBox({ x: (i / steps) * w, y: (j / steps) * h }, reach);
+    out.left = Math.min(out.left, b.left); out.top = Math.min(out.top, b.top);
+    out.right = Math.max(out.right, b.right); out.bottom = Math.max(out.bottom, b.bottom);
+  }
+  return out;
+}

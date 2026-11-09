@@ -47,7 +47,8 @@ interface BookLampProps {
 
 /**
  * The lamp on the Book page: the filter, the desk around the book, the live region and the one-time note. It owns the
- * light's controller, which finds the frame, the desk and #book-spot by id. Mounted only while the open book shows.
+ * light's controller, which finds the frame, the desk, #book-spot and (on desktop) the drawn lamp by id. Mounted only
+ * while the open book shows.
  */
 export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced, focusEntry, turning, frameKey }: BookLampProps) {
   const ctl = useRef<BookLight | null>(null);
@@ -55,7 +56,7 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
   turningRef.current = turning;
   const onSlowRef = useRef(onSlow);
   onSlowRef.current = onSlow;
-  void light; void focusEntry; // Task 3 (the lamp's look) and Task 5 (the glide to a word) use these
+  void light; void focusEntry; // Task 5 (the glide to a word) uses focusEntry; the desktop lamp (BookLampArt) gets the light from DictionaryApp
 
   // Before the first paint, so the filter never shows its placeholder aim.
   useLayoutEffect(() => {
@@ -64,7 +65,13 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
     const desk = document.getElementById('book-desk');
     if (!frame || !desk) return;
     const size = phone ? { w: frame.offsetWidth, h: frame.offsetHeight } : SPREAD;
-    const c = createBookLight({ frame, size, desk, phone, reduced, timed: version === 'B', onSlow: () => onSlowRef.current() });
+    // The drawn lamp (desktop): DictionaryApp renders it beside the spread, in ScaledSpread.
+    const scaleBox = phone ? null : document.getElementById('book-scale');
+    const button = phone ? null : document.getElementById('book-lamp');
+    const art = phone ? null : document.querySelector('.book-lamp-art');
+    const lamp = button instanceof HTMLButtonElement && art instanceof SVGSVGElement
+      ? { button, art, scale: () => Number(scaleBox?.dataset.scale) || 1 } : undefined;
+    const c = createBookLight({ frame, size, desk, phone, reduced, timed: version === 'B', onSlow: () => onSlowRef.current(), lamp });
     if (turningRef.current) c.hold(true);
     ctl.current = c;
     // The page's size (a phone page is as tall as its words) or place changed: re-measure.
@@ -73,7 +80,10 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
     ro.observe(frame);
     ro.observe(desk);
     window.addEventListener('resize', refresh);
-    return () => { ro.disconnect(); window.removeEventListener('resize', refresh); c.destroy(); ctl.current = null; };
+    // The spread's scale changed (a transform: the observer above doesn't see it): the lamp may no longer fit, or fit again.
+    const mo = new MutationObserver(refresh);
+    if (scaleBox) mo.observe(scaleBox, { attributes: true, attributeFilter: ['data-scale'] });
+    return () => { ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', refresh); c.destroy(); ctl.current = null; };
   }, [phone, version, reduced, frameKey]);
 
   useEffect(() => { ctl.current?.hold(turning); }, [turning]);

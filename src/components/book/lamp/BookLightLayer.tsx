@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import type { LightVersion } from '@/lib/desk';
-import { BOOK_DEFAULT_AIM, PHONE_POOL } from '@/lib/desk';
+import { BOOK_DEFAULT_AIM, BOOK_REACH, lampGeometry, PHONE_POOL } from '@/lib/desk';
 import { BOOK_LIGHT } from './bookLight';
 
 const B = BOOK_LIGHT.b;
@@ -15,9 +15,11 @@ const B = BOOK_LIGHT.b;
  */
 export function BookLightFilter({ version, phone }: { version: LightVersion | null; phone: boolean }) {
   if (version !== 'B') return null;
-  const src = phone ? BOOK_LIGHT.source.phone : BOOK_LIGHT.source.desktop;
   // Near the resting aim; bookLight.ts sets the real one before the first paint (a phone page's size isn't known here).
   const at = phone ? { x: PHONE_POOL.x * 360, y: PHONE_POOL.y * 640 } : { x: BOOK_DEFAULT_AIM.x * 1120, y: BOOK_DEFAULT_AIM.y * 640 };
+  // From the lamp's mouth: the drawn lamp's on desktop, an imaginary one above the page on a phone.
+  const mouth = lampGeometry(at, BOOK_REACH);
+  const src = phone ? BOOK_LIGHT.source.phone : { x: mouth.mx, y: mouth.my };
   return (
     <svg className="book-light-defs" width="0" height="0" aria-hidden="true" focusable="false">
       <filter id="book-spot-filter" filterUnits="objectBoundingBox" x="0" y="0" width="1" height="1" primitiveUnits="userSpaceOnUse"

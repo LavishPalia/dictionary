@@ -17,6 +17,7 @@ import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocat
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
 import { BookLamp, useBookLightVersion } from '@/components/book/lamp/BookLamp';
+import { BookLampArt } from '@/components/book/lamp/BookLampArt';
 import { useLampSwitch } from '@/components/desk/useLampSwitch';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { useDuelVisible } from '@/components/today/DuelCard';
@@ -1502,6 +1503,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onPrevPage={handlePrevSpread}
             onNextPage={handleNextSpread}
           />
+          {/* The desk lamp leaning in from the top-left, drawn in the spread's units (only while the Book page shows). */}
+          {section === 'book' && <BookLampArt light={appliedLight} onToggle={bookSw.toggle} />}
         </ScaledSpread>
       )}
       {isBookOpen && !isMobile && (

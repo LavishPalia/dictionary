@@ -331,4 +331,202 @@ await run('Book lamp', async (t: any) => {
   };
   cmp('page', base, now);
   check('the page doesn\'t change (every baseline rect within 0.5 px, every entry style equal)', diffs.length === 0, diffs.slice(0, 10));
+
+  // ── The desktop lamp (Task 3): it leans in from the top-left; its shade switches the light and aims it ──
+  const { send } = t;
+  const stored = async () => JSON.parse((await evaluate(`localStorage.getItem('panna_settings')`)) ?? 'null');
+  const deskStore = async () => JSON.parse((await evaluate(`localStorage.getItem('panna_desk')`)) ?? 'null');
+  const dataLight = () => evaluate(`document.documentElement.getAttribute('data-light')`);
+  const center = (sel: string) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+  const mouse = (type: string, x: number, y: number) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1 });
+  /** Presses at (x, y), moves by (dx, dy) in steps, and lets go. */
+  const dragAt = async (x: number, y: number, dx: number, dy: number, steps = 8) => {
+    await mouse('mousePressed', x, y);
+    for (let i = 1; i <= steps; i++) { await mouse('mouseMoved', x + (dx * i) / steps, y + (dy * i) / steps); await sleep(16); }
+    await mouse('mouseReleased', x + dx, y + dy);
+    await sleep(150);
+  };
+  const drag = async (sel: string, dx: number, dy: number) => { const c = await center(sel); await dragAt(c.x, c.y, dx, dy); return c; };
+  const clickAt = async (sel: string) => { const c = await center(sel); await mouse('mousePressed', c.x, c.y); await mouse('mouseReleased', c.x, c.y); await sleep(150); };
+  const press = async (key: string, code: string, vk: number, modifiers = 0) => {
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: vk, modifiers });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: vk, modifiers });
+    await sleep(60);
+  };
+  const lampShown = () => evaluate(`(() => { const b = document.querySelector('#book-lamp'), a = document.querySelector('.book-lamp-art'); if (!b || !a) return false;
+    const r = b.getBoundingClientRect(); return !b.hidden && !a.hasAttribute('hidden') && r.width > 0 && getComputedStyle(a).display !== 'none'; })()`);
+  const dupIds = () => evaluate(`(() => { const seen = new Map(); for (const el of document.querySelectorAll('[id]')) seen.set(el.id, (seen.get(el.id) ?? 0) + 1);
+    return [...seen].filter(([, n]) => n > 1).map(([id]) => id); })()`);
+  const watchErrors = () => evaluate(`(() => { window.__errs = []; addEventListener('error', (e) => window.__errs.push(String(e.message)));
+    const ce = console.error; console.error = (...a) => { window.__errs.push(String(a[0]).slice(0, 200)); ce.apply(console, a); }; return true; })()`);
+  // The shade's box against what it must never cover (viewport px).
+  const clearOfAll = () => evaluate(`(() => { const R = (el) => el && el.getBoundingClientRect(); const lamp = R(document.querySelector('#book-lamp'));
+    const avoid = { spread: R(document.querySelector('#book-spread-container')), arrow: R(document.querySelector('button[aria-label="Previous spread"]')),
+      header: R(document.querySelector('.app-header')), count: R(document.querySelector('#page-number-btn')) };
+    const hit = Object.entries(avoid).filter(([, a]) => a && lamp.left <= a.right && lamp.right >= a.left && lamp.top <= a.bottom && lamp.bottom >= a.top).map(([k]) => k);
+    return { hit, lamp: [lamp.left, lamp.top, lamp.right, lamp.bottom].map(Math.round) }; })()`);
+  const LAMP_B = { noted: true, light: 'B' };
+
+  await load(D1440, 400, 'evening', LAMP_B);
+  const named = await evaluate(`(() => { const b = document.querySelector('#book-lamp'); if (!b) return null; const hint = document.getElementById(b.getAttribute('aria-describedby') ?? '');
+    return { tag: b.tagName, name: b.getAttribute('aria-label'), pressed: b.getAttribute('aria-pressed'), hint: hint?.textContent, cls: b.className,
+      art: document.querySelector('.book-lamp-art')?.getAttribute('aria-hidden') }; })()`);
+  check('the lamp is a button named "Desk lamp, on: Evening lighting"', named?.tag === 'BUTTON' && named.name === 'Desk lamp, on: Evening lighting' && named.pressed === 'true'
+    && named.cls === 'book-lamp-hit' && named.hint === 'Drag the shade to aim the light. Arrow keys aim it; Home puts it back.' && named.art === 'true', named);
+  check('desktop lamp: it shows at 1440 × 900', await lampShown());
+  await evaluate(`document.querySelector('#book-lamp').focus(); true`);
+  await press('Shift', 'ShiftLeft', 16); // a key press makes the focus visible
+  check('desktop lamp: the shade has a visible focus ring', await evaluate(`(() => { const b = document.querySelector('#book-lamp'); const s = getComputedStyle(b);
+    return b.matches(':focus-visible') && s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) >= 2; })()`));
+  await evaluate(`document.activeElement?.blur(); true`);
+  await clickAt('#book-lamp');
+  check('clicking the lamp switches to Day and says so', (await dataLight()) === 'day' && (await stored())?.lighting === 'day'
+    && (await attr('#book-lamp', 'aria-label'))?.endsWith('off: Day lighting') && (await attr('#book-lamp', 'aria-pressed')) === 'false', await stored());
+  check('#book-live says "Lamp off: Day lighting."', (await evaluate(`document.querySelector('#book-live')?.textContent`)) === 'Lamp off: Day lighting.');
+  await evaluate(`document.querySelector('#menu-btn').click(); true`);
+  await waitFor(`Boolean(document.querySelector('#lighting-day'))`);
+  check('the ⋯ menu shows Day after the switch', (await attr('#lighting-day', 'aria-checked')) === 'true');
+  await evaluate(`document.querySelector('#lighting-evening').click(); true`);
+  await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); true`);
+  await sleep(300);
+  check('picking Evening in the menu lights the lamp', (await attr('#book-lamp', 'aria-pressed')) === 'true' && (await dataLight()) === 'evening');
+  await clickAt('#book-lamp');
+  await clickAt('#book-lamp');
+  check('#book-live says "Lamp on: Evening lighting." after switching back on', (await evaluate(`document.querySelector('#book-live')?.textContent`)) === 'Lamp on: Evening lighting.');
+  await clickAt('#book-lamp'); // off again, then Today
+  const pressedHere = await attr('#book-lamp', 'aria-pressed');
+  check('no duplicate ids on the Book page', (await dupIds()).length === 0, await dupIds());
+  await evaluate(`document.querySelector('#open-today-btn').click(); true`);
+  await waitFor(`Boolean(document.querySelector('#desk-lamp'))`, 10000);
+  check('Today\'s lamp agrees after a switch on the Book page', (await attr('#desk-lamp', 'aria-pressed')) === pressedHere && pressedHere === 'false', { pressedHere });
+  check('no duplicate ids on Today (from the Book page)', (await dupIds()).length === 0, await dupIds());
+  await evaluate(`document.querySelector('#open-today-btn').click(); true`);
+  await waitFor(`Boolean(document.querySelector('#book-lamp'))`, 10000);
+  check('no duplicate ids back on the Book page', (await dupIds()).length === 0, await dupIds());
+  await evaluate(`document.querySelector('#open-today-btn').click(); true`);
+  await waitFor(`Boolean(document.querySelector('#desk-lamp')) && !document.querySelector('#book-lamp')`, 10000);
+  check('no duplicate ids on Today again (Today → Book → Today)', (await dupIds()).length === 0, await dupIds());
+
+  // The one-time note, shared with Today through `noted`.
+  await load(D1440, 400, 'evening', { light: 'B' });
+  await clickAt('#book-lamp');
+  check('the note shows on the first switch on a device', await waitFor(`Boolean(document.querySelector('#book-note'))`, 2000));
+  await evaluate(`document.querySelector('#book-note-auto').click(); true`);
+  await sleep(200);
+  check('Use Auto stores Auto and puts focus on #book-lamp', (await stored())?.lighting === 'auto' && (await evaluate(`document.activeElement?.id`)) === 'book-lamp',
+    { s: await stored(), f: await evaluate(`document.activeElement?.id`) });
+  await load(D1440, 400, 'evening', LAMP_B);
+  await clickAt('#book-lamp');
+  await sleep(300);
+  check('the note shows once, shared with Today (noted set: no #book-note)', !(await evaluate(`Boolean(document.querySelector('#book-note'))`)));
+
+  // Dragging the shade aims the light; a small move still switches.
+  await load(D1440, 400, 'evening', LAMP_B);
+  const frameBox = await evaluate(`(() => { const r = document.querySelector('#book-spread-container').getBoundingClientRect(); return { x: r.left, y: r.top, k: r.width / 1120 }; })()`);
+  const from = await drag('#book-lamp', 200, 120);
+  // The light glides to the new aim (slowly in headless Edge, which draws the filter without a GPU).
+  await waitFor(`!document.querySelector('#book-spread-container').dataset.lightMoving`, 8000);
+  const dropped = await deskStore(), s1 = await spot();
+  const wantX = (from.x + 200 - frameBox.x) / frameBox.k, wantY = (from.y + 120 - frameBox.y) / frameBox.k;
+  check('dragging the shade aims the light (bookAim stored, Today\'s aim untouched, the spotlight follows)', dropped?.bookAim && dropped.aim === undefined
+    && near(dropped.bookAim.x * SPREAD.w, wantX, 2) && near(dropped.bookAim.y * SPREAD.h, wantY, 2) && near(s1.x, wantX, 2) && near(s1.y, wantY, 2), { dropped, s1, wantX, wantY });
+  check('a drag doesn\'t switch the lamp', (await dataLight()) === 'evening');
+  check('the light comes from the shade\'s mouth, left of the spread and up-left of the spot', await evaluate(`(() => { const s = document.querySelector('#book-spot');
+    return Number(s.getAttribute('x')) < 0 && Number(s.getAttribute('x')) < Number(s.getAttribute('pointsAtX')) && Number(s.getAttribute('y')) < Number(s.getAttribute('pointsAtY')); })()`));
+  await drag('#book-lamp', 4, 0);
+  check('a 4 px move switches instead', (await dataLight()) === 'day' && (await deskStore())?.bookAim?.x === dropped?.bookAim?.x);
+
+  // The keys, with the shade focused.
+  await load(D1440, 400, 'evening', LAMP_B);
+  await evaluate(`document.querySelector('#book-lamp').focus(); true`);
+  await press('ArrowRight', 'ArrowRight', 39);
+  const k1 = (await deskStore())?.bookAim;
+  check('ArrowRight aims 20 px right', k1 && near(k1.x * SPREAD.w, BOOK_DEFAULT_AIM.x * SPREAD.w + 20, 1) && near(k1.y, BOOK_DEFAULT_AIM.y, 0.002), k1);
+  await press('ArrowDown', 'ArrowDown', 40, 8);
+  const k2 = (await deskStore())?.bookAim;
+  check('Shift+ArrowDown aims 60 px down', k2 && near(k2.y * SPREAD.h, BOOK_DEFAULT_AIM.y * SPREAD.h + 60, 1) && near(k2.x, k1.x, 0.002), k2);
+  await press('Home', 'Home', 36);
+  const k3 = (await deskStore())?.bookAim;
+  check('Home puts it back (0.25, 0.28)', k3?.x === 0.25 && k3?.y === 0.28 && (await deskStore())?.aim === undefined, k3);
+  check('the keys don\'t switch the lamp', (await dataLight()) === 'evening');
+
+  // The aim stays on the spread.
+  const c0 = await center('#book-lamp');
+  await dragAt(c0.x, c0.y, 1430 - c0.x, 890 - c0.y);
+  const far = (await deskStore())?.bookAim;
+  check('the aim stays on the spread (stored fractions ≤ 1)', far && far.x <= 1 && far.y <= 1 && far.x >= 0.99 && far.y >= 0.99, far);
+
+  // Touches: only the shade takes them over.
+  const touch = await evaluate(`(() => { const ta = (el) => el && getComputedStyle(el).touchAction;
+    return { lamp: ta(document.querySelector('#book-lamp')), spread: ta(document.querySelector('#book-spread-container')), pages: [...document.querySelectorAll('#book-spread-container .book-lit')].map(ta) }; })()`);
+  check('touch-action none only on the shade', touch.lamp === 'none' && touch.spread === 'auto' && touch.pages.length > 0 && touch.pages.every((v: string) => v === 'auto' || v === 'pan-y'), touch);
+
+  // Nothing lies over the entries.
+  const over = await evaluate(`(() => { const bad = []; const all = [...document.querySelectorAll('#book-spread-container .entry-open')].filter((e) => !e.closest('[aria-hidden="true"]'));
+    for (const e of all) { const r = e.getBoundingClientRect(); const top = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2)[0];
+      if (!top || !e.contains(top)) bad.push({ word: e.textContent, top: top?.id || top?.className }); }
+    return { n: all.length, bad }; })()`);
+  check(`nothing over the entries (${over?.n} entries)`, over?.n > 10 && over.bad.length === 0, over);
+
+  // Review Focus 4: a drag released over an entry opens nothing; selecting text across entries still works.
+  await load(D1440, 400, 'evening', LAMP_B);
+  const e1 = await center('#book-spread-container .entry-open');
+  const lc = await center('#book-lamp');
+  await dragAt(lc.x, lc.y, e1.x - lc.x, e1.y - lc.y);
+  await sleep(400);
+  check('a shade drag released over an entry opens no word sheet', !(await evaluate(`(() => { const s = document.querySelector('#word-sheet'); if (!s) return false;
+    const r = s.getBoundingClientRect(); return r.width > 0 && getComputedStyle(s).visibility !== 'hidden'; })()`)) && (await dataLight()) === 'evening');
+  const sel = await evaluate(`(() => { const ps = [...document.querySelectorAll('#book-spread-container .entry-text')].filter((p) => !p.closest('[aria-hidden="true"]'));
+    const a = ps[0].querySelector('.entry-hindi').getBoundingClientRect(), b = ps[1].querySelector('.entry-hindi').getBoundingClientRect();
+    return { a: { x: a.left + 2, y: a.top + a.height / 2 }, b: { x: b.right - 2, y: b.top + b.height / 2 } }; })()`);
+  await evaluate(`getSelection().removeAllRanges(); true`);
+  await dragAt(sel.a.x, sel.a.y, sel.b.x - sel.a.x, sel.b.y - sel.a.y);
+  const picked = await evaluate(`getSelection().toString()`);
+  check('a mouse drag across two entries still selects text', typeof picked === 'string' && picked.trim().length > 10, picked);
+  await evaluate(`getSelection().removeAllRanges(); true`);
+
+  // Review Focus 3: where the lamp fits.
+  await load(D1440, 400, 'evening', { ...LAMP_B, bookAim: { x: 0.4, y: 0.5 } });
+  await watchErrors();
+  const clear1440 = await clearOfAll();
+  check('1440 × 900: the lamp shows, clear of the spread, the arrow, the header and the page count', (await lampShown()) && clear1440.hit.length === 0, clear1440);
+  await setSize({ width: 1100, height: 800, mobile: false });
+  await sleep(500);
+  const at1100 = (await lampShown()) ? await clearOfAll() : null;
+  check('1100 × 800: the lamp is hidden or still clear', at1100 === null || at1100.hit.length === 0, at1100);
+  await setSize(D1440);
+  await sleep(500);
+  check('1440 → 1100 → 1440: the lamp comes back, bookAim kept, no console errors', (await lampShown()) && JSON.stringify((await deskStore())?.bookAim) === JSON.stringify({ x: 0.4, y: 0.5 })
+    && (await evaluate(`window.__errs.length`)) === 0, await evaluate(`window.__errs`));
+  await setSize({ width: 800, height: 900, mobile: false });
+  check('1440 → 800: the phone page, no lamp', await waitFor(`Boolean(document.querySelector('#mobile-page')) && !document.querySelector('#book-lamp, .book-lamp-art')`, 5000));
+  await setSize(D1440);
+  check('800 → 1440: the spread and the lamp come back cleanly', await waitFor(`Boolean(document.querySelector('#book-spread-container')) && Boolean(document.querySelector('#book-lamp'))`, 5000)
+    && (await lampShown()) && (await evaluate(`window.__errs.length`)) === 0 && (await dupIds()).length === 0, { errs: await evaluate(`window.__errs`), dup: await dupIds() });
+  await sleep(600);
+  await waitFor(`!document.querySelector('#book-spread-container').dataset.lightMoving`, 8000);
+  const back = await spot();
+  check('800 → 1440: the light rests at the stored aim', near(back.x, 0.4 * SPREAD.w) && near(back.y, 0.5 * SPREAD.h), back);
+  await load({ width: 1024, height: 768, mobile: false }, 400, 'evening', LAMP_B);
+  const at1024 = (await lampShown()) ? await clearOfAll() : null;
+  check('1024 × 768: the lamp is hidden or still clear of everything', at1024 === null || at1024.hit.length === 0, at1024);
+  if (at1024 === null) {
+    const s = await spot();
+    check('1024 × 768: the hidden lamp leaves the light at its resting aim', near(s.x, BOOK_DEFAULT_AIM.x * SPREAD.w) && near(s.y, BOOK_DEFAULT_AIM.y * SPREAD.h), s);
+  }
+
+  // No lamp over the cover.
+  await load(D1440, 400, 'evening', LAMP_B);
+  await evaluate(`document.querySelector('#menu-btn').click(); true`);
+  await waitFor(`Boolean(document.querySelector('#cover-toggle-btn'))`);
+  await evaluate(`document.querySelector('#cover-toggle-btn').click(); true`);
+  await waitFor(`!document.querySelector('#book-spread-container')`, 5000);
+  check('no lamp over the cover', !(await evaluate(`Boolean(document.querySelector('#book-lamp, .book-lamp-art'))`)));
+
+  // Reduced motion: the switch is instant.
+  await reduceMotion(true);
+  await load(D1440, 400, 'evening', LAMP_B);
+  await clickAt('#book-lamp');
+  check('reduced motion: no light-fading class after a switch', (await dataLight()) === 'day' && !(await evaluate(`document.documentElement.classList.contains('light-fading')`)));
+  await reduceMotion(false);
 });

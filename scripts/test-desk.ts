@@ -1,6 +1,6 @@
 // Checks the desk scene's pure parts (src/lib/desk.ts): the lamp's geometry and what a device remembers.
 // Usage: npx tsx scripts/test-desk.ts
-import { aimToScene, BOOK_DEFAULT_AIM, bookLampFits, clampScene, DEFAULT_AIM, lampGeometry, parseDesk, PHONE_POOL, sceneToAim, SCENE_H, SCENE_W, TODAY_REACH, type LampReach } from '../src/lib/desk';
+import { aimToScene, BOOK_DEFAULT_AIM, BOOK_REACH, bookLampFits, clampScene, DEFAULT_AIM, lampGeometry, parseDesk, PHONE_POOL, sceneToAim, SCENE_H, SCENE_W, TODAY_REACH, type LampReach } from '../src/lib/desk';
 
 let checks = 0, failures = 0;
 function check(label: string, ok: boolean, detail?: unknown) {
@@ -47,6 +47,21 @@ const view = { w: 400, h: 300 }, spread = { left: 100, top: 100, right: 300, bot
 check('a lamp inside the view and clear of the spread fits', bookLampFits({ left: 10, top: 10, right: 60, bottom: 90 }, [spread], view));
 check('a lamp touching the spread does not fit', !bookLampFits({ left: 60, top: 120, right: 100, bottom: 160 }, [spread], view));
 check('a lamp partly outside the view does not fit', !bookLampFits({ left: -5, top: 10, right: 40, bottom: 60 }, [spread], view) && !bookLampFits({ left: 350, top: 10, right: 410, bottom: 60 }, [spread], view));
+
+// ── the Book page's reach: the shade (74 units along its angle, ± 38 across) never covers the spread or the left arrow ──
+const shadeOf = (t: { x: number; y: number }) => {
+  const g = lampGeometry(t, BOOK_REACH); const c = Math.cos(g.ang), s = Math.sin(g.ang);
+  const pts = [0, 74].flatMap((a) => [-38, 38].map((k) => ({ x: g.px + a * c - k * s, y: g.py + a * s + k * c })));
+  return { left: Math.min(...pts.map((p) => p.x)), right: Math.max(...pts.map((p) => p.x)), top: Math.min(...pts.map((p) => p.y)), bottom: Math.max(...pts.map((p) => p.y)) };
+};
+type Box = { left: number; right: number; top: number; bottom: number };
+const hits = (b: Box, r: Box) => b.left <= r.right && b.right >= r.left && b.top <= r.bottom && b.bottom >= r.top;
+const SPREAD_Q = { left: 0, top: 0, right: Infinity, bottom: Infinity }, LEFT_ARROW = { left: -52, top: 288, right: -12, bottom: 352 };
+const aims = [[0, 0], [1120, 0], [0, 640], [1120, 640], [BOOK_DEFAULT_AIM.x * 1120, BOOK_DEFAULT_AIM.y * 640]].map(([x, y]) => ({ x, y }));
+const bad = aims.map((t) => ({ t, b: shadeOf(t) })).filter(({ b }) => hits(b, SPREAD_Q) || hits(b, LEFT_ARROW));
+check('the Book lamp’s shade stays off the spread and the left arrow at every corner', Boolean(BOOK_REACH) && bad.length === 0, bad);
+const g0 = BOOK_REACH && lampGeometry({ x: 280, y: 179 }, BOOK_REACH);
+check('the Book lamp’s light comes from the left of the spread and slants down-right', Boolean(g0) && g0.px < 0 && g0.mx < 0 && g0.ang > 0 && g0.ang < Math.PI / 2, g0);
 
 console.log(`\nDesk: ${checks - failures}/${checks} checks passed.`);
 if (failures) process.exit(1);
