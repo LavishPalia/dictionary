@@ -91,7 +91,7 @@ export function scrubPath(path: string): string {
 
 /** A full URL or a bare path, as a pattern: origin kept, path scrubbed, query and hash dropped. Junk becomes ''. */
 export function scrubUrl(value: string): string {
-  if (!value) return value;
+  if (!value || value === '$direct') return value; // PostHog's marker for no referrer
   if (value.startsWith('/')) return scrubPath(value.split(/[?#]/)[0]);
   try {
     const u = new URL(value);

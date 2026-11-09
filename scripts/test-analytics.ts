@@ -70,6 +70,7 @@ check('a share launch loses the shared text', scrubUrl('https://panna-ashen.verc
 check('a bare path with a query is scrubbed', scrubUrl('/page/9?v=abc') === '/page/[n]');
 check('an outside referrer keeps only its address, not its search', scrubUrl('https://www.google.com/search?q=camel+meaning+in+hindi') === 'https://www.google.com/search');
 check('junk becomes empty, empty stays empty', scrubUrl('not a url') === '' && scrubUrl('') === '');
+check('PostHog keeps $direct (no referrer) as it is', scrubUrl('$direct') === '$direct');
 
 const event = scrubEvent({
   event: '$pageview',

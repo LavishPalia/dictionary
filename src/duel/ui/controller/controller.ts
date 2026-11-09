@@ -338,7 +338,8 @@ export class GameController {
     this.save(you.state, end.state);
     if (end.state.over && !this.snap.state.over) {
       this.record(end.state);
-      this.platform.track?.('duel_finished', { mode: this.practice ? 'practice' : 'daily', result: end.state.scores.you > end.state.scores.quill ? 'won' : 'lost' });
+      const { you, quill } = end.state.scores;
+      this.platform.track?.('duel_finished', { mode: this.practice ? 'practice' : 'daily', result: you > quill ? 'won' : you < quill ? 'lost' : 'tied' });
     }
 
     this.lastTap = null;

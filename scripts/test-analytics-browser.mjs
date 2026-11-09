@@ -215,6 +215,37 @@ async function main() {
     check('phone: two page turns happened', await evaluate(`location.pathname !== '/page/${CAMEL_PAGE}'`), await evaluate('location.pathname'));
     check('phone: page turns send nothing', events().length === mark, events().slice(mark).map((e) => e.event));
 
+    // ── 4b. The other screens: Saved, Review (a finished round), the study guide, Play ──
+    await open('/word/camel', PHONE);
+    await waitFor(() => named('$pageview').filter((e) => e.properties?.screen === 'word').length >= 3);
+    await evaluate(`document.querySelector('#save-word-btn').click(); true`);
+    await sleep(400);
+    await key('Escape'); await sleep(500);
+    await settle();
+    mark = events().length;
+    await evaluate(`document.querySelector('#nav-saved-btn').click(); true`);
+    check('Saved counts as one page view at /saved', await waitFor(() => named('$pageview', mark).some((e) => e.properties?.screen === 'saved' && e.properties?.$pathname === '/saved')), named('$pageview', mark).map((e) => e.properties?.screen));
+    await sleep(600);
+    await evaluate(`document.querySelector('#nav-review-btn').click(); true`);
+    check('Review counts as one page view at /review', await waitFor(() => named('$pageview', mark).some((e) => e.properties?.screen === 'review' && e.properties?.$pathname === '/review')));
+    for (let i = 0; i < 12; i++) {
+      for (let j = 0; j < 30 && !(await evaluate(`Boolean(document.querySelector('.review-option:not([disabled]), #review-done'))`)); j++) await sleep(150);
+      if (await evaluate(`Boolean(document.querySelector('#review-done'))`)) break;
+      await evaluate(`document.querySelector('.review-option')?.click(); true`);
+      await sleep(500);
+      await evaluate(`document.querySelector('#review-next-btn')?.click(); true`);
+      await sleep(500);
+    }
+    check('a finished Review round sends review_finished with cards and right answers only', await waitFor(() => named('review_finished', mark).length === 1)
+      && Number.isInteger(named('review_finished', mark)[0].properties.cards) && Number.isInteger(named('review_finished', mark)[0].properties.right) && named('review_finished', mark)[0].properties.practice === false,
+      named('review_finished', mark)[0]?.properties);
+    const screens = named('$pageview', mark).map((e) => e.properties?.screen);
+    check('each screen opened counts once', screens.filter((s) => s === 'saved').length === 1 && screens.filter((s) => s === 'review').length === 1, screens);
+    await open('/learn', DESKTOP);
+    check('the study guide opened at /learn counts once, at /learn', await waitFor(() => named('$pageview').filter((e) => e.properties?.screen === 'learn' && e.properties?.$pathname === '/learn').length === 1));
+    await send('Page.navigate', { url: `${BASE}/play` });
+    check('Play counts as a page view at /play', await waitFor(() => named('$pageview').some((e) => e.properties?.screen === 'play' && e.properties?.$pathname === '/play'), 20000));
+
     // ── 5. No word, search, Hindi or page number ever leaves the device ──
     const everything = requests.map((r) => `${r.url}\n${r.body}`).join('\n');
     const leaks = ['camel', 'ऊंट', 'ऊँट', 'share_text', `/page/${CAMEL_PAGE}`, '/word/camel'].filter((w) => everything.toLowerCase().includes(w.toLowerCase()));
@@ -222,7 +253,7 @@ async function main() {
     check('no payload holds a headword, the search text, Hindi typed, a page address or the share text', leaks.length === 0 && pagePaths.length === 0, { leaks, pagePaths });
     check('no payload carries a page title', !/"\$?title"\s*:/.test(everything));
     check('every payload decoded', requests.every((r) => !r.body.startsWith('UNDECODABLE')), requests.filter((r) => r.body.startsWith('UNDECODABLE')).map((r) => r.body));
-    check('only the events of the plan are sent', events().every((e) => ['$pageview', 'word_looked_up', 'word_saved', 'word_unsaved', '$set', '$identify'].includes(e.event)), [...new Set(events().map((e) => e.event))]);
+    check('only the events of the plan are sent', events().every((e) => ['$pageview', 'word_looked_up', 'word_saved', 'word_unsaved', 'review_finished', '$set', '$identify'].includes(e.event)), [...new Set(events().map((e) => e.event))]);
 
     // ── 6. The Usage counts switch ──
     for (const [sizeName, size] of [['desktop', DESKTOP], ['phone', PHONE]]) {
@@ -290,6 +321,11 @@ async function main() {
     check('the service worker caches nothing under /relay', Array.isArray(cached) && !cached.some((u) => new URL(u).pathname.startsWith('/relay')), cached?.filter((u) => u.includes('relay')));
     const csp = await evaluate(`fetch('/').then((r) => r.headers.get('content-security-policy'))`);
     check('the CSP header is unchanged (connect-src \'self\')', csp === CSP, csp);
+    // /relay needs Next's trailing-slash redirect off; every other address keeps it (next.config.mjs).
+    for (const [from, to] of [['/learn/', '/learn'], [`/page/${CAMEL_PAGE}/`, `/page/${CAMEL_PAGE}`], ['/word/camel/', '/word/camel'], ['/play/', '/play']]) {
+      const res = await fetch(`${BASE}${from}`, { redirect: 'manual' });
+      check(`${from} still redirects to ${to}`, [301, 308].includes(res.status) && new URL(res.headers.get('location'), BASE).pathname === to, { status: res.status, location: res.headers.get('location') });
+    }
   } finally {
     socket?.close();
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
