@@ -10,6 +10,7 @@ import {
   type AnalyticsEnv, type Screen,
 } from './analytics-core';
 import { readLaunch } from './launch';
+import { personName, readBookplate, unshareBookplate } from './bookplate';
 import { loadRecords, loadReviewDays, statusOf, streak } from './review';
 import { readResults, RESULTS_KEY } from '@/duel/progress';
 
@@ -32,6 +33,7 @@ let started = false;
 let loading = false;
 let posthog: PostHog | null = null;
 let queue: Queued[] = [];
+let nickname = '';
 
 function readSettings(): Record<string, unknown> {
   try {
@@ -92,7 +94,7 @@ function readingProfile(): Props {
     mastered_words: keys.filter((k) => statusOf(records[k]) === 'mastered').length,
     review_streak: streak(loadReviewDays(), Date.now()),
     duel_games: readResults(readJson(RESULTS_KEY)).length,
-    bookplate: Boolean(readSettings().bookplate),
+    bookplate: Boolean(readBookplate(readSettings())),
   };
 }
 
@@ -160,14 +162,15 @@ async function load() {
     // The nickname and the reading profile ride on this open's first event as its $set: the person is named from their
     // very first event (a separate $set is batched and lands seconds later), and no extra "Set person properties"
     // events are spent. With no event waiting, they go as one $set.
-    const nickname = nicknameFor(ph.get_distinct_id());
+    nickname = nicknameFor(ph.get_distinct_id());
     let person: Props = {};
     const events: Extract<Queued, { kind: 'event' }>[] = [];
     for (const item of queue) {
       if (item.kind === 'person') person = { ...person, ...item.props };
       else events.push(item);
     }
-    person = { ...person, name: nickname, nickname };
+    // The name is the nickname, or "Riya · Indigo Owl 3f2" once the reader has ticked "Share my name" on their bookplate.
+    person = { ...person, name: personName(nickname, readBookplate(readSettings()), true), nickname };
     posthog = ph;
     queue = [];
     const [first, ...rest] = events;
@@ -221,13 +224,33 @@ export function setUsageCounts(on: boolean): void {
   } catch {}
   if (!on) {
     queue = [];
+    // Switching counting off also unticks "Share my name": the name is taken back at once, in one last update sent
+    // before PostHog stops, and it isn't sent again if counting is switched back on.
+    const plate = readBookplate(readSettings());
+    if (plate?.share) {
+      unshareBookplate();
+      if (posthog && nickname) posthog.capture('$set', {}, { $set: { name: nickname }, send_instantly: true });
+    }
     posthog?.opt_out_capturing();
     return;
   }
+  // A share tick can't be set while counting is off: one stored as ticked is stale, and must not send the name now.
+  unshareBookplate();
   if (!allowed()) return;
   if (posthog) { posthog.opt_in_capturing({ captureEventName: false }); return; }
   if (started) {
     enqueue({ kind: 'person', props: readingProfile() });
     void load();
   }
+}
+
+/**
+ * The bookplate was saved, changed or removed: the profile's name follows at once (the nickname, or the plate's name
+ * with the share tick) along with whether a plate exists. Before PostHog has loaded nothing is needed: loading reads
+ * the plate itself.
+ */
+export function syncBookplate(): void {
+  if (!posthog || !nickname || !allowed()) return;
+  const plate = readBookplate(readSettings());
+  posthog.capture('$set', {}, { $set: { name: personName(nickname, plate, true), bookplate: Boolean(plate) }, send_instantly: true });
 }

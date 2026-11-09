@@ -9,6 +9,8 @@ import { StarIcon } from '@/components/ui/icons';
 import { ProgressBar, ReviewCalendar } from '@/components/progress/Progress';
 import type { CalendarDay, Progress } from '@/lib/progress';
 import { DuelCard } from './DuelCard';
+import { BookplateGreeting, BookplateOffer } from '@/components/bookplate/Bookplate';
+import type { Bookplate } from '@/lib/bookplate';
 
 interface TodayScreenProps {
   dueCount: number;
@@ -38,6 +40,11 @@ interface TodayScreenProps {
   lookedUpToday: { total: number; unsaved: number };
   /** Opens Saved on the History tab. */
   onOpenHistory: () => void;
+  /** The reader's bookplate (a greeting with their name), and the one-time offer to write one. */
+  bookplate: Bookplate | null;
+  offerBookplate: boolean;
+  onWriteBookplate: () => void;
+  onDismissBookplate: () => void;
 }
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
@@ -69,6 +76,7 @@ export function TodayScreen(props: TodayScreenProps) {
   return (
     <section className="today" id="today-screen" aria-labelledby="today-title">
       <h1 id="today-title" className="ui-visually-hidden">Today</h1>
+      {props.bookplate && <BookplateGreeting plate={props.bookplate} hour={new Date().getHours()} />}
       <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
 
       {props.showWelcome && (
@@ -82,6 +90,10 @@ export function TodayScreen(props: TodayScreenProps) {
             <Button id="today-not-now" onClick={props.onDismissWelcome}>Not now</Button>
           </div>
         </Card>
+      )}
+
+      {props.offerBookplate && !props.showWelcome && (
+        <BookplateOffer onWrite={props.onWriteBookplate} onNotNow={props.onDismissBookplate} />
       )}
 
       <DuelCard />

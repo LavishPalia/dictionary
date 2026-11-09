@@ -1,0 +1,126 @@
+/* The bookplate (src/components/bookplate): the plate and its sheet, Today's offer and greeting, the ⋯ row's miniature.
+   Theme tokens only, so all of it dims with the Evening lamp. The plate's paper is --parch-hi, its ink --crimson, and the
+   name is written in the margin-note pen (--pencil-blue) in the hand face; Hindi names fall back to the Devanagari face. */
+
+/* ---------- the plate ---------- */
+.bp-plate {
+  position: relative; box-sizing: border-box; width: 100%; max-width: 300px; margin: 0 auto; padding: 18px 22px 20px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--ink);
+  background: radial-gradient(ellipse at 50% 40%, var(--parch-hi), var(--parch));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28), inset 0 0 24px color-mix(in srgb, var(--page-shade) 16%, transparent);
+}
+.bp-plate::before, .bp-plate::after { content: ''; position: absolute; pointer-events: none; }
+.bp-plate::before { inset: 7px; border: 2px solid var(--crimson); }
+.bp-plate::after { inset: 11px; border: 1px solid color-mix(in srgb, var(--crimson) 55%, transparent); }
+.bp-corner { position: absolute; width: 14px; height: 14px; color: var(--crimson); }
+.bp-corner--tl { top: 3px; left: 3px; }
+.bp-corner--tr { top: 3px; right: 3px; transform: scaleX(-1); }
+.bp-corner--bl { bottom: 3px; left: 3px; transform: scaleY(-1); }
+.bp-corner--br { bottom: 3px; right: 3px; transform: scale(-1); }
+.bp-exlibris { font: 13px var(--font-fell-sc); letter-spacing: 0.32em; margin-left: 0.32em; color: var(--crimson); }
+.bp-medallion {
+  flex: none; width: 62px; height: 62px; margin: 6px 0 2px; border-radius: 50%; display: grid; place-items: center; color: var(--crimson);
+  border: 1.5px solid var(--crimson);
+  box-shadow: inset 0 0 0 3px var(--parch-hi), inset 0 0 0 4px color-mix(in srgb, var(--crimson) 45%, transparent);
+}
+.bp-medallion svg { width: 40px; height: 40px; }
+.bp-monogram { font: 30px/1 var(--font-fell-sc); color: currentColor; padding-top: 3px; }
+.bp-monogram--deva { font: 28px/1 var(--font-deva); padding-top: 6px; }
+.bp-belongs { margin-top: 2px; font: italic 13.5px var(--font-fell); color: var(--ink-soft); }
+.bp-name-line { width: 88%; border-bottom: 1px solid var(--sepia); }
+.bp-name-input {
+  display: block; box-sizing: border-box; width: 100%; height: 42px; padding: 0 4px; border: 0; border-radius: 4px;
+  background: transparent; text-align: center; color: var(--pencil-blue);
+  font: 600 31px/1.25 var(--font-hand), var(--font-deva);
+}
+.bp-name-input::placeholder { color: var(--ink-soft); opacity: 0.75; font: italic 16px var(--font-fell); }
+.bp-name-input:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 3px; }
+/* Devanagari has no hand face here: the book's Hindi face, a little smaller. */
+.bp-name--deva { font-family: var(--font-deva); font-weight: normal; font-size: 26px; }
+
+/* ---------- the sheet ---------- */
+.bp-sheet form { display: flex; flex-direction: column; }
+.bp-count { margin: 6px 0 0; min-height: 18px; text-align: center; font: 12.5px var(--font-fell); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.bp-count--near { color: var(--crimson); }
+.bp-emblems { margin: 6px 0 0; padding: 0; border: 0; min-width: 0; }
+.bp-emblems legend { padding: 0; margin-bottom: 6px; }
+.bp-emblem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; }
+.bp-emblem {
+  position: relative; height: 50px; border-radius: var(--radius-md); border: 1px solid var(--rule); cursor: pointer;
+  background: color-mix(in srgb, var(--wash) 30%, transparent); display: grid; place-items: center; color: var(--crimson);
+}
+.bp-emblem:hover { background: color-mix(in srgb, var(--wash) 50%, transparent); }
+.bp-emblem input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.bp-emblem svg { width: 30px; height: 30px; pointer-events: none; }
+.bp-emblem .bp-monogram { font-size: 22px; padding-top: 2px; pointer-events: none; }
+.bp-emblem .bp-monogram--deva { font-size: 20px; }
+.bp-emblem:has(input:checked) { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
+.bp-emblem:has(input:focus-visible) { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+.bp-emblem-name { margin: 6px 0 0; min-height: 20px; font: italic 13.5px var(--font-fell); color: var(--ink-soft); }
+.bp-emblem-name [lang='hi'] { font: normal 14px var(--font-deva); }
+
+.bp-share {
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: start; margin-top: 12px; padding: 12px 14px;
+  border: 1px solid var(--rule); border-radius: var(--radius-md); background: color-mix(in srgb, var(--wash) 18%, transparent); cursor: pointer;
+}
+.bp-share input {
+  appearance: none; grid-row: span 2; width: 24px; height: 24px; margin: 1px 0 0; display: grid; place-items: center; cursor: pointer;
+  border: 1.5px solid var(--sepia); border-radius: 5px; background: color-mix(in srgb, var(--wash) 45%, transparent);
+}
+/* the 44px tap area */
+.bp-share input::before { content: ''; position: absolute; width: 44px; height: 44px; }
+.bp-share input:checked { background: var(--binding); border-color: var(--binding); }
+.bp-share input:checked::after {
+  content: ''; width: 6px; height: 12px; border: solid var(--on-binding); border-width: 0 2.5px 2.5px 0; transform: translateY(-2px) rotate(45deg);
+}
+.bp-share input:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+.bp-share input:disabled { opacity: 0.5; cursor: not-allowed; }
+.bp-share-title { font: 16.5px/1.35 var(--font-fell); color: var(--ink); }
+.bp-share-sub { font: 13.5px/1.4 var(--font-fell); color: var(--ink-soft); }
+.bp-share--off { cursor: default; }
+.bp-share--off .bp-share-title { color: var(--ink-soft); }
+
+.bp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-4); }
+.bp-actions .ui-btn--primary { flex: 1 1 140px; }
+.bp-remove {
+  margin-left: auto; min-height: var(--tap); padding: 0 4px; border: 0; background: none; cursor: pointer;
+  color: var(--crimson); font: 14.5px var(--font-fell); text-decoration: underline;
+}
+.bp-remove:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- Today: the offer and the greeting ---------- */
+.bp-offer { display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; }
+.bp-offer-text { min-width: 0; }
+.bp-offer-text .today-muted { margin-bottom: 0; }
+.bp-offer-plate { width: 64px; height: 82px; align-self: center; color: var(--crimson); }
+.bp-offer-paper { fill: var(--parch-hi); stroke: currentColor; }
+.bp-offer-line { stroke: var(--sepia); }
+.bp-offer-actions { grid-column: 1 / -1; margin-top: 8px; }
+
+.bp-greeting { display: flex; align-items: center; gap: 10px; margin: -4px 2px 0; color: var(--brass-soft); font: italic 20px var(--font-fell); }
+.bp-seal { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--brass-line); display: grid; place-items: center; color: var(--brass); }
+.bp-seal svg { width: 22px; height: 22px; }
+.bp-seal .bp-monogram { font-size: 18px; padding-top: 2px; }
+.bp-seal .bp-monogram--deva { font-size: 17px; padding-top: 4px; }
+.bp-hand { font: normal 600 25px/1 var(--font-hand), var(--font-deva); }
+.bp-greeting .bp-name--deva { font: normal 20px/1 var(--font-deva); }
+
+/* ---------- the ⋯ menu: a chip beside the title ---------- */
+.menu-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); }
+.menu-head .ui-sheet-title { margin: 0; }
+.menu-plate-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; max-width: 55%; min-height: var(--tap); padding: 0 6px 0 4px;
+  border: 1px solid var(--rule); border-radius: var(--radius-md); background: transparent; color: var(--ink); cursor: pointer;
+}
+.menu-plate-chip:hover .menu-plate-chip-name { color: var(--crimson); }
+.menu-plate-chip:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+.menu-plate-chip .ui-icon { flex: none; width: 16px; height: 16px; color: var(--ink-soft); }
+.menu-plate-chip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 15px var(--font-fell); }
+.bp-mini {
+  flex: none; width: 28px; height: 34px; display: grid; place-items: center; color: var(--crimson); background: var(--parch-hi);
+  border: 1.5px solid var(--crimson); outline: 1px solid color-mix(in srgb, var(--crimson) 45%, transparent); outline-offset: -4px;
+}
+.bp-mini svg { width: 20px; height: 20px; }
+.bp-mini .bp-monogram { font-size: 15px; padding-top: 2px; }
+.bp-mini .bp-monogram--deva { font-size: 14px; padding-top: 3px; }
+.bp-mini--empty { border-style: dashed; border-color: var(--sepia); outline: 0; color: var(--ink-soft); font: 17px var(--font-fell); background: transparent; }
