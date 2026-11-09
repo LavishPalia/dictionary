@@ -646,7 +646,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const handleSelectSavedWord = async (headword: string, savedPage: number) => {
     showBookForSearch();
     const found = await fetchWord(headword);
-    if (found) recordEntry(found.entry, 'search', found.pageNumber);
+    if (found) recordShown({ normalized: found.entry.normalized, headword: found.entry.headword, meaning_hi: found.entry.meaning_hi, page: found.pageNumber }, 'search', 'other'); // a recent: counted apart from searches
     turnToPage(found ? found.pageNumber : savedPage, found ? found.entry.headword : headword);
   };
 
