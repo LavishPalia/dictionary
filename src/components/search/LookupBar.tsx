@@ -14,7 +14,8 @@ import { Chip } from '@/components/ui';
 export interface LookupFill { text: string; show?: 'list' | 'closest' }
 
 interface LookupBarProps {
-  onSelectWord: (headword: string, pageNumber: number, meaning_hi?: string) => void;
+  /** `match` says how it was found ('hindi', 'hinglish', …): usage counts tell Hindi look-ups apart, never the word. */
+  onSelectWord: (headword: string, pageNumber: number, meaning_hi?: string, match?: string) => void;
   /** Recent words are looked up again: their stored page may be from an older build of the book. */
   onSelectRecent: (headword: string, savedPage: number) => void;
   /** The newest words from lookup history (at most 8), shown while the box is empty. */
@@ -221,7 +222,7 @@ export const LookupBar: React.FC<LookupBarProps> = ({
     setQuery(item.headword);
     setIsOpen(false);
     closeKeyboard();
-    onSelectWord(item.headword, item.page_number, item.meaning_hi);
+    onSelectWord(item.headword, item.page_number, item.meaning_hi, item.match);
   };
 
   const handleSelectRecent = (item: RecentWord) => {

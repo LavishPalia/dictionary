@@ -36,6 +36,10 @@ interface ReadingMenuProps {
   iosShortcut: string;
   /** e.g. "Last backup 3 days ago". */
   backupLabel: string;
+  /** Usage counts (src/lib/analytics.ts): on, and whether the browser's Do Not Track / GPC keeps it off. */
+  usageCounts: boolean;
+  usageCountsBlocked: boolean;
+  onUsageCountsChange: (on: boolean) => void;
 }
 
 // Everything that used to crowd the top of the screen: reading preferences and the less frequent actions.
@@ -144,6 +148,16 @@ export function ReadingMenu(props: ReadingMenuProps) {
           Restore
         </button>
       </div>
+      <label className="menu-row" htmlFor="usage-counts-switch">
+        <div>
+          <div className="menu-title">Usage counts</div>
+          <div className="menu-sub" id="usage-counts-sub">
+            {props.usageCountsBlocked ? 'Off: your browser asks sites not to track it' : 'Anonymous counts of visits, never which words'}
+          </div>
+        </div>
+        <Switch id="usage-counts-switch" checked={props.usageCounts} onChange={props.onUsageCountsChange} label="Usage counts"
+          disabled={props.usageCountsBlocked} describedBy="usage-counts-sub" />
+      </label>
       <button type="button" className="menu-foot" id="open-credits-btn" onClick={thenClose(props.onOpenCredits)}>
         Sources &amp; credits ›
       </button>

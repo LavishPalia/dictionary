@@ -115,6 +115,7 @@
 .ui-switch::before { content: ''; position: absolute; inset: -8px -4px; } /* 44px tap area */
 .ui-switch[aria-checked='true'] { background: var(--binding); }
 .ui-switch[aria-checked='true']::after { transform: translateX(18px); }
+.ui-switch:disabled { opacity: .55; cursor: not-allowed; }
 
 /* ---------- sheet (bottom sheet on phones, centred panel on wider screens) ---------- */
 .ui-scrim { position: fixed; inset: 0; z-index: 900; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; }

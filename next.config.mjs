@@ -30,7 +30,24 @@ const nextConfig = {
   images: { unoptimized: true },
   // Which Vercel deploy this is ('production', 'preview', or '' locally), for the Duel's pre-launch hiding
   // (src/duel/platform/web/entry.ts), without relying on Vercel exposing its system variables to the browser.
-  env: { NEXT_PUBLIC_DUEL_ENV: process.env.VERCEL_ENV ?? '' },
+  // NEXT_PUBLIC_DEPLOY_ENV is the same for usage counts (src/lib/analytics.ts): PostHog starts only on 'production', or on
+  // 'preview' while NEXT_PUBLIC_ANALYTICS_PREVIEW=1 is set for Preview in Vercel.
+  env: { NEXT_PUBLIC_DUEL_ENV: process.env.VERCEL_ENV ?? '', NEXT_PUBLIC_DEPLOY_ENV: process.env.VERCEL_ENV ?? '' },
+  // Usage counts reach PostHog's EU servers through this site's own /relay path, so the CSP keeps connect-src 'self'.
+  // Order matters: the static and array paths go to the assets host. (PostHog's Next.js reverse-proxy guide.)
+  async rewrites() {
+    return [
+      { source: '/relay/static/:path*', destination: 'https://eu-assets.i.posthog.com/static/:path*' },
+      { source: '/relay/array/:path*', destination: 'https://eu-assets.i.posthog.com/array/:path*' },
+      { source: '/relay/:path*', destination: 'https://eu.i.posthog.com/:path*' },
+    ];
+  },
+  // PostHog's API paths end in a slash (/e/, /i/v0/e/); Next's redirect to the unslashed path would break them. The
+  // redirect below puts it back for every other address, so /learn/ still goes to /learn as before.
+  skipTrailingSlashRedirect: true,
+  async redirects() {
+    return [{ source: '/:path((?!relay(?:/|$)).+)/', destination: '/:path', permanent: true }];
+  },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },

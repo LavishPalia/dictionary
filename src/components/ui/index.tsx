@@ -85,8 +85,8 @@ export function Segmented<T extends string>({ label, options, value, onChange }:
   );
 }
 
-export function Switch({ checked, onChange, label, id }: { checked: boolean; onChange: (checked: boolean) => void; label: string; id?: string }) {
-  return <button id={id} type="button" role="switch" aria-checked={checked} aria-label={label} className="ui-switch" onClick={() => onChange(!checked)} />;
+export function Switch({ checked, onChange, label, id, disabled, describedBy }: { checked: boolean; onChange: (checked: boolean) => void; label: string; id?: string; disabled?: boolean; describedBy?: string }) {
+  return <button id={id} type="button" role="switch" aria-checked={checked} aria-label={label} aria-describedby={describedBy} className="ui-switch" disabled={disabled} onClick={() => onChange(!checked)} />;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';

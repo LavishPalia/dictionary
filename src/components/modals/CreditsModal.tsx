@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { APP_NAME } from '@/lib/app-name';
 
 interface CreditsModalProps {
   isOpen: boolean;
@@ -47,6 +48,11 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({ isOpen, onClose }) =
           <section>
             <h3 style={{ margin: '0 0 3px', color: 'var(--crimson)', font: '18px var(--font-fell)' }}>AGID / SCOWL</h3>
             <p style={{ margin: 0, fontSize: '14px' }}>Inflection data supports lookup of forms such as plurals and verb tenses. AGID is by Kevin Atkinson and is free to use with its copyright notice; SCOWL materials carry their own notices. See <a href="https://wordlist.aspell.net/" target="_blank" rel="noreferrer" style={{ color: 'var(--crimson)' }}>SCOWL</a> and the included data-source notices.</p>
+          </section>
+          <section id="usage-counts-notice" style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+            <h3 style={{ margin: '0 0 5px', color: 'var(--crimson)', font: '18px var(--font-fell)' }}>Usage counts</h3>
+            <p style={{ margin: '0 0 7px', fontSize: '14px' }}>To see how the book is used, {APP_NAME} counts visits and actions anonymously with PostHog: a random number for this device, a made-up nickname, the screens you open, and how many words you save or review, never which words. No email, IP address or search is recorded. Turn it off any time in ⋯ → Usage counts.</p>
+            <p lang="hi" style={{ margin: 0, fontSize: '14px' }}>{APP_NAME} बिना नाम के गिनता है कि किताब कैसे इस्तेमाल होती है: कितनी बार खोली गई और कितने शब्द सहेजे गए, पर कौन-से शब्द, यह कभी नहीं। इसे कभी भी ⋯ → Usage counts में बंद करें।</p>
           </section>
           <section style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
             <h3 style={{ margin: '0 0 5px', color: 'var(--crimson)', font: '18px var(--font-fell)' }}>Editorial and review status</h3>
