@@ -1453,6 +1453,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           page={singleMobilePage}
           loadingPage={loadingPage}
           lampVersion={lampVersion}
+          light={appliedLight}
+          onToggleLamp={bookSw.toggle}
           highlightedWord={highlightedWord}
           isBookmarked={isSpreadBookmarked}
           onToggleBookmark={handleToggleSpreadBookmark}

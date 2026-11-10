@@ -8,6 +8,8 @@ import { PronunciationFooter } from './PronunciationFooter';
 import { InkLines } from './InkLines';
 import { LetterRail } from './LetterRail';
 import { BookLightLayer } from './lamp/BookLightLayer';
+import { PushSwitch } from './lamp/PushSwitch';
+import type { Light } from '@/lib/lighting';
 import type { LightVersion } from '@/lib/desk';
 
 interface MobilePageProps {
@@ -31,6 +33,9 @@ interface MobilePageProps {
   onSelectLetter?: (letter: string, page: number) => void;
   /** The lamp's light under the ink (Evening), in this version; none when the lamp isn't mounted. */
   lampVersion?: LightVersion | null;
+  /** The light now, and the foot row's brass switch that flips it. */
+  light?: Light;
+  onToggleLamp?: () => void;
 }
 
 // A swipe turns the page past a quarter of the page's width, or as a quick flick.
@@ -56,6 +61,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   thumbIndex,
   onSelectLetter,
   lampVersion = null,
+  light = 'day',
+  onToggleLamp,
 }) => {
   // The page follows the finger sideways; vertical moves are left to the browser (touch-action: pan-y).
   const cardRef = useRef<HTMLDivElement>(null);
@@ -285,12 +292,17 @@ export const MobilePage: React.FC<MobilePageProps> = ({
           ←
         </button>
 
+        {/* Matches the switch on the other side of the page number, so the number stays centred. */}
+        <span className="book-switch-spacer" aria-hidden="true" />
+
         <button type="button" id="page-number-btn" className="page-number-btn page-number-btn--phone"
           aria-label={`Page ${page.page_number.toLocaleString('en-IN')}. Go to another page`} aria-haspopup="dialog"
           onClick={onOpenGoTo}>
           {/* Shows "p. 16 ▾": the "p." and "▾" come from CSS, so the label ("Page 16. …") contains all the text (axe). */}
           {page.page_number.toLocaleString('en-IN')}
         </button>
+
+        <PushSwitch light={light} onToggle={() => onToggleLamp?.()} />
 
         <button
           onClick={onNextPage}

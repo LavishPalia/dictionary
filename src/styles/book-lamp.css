@@ -61,3 +61,25 @@ html[data-light="evening"] .book-light { opacity: 1; visibility: visible; }
 .book-lamp-hit:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: 0; }
 /* Where it doesn't fit, bookLight.ts sets `hidden` on both (an SVG ignores the attribute without this). */
 .book-lamp-art[hidden], .book-lamp-hit[hidden] { display: none; }
+
+/* ── The phone's brass push-switch, on the page's foot row (right of the page number) ── */
+.book-switch-spacer { flex: none; width: 44px; height: 44px; }
+.book-switch {
+  flex: none; width: 44px; height: 44px; box-sizing: border-box; margin: 0; padding: 0; border: 0; border-radius: 50%;
+  background: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.book-switch:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+.book-switch-art { display: block; width: 44px; height: 44px; pointer-events: none; }
+.book-switch-art svg { display: block; }
+.book-switch-cap { transform-box: fill-box; transform-origin: center; }
+.book-switch[data-sunk="true"] .book-switch-cap { transform: scale(.85); }
+.book-switch-glow { opacity: 0; visibility: hidden; }
+.book-switch-art[data-on="true"] .book-switch-glow { opacity: 1; visibility: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  .book-switch-cap { transition: transform .12s ease-out; }
+  .book-switch-glow { transition: opacity .7s ease, visibility 0s linear .7s; }
+  .book-switch-art[data-on="true"] .book-switch-glow { transition: opacity .7s ease, visibility 0s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-switch[data-sunk="true"] .book-switch-cap { transform: none; }
+}

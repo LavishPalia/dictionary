@@ -552,4 +552,86 @@ await run('Book lamp', async (t: any) => {
   await clickAt('#book-lamp');
   check('reduced motion: no light-fading class after a switch', (await dataLight()) === 'day' && !(await evaluate(`document.documentElement.classList.contains('light-fading')`)));
   await reduceMotion(false);
+
+  // ── The phone's brass push-switch (Task 4): on the page's foot, right of the page number ──
+  const SW = '#book-switch';
+  /** A key with its character, as a keyboard sends it (a button's Space and Enter need the text to click). */
+  const typeKey = async (key: string, code: string, vk: number, text: string) => {
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: vk, text });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: vk });
+    await sleep(600);
+  };
+  const footGeometry = () => evaluate(`(() => { ${RECT_JS}
+    const sw = document.querySelector('#book-switch'); if (!sw) return null;
+    const row = sw.parentElement, r = (el) => el.getBoundingClientRect();
+    const pill = r(document.querySelector('#page-number-btn')), next = r(document.querySelector('button[aria-label="Next page"]')), s = r(sw), f = r(row);
+    const spacer = row.querySelector('.book-switch-spacer');
+    const kids = [...row.children].map((c) => c.id || c.className || c.getAttribute('aria-label'));
+    const probe = (x) => document.elementsFromPoint(x, s.top + s.height / 2).filter((e) => e.closest('#book-switch, #page-number-btn, button[aria-label="Next page"], button[aria-label="Previous page"]')).map((e) => e.id || e.tagName);
+    const sc = getComputedStyle(sw);
+    return { w: s.width, h: s.height, rowH: f.height, rowCx: f.left + f.width / 2, pillCx: pill.left + pill.width / 2, gapL: s.left - pill.right, gapR: next.left - s.right,
+      pad: sc.padding, before: getComputedStyle(sw, '::before').content, after: getComputedStyle(sw, '::after').content, spacer: spacer ? r(spacer).width : null, kids,
+      hitL: probe(s.left - 2), hitR: probe(s.right + 2),
+      rects: { prev: rect(document.querySelector('button[aria-label="Previous page"]')), pill: rect(document.querySelector('#page-number-btn')), next: rect(document.querySelector('button[aria-label="Next page"]')) },
+      label: sw.getAttribute('aria-label'), pressed: sw.getAttribute('aria-pressed'), type: sw.tagName + ':' + sw.type }; })()`);
+  for (const size of PHONE_SIZES) for (const page of [TALL, SHORT]) for (const lighting of ['day', 'evening']) {
+    const where = `switch, ${size.width} px, p. ${page}, ${lighting}`;
+    await load(size, page, lighting);
+    const g: any = await footGeometry();
+    check(`${where}: #book-switch is a 44 × 44 button with no padding or pseudo-element`, g && near(g.w, 44, 0.01) && near(g.h, 44, 0.01) && g.type === 'BUTTON:button' && g.pad === '0px' && g.before === 'none' && g.after === 'none', g);
+    check(`${where}: the foot is ←, spacer, pill, switch, → and 56 px tall`, g && g.rowH === 56 && g.spacer === 44 && g.kids.length === 5 && g.kids[1] === 'book-switch-spacer' && g.kids[2] === 'page-number-btn' && g.kids[3] === 'book-switch', g);
+    check(`${where}: the pill is centred on the foot`, g && near(g.pillCx, g.rowCx, 1), g);
+    // Equal gaps. The owner's ~21 px is at 412; the pill is fixed, so at 360 px only ~7 px (6.8 on p. 2440) is left each side of a 44 px switch.
+    check(`${where}: the switch is centred between the pill and → (gaps ${g?.gapL?.toFixed(1)} / ${g?.gapR?.toFixed(1)}, each at least ${size.width >= 412 ? 16 : 6})`, g && near(g.gapL, g.gapR, 1) && g.gapL >= (size.width >= 412 ? 16 : 6), g);
+    const b = base.phone[`${size.width}x${size.height}`][page];
+    check(`${where}: ←, the pill and → sit where they did`, g && ['prev', 'pill', 'next'].every((k) => ['x', 'y', 'w', 'h'].every((m) => near(g.rects[k][m], b[k][m], 0.5))), { g: g?.rects, b });
+    check(`${where}: 2 px outside the switch hits neither it, the pill nor →`, g && g.hitL.length === 0 && g.hitR.length === 0, g);
+    check(`${where}: labelled and pressed to match the light`, g && g.label === (lighting === 'evening' ? 'Desk lamp, on: Evening lighting' : 'Desk lamp, off: Day lighting') && g.pressed === String(lighting === 'evening'), g);
+    const glow = await evaluate(`(() => { const g = document.querySelector('#book-switch [data-glow]'); if (!g) return null; const s = getComputedStyle(g); return { op: Number(s.opacity), vis: s.visibility }; })()`);
+    check(`${where}: the warm ring ${lighting === 'evening' ? 'shows' : 'is gone'}`, glow && (lighting === 'evening' ? glow.op > 0.9 && glow.vis === 'visible' : glow.op === 0 || glow.vis === 'hidden'), glow);
+  }
+
+  // Switching: a tap, Space, Enter and the ⋯ menu, each one switch.
+  for (const size of PHONE_SIZES) {
+    const where = `switch, ${size.width} px`;
+    await load(size, TALL, 'evening');
+    // At 360 px a tall page runs under the tab bar until the page is scrolled: bring the switch into view first.
+    await evaluate(`document.querySelector('#book-switch').scrollIntoView({ block: 'center' }); true`);
+    await sleep(200);
+    await clickAt(SW);
+    await sleep(500); // the light fades slowly in headless Edge
+    check(`${where}: a tap switches once (Day, stored, pressed follows)`, (await dataLight()) === 'day' && (await stored())?.lighting === 'day' && (await attr(SW, 'aria-pressed')) === 'false'
+      && (await attr(SW, 'aria-label')) === 'Desk lamp, off: Day lighting', { l: await dataLight(), s: await stored() });
+    check(`${where}: #book-live says so`, (await evaluate(`document.querySelector('#book-live')?.textContent`)) === 'Lamp off: Day lighting.');
+    await evaluate(`document.querySelector('#book-switch').focus(); true`);
+    await typeKey(' ', 'Space', 32, ' ');
+    check(`${where}: focus plus Space switches once`, (await dataLight()) === 'evening' && (await stored())?.lighting === 'evening', { l: await dataLight() });
+    await typeKey('Enter', 'Enter', 13, '\r');
+    check(`${where}: focus plus Enter switches once`, (await dataLight()) === 'day' && (await stored())?.lighting === 'day', { l: await dataLight() });
+    await evaluate(`document.querySelector('#menu-btn').click(); true`);
+    await waitFor(`Boolean(document.querySelector('#lighting-evening'))`);
+    await evaluate(`document.querySelector('#lighting-evening').click(); true`);
+    await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); true`);
+    await sleep(300);
+    check(`${where}: the ⋯ menu lights the lamp and the switch follows`, (await attr(SW, 'aria-pressed')) === 'true' && (await dataLight()) === 'evening', { l: await dataLight() });
+  }
+  await load(P412, TALL, 'evening');
+  check('switch: no duplicate ids on the phone page', (await dupIds()).length === 0, await dupIds());
+
+  // The press: the cap sinks for about 120 ms (none under reduced motion).
+  await evaluate(`document.querySelector('#book-switch').click(); true`);
+  await sleep(80);
+  const sunk = await evaluate(`(() => { const sw = document.querySelector('#book-switch'); return { on: sw.dataset.sunk, m: getComputedStyle(sw.querySelector('.book-switch-cap')).transform }; })()`);
+  await sleep(400);
+  const sunkAfter = await evaluate(`document.querySelector('#book-switch').dataset.sunk ?? null`);
+  check('switch: the cap sinks on a press (scale below 1) and comes back', sunk.on === 'true' && sunk.m !== 'none' && Number(sunk.m.match(/matrix\(([^,]+)/)?.[1]) < 1 && sunkAfter === null, { sunk, sunkAfter });
+  await reduceMotion(true);
+  await load(P412, TALL, 'evening');
+  await evaluate(`document.querySelector('#book-switch').click(); true`);
+  await sleep(80);
+  check('switch: under reduced motion the cap does not move', (await evaluate(`getComputedStyle(document.querySelector('#book-switch .book-switch-cap')).transform`)) === 'none' && (await dataLight()) === 'day');
+  await reduceMotion(false);
+
+  // axe on the phone, with the switch in.
+  for (const lighting of ['day', 'evening']) { await load(P412, TALL, lighting); await t.axe(`phone with the switch, ${lighting === 'day' ? 'Day' : 'Evening'}`); }
 });
