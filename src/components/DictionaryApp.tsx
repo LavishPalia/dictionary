@@ -16,6 +16,9 @@ import type { Section } from '@/components/shell/AppChrome';
 import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocateMarks, type MarkAnchors } from '@/lib/marks';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
+import { BookLamp, useBookLightVersion } from '@/components/book/lamp/BookLamp';
+import { BookLampArt } from '@/components/book/lamp/BookLampArt';
+import { useLampSwitch } from '@/components/desk/useLampSwitch';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { useDuelVisible } from '@/components/today/DuelCard';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
@@ -25,7 +28,8 @@ import { BookMeta, BookPage, DictionaryEntry, MarginNote, RelatedWord } from '@/
 import { soundEngine } from '@/lib/audio';
 import { flushSync } from 'react-dom';
 import { useReducedMotion, visibleElement } from '@/lib/motion';
-import { applyLight, readLighting, resolveLight, storedSettings, type Lighting } from '@/lib/lighting';
+import { clampGoal, readGoal, todaysWords } from '@/lib/today-words';
+import { applyLight, readLighting, resolveLight, storedSettings, type Light, type Lighting } from '@/lib/lighting';
 import type { PageTurnSpeed } from '@/components/shell/ReadingMenu';
 import { TourLayer } from '@/components/tour/TourLayer';
 import { ToursSheet } from '@/components/tour/ToursSheet';
@@ -35,7 +39,7 @@ import { bestStreak, calendar, progressOf } from '@/lib/progress';
 import { useOffline } from '@/components/shell/useOffline';
 import { REPORTS_ENABLED, flushQueue } from '@/lib/report';
 import { LearnScreen } from '@/components/learn/LearnScreen';
-import { nextStep } from '@/lib/learn';
+import { NEW_WORDS_PER_DAY, nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
@@ -70,6 +74,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const meta = initialMeta;
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [highlightedWord, setHighlightedWord] = useState<string>(initialEntry?.headword || '');
+  // The word a search (or an address) turned the book to: the Book page's light goes to it once it is on the page.
+  const [jumpWord, setJumpWord] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -77,6 +83,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // head script (src/lib/lighting.ts) and kept up to date by the effect further down.
   const [lighting, setLighting] = useState<Lighting>('auto');
   const [speedMode, setSpeedMode] = useState<PageTurnSpeed>('realistic');
+  // Today's words: how many a day (in panna_settings, so the backup carries it).
+  const [dailyGoal, setDailyGoal] = useState<number>(NEW_WORDS_PER_DAY);
   const reducedMotion = useReducedMotion();
   // Turn pages without the 3D flip: phones (no flip engine), the "Instant" speed, or a reduce-motion setting.
   const instantTurns = isMobile || speedMode === 'instant' || reducedMotion;
@@ -90,6 +98,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       setLighting(readLighting(saved)); // old { evening: true } reads as Evening
       if (['slow', 'realistic', 'brisk', 'instant'].includes(saved.speed)) setSpeedMode(saved.speed);
       if (typeof saved.sounds === 'boolean') { setIsMuted(!saved.sounds); soundEngine.setMuted(!saved.sounds); }
+      setDailyGoal(readGoal(saved));
     } catch {}
     setSettingsLoaded(true);
   }, []);
@@ -98,15 +107,18 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     try {
       // Nothing to remember until the reader changes something: a browser that has never been set up must not
       // look as if it chose the defaults (a restored backup's settings would otherwise lose to them).
-      const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted;
+      const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted && dailyGoal === NEW_WORDS_PER_DAY;
       if (untouched && localStorage.getItem('panna_settings') === null) return;
       // Keys this effect doesn't own (the Usage counts choice) are kept as they are.
+      // dailyGoal is ours: it's left out at the default, so an old value must not survive from `others`.
       const stored = JSON.parse(localStorage.getItem('panna_settings') || '{}');
-      const others = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
-      const ours = storedSettings(lighting, { speed: speedMode, sounds: !isMuted });
+      const others = stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...stored } : {};
+      delete others.dailyGoal;
+      const ours = storedSettings(lighting, {
+        speed: speedMode, sounds: !isMuted, ...(dailyGoal === NEW_WORDS_PER_DAY ? {} : { dailyGoal }) });
       localStorage.setItem('panna_settings', JSON.stringify({ ...ours, ...others, ...ours })); // ours first, and ours win
     } catch {}
-  }, [settingsLoaded, lighting, speedMode, isMuted]);
+  }, [settingsLoaded, lighting, speedMode, isMuted, dailyGoal]);
 
   // Usage counts (src/lib/analytics.ts): started here, before the launch effect below gives the address back, so the
   // launch kind is still readable. The switch shows off, and can't be turned on, while the browser asks not to be tracked.
@@ -410,7 +422,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   // Trigger 3D Page Turn / Multi-Page Riffle with URL sync. The target pages are loaded before the flip
   // starts, so the leaf never lands on a blank page.
-  const turnToPage = useCallback(async (newTarget: number, wordToHighlight?: string) => {
+  // `quiet`: the phone's leaf turn played the page-turn sound already, at its midpoint.
+  const turnToPage = useCallback(async (newTarget: number, wordToHighlight?: string, opts?: { quiet?: boolean }) => {
     if (isFlipping || loadingTargetRef.current) return;
 
     const clampedTarget = Math.max(1, Math.min(meta.total_pages, newTarget));
@@ -424,7 +437,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       }
     };
     if (clampedTarget === currentPage) {
-      if (wordToHighlight) setHighlightedWord(wordToHighlight);
+      if (wordToHighlight) { setHighlightedWord(wordToHighlight); setJumpWord(wordToHighlight); }
       showInAddress(); // e.g. a search from Today for a word on the page the book is already open at
       return;
     }
@@ -449,6 +462,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
     if (wordToHighlight !== undefined) {
       setHighlightedWord(wordToHighlight);
+      setJumpWord(wordToHighlight || null);
     }
 
     setTargetPage(clampedTarget);
@@ -473,7 +487,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // Nothing to animate: apply the page change immediately, and never latch
       // isFlipping (desktop parity for the paper sound is kept here instead of
       // in the flip midpoint callback).
-      soundEngine.playPageTurn();
+      if (!opts?.quiet) soundEngine.playPageTurn();
       setCurrentPage(clampedTarget);
       setIsFlipping(false);
       return;
@@ -581,11 +595,37 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [clockTick, setClockTick] = useState(0);
   const manualPickRef = useRef(false);
   const fadeTimerRef = useRef<number | null>(null);
-  const pickLighting = useCallback((next: Lighting) => {
+  // The light on <html> now, for the desk lamp (which shows what is applied, not the stored preference).
+  const [appliedLight, setAppliedLight] = useState<Light>('day');
+  useEffect(() => { // the head script already set it before first paint
+    const set = document.documentElement.getAttribute('data-light');
+    if (set === 'day' || set === 'evening') setAppliedLight(set);
+  }, []);
+  // A switch of the desk lamp fades the tokens in 0.7 s (html.light-fading--quick), quicker than the clock's fade.
+  const quickPickRef = useRef(false);
+  const pickLighting = useCallback((next: Lighting, opts?: { quick?: boolean }) => {
     if (next === lighting) return; // re-picking the current option must not leave a stale "manual" flag behind
     manualPickRef.current = true;
+    quickPickRef.current = Boolean(opts?.quick);
     setLighting(next);
   }, [lighting]);
+  // The lamp on the Book page: its switch (the desktop lamp and the phone's push-switch both use it; one note, shared
+  // with Today through the `noted` flag) and the light it draws. It is mounted only while the open book shows.
+  const bookSw = useLampSwitch({ light: appliedLight, onSetLight: (next) => pickLighting(next, { quick: true }) });
+  const [bookLightVersion, bookLightSlow] = useBookLightVersion(reducedMotion, section);
+  const bookLampOn = section === 'book' && isBookOpen;
+  const lampVersion = bookLampOn ? bookLightVersion : null;
+  // The pool goes to the open word's first line (or, with no sheet, to the word a search just turned the book to) while its
+  // entry is on the visible page(s). A related word opened from the sheet that isn't on them leaves the pool where it is
+  // (the last word stays); closing the sheet, or clicking another entry, clears it (back to rest).
+  const bookFocusRef = useRef<string | null>(null);
+  {
+    const onPage = (norm: string) => [leftPage, rightPage, singleMobilePage].some(p => p && [...p.column1, ...p.column2].some(e => e.normalized === norm));
+    if (showWordDrawer && activeWordEntry) { if (onPage(activeWordEntry.normalized)) bookFocusRef.current = activeWordEntry.headword; }
+    else if (jumpWord && highlightedWord === jumpWord) { if (onPage(jumpWord.toLowerCase().trim())) bookFocusRef.current = jumpWord; }
+    else bookFocusRef.current = null;
+  }
+  const bookFocus = bookFocusRef.current;
   useEffect(() => {
     const tick = () => setClockTick((n) => n + 1);
     const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
@@ -595,27 +635,36 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   }, []);
   useEffect(() => {
     if (!settingsLoaded) return;
-    const manual = manualPickRef.current;
+    const manual = manualPickRef.current, quick = quickPickRef.current;
     manualPickRef.current = false;
+    quickPickRef.current = false;
     const html = document.documentElement;
     const endFade = () => {
       if (fadeTimerRef.current !== null) { window.clearTimeout(fadeTimerRef.current); fadeTimerRef.current = null; }
-      html.classList.remove('light-fading');
+      html.classList.remove('light-fading', 'light-fading--quick');
     };
     const want = resolveLight(lighting, new Date());
-    if (html.getAttribute('data-light') === want) return;
+    if (html.getAttribute('data-light') === want) { setAppliedLight(want); return; }
     if (!manual && (isFlipping || loadingPage !== null)) return; // runs again when the turn lands
     endFade();
-    if (!manual && !reducedMotion) {
+    if ((!manual || quick) && !reducedMotion) {
       html.classList.add('light-fading');
-      fadeTimerRef.current = window.setTimeout(endFade, 2100);
+      if (quick) html.classList.add('light-fading--quick');
+      fadeTimerRef.current = window.setTimeout(endFade, quick ? 700 : 2100);
     }
     applyLight(want);
+    setAppliedLight(want);
   }, [settingsLoaded, lighting, clockTick, isFlipping, loadingPage, reducedMotion]);
   useEffect(() => () => {
     if (fadeTimerRef.current !== null) window.clearTimeout(fadeTimerRef.current);
-    document.documentElement.classList.remove('light-fading');
+    document.documentElement.classList.remove('light-fading', 'light-fading--quick');
   }, []);
+
+  // Today's words for the daily goal: re-read with the minute clock and when the app is shown again, so midnight
+  // empties it without a reload.
+  const todaysWordsNow = useMemo(() => todaysWords(bookmarkedWords, reviewRecords, Date.now()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bookmarkedWords, reviewRecords, clock, clockTick]);
 
   // Popstate listener for browser Back/Forward buttons
   useEffect(() => {
@@ -709,6 +758,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Entry click handler -> opens Word Detail Drawer & syncs URL
   const handleEntryClick = (headword: string) => {
     setHighlightedWord(headword);
+    setJumpWord(null);
     const norm = headword.toLowerCase().trim();
     const visible = [leftPage, rightPage, singleMobilePage].flatMap(p => (p ? [...p.column1, ...p.column2] : []));
     const found = visible.find(e => e.normalized === norm);
@@ -1309,13 +1359,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   // ── Mobile single-page stepping ─────────────────────────────────────────
   // The mobile view shows one page, so it steps one page at a time (92 → 93 → 94).
-  const handleMobilePrev = useCallback(() => {
-    if (currentPage > 1) turnToPage(currentPage - 1);
+  const handleMobilePrev = useCallback((opts?: { quiet?: boolean }) => {
+    if (currentPage > 1) turnToPage(currentPage - 1, undefined, opts);
   }, [currentPage, turnToPage]);
 
-  const handleMobileNext = useCallback(() => {
-    if (currentPage < meta.total_pages) turnToPage(currentPage + 1);
+  const handleMobileNext = useCallback((opts?: { quiet?: boolean }) => {
+    if (currentPage < meta.total_pages) turnToPage(currentPage + 1, undefined, opts);
   }, [currentPage, meta.total_pages, turnToPage]);
+
+  // The phone's leaf turns onto the pages either side, which the prefetch above (the spread ± 2 pages) already loads.
+  const prevMobilePage = useMemo(() => getCachedPage(currentPage - 1), [getCachedPage, currentPage]);
+  const nextMobilePage = useMemo(() => getCachedPage(currentPage + 1), [getCachedPage, currentPage]);
+  // A one-page step on a phone: a leaf turning from the spine; Instant changes the page at once, reduced motion cross-fades.
+  const mobileTurn = speedMode === 'instant' ? 'instant' : reducedMotion ? 'fade' : 'leaf';
+  // About 0.5 s at Realistic, and in proportion at Slow and Brisk.
+  const mobileTurnMs = Math.round((500 * flipDuration) / 1050);
+  const [phoneTurning, setPhoneTurning] = useState(false);
+  const isPageBookmarked = useCallback((n: number) => bookmarkedPages.includes(spreadLeftOf(n)), [bookmarkedPages]);
 
   const canPrevMobile = currentPage > 1;
   const canNextMobile = currentPage < meta.total_pages;
@@ -1386,6 +1446,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   return (
     <main
       className="app-main"
+      data-book-lamp={bookLampOn ? '' : undefined}
       style={{
         minHeight: '100vh',
         width: '100vw',
@@ -1460,6 +1521,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           </div>
         )}
 
+      {bookLampOn && (
+        <BookLamp phone={isMobile} light={appliedLight} sw={bookSw} onUseAuto={() => pickLighting('auto', { quick: true })}
+          version={bookLightVersion} onSlow={bookLightSlow} reduced={reducedMotion}
+          focusEntry={bookFocus} turning={isFlipping || loadingPage !== null || phoneTurning}
+          frameKey={isMobile ? (singleMobilePage ? 'page' : 'missing') : 'spread'} />
+      )}
+
       {/* Main Reading Canvas */}
       {!isBookOpen ? (
         /* VINTAGE HARDCOVER PRESENTATION WITH 3D OPENING CINEMATIC */
@@ -1473,15 +1541,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         <MobilePage
           page={singleMobilePage}
           loadingPage={loadingPage}
+          lampVersion={lampVersion}
+          light={appliedLight}
+          onToggleLamp={bookSw.toggle}
           highlightedWord={highlightedWord}
           isBookmarked={isSpreadBookmarked}
           onToggleBookmark={handleToggleSpreadBookmark}
           onSelectWord={handleEntryClick}
           onPrevPage={handleMobilePrev}
           onNextPage={handleMobileNext}
+          prevPage={prevMobilePage}
+          nextPage={nextMobilePage}
+          isPageBookmarked={isPageBookmarked}
           canPrev={canPrevMobile}
           canNext={canNextMobile}
-          animate={!reducedMotion && speedMode !== 'instant'}
+          turn={mobileTurn}
+          turnMs={mobileTurnMs}
+          onTurning={setPhoneTurning}
           onOpenGoTo={() => setGoToOpen(true)}
           thumbIndex={meta.thumb_index}
           // Through the Go to queue, as the panel's letters: a jump made while a page loads is made after it.
@@ -1496,6 +1572,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             targetLeftPage={targetLeftPage}
             targetRightPage={targetRightPage}
             loadingPage={loadingPage}
+            lampVersion={lampVersion}
             highlightedWord={highlightedWord}
             activeLetter={activeLetter}
             thumbMap={meta.thumb_index}
@@ -1522,6 +1599,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onPrevPage={handlePrevSpread}
             onNextPage={handleNextSpread}
           />
+          {/* The desk lamp leaning in from the top-left, drawn in the spread's units (only while the Book page shows). */}
+          {section === 'book' && <BookLampArt light={appliedLight} onToggle={bookSw.toggle} />}
         </ScaledSpread>
       )}
       {isBookOpen && !isMobile && (
@@ -1592,6 +1671,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onOpenGuide={() => goTo('learn')}
           lookedUpToday={lookedUpToday}
           onOpenHistory={() => openSaved('history')}
+          light={appliedLight}
+          onSetLight={(next) => pickLighting(next, { quick: true })}
+          onUseAuto={() => pickLighting('auto', { quick: true })}
+          todaysWords={todaysWordsNow}
+          dailyGoal={dailyGoal}
+          onSetGoal={(g) => setDailyGoal(clampGoal(g))}
           bookplate={bookplate}
           offerBookplate={bookplateOffer}
           onWriteBookplate={() => openBookplate('bookplate-write')}

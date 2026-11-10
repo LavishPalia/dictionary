@@ -94,6 +94,8 @@ function cacheFor(url) {
   if (url.origin !== self.location.origin) return null;
   if (isRelay(url)) return null;
   const p = url.pathname;
+  // The intro film (public/intro) is never kept: it loads only when played, and is not part of the offline download.
+  if (p.startsWith('/intro/')) return null;
   if (p.startsWith('/duel/')) return DUEL;
   if (p.startsWith('/_next/static/') || p.startsWith('/icons/') || p === '/icon.svg' || p === '/manifest.webmanifest') return STATIC;
   // The Duel's server: replies are per player, so none is kept here (the game keeps its own last copy of the board).

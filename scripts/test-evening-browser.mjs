@@ -266,6 +266,8 @@ async function main() {
           const box = el.getBoundingClientRect();
           const s = getComputedStyle(el);
           if (!box.width || !box.height || s.visibility === 'hidden' || s.display === 'none') continue;
+          if (el.closest('[data-glow]')) continue; // a light source on purpose (the desk lamp's bulb), not a surface
+          if (s.mixBlendMode === 'multiply') continue; // a multiply layer can only darken what is under it (white = no change)
           for (const pseudo of [null, '::before', '::after']) {
             const p = pseudo ? getComputedStyle(el, pseudo) : s;
             if (pseudo && (p.content === 'none' || p.content === 'normal' || p.display === 'none' || p.visibility === 'hidden')) continue;
@@ -583,6 +585,12 @@ async function main() {
       const probe = async (name, marker) => {
         const shown = await waitFor(marker, 30);
         await sleep(350);
+        // The colours are measured once the card has finished fading in: a slow frame (the Book page's light moving in
+        // headless Edge) stretches its animation past the 350 ms above. Looping animations don't count; gives up after 3 s.
+        for (let i = 0; i < 30; i++) {
+          if (await evaluate(`document.getAnimations().every((a) => a.effect?.getTiming().iterations === Infinity || a.playState !== 'running')`)) break;
+          await sleep(100);
+        }
         views.push({ name, shown, ...(shown ? await inPage(`return { hits: bright(['body'], 0.5), low: lowText() };`) : {}) });
       };
       // Focus rings, measured against what they are drawn over; the green "mastered" marks against their card or desk.

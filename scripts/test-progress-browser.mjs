@@ -110,7 +110,7 @@ async function main() {
       await seed();
       await open('/', size);
       await sleep(1200);
-      check(`${sizeName}: Today shows "Your progress" after Continue reading`, await evaluate(`(() => { const ids = [...document.querySelectorAll('#today-screen > .today-card')].map((c) => c.id); return ids.indexOf('today-progress') === ids.indexOf('today-continue') + 1; })()`));
+      check(`${sizeName}: Today shows "Your progress" after Continue reading (after Review on the desk)`, await evaluate(`(() => { const ids = [...document.querySelectorAll('#today-screen > .today-card')].map((c) => c.id); const before = ids.includes('today-continue') ? 'today-continue' : 'today-review'; /* the desk's book replaces the card on wide screens */ return ids.indexOf('today-progress') === ids.indexOf(before) + 1; })()`));
       check(`${sizeName}: the bar says the counts to a screen reader`, await evaluate(`document.querySelector('#today-progress .progress-bar').getAttribute('aria-label') === 'Saved words: 2 mastered, 4 learning, 4 new'`));
       check(`${sizeName}: the bar's parts are in proportion`, await evaluate(`(() => { const w = (k) => document.querySelector('#today-progress .progress-seg--' + k).getBoundingClientRect().width; return Math.abs(w('learning') / w('mastered') - 2) < 0.25 && Math.abs(w('new') - w('learning')) < 3; })()`));
       check(`${sizeName}: the counts are shown as text`, (await evaluate(`document.querySelector('#today-progress .progress-legend').innerText.replace(/\\s+/g, ' ')`)).includes('2 mastered 4 learning 4 new'));

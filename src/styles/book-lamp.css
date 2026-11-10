@@ -1,0 +1,123 @@
+/* The lamp on the Book page. Spec: docs/superpowers/specs/2026-11-09-book-lamp-design.md (§3, §4.4).
+   The light is a layer UNDER the ink: each lit page is isolated, and its light is its first child at z-index −1, so it
+   paints above the page's paper and below everything on it, and it only adds light (screen). The darkness is a
+   multiply layer on the desk alone, behind the book and every other thing on the Book page. */
+
+/* ── The desk ── */
+/* Isolated while the lamp is mounted, so the desk layer (z-index −1) paints above the desk's own background and below
+   everything else in the app. Each desk layer sits directly in it (a wrapper would isolate the multiply from the desk). */
+.app-main[data-book-lamp] { isolation: isolate; }
+.book-desk-day, .book-desk-dark { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+/* Day: a soft cool window light from the right, beside the book, away from the chrome's text. */
+.book-desk-day {
+  background: radial-gradient(ellipse 30% 46% at 100% 55%, rgba(232, 240, 255, .1) 0%, rgba(232, 240, 255, 0) 72%);
+}
+/* Evening: the lamp's darkness, centred on the pool (bookLight.ts writes --dark-*). Multiply: it can only darken desk. */
+.book-desk-dark {
+  opacity: 0; visibility: hidden; mix-blend-mode: multiply;
+  background: radial-gradient(ellipse var(--dark-rx, 1120px) var(--dark-ry, 800px) at var(--dark-x, 50%) var(--dark-y, 30%),
+    #fff 0%, #e8d6bc 26%, #9a8068 58%, #3a3029 100%);
+}
+html[data-light="evening"] .book-desk-day { opacity: 0; visibility: hidden; }
+html[data-light="evening"] .book-desk-dark { opacity: 1; visibility: visible; }
+
+/* ── The light on the paper ── */
+.book-lit { isolation: isolate; }
+.book-light {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
+  pointer-events: none; mix-blend-mode: screen; opacity: 0; visibility: hidden;
+}
+html[data-light="evening"] .book-light { opacity: 1; visibility: visible; }
+/* Light A: the same pool without the grain (--pool-* are on the frame, in its units; --light-origin is the page's left). */
+.book-light--a {
+  background: radial-gradient(ellipse var(--pool-rx, 380px) var(--pool-ry, 290px) at calc(var(--pool-x, 230px) - var(--light-origin, 0px)) var(--pool-y, 169px),
+    rgba(255, 214, 150, .56) 0%, rgba(255, 206, 138, .36) 30%, rgba(255, 198, 128, .12) 62%, rgba(255, 196, 128, 0) 100%);
+}
+/* The spread's base layer lies under the resting pages (opaque, so its light isn't seen) and stays lit: its filter is then
+   already painted when a flip or riffle starts, instead of on the flip's first frame. */
+
+/* Fades: 0.7 s, then hidden (so the filter costs nothing in Day); none under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .book-light, .book-desk-dark, html[data-light="evening"] .book-desk-day { transition: opacity .7s ease, visibility 0s linear .7s; }
+  html[data-light="evening"] .book-light, html[data-light="evening"] .book-desk-dark, .book-desk-day { transition: opacity .7s ease, visibility 0s; }
+}
+
+/* The filter's own <svg>: present for the renderer, nothing on screen. */
+.book-light-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+
+/* ── The desk lamp (desktop): drawn in the spread's units beside it, leaning in from the top-left ── */
+/* The art never takes a pointer; the shade's button (placed and turned by bookLight.ts, as on Today) is the switch.
+   Its box is a little smaller than Today's, so it stays in the gutter, and it shrinks with the head: --lamp-s is the
+   head's scale and --lamp-q its mouth's squash (bookLight.ts sets both to fit the gutter). */
+.book-lamp-art { position: absolute; z-index: 3; pointer-events: none; }
+.book-lamp-hit {
+  /* never smaller than 40 × 34 (at least 24 px on screen at 1024 px, where the spread's scale is 0.776) */
+  --s: var(--lamp-s, 1); --w: max(calc(86px * var(--s)), 40px); --h: max(calc(80px * var(--s) * var(--lamp-q, 1)), 34px);
+  position: absolute; z-index: 4; width: var(--w); height: var(--h);
+  margin: calc(var(--h) / -2) 0 0 calc(-10px * var(--s)); transform-origin: calc(10px * var(--s)) calc(var(--h) / 2);
+  padding: 0; border: 0; border-radius: calc(22px * var(--s)); background: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.book-lamp-hit:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: 0; }
+/* Where it doesn't fit, bookLight.ts sets `hidden` on both (an SVG ignores the attribute without this). */
+.book-lamp-art[hidden], .book-lamp-hit[hidden] { display: none; }
+
+/* ── The phone's brass push-switch, on the page's foot row (right of the page number) ── */
+.book-switch-spacer { flex: none; width: 44px; height: 44px; }
+.book-switch {
+  flex: none; width: 44px; height: 44px; box-sizing: border-box; margin: 0; padding: 0; border: 0; border-radius: 50%;
+  background: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.book-switch:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+.book-switch-art { display: block; width: 44px; height: 44px; pointer-events: none; }
+.book-switch-art svg { display: block; }
+.book-switch-cap { transform-box: fill-box; transform-origin: center; }
+.book-switch[data-sunk="true"] .book-switch-cap { transform: scale(.85); }
+.book-switch-glow { opacity: 0; visibility: hidden; }
+.book-switch-art[data-on="true"] .book-switch-glow { opacity: 1; visibility: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  .book-switch-cap { transition: transform .12s ease-out; }
+  .book-switch-glow { transition: opacity .7s ease, visibility 0s linear .7s; }
+  .book-switch-art[data-on="true"] .book-switch-glow { transition: opacity .7s ease, visibility 0s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-switch[data-sunk="true"] .book-switch-cap { transform: none; }
+}
+
+/* ── The phone page turn (spec §5b): still copies on a stage over the live page, which is inert and unpainted (visibility: hidden) meanwhile ── */
+/* The turning area is exactly the page at rest; while a leaf turns, MobilePage gives it the taller page's height. */
+.phone-turn { position: relative; }
+/* Above the live page's ribbon (z 30) and below the header (40) and the tab bar (60). Soft perspective: the leaf barely
+   bulges toward the reader. */
+.phone-turn-stage { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 32; perspective: 2400px; perspective-origin: 50% 50%; }
+.phone-turn-under, .phone-turn-leaf { position: absolute; left: 0; top: 0; width: 100%; }
+.phone-turn-under { z-index: 0; }
+/* The leaf's shadow on the page beneath, out to the leaf's edge (scaleX), deepest at the edge. */
+.phone-turn-cast {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; border-radius: 4px;
+  transform-origin: 0 50%; background: linear-gradient(90deg, rgba(20, 10, 2, 0) 0%, rgba(20, 10, 2, .1) 60%, rgba(20, 10, 2, .38) 100%);
+}
+/* The leaf turns from the spine, its left edge. Only its transform changes per frame. */
+.phone-turn-leaf { z-index: 2; transform-origin: 0 50%; transform-style: preserve-3d; will-change: transform; }
+.phone-turn-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 4px; overflow: hidden; }
+.phone-turn-front { position: relative; }
+/* The leaf's back: plain paper with a hint of the ruling, and no text. */
+.phone-turn-back {
+  position: absolute; inset: 0; transform: rotateY(180deg);
+  background: repeating-linear-gradient(0deg, rgba(30, 21, 13, .07) 0 1px, rgba(30, 21, 13, 0) 1px 22px), var(--parch-2);
+}
+/* It darkens as it lifts (opacity from MobilePage): only on this moving copy, gone at rest. */
+.phone-turn-shade {
+  position: absolute; inset: 0; z-index: 100; pointer-events: none;
+  background: linear-gradient(90deg, rgba(40, 20, 5, .55) 0%, rgba(40, 20, 5, 0) 60%);
+}
+/* Plain paper: a page not loaded yet (with ink lines), or nothing beyond the first or last page. */
+.phone-turn-paper { position: relative; height: 100%; overflow: hidden; border-radius: 4px; background: var(--parch-2); }
+/* A copy's controls are art: the live buttons' boxes, without their behaviour. */
+.page-number-copy { display: inline-flex; align-items: center; box-sizing: border-box; cursor: default; }
+.book-switch-copy { display: block; flex: none; width: 44px; height: 44px; }
+/* Reduced motion: the old page's copy fades over the new one (MobilePage animates its opacity); taps go through. */
+.phone-turn-fade { position: absolute; left: 0; top: 0; width: 100%; z-index: 32; pointer-events: none; }
+/* A phone held sideways: the page is wider (shell.css), and so are the turning area and its copies. */
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 500px) {
+  .phone-turn, .phone-page-copy { max-width: 640px !important; }
+}

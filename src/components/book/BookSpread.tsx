@@ -25,6 +25,8 @@ import { DogEar } from './DogEar';
 import { Marginalia } from './Marginalia';
 import { soundEngine } from '@/lib/audio';
 import { InkLines } from './InkLines';
+import { BookLightLayer } from './lamp/BookLightLayer';
+import type { LightVersion } from '@/lib/desk';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Types
@@ -59,6 +61,8 @@ interface BookSpreadProps {
   onNextPage: () => void;
   /** A spread being fetched (slow connection): faint ink lines show over both pages until it arrives. */
   loadingPage?: number | null;
+  /** The lamp's light under the ink (Evening), in this version; none when the lamp isn't mounted. */
+  lampVersion?: LightVersion | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,6 +74,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
   targetLeftPage = null,
   targetRightPage = null,
   loadingPage = null,
+  lampVersion = null,
   highlightedWord,
   activeLetter,
   thumbMap,
@@ -182,6 +187,9 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
          * is going).
          */
         aria-hidden={!isFlipping}
+        // The light on these copies is drawn only while a flip runs (book-lamp.css); the resting pages above carry it.
+        data-book-base=""
+        data-flipping={isFlipping ? '' : undefined}
         style={{
           position: 'absolute',
           inset: 0,
@@ -211,7 +219,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
             zIndex: 2,
           }}
         >
-          <PageFace page={baseLeft} isLeftPage={true} highlightedWord={highlightedWord} />
+          <PageFace page={baseLeft} isLeftPage={true} highlightedWord={highlightedWord} lampVersion={lampVersion} />
         </div>
 
         {/* RIGHT BASE PAGE */}
@@ -223,7 +231,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
             zIndex: 2,
           }}
         >
-          <PageFace page={baseRight} isLeftPage={false} highlightedWord={highlightedWord} />
+          <PageFace page={baseRight} isLeftPage={false} highlightedWord={highlightedWord} lampVersion={lampVersion} />
         </div>
 
         {/* Spine center-fold shadow */}
@@ -253,7 +261,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
         >
           {/* LEFT PAGE (interactive, selectable text) */}
           <div
-            className="page-inset"
+            className={lampVersion ? 'page-inset book-lit' : 'page-inset'}
             style={{
               position: 'absolute',
               top: 0, left: 0,
@@ -265,6 +273,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
               flexDirection: 'column',
             }}
           >
+            {lampVersion && <BookLightLayer originX={0} width={560} height={640} version={lampVersion} />}
             {leftPage ? (
               <>
                 <DogEar
@@ -301,7 +310,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
 
           {/* RIGHT PAGE (interactive, selectable text) */}
           <div
-            className="page-inset"
+            className={lampVersion ? 'page-inset book-lit' : 'page-inset'}
             style={{
               position: 'absolute',
               top: 0, right: 0,
@@ -313,6 +322,7 @@ export const BookSpread: React.FC<BookSpreadProps> = ({
               flexDirection: 'column',
             }}
           >
+            {lampVersion && <BookLightLayer originX={560} width={560} height={640} version={lampVersion} />}
             {rightPage ? (
               <>
                 <DogEar

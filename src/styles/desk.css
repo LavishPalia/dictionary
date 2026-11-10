@@ -1,0 +1,323 @@
+/* The desk scene on Today (wide screens) and the strip (phones). Spec: docs/superpowers/specs/2026-11-08-desk-scene-design.md.
+   The scene is drawn at 940 × 400 and scaled to fit; its box keeps that ratio from the first paint, so nothing shifts.
+   The width that switches between them (900 px) is DESK_QUERY in src/components/today/desk/useWide.ts. */
+
+.desk-scene-box { display: none; }
+.desk-strip { position: relative; height: 84px; margin: 0 0 -4px; display: flex; align-items: stretch; gap: 10px; }
+@media (min-width: 900px) {
+  .desk-scene-box {
+    display: block; position: relative; align-self: center; flex: none;
+    width: min(940px, calc(100vw - 48px)); aspect-ratio: 940 / 400; margin: 0 0 30px;
+  }
+  .desk-strip { display: none; }
+}
+
+.desk-scene {
+  position: absolute; left: 0; top: 0; width: 940px; height: 400px; transform-origin: 0 0; overflow: hidden;
+  border-radius: 14px;
+  background:
+    repeating-linear-gradient(92deg, rgba(0, 0, 0, .06) 0 2px, transparent 2px 9px, rgba(255, 255, 255, .02) 9px 11px, transparent 11px 23px),
+    linear-gradient(180deg, var(--desk-center) 26%, var(--desk-edge) 100%);
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, .55), 0 10px 30px rgba(0, 0, 0, .4);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .desk-scene { animation: desk-arrive .35s ease-out; }
+}
+@keyframes desk-arrive { from { opacity: 0; } }
+/* the wall behind the desk's back edge */
+.desk-scene::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 26%; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .35), rgba(0, 0, 0, .12)); }
+
+/* ── Light ──
+   Day (lamp off): soft, cool window light from the top right. Evening (lamp on): the lamp's pool at (--tx, --ty) with
+   radii (--rx, --ry); the rest of the desk sinks into the dark. These are light version A, also the fallback for B. */
+.desk-daylight, .desk-dark, .desk-warm { position: absolute; inset: 0; pointer-events: none; }
+.desk-daylight { z-index: 1;
+  background: radial-gradient(ellipse 70% 90% at 95% -10%, rgba(232, 240, 255, .34), transparent 60%),
+              linear-gradient(115deg, transparent 55%, rgba(236, 244, 255, .07) 55% 62%, transparent 62% 66%, rgba(236, 244, 255, .06) 66% 72%, transparent 72%); }
+.desk-dark { z-index: 2; opacity: 0;
+  background: radial-gradient(ellipse var(--rx) var(--ry) at var(--tx) var(--ty), rgba(4, 2, 1, 0) 0%, rgba(4, 2, 1, .14) 55%, rgba(4, 2, 1, .55) 100%); }
+/* the warm pool stays under the book and notebook too: soft-light lifts dark ink more than paper (AA) */
+.desk-warm { z-index: 2; opacity: 0; mix-blend-mode: soft-light;
+  background: radial-gradient(ellipse var(--rx) var(--ry) at var(--tx) var(--ty), rgba(255, 205, 130, .75) 0%, rgba(255, 190, 110, .25) 50%, transparent 100%); }
+/* Light B: the spotlight on paper grain, multiplied into the desk (deskLight.ts aims it). */
+.desk-light-b { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; mix-blend-mode: multiply; opacity: 0; }
+/* the faint beam from the shade; above about .35 a screen beam washes out text, so it stays under the book too */
+.desk-beam { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; mix-blend-mode: screen; filter: blur(10px); opacity: 0; }
+html[data-light="evening"] .desk-daylight { opacity: 0; }
+html[data-light="evening"] .desk-dark, html[data-light="evening"] .desk-warm, html[data-light="evening"] .desk-light-b { opacity: 1; }
+html[data-light="evening"] .desk-beam { opacity: .32; }
+@media (prefers-reduced-motion: no-preference) {
+  .desk-daylight, .desk-dark, .desk-warm, .desk-light-b, .desk-beam, .desk-lamp-glow, .desk-lamp-inner { transition: opacity .7s ease; }
+}
+
+/* The pool's handle: drag it to aim the light (a tap passes through to the book under it). */
+.desk-pool-handle { position: absolute; z-index: 8; width: 74px; height: 74px; margin: -37px 0 0 -37px; border-radius: 50%; cursor: grab; touch-action: none;
+  user-select: none; -webkit-user-select: none; }
+.desk-pool-handle:hover::after, .desk-scene[data-dragging] .desk-pool-handle::after {
+  content: ''; position: absolute; inset: 22px; border-radius: 50%; border: 1.5px dashed rgba(255, 226, 170, .7); }
+.desk-scene[data-dragging], .desk-scene[data-dragging] * { cursor: grabbing !important; }
+.desk-lamp-tip { position: absolute; left: 24px; bottom: 6px; z-index: 9; padding: 3px 10px; border-radius: 999px; pointer-events: none; opacity: 0;
+  background: rgba(15, 9, 4, .7); border: 1px solid var(--brass-line); font: 13px var(--font-fell-sc); color: #e8d3a0; }
+@media (prefers-reduced-motion: no-preference) { .desk-lamp-tip { transition: opacity .2s; } }
+.desk-lamp-hit:hover ~ .desk-lamp-tip, .desk-lamp-hit:focus-visible ~ .desk-lamp-tip { opacity: 1; }
+
+/* ── The lamp ── */
+.desk-lamp-art { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; overflow: visible; }
+.desk-lamp-glow, .desk-lamp-inner { opacity: 0; }
+html[data-light="evening"] .desk-lamp-glow { opacity: 1; }
+html[data-light="evening"] .desk-lamp-inner { opacity: .85; }
+/* the little "click" of the switch */
+@media (prefers-reduced-motion: no-preference) {
+  .desk-scene--click .desk-lamp-nudge { animation: desk-click .18s ease-out; }
+}
+@keyframes desk-click { 40% { transform: translate(1.5px, 1px); } }
+.desk-lamp-base { position: absolute; left: 40px; top: 300px; width: 124px; height: 92px; z-index: 8; cursor: pointer; border-radius: 40px 40px 10px 10px; }
+/* The shade's button: placed at the shade's hinge and turned with it (DeskLamp's shadeHitStyle). */
+.desk-lamp-hit {
+  position: absolute; z-index: 9; width: 96px; height: 92px; margin: -46px 0 0 -16px; transform-origin: 16px 46px;
+  padding: 0; border: 0; border-radius: 22px; background: none; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.desk-lamp-hit:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: 0; }
+
+/* ── The pen (a prop) ── */
+.desk-pen { position: absolute; left: 610px; top: 368px; z-index: 1; width: 220px; height: 9px; border-radius: 5px; transform: rotate(-4deg);
+  background: linear-gradient(180deg, #2a2a2a, #0f0f0f); box-shadow: 0 6px 6px rgba(0, 0, 0, .4); }
+.desk-pen::before { content: ''; position: absolute; right: -16px; top: 1px; border-left: 18px solid #b08b3c; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; }
+.desk-pen::after { content: ''; position: absolute; left: 40px; top: 0; width: 6px; height: 9px; background: #b08b3c; }
+
+/* ── Phone: the pull cord ── */
+.desk-strip::before { content: ''; position: absolute; inset: 0 0 0 -16px; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse 160px 90px at 38px 0, rgba(255, 205, 130, .28), transparent 70%); }
+html[data-light="evening"] .desk-strip::before { opacity: 1; }
+.desk-cord { position: relative; flex: none; width: 76px; height: 84px; margin-left: -16px; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; color: inherit; }
+.desk-cord-shade { position: absolute; left: 6px; top: -6px; width: 64px; height: 14px; border-radius: 0 0 40px 40px;
+  background: linear-gradient(180deg, #1d3d29, #2f6043); box-shadow: 0 2px 4px rgba(0, 0, 0, .4), inset 0 -2px 0 #c9a24a; }
+.desk-cord-glow { position: absolute; left: 22px; top: 2px; width: 32px; height: 10px; border-radius: 50%; background: #ffe2a6; filter: blur(4px); opacity: 0; }
+html[data-light="evening"] .desk-cord-glow { opacity: 1; }
+.desk-cord-string { position: absolute; left: 37px; top: 8px; width: 2px; height: calc(42px + var(--pull, 0px)); background: linear-gradient(#bfa06a, #8a6e3e); }
+.desk-cord-bead { position: absolute; left: 31px; top: calc(48px + var(--pull, 0px)); width: 14px; height: 18px; border-radius: 7px 7px 8px 8px;
+  background: radial-gradient(circle at 35% 30%, #f3d58e, #b08b3c 55%, #6e5124); box-shadow: 0 2px 3px rgba(0, 0, 0, .5); }
+html[data-light="evening"] .desk-cord-bead { background: radial-gradient(circle at 35% 30%, #b8954f, #7a5c26 55%, #4a3414); }
+@media (prefers-reduced-motion: no-preference) {
+  .desk-cord-string { transition: height .25s cubic-bezier(.3, 1.6, .5, 1); }
+  .desk-cord-bead { transition: top .25s cubic-bezier(.3, 1.6, .5, 1); }
+  .desk-cord-glow { transition: opacity .7s ease; }
+}
+.desk-cord--dragging .desk-cord-string, .desk-cord--dragging .desk-cord-bead { transition: none; }
+.desk-cord-label { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font: 11px var(--font-fell-sc); color: var(--brass-muted); }
+.desk-cord:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; border-radius: 10px; }
+
+/* ── The note after the first lamp switch ── */
+.desk-note {
+  position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60;
+  display: flex; gap: 12px; align-items: center; width: max-content; max-width: calc(100vw - 32px); padding: 10px 12px 10px 16px; border-radius: 10px;
+  background: #1b120b; border: 1px solid var(--brass-line); color: #e8d3a0; font: 14px/1.35 var(--font-fell); box-shadow: 0 10px 24px rgba(0, 0, 0, .5);
+}
+@media (min-width: 900px) { .desk-note { bottom: 24px; max-width: 560px; } }
+.desk-note button { flex: none; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--brass-line); background: rgba(201, 162, 74, .12);
+  color: #e8d3a0; font: 14px var(--font-fell-sc); cursor: pointer; }
+.desk-note button:focus-visible { outline: 2px solid #e8d3a0; outline-offset: 2px; }
+
+/* ── Today's words: the notebook on the desk ── */
+.desk-notebook {
+  position: absolute; right: 26px; top: 60px; z-index: 4; width: 184px; min-height: 240px; transform: rotate(3deg);
+  padding: 12px 12px 10px 24px; border-radius: 3px 8px 8px 3px; color: var(--ink); background: var(--paper-gradient);
+  box-shadow: 0 14px 18px rgba(0, 0, 0, .45), inset 10px 0 0 rgba(122, 43, 34, .16);
+}
+/* the ruled lines, drawn apart from the paper so the paper is the text's only background */
+.desk-notebook::after { content: ''; position: absolute; inset: 70px 0 0; pointer-events: none;
+  background: repeating-linear-gradient(180deg, transparent 0 25px, rgba(74, 106, 154, .3) 25px 26px); }
+.desk-notebook--editing::after { display: none; }
+.desk-notebook::before { content: ''; position: absolute; left: 17px; top: 0; bottom: 0; width: 1px; background: rgba(122, 43, 34, .4); }
+@media (prefers-reduced-motion: no-preference) { .desk-notebook { transition: transform .25s ease; } }
+.desk-notebook--editing { transform: rotate(0deg) translateY(-6px); }
+.desk-goal-label { display: block; font: 12.5px var(--font-fell-sc); letter-spacing: .04em; color: var(--ink-soft); }
+.desk-goal-count { font: 700 34px/1 var(--font-hand); margin: 2px 0; color: var(--ink); }
+.desk-goal-count small { font-size: 22px; font-weight: 500; color: var(--ink-soft); }
+.desk-goal-pencil { position: absolute; right: 2px; top: 2px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
+  border-radius: 50%; border: 1px solid var(--rule); background: rgba(255, 255, 255, .22); color: var(--ink); cursor: pointer; }
+.desk-goal-pencil:hover { background: rgba(255, 255, 255, .4); }
+.desk-goal-words { list-style: none; margin: 10px 0 0; padding: 0; min-height: 52px; font: 600 21px/26px var(--font-hand); color: var(--pencil-blue); }
+.desk-goal-words li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desk-goal-words .desk-goal-more { font-size: 18px; color: var(--ink-soft); }
+.desk-goal-words .desk-goal-empty { padding-top: 4px; white-space: normal; font: italic 14px/19px var(--font-fell); color: var(--ink-soft); }
+.desk-goal-full { margin: 6px 0 0; font: italic 14px/1.3 var(--font-fell); color: var(--crimson); }
+.desk-goal-full span { display: block; font: normal 14px/1.5 var(--font-deva); }
+
+/* the editor (in the notebook, and in the phone's card) */
+.desk-goal-editor .desk-goal-label { margin-bottom: 8px; }
+.desk-goal-stepper { display: flex; align-items: center; gap: 6px; }
+.desk-goal-stepper button { width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--sepia); background: rgba(255, 255, 255, .25);
+  color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+.desk-goal-stepper button:disabled { opacity: .45; cursor: default; }
+.desk-goal-stepper input { width: 48px; height: 44px; text-align: center; font: 700 28px var(--font-hand); color: var(--ink);
+  background: rgba(255, 255, 255, .35); border: 1px solid var(--rule); border-radius: 6px; }
+.desk-goal-presets { display: flex; gap: 4px; margin: 8px 0 6px; }
+.desk-goal-presets button { flex: 1; height: 44px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--ink);
+  font: 14px var(--font-fell); cursor: pointer; }
+.desk-goal-presets button[aria-pressed="true"] { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
+.desk-goal-help { margin: 6px 0 8px; font: italic 13px/1.35 var(--font-fell); color: var(--ink-soft); }
+.desk-goal-actions { display: flex; gap: 6px; }
+.desk-goal-actions button { flex: 1; height: 44px; border-radius: 999px; border: 1px solid var(--sepia); background: transparent; color: var(--ink);
+  font: 14px var(--font-fell-sc); cursor: pointer; }
+.desk-goal-actions .desk-goal-save { background: var(--binding); border-color: var(--binding); color: var(--on-binding); }
+.desk-goal-pencil:focus-visible, .desk-goal-editor button:focus-visible, .desk-goal-editor input:focus-visible, .desk-goal-chip:focus-visible {
+  outline: 2px solid var(--brass-on-paper); outline-offset: 2px; }
+
+/* ── Phone: the goal chip and its editor card ── */
+.desk-goal-chip {
+  flex: 1; display: flex; align-items: center; gap: 12px; min-width: 0; margin: 10px 0; padding: 8px 12px 8px 18px; text-align: left; cursor: pointer;
+  position: relative; border-radius: 4px 10px 10px 4px; border: 1px solid var(--rule); color: var(--ink); background: var(--paper-gradient);
+  box-shadow: var(--lift), inset 6px 0 0 rgba(122, 43, 34, .2);
+}
+.desk-goal-chip::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: repeating-linear-gradient(180deg, transparent 0 19px, rgba(74, 106, 154, .22) 19px 20px); }
+.desk-goal-chip-label { display: block; font: 12px var(--font-fell-sc); letter-spacing: .03em; color: var(--ink-soft); }
+.desk-goal-chip-count { font: 700 28px/1 var(--font-hand); }
+.desk-goal-chip-count small { font-size: 19px; font-weight: 500; color: var(--ink-soft); }
+.desk-goal-tally { display: flex; gap: 3px; margin-left: auto; align-items: flex-end; height: 26px; }
+.desk-goal-tally i { width: 3px; height: 20px; border-radius: 2px; background: rgba(94, 74, 51, .28); transform: rotate(8deg); }
+.desk-goal-tally i.on { background: var(--pencil-blue); }
+.desk-goal-tally i.five { height: 26px; }
+.desk-goal-card .desk-goal-stepper { justify-content: center; margin: 4px 0 2px; }
+.desk-goal-card .desk-goal-stepper button, .desk-goal-card .desk-goal-stepper input { width: 48px; height: 48px; }
+.desk-goal-card .desk-goal-stepper input { width: 64px; }
+.desk-goal-card .desk-goal-presets button { height: 44px; }
+.desk-goal-card .desk-goal-actions button { height: 44px; }
+
+/* ── The open book ── */
+/* No filter on the book: a filter would flatten the leaf's 3D turn. Its shadow is on the cloth instead. */
+.desk-book { position: absolute; left: 296px; top: 44px; z-index: 3; width: 416px; height: 300px; perspective: 1800px; }
+.desk-book-half { position: absolute; top: 0; width: 50%; height: 100%; }
+.desk-book-half--left { left: 0; }
+.desk-book-half--right { left: 50%; }
+.desk-book-cloth { position: absolute; inset: -8px; background: linear-gradient(160deg, var(--cover-1), var(--cover-2) 60%, var(--cover-3));
+  box-shadow: 0 18px 22px rgba(0, 0, 0, .45); }
+.desk-book-half--left .desk-book-cloth { right: 0; border-radius: 6px 0 0 6px; }
+.desk-book-half--right .desk-book-cloth { left: 0; border-radius: 0 6px 6px 0; }
+.desk-book-edge { position: absolute; top: 3px; bottom: -5px; width: 6px;
+  background: repeating-linear-gradient(180deg, var(--parch-3) 0 1px, var(--page-gutter) 1px 2px); }
+.desk-book-half--left .desk-book-edge { left: -6px; border-radius: 3px 0 0 3px; }
+.desk-book-half--right .desk-book-edge { right: -6px; border-radius: 0 3px 3px 0; }
+.desk-page { position: absolute; inset: 0; padding: 16px 16px 14px; overflow: hidden; color: var(--ink); box-shadow: inset 0 0 26px rgba(120, 80, 30, .16); }
+.desk-book-half--left .desk-page { border-radius: 3px 0 0 3px; background: linear-gradient(270deg, var(--page-gutter) 0%, var(--parch) 9%, var(--parch-2) 100%); }
+.desk-book-half--right .desk-page { border-radius: 0 3px 3px 0; background: linear-gradient(90deg, var(--page-gutter) 0%, var(--parch) 9%, var(--parch-2) 100%); }
+/* while the page loads, or offline: blank ruled pages */
+.desk-page--blank::after { content: ''; position: absolute; inset: 40px 18px 26px; background: repeating-linear-gradient(180deg, transparent 0 21px, rgba(110, 85, 50, .18) 21px 22px); }
+.desk-mini-guide { display: flex; justify-content: space-between; gap: 8px; padding-bottom: 3px; margin-bottom: 6px; border-bottom: 1px solid var(--rule);
+  font: 11px var(--font-fell-sc); color: var(--ink-soft); }
+.desk-mini-guide span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desk-mini-entry { margin: 0 0 6px; font: 11.5px/1.38 var(--font-fell); color: var(--ink);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.desk-mini-entry b { font-size: 13px; }
+.desk-mini-entry [lang="hi"] { font: 12px var(--font-deva); color: var(--crimson); }
+.desk-page-foot { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font: 10.5px var(--font-fell); color: var(--ink-soft); }
+.desk-book-open { position: absolute; inset: -8px; z-index: 2; padding: 0; border: 0; border-radius: 6px; background: none; cursor: pointer; }
+.desk-book-open:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: 4px; }
+.desk-book-tag { position: absolute; left: 50%; bottom: -38px; transform: translateX(-50%); max-width: 520px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; pointer-events: none; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--brass-line);
+  background: rgba(20, 12, 6, .6); font: 14px var(--font-fell-sc); color: #e8d3a0; }
+.desk-book-open:hover ~ .desk-book-tag { color: #fff2d0; border-color: var(--brass); }
+
+/* Evening: each page outside the pool dims to 0.85 (multiply by rgb 217), never darker: at 0.85 every text on it
+   still reaches AA (ink-soft 4.7:1, crimson 4.8:1 on parch-2). Inside the page, so it only ever lies over paper.
+   --page-x is the page's left edge in the scene (the book's top is 44). */
+.desk-page-shade { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; opacity: 0;
+  background: radial-gradient(ellipse var(--rx) var(--ry) at calc(var(--tx) - var(--page-x)) calc(var(--ty) - 44px), #fff 35%, rgb(217, 217, 217) 90%); }
+.desk-book-half--left .desk-page-shade { --page-x: 296px; }
+.desk-book-half--right .desk-page-shade { --page-x: 504px; }
+html[data-light="evening"] .desk-page-shade { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) { .desk-page-shade { transition: opacity .7s ease; } }
+
+/* first visit: the welcome on the left page */
+.desk-welcome { padding-top: 6px; }
+.desk-welcome .today-big { margin: 6px 0 4px; font-size: 19px; line-height: 1.15; }
+.desk-welcome .tour-hi { margin: 0 0 8px; font: 14px/1.4 var(--font-deva); color: var(--crimson); }
+.desk-welcome .today-muted { margin: 0 0 10px; font-size: 13px; }
+.desk-welcome .today-actions { flex-wrap: wrap; gap: 6px; margin-top: 0; }
+.desk-welcome .ui-btn { min-height: 44px; padding: 0 12px; font-size: 14px; }
+
+/* Wide screens: the book replaces the Continue reading card (hidden from the first paint, before the width is known). */
+@media (min-width: 900px) { .today-continue-card { display: none; } }
+
+/* ── The intro film (first visits) ── */
+.desk-film { display: flex; flex-direction: column; align-items: center; }
+.desk-film-frame { position: relative; width: 120px; aspect-ratio: 540 / 960; border-radius: 3px; overflow: hidden; background: #120a06;
+  box-shadow: 0 0 0 1px var(--rule), 0 3px 8px rgba(0, 0, 0, .3); }
+.desk-film video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.desk-film-play { position: absolute; inset: 0; display: grid; place-items: center; padding: 0; border: 0; background: rgba(0, 0, 0, .18); color: #f0e2c0; cursor: pointer; }
+.desk-film-play span { display: grid; place-items: center; width: 56px; height: 56px; padding-left: 4px; border-radius: 50%;
+  background: rgba(20, 12, 6, .72); border: 1.5px solid #e8d3a0; }
+.desk-film-play:focus-visible span { outline: 2px solid #e8d3a0; outline-offset: 3px; }
+.desk-film-tools { position: absolute; right: 0; top: 0; display: flex; }
+.desk-film-tools button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: #f0e2c0; cursor: pointer; }
+.desk-film-tools button::before { content: ''; position: absolute; width: 30px; height: 30px; border-radius: 50%; background: rgba(20, 12, 6, .65); z-index: -1; }
+.desk-film-tools button { position: relative; z-index: 0; }
+.desk-film-tools button:focus-visible { outline: 2px solid #e8d3a0; outline-offset: -6px; border-radius: 50%; }
+.desk-film-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; margin-top: 4px; font: 12px var(--font-fell); color: var(--ink-soft); }
+.desk-film-lang { display: inline-flex; flex: none; }
+.desk-film-lang button { min-width: 40px; min-height: 44px; padding: 0 6px; border: 0; background: none; cursor: pointer; font: 13px var(--font-fell); color: var(--ink); }
+.desk-film-lang button span, .desk-film-lang button { text-decoration: none; }
+.desk-film-lang button[aria-pressed="true"] { color: var(--crimson); font-weight: bold; text-decoration: underline; text-underline-offset: 3px; }
+.desk-film-lang button:lang(hi) { font-family: var(--font-deva); }
+.desk-film-lang button:focus-visible { outline: 2px solid var(--brass-on-paper); outline-offset: -6px; border-radius: 8px; }
+/* on the desk: the book's right page */
+.desk-book .desk-film { padding-top: 4px; }
+
+/* on a phone: beside the welcome text, then the card's full width once played */
+.today-welcome-row { display: flex; gap: 12px; align-items: flex-start; }
+.today-welcome-text { flex: 1; min-width: 0; }
+.today-welcome-row .desk-film-frame { width: 104px; }
+.today-welcome-row .desk-film-meta { flex-direction: column; align-items: center; gap: 0; width: 104px; }
+.today-welcome--lifted .today-welcome-row { flex-direction: column-reverse; }
+.today-welcome--lifted .desk-film, .today-welcome--lifted .desk-film-frame { width: 100%; }
+.today-welcome--lifted .today-welcome-row .desk-film-meta { flex-direction: row; justify-content: space-between; width: 100%; }
+@media (prefers-reduced-motion: no-preference) { .today-welcome-row .desk-film-frame { transition: width .45s ease; } }
+
+/* ── Close the book ── */
+.desk-book-half--left { transform-style: preserve-3d; transform-origin: right center; z-index: 1; }
+.desk-leaf-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.desk-leaf-back { transform: rotateY(180deg); }
+/* the cover: cloth with a brass panel, and no name */
+.desk-leaf-back, .desk-book-cover { display: grid; place-items: center; }
+.desk-leaf-back::before, .desk-book-cover::before { content: ''; position: absolute; inset: -8px; border-radius: 6px 0 0 6px;
+  background: linear-gradient(160deg, var(--cover-1), var(--cover-2) 60%, var(--cover-3)); box-shadow: 0 18px 22px rgba(0, 0, 0, .45); }
+.desk-book-cover::before { border-radius: 0 6px 6px 0; }
+.desk-cover-ornament { position: relative; width: 70%; height: 78%; border-radius: 4px; border: 1.5px solid rgba(201, 162, 74, .7);
+  box-shadow: inset 0 0 0 5px transparent, inset 0 0 0 6px rgba(201, 162, 74, .4); }
+.desk-cover-ornament::after { content: ''; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%) rotate(45deg);
+  border: 1.5px solid rgba(201, 162, 74, .75); }
+.desk-book-cover { position: absolute; left: 50%; top: 0; width: 50%; height: 100%; z-index: 1; opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .desk-book { transition: transform .7s ease; }
+  .desk-book-half--left { transition: transform .95s cubic-bezier(.55, .05, .35, 1); }
+  .desk-book--closed { transform: translateX(-104px); }
+  .desk-book--closed .desk-book-half--left { transform: rotateY(180deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .desk-book-half--left, .desk-book-cover { transition: opacity .3s ease; }
+  .desk-book--closed .desk-book-half--left { opacity: 0; }
+  .desk-book--closed .desk-book-cover { opacity: 1; }
+}
+.desk-book--closed .desk-book-tag, .desk-book--closed .desk-clasp, .desk-book--closed .desk-clasp-tip { opacity: 0; pointer-events: none; }
+
+/* the clasp on the fore-edge: press and hold */
+.desk-clasp { position: absolute; right: -26px; top: 50%; z-index: 3; width: 36px; height: 52px; margin-top: -26px; padding: 0; border: 0; background: none;
+  cursor: grab; touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.desk-clasp-body { position: absolute; left: 4px; top: 6px; width: 26px; height: 40px; border-radius: 4px 9px 9px 4px;
+  background: linear-gradient(90deg, #8a6a2a, #d8b562 45%, #9a7632); box-shadow: 0 2px 4px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(60, 40, 10, .6); }
+.desk-clasp-body::after { content: ''; position: absolute; left: 9px; top: 14px; width: 9px; height: 12px; border-radius: 50%; background: radial-gradient(#5a3e12, #2c1d07); }
+.desk-clasp-ring { position: absolute; left: -8px; top: -2px; width: 52px; height: 56px; pointer-events: none; overflow: visible; }
+.desk-clasp-ring circle { fill: none; stroke: #e8d3a0; stroke-width: 3; stroke-dasharray: 160; stroke-dashoffset: 160; transform: rotate(-90deg); transform-origin: center; }
+.desk-clasp--holding .desk-clasp-ring circle { transition: stroke-dashoffset .75s linear; stroke-dashoffset: 0; }
+.desk-clasp:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: 2px; border-radius: 8px; }
+.desk-clasp-tip { position: absolute; right: -14px; top: -32px; padding: 2px 10px; border-radius: 999px; white-space: nowrap; pointer-events: none; opacity: 0;
+  background: rgba(15, 9, 4, .7); border: 1px solid var(--brass-line); font: 13px var(--font-fell-sc); color: #e8d3a0; }
+@media (prefers-reduced-motion: no-preference) { .desk-clasp-tip { transition: opacity .2s; } }
+.desk-clasp:hover ~ .desk-clasp-tip, .desk-clasp:focus-visible ~ .desk-clasp-tip { opacity: 1; }
+
+/* the puff of dust */
+.desk-dust { position: absolute; z-index: 4; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(rgba(240, 220, 180, .7), rgba(240, 220, 180, 0) 70%); animation: desk-puff 1.4s ease-out forwards; }
+@keyframes desk-puff { from { transform: translate(0, 0) scale(.6); opacity: .9; } to { transform: translate(var(--dx), var(--dy)) scale(4); opacity: 0; } }

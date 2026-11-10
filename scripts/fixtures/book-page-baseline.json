@@ -1,0 +1,276 @@
+{
+  "desktop": {
+    "1440x900": {
+      "spread": {
+        "x": 133,
+        "y": 100,
+        "w": 1120,
+        "h": 640
+      },
+      "prev": {
+        "x": 81,
+        "y": 388,
+        "w": 40,
+        "h": 64
+      },
+      "pill": {
+        "x": 626.25,
+        "y": 762,
+        "w": 187.48,
+        "h": 36
+      },
+      "next": {
+        "x": 1319,
+        "y": 388,
+        "w": 40,
+        "h": 64
+      }
+    },
+    "1280x800": {
+      "spread": {
+        "x": 66.77,
+        "y": 100,
+        "w": 1093.71,
+        "h": 624.98
+      },
+      "prev": {
+        "x": 15.99,
+        "y": 381.24,
+        "w": 39.06,
+        "h": 62.5
+      },
+      "pill": {
+        "x": 546.25,
+        "y": 746.97,
+        "w": 187.48,
+        "h": 36
+      },
+      "next": {
+        "x": 1224.93,
+        "y": 381.24,
+        "w": 39.06,
+        "h": 62.5
+      }
+    }
+  },
+  "phone": {
+    "360x780": {
+      "2439": {
+        "page": {
+          "x": 16,
+          "y": 88,
+          "w": 328,
+          "h": 677.66
+        },
+        "prev": {
+          "x": 32,
+          "y": 716.16,
+          "w": 44,
+          "h": 44
+        },
+        "pill": {
+          "x": 134.72,
+          "y": 716.16,
+          "w": 90.56,
+          "h": 44
+        },
+        "next": {
+          "x": 284,
+          "y": 716.16,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "2440": {
+        "page": {
+          "x": 16,
+          "y": 88,
+          "w": 328,
+          "h": 677.06
+        },
+        "prev": {
+          "x": 32,
+          "y": 715.56,
+          "w": 44,
+          "h": 44
+        },
+        "pill": {
+          "x": 133.52,
+          "y": 715.56,
+          "w": 92.97,
+          "h": 44
+        },
+        "next": {
+          "x": 284,
+          "y": 715.56,
+          "w": 44,
+          "h": 44
+        }
+      }
+    },
+    "412x915": {
+      "2439": {
+        "page": {
+          "x": 16,
+          "y": 88,
+          "w": 380,
+          "h": 592
+        },
+        "prev": {
+          "x": 32,
+          "y": 630.5,
+          "w": 44,
+          "h": 44
+        },
+        "pill": {
+          "x": 160.72,
+          "y": 630.5,
+          "w": 90.56,
+          "h": 44
+        },
+        "next": {
+          "x": 336,
+          "y": 630.5,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "2440": {
+        "page": {
+          "x": 16,
+          "y": 88,
+          "w": 380,
+          "h": 656.06
+        },
+        "prev": {
+          "x": 32,
+          "y": 694.56,
+          "w": 44,
+          "h": 44
+        },
+        "pill": {
+          "x": 159.52,
+          "y": 694.56,
+          "w": 92.97,
+          "h": 44
+        },
+        "next": {
+          "x": 336,
+          "y": 694.56,
+          "w": 44,
+          "h": 44
+        }
+      }
+    }
+  },
+  "styles": {
+    "desktop": {
+      "day": [
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(42, 30, 20)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(42, 30, 20)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(42, 30, 20)"
+        }
+      ],
+      "evening": [
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(30, 21, 13)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(30, 21, 13)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(30, 21, 13)"
+        }
+      ]
+    },
+    "phone": {
+      "day": [
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(42, 30, 20)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(42, 30, 20)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(42, 30, 20)"
+        }
+      ],
+      "evening": [
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(30, 21, 13)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(30, 21, 13)"
+        },
+        {
+          "font": "15px / 21px \"IM Fell English\", \"IM Fell English Fallback\", \"IM Fell English\", Georgia, serif",
+          "lineHeight": "21px",
+          "textAlign": "justify",
+          "margin": "0px 0px 11px",
+          "padding": "0px",
+          "color": "rgb(30, 21, 13)"
+        }
+      ]
+    }
+  }
+}

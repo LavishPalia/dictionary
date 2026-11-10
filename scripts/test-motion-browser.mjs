@@ -203,13 +203,16 @@ async function main() {
       const real = window.fetch.bind(window);
       window.fetch = (input, init) => (String(input?.url ?? input).includes('/api/page/') ? new Promise((r) => setTimeout(r, 2500)).then(() => real(input, init)) : real(input, init));
     }` });
-    const slowTurn = (label, inside) => evaluate(`(async () => {
+    // `late`: when to look for the lines after the first 120 ms. A phone's leaf turns first (500 ms) onto a copy with ink
+    // lines; the page is asked for as the leaf lands, and its own lines show 180 ms later, under the stage.
+    const slowTurn = (label, inside, late = 180) => evaluate(`(async () => {
       const from = location.pathname;
       document.querySelector('button[aria-label="${label}"]').click();
       const seen = { at300: null, inside: false, said: '' };
       await new Promise((r) => setTimeout(r, 120));
       seen.early = Boolean(document.querySelector('#page-loading'));
-      await new Promise((r) => setTimeout(r, 180));
+      seen.leafOntoLines = Boolean(document.querySelector('.phone-turn-under .ink-lines'));
+      await new Promise((r) => setTimeout(r, ${late}));
       const lines = document.querySelector('#page-loading');
       seen.at300 = Boolean(lines);
       seen.inside = Boolean(lines?.closest('${inside}'));
@@ -226,7 +229,8 @@ async function main() {
       await open(`/page/${CAMEL_PAGE}`, size);
       await evaluate(`localStorage.setItem('test-slow-pages', '1'); true`);
       await open(`/page/${CAMEL_PAGE}`, size);
-      const seen = await slowTurn(label, inside);
+      const seen = await slowTurn(label, inside, name === 'phone' ? 700 : 180);
+      if (name === 'phone') check('phone: the leaf turns onto ink lines while the next page loads', seen.leafOntoLines, seen);
       check(`${name}: a slow page shows ink lines over the book, and says it is loading`,
         seen.at300 && seen.inside && seen.said.startsWith('Loading page') && seen.anim === 'ink-write', seen);
       check(`${name}: a quick wait shows nothing (no lines in the first 120 ms)`, seen.early === false, seen);

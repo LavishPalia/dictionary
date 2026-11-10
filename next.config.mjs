@@ -55,6 +55,9 @@ const nextConfig = {
       { source: '/duel/p/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
       // So are the sounds: a new sound gets a new version in its name.
       { source: '/duel/sounds/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+      // And the intro film: a new cut gets a new version in its name. Without this, a browser revalidating a half-cached
+      // film (weak ETag, max-age=0) could fail to play it a second time ("Format error").
+      { source: '/intro/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
     ];
   },
   // better-sqlite3 is a native module: load it from node_modules at runtime instead of bundling it.
