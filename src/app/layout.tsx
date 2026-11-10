@@ -10,6 +10,7 @@ import '@/styles/review.css';
 import '@/styles/today.css';
 import '@/styles/desk.css';
 import '@/styles/book-lamp.css';
+import '@/styles/bookplate.css';
 import '@/styles/tour.css';
 import '@/styles/learn.css';
 import '@/styles/progress.css';
@@ -24,7 +25,7 @@ import { PRE_PAINT_SCRIPT } from '@/lib/lighting';
 const fell = IM_Fell_English({ weight: '400', style: ['normal', 'italic'], subsets: ['latin'], variable: '--nf-fell', display: 'swap' });
 const fellSc = IM_Fell_English_SC({ weight: '400', subsets: ['latin'], variable: '--nf-fell-sc', display: 'swap', adjustFontFallback: false }); // next/font has no metrics for it
 const deva = Tiro_Devanagari_Hindi({ weight: '400', style: ['normal', 'italic'], subsets: ['devanagari', 'latin'], variable: '--nf-deva', display: 'swap' });
-const hand = Caveat({ weight: ['400', '600', '700'], subsets: ['latin'], variable: '--nf-hand', display: 'swap', preload: false }); // margin notes only
+const hand = Caveat({ weight: ['400', '600', '700'], subsets: ['latin'], variable: '--nf-hand', display: 'swap', preload: false }); // margin notes and the bookplate's name
 
 const fontVariables = [fell, fellSc, deva, hand].map((font) => font.variable).join(' ');
 

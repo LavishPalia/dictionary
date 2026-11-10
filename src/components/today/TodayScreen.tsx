@@ -21,6 +21,8 @@ import { GoalEditor } from './desk/GoalEditor';
 import { DeskBook } from './desk/DeskBook';
 import { IntroFilm } from './desk/IntroFilm';
 import type { TodayWord } from '@/lib/today-words';
+import { BookplateGreeting, BookplateOffer } from '@/components/bookplate/Bookplate';
+import type { Bookplate } from '@/lib/bookplate';
 
 interface TodayScreenProps {
   dueCount: number;
@@ -60,6 +62,11 @@ interface TodayScreenProps {
   todaysWords: TodayWord[];
   dailyGoal: number;
   onSetGoal: (goal: number) => void;
+  /** The reader's bookplate (a greeting with their name), and the one-time offer to write one. */
+  bookplate: Bookplate | null;
+  offerBookplate: boolean;
+  onWriteBookplate: () => void;
+  onDismissBookplate: () => void;
 }
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
@@ -121,6 +128,7 @@ export function TodayScreen(props: TodayScreenProps) {
   return (
     <section className="today" id="today-screen" aria-labelledby="today-title">
       <h1 id="today-title" className="ui-visually-hidden">Today</h1>
+      {props.bookplate && <BookplateGreeting plate={props.bookplate} hour={new Date().getHours()} />}
       <p className="today-hint">Hindi works too: try typing <span lang="hi" className="today-hint-hi">छोड़ना</span> or <span className="today-hint-latin">chhodna</span> in the search box.</p>
 
       <DeskScene wide={wide} light={light} onToggleLamp={sw.toggle}
@@ -148,6 +156,10 @@ export function TodayScreen(props: TodayScreenProps) {
             <IntroFilm onPlayingChange={liftFilm} />
           </div>
         </Card>
+      )}
+
+      {props.offerBookplate && !props.showWelcome && (
+        <BookplateOffer onWrite={props.onWriteBookplate} onNotNow={props.onDismissBookplate} />
       )}
 
       <DuelCard />

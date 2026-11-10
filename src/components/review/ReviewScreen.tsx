@@ -1,5 +1,6 @@
 'use client';
 
+import { track } from '@/lib/analytics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { QuizCard } from '@/lib/book-data';
 import { describePos } from '@/lib/pos';
@@ -188,6 +189,13 @@ export function ReviewScreen({ saved, records, onAnswer, onClose, onOpenSaved, o
   useEffect(() => {
     if (done && firstRoundSize > 0 && !practice && !earned.current) { earned.current = true; earnReviewHint(webStorage()); }
   }, [done, firstRoundSize, practice]);
+  // Usage counts: how many cards and how many right first time, once per finished round (never which words).
+  const counted = useRef(false);
+  useEffect(() => {
+    if (!done || firstRoundSize === 0 || counted.current) return;
+    counted.current = true;
+    track('review_finished', { cards: firstRoundSize, right: Object.values(firstTry).filter(Boolean).length, practice: Boolean(practice) });
+  }, [done, firstRoundSize, firstTry, practice]);
   const header = (
     <div className="review-top">
       <IconButton id="close-review-btn" aria-label="Close review" onClick={onClose}><CloseIcon /></IconButton>

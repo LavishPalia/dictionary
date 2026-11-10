@@ -91,4 +91,6 @@ export interface Platform {
   prepareOffline(today: string): Promise<void>;
   /** Where the back arrow goes. */
   exitHref: string;
+  /** Usage counts, given by the host app (Panna's src/lib/analytics.ts): counts or a type only, never words. */
+  track?(name: string, props: Record<string, string | number | boolean>): void;
 }

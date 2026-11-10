@@ -83,6 +83,10 @@
     "test:duel-progress": "tsx scripts/test-duel-progress.ts",
     "test:duel-help": "tsx scripts/test-duel-help.ts",
     "test:duel-schedule": "tsx scripts/test-duel-schedule.ts",
+    "test:analytics": "tsx scripts/test-analytics.ts",
+    "test:analytics-ui": "node scripts/test-analytics-browser.mjs",
+    "test:bookplate": "tsx scripts/test-bookplate.ts",
+    "test:bookplate-ui": "node scripts/test-bookplate-browser.mjs",
     "test:duel-api": "tsx scripts/test-duel-api.ts",
     "test:duel-outbox": "tsx scripts/test-duel-outbox.ts",
     "test:duel-ui": "node scripts/test-duel-ui-browser.mjs",
@@ -106,6 +110,7 @@
     "@neondatabase/serverless": "^1.2.0",
     "better-sqlite3": "^13.0.3",
     "next": "15.5.28",
+    "posthog-js": "^1.447.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

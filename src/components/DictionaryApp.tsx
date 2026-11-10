@@ -43,6 +43,9 @@ import { NEW_WORDS_PER_DAY, nextStep } from '@/lib/learn';
 import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
+import { browserBlocksCounting, pageview, setUsageCounts, startAnalytics, syncBookplate, track, usageCountsChosen } from '@/lib/analytics';
+import { bookplateOfferDone, endBookplateOffer, loadBookplate, offerBookplate, storeBookplate, unshareBookplate, type Bookplate } from '@/lib/bookplate';
+import { BookplateSheet } from '@/components/bookplate/Bookplate';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
 import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, clearHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
@@ -106,10 +109,53 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // look as if it chose the defaults (a restored backup's settings would otherwise lose to them).
       const untouched = lighting === 'auto' && speedMode === 'realistic' && !isMuted && dailyGoal === NEW_WORDS_PER_DAY;
       if (untouched && localStorage.getItem('panna_settings') === null) return;
-      localStorage.setItem('panna_settings', JSON.stringify(storedSettings(lighting, {
-        speed: speedMode, sounds: !isMuted, ...(dailyGoal === NEW_WORDS_PER_DAY ? {} : { dailyGoal }) })));
+      // Keys this effect doesn't own (the Usage counts choice) are kept as they are.
+      // dailyGoal is ours: it's left out at the default, so an old value must not survive from `others`.
+      const stored = JSON.parse(localStorage.getItem('panna_settings') || '{}');
+      const others = stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...stored } : {};
+      delete others.dailyGoal;
+      const ours = storedSettings(lighting, {
+        speed: speedMode, sounds: !isMuted, ...(dailyGoal === NEW_WORDS_PER_DAY ? {} : { dailyGoal }) });
+      localStorage.setItem('panna_settings', JSON.stringify({ ...ours, ...others, ...ours })); // ours first, and ours win
     } catch {}
   }, [settingsLoaded, lighting, speedMode, isMuted, dailyGoal]);
+
+  // Usage counts (src/lib/analytics.ts): started here, before the launch effect below gives the address back, so the
+  // launch kind is still readable. The switch shows off, and can't be turned on, while the browser asks not to be tracked.
+  const [usageCounts, setUsageCountsState] = useState(true);
+  const [countingBlocked, setCountingBlocked] = useState(false);
+  useEffect(() => {
+    startAnalytics();
+    setUsageCountsState(usageCountsChosen());
+    // A browser that asks not to be tracked can't share the bookplate name: a tick stored before is taken off, so the
+    // box and the menu chip show what is true, and the name isn't sent if the browser later stops asking.
+    const blocked = browserBlocksCounting();
+    setCountingBlocked(blocked);
+    if (blocked) { unshareBookplate(); setBookplate(loadBookplate()); }
+  }, []);
+  // The bookplate (src/lib/bookplate.ts): read after the first render, like the other settings. Switching Usage counts
+  // off unticks its "Share my name" too, so the plate is read again after the switch.
+  const [bookplate, setBookplate] = useState<Bookplate | null>(null);
+  const [bookplateLoaded, setBookplateLoaded] = useState(false);
+  const [showBookplate, setShowBookplate] = useState(false);
+  // The control that opened the sheet (the offer's button, or the ⋯ button behind the menu's chip) gets focus back.
+  const bookplateOpenerRef = useRef<string>('menu-btn');
+  const openBookplate = (opener: string) => { bookplateOpenerRef.current = opener; setShowBookplate(true); };
+  useEffect(() => { setBookplate(loadBookplate()); setBookplateLoaded(true); }, []);
+  const changeUsageCounts = (on: boolean) => { setUsageCounts(on); setUsageCountsState(on); setBookplate(loadBookplate()); };
+  const saveBookplate = (plate: Bookplate) => {
+    storeBookplate(plate);
+    setBookplate(loadBookplate());
+    setBookplateOffer(false);
+    setShowBookplate(false);
+    syncBookplate();
+  };
+  const removeBookplate = () => {
+    storeBookplate(null);
+    setBookplate(null);
+    setShowBookplate(false);
+    syncBookplate();
+  };
 
   // Dog-Eared Pages & Handwritten Pencil Marginalia State
   const [dogEaredPages, setDogEaredPages] = useState<number[]>([]);
@@ -469,7 +515,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const searchRecents = useMemo(() => recentWords(history), [history]);
   // The most recent card open, and whether it was a lookup that counts (read by the repeat-lookup nudge).
   const lastLookupRef = useRef<{ normalized: string; counted: boolean } | null>(null);
-  const recordShown = useCallback((word: LookupWord, source: LookupSource) => {
+  const recordShown = useCallback((word: LookupWord, source: LookupSource, via: string = source) => {
+    // Counted by how it was looked up, never which word.
+    track('word_looked_up', { via, found: true });
     // Read the stored list, not state: another tab (or a restored backup) may have changed it.
     const next = saveHistory(recordLookup(loadHistory(), word, source, Date.now()));
     lastLookupRef.current = { normalized: word.normalized, counted: true };
@@ -664,8 +712,9 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   };
 
   // Search selection handler: a result picked in the search box.
-  const handleSelectWord = (headword: string, destPage: number, meaning_hi?: string) => {
-    recordShown({ normalized: headword.toLowerCase().trim(), headword, meaning_hi, page: destPage }, 'search');
+  const handleSelectWord = (headword: string, destPage: number, meaning_hi?: string, match?: string) => {
+    const via = match === 'hindi' || match === 'hinglish' ? 'hindi' : 'search';
+    recordShown({ normalized: headword.toLowerCase().trim(), headword, meaning_hi, page: destPage }, 'search', via);
     showBookForSearch();
     turnToPage(destPage, headword);
   };
@@ -674,7 +723,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const handleSelectSavedWord = async (headword: string, savedPage: number) => {
     showBookForSearch();
     const found = await fetchWord(headword);
-    if (found) recordEntry(found.entry, 'search', found.pageNumber);
+    if (found) recordShown({ normalized: found.entry.normalized, headword: found.entry.headword, meaning_hi: found.entry.meaning_hi, page: found.pageNumber }, 'search', 'other'); // a recent: counted apart from searches
     turnToPage(found ? found.pageNumber : savedPage, found ? found.entry.headword : headword);
   };
 
@@ -764,6 +813,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const handleToggleWordBookmark = (entry: DictionaryEntry) => {
     // The very first save gets a one-time tip saying when the word comes back.
     if (bookmarkedWords.length === 0) tours.offerTip('first-save', true);
+    track(bookmarkedWords.some(w => w.normalized === entry.normalized) ? 'word_unsaved' : 'word_saved');
     setBookmarkedWords(prev => {
       const exists = prev.some(w => w.normalized === entry.normalized);
       const updated = exists
@@ -961,6 +1011,11 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     reducedMotion: reducedMotion || speedMode === 'instant',
   });
   const { offerTip } = tours;
+  // Page views: one per screen opened (and per word card opened), never per page turn. A tour walking through screens
+  // is not the reader opening them.
+  useEffect(() => { if (!tours.active) pageview(section); }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cardOpen = showWordDrawer && activeWordEntry !== null;
+  useEffect(() => { if (cardOpen && !tours.active) pageview('word'); }, [cardOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   // One-time tips, the first time each thing is used (never during a tour; the layer waits for its target).
   useEffect(() => {
     if (section !== 'book' || showWordDrawer || showMenu || !isBookOpen) return;
@@ -1012,6 +1067,14 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Opening it is remembered (Today then shows a small link instead of its card); wait for the saved state to load,
   // so this does not write over it.
   const { loaded: toursLoaded, markGuideOpened } = tours;
+  const [bookplateOffer, setBookplateOffer] = useState(false);
+  const savedCountRef = useRef(0);
+  savedCountRef.current = bookmarkedWords.length;
+  useEffect(() => {
+    if (section !== 'today' || !savedLoaded || !toursLoaded || !bookplateLoaded) return;
+    setBookplateOffer(offerBookplate({ savedWords: savedCountRef.current, plate: loadBookplate(), offerDone: bookplateOfferDone(), welcomeShowing: tours.showWelcome }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section, savedLoaded, toursLoaded, bookplateLoaded]);
   useEffect(() => {
     if (section === 'learn' && toursLoaded) markGuideOpened();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1144,7 +1207,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     const id = lookupRef.current;
     const found = await fetchWord(word);
     if (!current()) return false;
-    if (!found) { setLookupFill({ text: word }); return false; }
+    if (!found) { track('word_looked_up', { via: 'voice', found: false }); setLookupFill({ text: word }); return false; }
     const at = found.entry.normalized;
     recordEntry(found.entry, 'voice', found.pageNumber);
     setHeard({ text: word, alternates: [], at });
@@ -1266,7 +1329,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           fetchWord(only.key!).then((found) => {
             if (!current()) return;
             if (found) { recordEntry(found.entry, 'share', found.pageNumber); setActiveWordEntry(found.entry); setShowWordDrawer(true); }
-            else setLookupFill({ text: only.text, show: 'closest' }); // not a book word: its closest matches, as for voice
+            else { track('word_looked_up', { via: 'share', found: false }); setLookupFill({ text: only.text, show: 'closest' }); } // not a book word: its closest matches, as for voice
           });
         } else if (words.length > 1) {
           setShareText(cutText(launch.text ?? '')); // as shared: /api/sentence cleans it and says if it was cut
@@ -1614,6 +1677,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           todaysWords={todaysWordsNow}
           dailyGoal={dailyGoal}
           onSetGoal={(g) => setDailyGoal(clampGoal(g))}
+          bookplate={bookplate}
+          offerBookplate={bookplateOffer}
+          onWriteBookplate={() => openBookplate('bookplate-write')}
+          onDismissBookplate={() => { endBookplateOffer(); setBookplateOffer(false); }}
         />
       )}
 
@@ -1722,6 +1789,21 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         installHint={offline.installHint}
         iosShortcut={iosShortcut}
         backupLabel={lastBackupLabel(lastBackupAt)}
+        usageCounts={usageCounts && !countingBlocked}
+        usageCountsBlocked={countingBlocked}
+        onUsageCountsChange={changeUsageCounts}
+        bookplate={bookplate}
+        onOpenBookplate={() => openBookplate('menu-btn')}
+      />
+
+      <BookplateSheet
+        open={showBookplate}
+        plate={bookplate}
+        canShare={usageCounts && !countingBlocked}
+        onSave={saveBookplate}
+        onRemove={removeBookplate}
+        onClose={() => setShowBookplate(false)}
+        returnFocusTo={() => document.getElementById(bookplateOpenerRef.current) ?? document.getElementById('menu-btn')}
       />
 
       <ToursSheet
