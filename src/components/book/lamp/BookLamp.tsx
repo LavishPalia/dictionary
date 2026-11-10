@@ -85,7 +85,14 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
     // The spread's scale changed (a transform: the observer above doesn't see it): the lamp may no longer fit, or fit again.
     const mo = new MutationObserver(refresh);
     if (scaleBox) mo.observe(scaleBox, { attributes: true, attributeFilter: ['data-scale'] });
-    return () => { ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', refresh); c.destroy(); ctl.current = null; };
+    // Content in the flow between the header and the spread (the offline notice, the share note) comes and goes as a sibling
+    // of the header and moves the spread without resizing anything watched above: refit when one mounts or unmounts, or the
+    // header itself changes size (it wraps), so the shade never ends up under the header (§4.2).
+    const header = phone ? null : document.querySelector('.app-header');
+    const mo2 = header?.parentElement ? new MutationObserver(refresh) : null;
+    if (header?.parentElement) mo2?.observe(header.parentElement, { childList: true });
+    if (header) ro.observe(header);
+    return () => { ro.disconnect(); mo.disconnect(); mo2?.disconnect(); window.removeEventListener('resize', refresh); c.destroy(); ctl.current = null; };
   }, [phone, version, reduced, frameKey]);
 
   // A turn holds the light; when it lands the pool goes to the open word (if its entry is on the page), and back to rest when

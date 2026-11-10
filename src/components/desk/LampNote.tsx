@@ -12,7 +12,11 @@ export function LampNote({ sw, onUseAuto, returnFocusTo, id }: { sw: LampSwitch;
       <span>{sw.note === 'evening' ? 'Lamp on.' : 'Lamp off.'} It stays this way until you switch it, or choose Auto to follow the clock again.</span>
       <button type="button" id={`${id}-auto`} onClick={() => {
         sw.hideNote(); onUseAuto();
-        document.getElementById(returnFocusTo)?.focus(); // the note goes; focus goes back to the lamp
+        // The note goes; focus goes back to the lamp. Where the lamp is hidden (or inert) the focus doesn't take: the Book page's
+        // page count is the next control in its place.
+        const to = document.getElementById(returnFocusTo);
+        to?.focus();
+        if (document.activeElement !== to) document.getElementById('page-number-btn')?.focus();
       }}>Use Auto</button>
     </div>
   );

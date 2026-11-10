@@ -46,8 +46,10 @@ export function entryAim(frame: HTMLElement, headword: string, scale: number): A
   const w = frame.offsetWidth, h = frame.offsetHeight;
   if (!w || !h) return null;
   const want = headword.trim();
-  for (const el of frame.querySelectorAll('.entry-headword')) {
-    if (el.textContent?.trim() !== want || el.closest('[aria-hidden="true"]')) continue;
+  // Two entries may share a headword (homographs): the highlighted one (the word that is open) is meant, then the first.
+  const found = [...frame.querySelectorAll('.entry-headword')].filter((el) => el.textContent?.trim() === want && !el.closest('[aria-hidden="true"]'))
+    .sort((a, b) => Number(b.classList.contains('pencil-underlined')) - Number(a.classList.contains('pencil-underlined')));
+  for (const el of found) {
     const r = el.getClientRects()[0], f = frame.getBoundingClientRect();
     if (!r || !r.width || !r.height) continue;
     const k = scale || 1;

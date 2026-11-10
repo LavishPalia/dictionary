@@ -115,6 +115,8 @@ export const PhonePageBody = React.memo(function PhonePageBody({
         width: '100%',
         maxWidth: '390px',
         touchAction: live ? 'pan-y' : undefined,
+        // While a leaf turns the stage's copies are the page the reader sees: the live page stays in layout but is not painted.
+        visibility: live && inert ? 'hidden' : undefined,
         transform: live && offset ? `translateX(${offset}px)` : undefined,
         transition: live ? (sliding ? `transform ${slideMs}ms ease-out` : 'none') : undefined,
         background: 'var(--parch-2)',

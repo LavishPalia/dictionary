@@ -33,14 +33,13 @@ html[data-light="evening"] .book-light { opacity: 1; visibility: visible; }
   background: radial-gradient(ellipse var(--pool-rx, 380px) var(--pool-ry, 290px) at calc(var(--pool-x, 230px) - var(--light-origin, 0px)) var(--pool-y, 169px),
     rgba(255, 214, 150, .56) 0%, rgba(255, 206, 138, .36) 30%, rgba(255, 198, 128, .12) 62%, rgba(255, 196, 128, 0) 100%);
 }
-/* The spread's base layer lies under the resting pages: its light is drawn only while a flip or riffle runs. */
-[data-book-base]:not([data-flipping]) .book-light { visibility: hidden; }
+/* The spread's base layer lies under the resting pages (opaque, so its light isn't seen) and stays lit: its filter is then
+   already painted when a flip or riffle starts, instead of on the flip's first frame. */
 
 /* Fades: 0.7 s, then hidden (so the filter costs nothing in Day); none under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .book-light, .book-desk-dark, html[data-light="evening"] .book-desk-day { transition: opacity .7s ease, visibility 0s linear .7s; }
   html[data-light="evening"] .book-light, html[data-light="evening"] .book-desk-dark, .book-desk-day { transition: opacity .7s ease, visibility 0s; }
-  [data-book-base]:not([data-flipping]) .book-light { transition: none; }
 }
 
 /* The filter's own <svg>: present for the renderer, nothing on screen. */
@@ -84,7 +83,7 @@ html[data-light="evening"] .book-light { opacity: 1; visibility: visible; }
   .book-switch[data-sunk="true"] .book-switch-cap { transform: none; }
 }
 
-/* ── The phone page turn (spec §5b): still copies on a stage over the live page, which is inert meanwhile ── */
+/* ── The phone page turn (spec §5b): still copies on a stage over the live page, which is inert and unpainted (visibility: hidden) meanwhile ── */
 /* The turning area is exactly the page at rest; while a leaf turns, MobilePage gives it the taller page's height. */
 .phone-turn { position: relative; }
 /* Above the live page's ribbon (z 30) and below the header (40) and the tab bar (60). Soft perspective: the leaf barely

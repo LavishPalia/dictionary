@@ -112,6 +112,25 @@ await run('Phone page turn', async (t: any) => {
   await stageGone();
   check('after the turn #mobile-page is no longer inert', await evaluate(`!document.querySelector('#mobile-page').hasAttribute('inert')`));
 
+  // ── A turn onto a shorter page: the old page doesn't show under the copy (spec §5b, pages of different heights) ──
+  // 2440 is 656 px tall at 412 px and 2441 is 592: the copy underneath is shorter than the live page it lies over.
+  await load(TALL);
+  const shorter = await evaluate(`(async () => {
+    const live = document.querySelector('#mobile-page');
+    document.querySelector('button[aria-label="Next page"]').click();
+    await new Promise((r) => setTimeout(r, 150));
+    const under = document.querySelector('.phone-turn-under .phone-page-copy');
+    const lr = live.getBoundingClientRect(), underBottom = under ? under.getBoundingClientRect().bottom : null;
+    const below = underBottom === null ? [] : document.elementsFromPoint(lr.left + lr.width / 2, underBottom + 12).map((e) => e.id || e.className);
+    return { underH: under ? under.getBoundingClientRect().height : null, gap: underBottom === null ? null : lr.bottom - underBottom,
+      vis: getComputedStyle(live).visibility, inert: live.hasAttribute('inert'), below }; })()`);
+  check('turning onto a shorter page: there is a strip below the copy underneath', shorter.underH !== null && shorter.gap > 20, shorter);
+  check('turning onto a shorter page: the live old page is hidden (not painted under the stage)', shorter.vis === 'hidden' && shorter.inert, shorter);
+  check('turning onto a shorter page: nothing of #mobile-page is at the point just below the copy', !shorter.below.includes('mobile-page'), shorter);
+  await stageGone();
+  check('after the turn #mobile-page is visible again, on the next page', (await evaluate(`getComputedStyle(document.querySelector('#mobile-page')).visibility === 'visible'`))
+    && (await title()) === `Page ${TALL + 1}`, await title());
+
   // ── A swipe follows the finger; a short slow one falls back ──
   await load(SHORT);
   let w = await width();

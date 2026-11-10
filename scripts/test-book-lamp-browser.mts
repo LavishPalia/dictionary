@@ -210,8 +210,8 @@ await run('Book lamp', async (t: any) => {
         && Number(filter.z) === BOOK_LIGHT_B.z && Number(filter.exp) === BOOK_LIGHT_B.specularExponent && Number(filter.cone) === BOOK_LIGHT_B.coneAngle && filter.composite === 0 && filter.used >= 2, filter);
       const s = await spot();
       check('desktop: the pool rests at the default aim', near(s.x, BOOK_DEFAULT_AIM.x * SPREAD.w) && near(s.y, BOOK_DEFAULT_AIM.y * SPREAD.h), s);
-      check('desktop: the base-layer copies of the light are hidden at rest', await evaluate(`(() => { const base = [...document.querySelectorAll('#book-spread-container .book-light')].filter((l) => l.closest('[data-book-base]'));
-        return base.length === 2 && base.every((l) => getComputedStyle(l).visibility === 'hidden'); })()`));
+      check('desktop: the base-layer copies of the light are visible at rest', await evaluate(`(() => { const base = [...document.querySelectorAll('#book-spread-container .book-light')].filter((l) => l.closest('[data-book-base]'));
+        return base.length === 2 && base.every((l) => getComputedStyle(l).visibility === 'visible'); })()`));
       check('desktop: no light on the turning leaves (they never get one)', await evaluate(`!document.querySelector('[style*="preserve-3d"] .book-light')`));
     } else {
       const s = await spot();
@@ -307,8 +307,8 @@ await run('Book lamp', async (t: any) => {
   check('desktop flip: the base-layer light shows while it runs, and no light is on a turning leaf', during?.flipping && during.base === 2 && during.shown && during.onLeaf === 0, during);
   await waitFor(`!document.querySelector('[data-book-base][data-flipping]')`, 5000);
   await sleep(200);
-  check('desktop flip: afterwards the base-layer copies are hidden again', await evaluate(`(() => { const base = [...document.querySelectorAll('[data-book-base] .book-light')];
-    return base.length === 2 && base.every((l) => getComputedStyle(l).visibility === 'hidden'); })()`));
+  check('desktop flip: afterwards the base-layer copies are still visible', await evaluate(`(() => { const base = [...document.querySelectorAll('[data-book-base] .book-light')];
+    return base.length === 2 && base.every((l) => getComputedStyle(l).visibility === 'visible'); })()`));
 
   // ── AA on unlit paper, and axe ──
   for (const lighting of ['day', 'evening']) {
@@ -422,6 +422,14 @@ await run('Book lamp', async (t: any) => {
   await sleep(200);
   check('Use Auto stores Auto and puts focus on #book-lamp', (await stored())?.lighting === 'auto' && (await evaluate(`document.activeElement?.id`)) === 'book-lamp',
     { s: await stored(), f: await evaluate(`document.activeElement?.id`) });
+  // Use Auto with the desktop lamp hidden (the fit check left it out): focus can't go there, so it goes to the page count.
+  await load(D1440, 400, 'evening', { light: 'B' });
+  await clickAt('#book-lamp');
+  await waitFor(`Boolean(document.querySelector('#book-note'))`, 2000);
+  await evaluate(`document.querySelector('#book-lamp').hidden = true; document.querySelector('.book-lamp-art').setAttribute('hidden', ''); true`);
+  await evaluate(`document.querySelector('#book-note-auto').click(); true`);
+  await sleep(200);
+  check('Use Auto with the lamp hidden puts focus on #page-number-btn', (await evaluate(`document.activeElement?.id`)) === 'page-number-btn', await evaluate(`document.activeElement?.id`));
   await load(D1440, 400, 'evening', LAMP_B);
   await clickAt('#book-lamp');
   await sleep(300);
@@ -525,6 +533,23 @@ await run('Book lamp', async (t: any) => {
   await sleep(500);
   check('1440 → 1100 → 1440: the lamp comes back, bookAim kept, no console errors', (await lampShown()) && JSON.stringify((await deskStore())?.bookAim) === JSON.stringify({ x: 0.4, y: 0.5 })
     && (await evaluate(`window.__errs.length`)) === 0 && (await clearOfAll()).gap >= 8, await evaluate(`window.__errs`));
+  // A notice in the flow above the spread (offline, or the share note) moves the spread ~33 px: the lamp is fitted again, so
+  // the shade never ends up under the header (§4.2) once the notice goes (the fit is refreshed on resizes; force one while it shows).
+  await load(D1440, 400, 'evening', { ...LAMP_B, bookAim: { x: 0.4, y: 0.5 } });
+  const top0 = await evaluate(`document.querySelector('#book-spread-container').getBoundingClientRect().top`);
+  await evaluate(`Object.defineProperty(navigator, 'onLine', { get: () => false, configurable: true }); dispatchEvent(new Event('offline')); true`);
+  await waitFor(`Boolean(document.querySelector('#offline-notice'))`, 3000);
+  await sleep(300);
+  const top1 = await evaluate(`document.querySelector('#book-spread-container').getBoundingClientRect().top`);
+  await setSize({ width: 1440, height: 899, mobile: false }); await sleep(300); await setSize(D1440); await sleep(400);
+  await evaluate(`delete navigator.onLine; dispatchEvent(new Event('online')); true`);
+  await waitFor(`!document.querySelector('#offline-notice')`, 3000);
+  await sleep(500);
+  const afterNotice = await clearOfAll();
+  check('the offline notice moves the spread (guard)', top1 - top0 > 20, { top0, top1 });
+  check('the offline notice goes: the lamp is refitted, its shade clear of the header by 8 px', (await lampShown()) && afterNotice.gaps.header >= 8 && afterNotice.hit.length === 0, afterNotice);
+
+  await watchErrors(); // (the load above is a new page)
   await setSize({ width: 800, height: 900, mobile: false });
   check('1440 → 800: the phone page, no lamp', await waitFor(`Boolean(document.querySelector('#mobile-page')) && !document.querySelector('#book-lamp, .book-lamp-art')`, 5000));
   await setSize(D1440);
