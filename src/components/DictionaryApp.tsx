@@ -376,7 +376,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   // Trigger 3D Page Turn / Multi-Page Riffle with URL sync. The target pages are loaded before the flip
   // starts, so the leaf never lands on a blank page.
-  const turnToPage = useCallback(async (newTarget: number, wordToHighlight?: string) => {
+  // `quiet`: the phone's leaf turn played the page-turn sound already, at its midpoint.
+  const turnToPage = useCallback(async (newTarget: number, wordToHighlight?: string, opts?: { quiet?: boolean }) => {
     if (isFlipping || loadingTargetRef.current) return;
 
     const clampedTarget = Math.max(1, Math.min(meta.total_pages, newTarget));
@@ -440,7 +441,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // Nothing to animate: apply the page change immediately, and never latch
       // isFlipping (desktop parity for the paper sound is kept here instead of
       // in the flip midpoint callback).
-      soundEngine.playPageTurn();
+      if (!opts?.quiet) soundEngine.playPageTurn();
       setCurrentPage(clampedTarget);
       setIsFlipping(false);
       return;
@@ -1295,13 +1296,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   // ── Mobile single-page stepping ─────────────────────────────────────────
   // The mobile view shows one page, so it steps one page at a time (92 → 93 → 94).
-  const handleMobilePrev = useCallback(() => {
-    if (currentPage > 1) turnToPage(currentPage - 1);
+  const handleMobilePrev = useCallback((opts?: { quiet?: boolean }) => {
+    if (currentPage > 1) turnToPage(currentPage - 1, undefined, opts);
   }, [currentPage, turnToPage]);
 
-  const handleMobileNext = useCallback(() => {
-    if (currentPage < meta.total_pages) turnToPage(currentPage + 1);
+  const handleMobileNext = useCallback((opts?: { quiet?: boolean }) => {
+    if (currentPage < meta.total_pages) turnToPage(currentPage + 1, undefined, opts);
   }, [currentPage, meta.total_pages, turnToPage]);
+
+  // The phone's leaf turns onto the pages either side, which the prefetch above (the spread ± 2 pages) already loads.
+  const prevMobilePage = useMemo(() => getCachedPage(currentPage - 1), [getCachedPage, currentPage]);
+  const nextMobilePage = useMemo(() => getCachedPage(currentPage + 1), [getCachedPage, currentPage]);
+  // A one-page step on a phone: a leaf turning from the spine; Instant changes the page at once, reduced motion cross-fades.
+  const mobileTurn = speedMode === 'instant' ? 'instant' : reducedMotion ? 'fade' : 'leaf';
+  // About 0.5 s at Realistic, and in proportion at Slow and Brisk.
+  const mobileTurnMs = Math.round((500 * flipDuration) / 1050);
+  const [phoneTurning, setPhoneTurning] = useState(false);
+  const isPageBookmarked = useCallback((n: number) => bookmarkedPages.includes(spreadLeftOf(n)), [bookmarkedPages]);
 
   const canPrevMobile = currentPage > 1;
   const canNextMobile = currentPage < meta.total_pages;
@@ -1450,7 +1461,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       {bookLampOn && (
         <BookLamp phone={isMobile} light={appliedLight} sw={bookSw} onUseAuto={() => pickLighting('auto', { quick: true })}
           version={bookLightVersion} onSlow={bookLightSlow} reduced={reducedMotion}
-          focusEntry={bookFocus} turning={isFlipping || loadingPage !== null}
+          focusEntry={bookFocus} turning={isFlipping || loadingPage !== null || phoneTurning}
           frameKey={isMobile ? (singleMobilePage ? 'page' : 'missing') : 'spread'} />
       )}
 
@@ -1476,9 +1487,14 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onSelectWord={handleEntryClick}
           onPrevPage={handleMobilePrev}
           onNextPage={handleMobileNext}
+          prevPage={prevMobilePage}
+          nextPage={nextMobilePage}
+          isPageBookmarked={isPageBookmarked}
           canPrev={canPrevMobile}
           canNext={canNextMobile}
-          animate={!reducedMotion && speedMode !== 'instant'}
+          turn={mobileTurn}
+          turnMs={mobileTurnMs}
+          onTurning={setPhoneTurning}
           onOpenGoTo={() => setGoToOpen(true)}
           thumbIndex={meta.thumb_index}
           // Through the Go to queue, as the panel's letters: a jump made while a page loads is made after it.
