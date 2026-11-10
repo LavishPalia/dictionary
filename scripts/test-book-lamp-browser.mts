@@ -228,7 +228,9 @@ await run('Book lamp', async (t: any) => {
     await waitFor(`Boolean(document.querySelector('#lighting-day'))`);
     await evaluate(`document.querySelector('#lighting-day').click(); true`);
     await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); true`);
-    await sleep(850);
+    // Wait for the fade to end (it is slow in headless Edge): the layers and the darkness turn hidden, or 2 s pass.
+    await waitFor(`(() => { const ls = [...document.querySelectorAll('.book-light')]; const d = document.querySelector('.book-desk-dark');
+      return ls.length > 0 && ls.every((l) => getComputedStyle(l).visibility === 'hidden') && (!d || getComputedStyle(d).visibility === 'hidden'); })()`, 2000);
     const day = await evaluate(`(() => { const v = (el) => (el ? getComputedStyle(el).visibility : null); const ls = [...document.querySelectorAll('.book-light')];
       const dd = document.querySelector('.book-desk-day');
       return { light: document.documentElement.dataset.light, layers: ls.length, hidden: ls.every((l) => v(l) === 'hidden'), dark: v(document.querySelector('.book-desk-dark')),
@@ -634,4 +636,203 @@ await run('Book lamp', async (t: any) => {
 
   // axe on the phone, with the switch in.
   for (const lighting of ['day', 'evening']) { await load(P412, TALL, lighting); await t.axe(`phone with the switch, ${lighting === 'day' ? 'Day' : 'Evening'}`); }
+  // ── The pool follows the word (Task 5) ──
+  const DESK_FRAME = '#book-spread-container', PHONE_FRAME = '#mobile-page';
+  const POOL = BOOK_LIGHT.pool;
+  const DEF = { x: BOOK_DEFAULT_AIM.x * SPREAD.w, y: BOOK_DEFAULT_AIM.y * SPREAD.h };
+  /** The n-th live entry's headword button: its text and where to click. */
+  const entryAt = (frame: string, n: number) => evaluate(`(() => { const b = [...document.querySelectorAll('${frame} .entry-open')].filter((e) => !e.closest('[aria-hidden="true"]'))[${n}];
+    if (!b) return null; const r = b.getBoundingClientRect(); return { hw: b.textContent.trim(), x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+  /** Where a headword's first line is, in frame units; `first` says the headword sits on the paragraph's first line. */
+  const lineOf = (frame: string, hw: string) => evaluate(`(() => { const f = document.querySelector('${frame}'); const k = f.getBoundingClientRect().width / f.offsetWidth, fr = f.getBoundingClientRect();
+    for (const el of f.querySelectorAll('.entry-headword')) { if (el.closest('[aria-hidden="true"]') || el.textContent.trim() !== ${JSON.stringify(hw)}) continue;
+      const r = el.getClientRects()[0], p = el.closest('.entry-text').getBoundingClientRect(), lh = parseFloat(getComputedStyle(el.closest('.entry-text')).lineHeight) || r.height;
+      return { x: (r.left + r.width / 2 - fr.left) / k, y: (r.top + r.height / 2 - fr.top) / k, first: r.top + r.height / 2 - p.top <= lh * 1.2 }; } return null; })()`);
+  const watchSpot = () => evaluate(`(() => { window.__ser = []; window.__n = 0; const s = document.querySelector('#book-spot'); if (!s) return false;
+    window.__mo?.disconnect(); window.__mo = new MutationObserver((l) => { window.__n += l.length; window.__ser.push([performance.now(), Number(s.getAttribute('pointsAtX')), Number(s.getAttribute('pointsAtY'))]); });
+    window.__mo.observe(s, { attributes: true }); return true; })()`);
+  const series = () => evaluate(`({ n: window.__n, ser: window.__ser })`);
+  const sheetShown = () => waitFor(`(() => { const s = document.querySelector('#word-sheet'); if (!s) return false; const r = s.getBoundingClientRect(); return r.width > 0 && getComputedStyle(s).visibility !== 'hidden'; })()`, 5000);
+  const sheetGone = () => waitFor(`(() => { const s = document.querySelector('#word-sheet'); if (!s) return true; const r = s.getBoundingClientRect(); return r.width === 0 || getComputedStyle(s).visibility === 'hidden'; })()`, 5000);
+  // Let the sheet finish sliding in (a click on its close button while it moves is lost), close it, and let it slide out.
+  const closeSheet = async () => { await sleep(500); await evaluate(`document.querySelector('#close-word-drawer')?.click(); true`); await sheetGone(); await sleep(400); };
+  const clickWord = async (frame: string, n: number) => { const e = await entryAt(frame, n); await mouse('mousePressed', e.x, e.y); await mouse('mouseReleased', e.x, e.y); return e; };
+  const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+  // The light is still: give a glide a moment to start (the flag comes on with its first frame), then wait for it to end.
+  const settleLight = async (frame: string) => { await waitFor(`Boolean(document.querySelector('${frame}').dataset.lightMoving)`, 700); return waitFor(`!document.querySelector('${frame}').dataset.lightMoving`, 15000); };
+  const liveText = () => evaluate(`document.querySelector('#book-live')?.textContent ?? null`);
+  const atDefault = (p: { x: number; y: number }) => near(p.x, DEF.x, 1.5) && near(p.y, DEF.y, 1.5);
+
+  // Opening a word (a click) glides the pool to its first line.
+  await load(D1440, 400, 'evening', LAMP_B);
+  const rest0 = await spot();
+  const liveBefore = await liveText();
+  await watchSpot();
+  const w3 = await entryAt(DESK_FRAME, 2);
+  const line3 = await lineOf(DESK_FRAME, w3.hw);
+  check('the third entry\'s headword sits on its first line', line3 && line3.first, { w3, line3 });
+  const clickedAt = await evaluate(`performance.now()`);
+  await mouse('mousePressed', w3.x, w3.y); await mouse('mouseReleased', w3.x, w3.y);
+  await sheetShown();
+  await settleLight(DESK_FRAME);
+  const end3 = await spot();
+  const ser3 = await series();
+  check(`opening a word moves the pool to its first line (${w3.hw})`, line3 && near(end3.x, line3.x, 4) && near(end3.y, line3.y, 4) && dist(end3, rest0) > 20, { end3, line3, rest0 });
+  const inBetween = (p: { x: number; y: number }) => p.x >= Math.min(rest0.x, end3.x) - 1 && p.x <= Math.max(rest0.x, end3.x) + 1 && p.y >= Math.min(rest0.y, end3.y) - 1 && p.y <= Math.max(rest0.y, end3.y) + 1;
+  check('it glides: some frame lies strictly between the start and the end, and none outside them',
+    ser3.ser.some((r: number[]) => dist({ x: r[1], y: r[2] }, rest0) > 3 && dist({ x: r[1], y: r[2] }, end3) > 3) && ser3.ser.every((r: number[]) => inBetween({ x: r[1], y: r[2] })),
+    { n: ser3.ser.length, first: ser3.ser[0], last: ser3.ser.at(-1) });
+  const at300 = [...ser3.ser].filter((r: number[]) => r[0] <= clickedAt + 300).pop();
+  check('its value at 300 ms is between the start and the end', !at300 || inBetween({ x: at300[1], y: at300[2] }), at300);
+  check('nothing is announced for a glide (#book-live unchanged)', (await liveText()) === liveBefore, { before: liveBefore, now: await liveText() });
+  check('the glide never overwrites bookAim', (await deskStore())?.bookAim === undefined, await deskStore());
+  await closeSheet();
+  await settleLight(DESK_FRAME);
+  check('closing the sheet returns it to rest (the default aim)', atDefault(await spot()), await spot());
+
+  // Enter on the headword button does the same.
+  await evaluate(`[...document.querySelectorAll('${DESK_FRAME} .entry-open')].filter((e) => !e.closest('[aria-hidden="true"]'))[3].focus(); true`);
+  const w4 = await entryAt(DESK_FRAME, 3);
+  await typeKey('Enter', 'Enter', 13, '\r');
+  await sheetShown();
+  await settleLight(DESK_FRAME);
+  const line4 = await lineOf(DESK_FRAME, w4.hw), end4 = await spot();
+  check(`Enter on a headword button moves the pool to its first line (${w4.hw})`, line4 && near(end4.x, line4.x, 4) && near(end4.y, line4.y, 4) && dist(end4, DEF) > 20, { end4, line4 });
+  await closeSheet();
+
+  // With a stored aim, closing goes back to that aim, and the stored aim is untouched.
+  await load(D1440, 400, 'evening', { ...LAMP_B, bookAim: { x: 0.6, y: 0.5 } });
+  const restS = await spot();
+  await clickWord(DESK_FRAME, 1);
+  await sheetShown(); await settleLight(DESK_FRAME);
+  const midS = await spot();
+  await closeSheet(); await settleLight(DESK_FRAME);
+  const backS = await spot();
+  check('a stored aim: the pool goes to the word, comes back to that aim, and bookAim stays as it was',
+    dist(midS, restS) > 20 && near(backS.x, 0.6 * SPREAD.w, 1.5) && near(backS.y, 0.5 * SPREAD.h, 1.5) && JSON.stringify((await deskStore())?.bookAim) === JSON.stringify({ x: 0.6, y: 0.5 }), { restS, midS, backS });
+
+  // While the shade is dragged, a word opening doesn't move the aim.
+  await load(D1440, 400, 'evening', LAMP_B);
+  const lamp0 = await center('#book-lamp');
+  await mouse('mousePressed', lamp0.x, lamp0.y);
+  for (let i = 1; i <= 6; i++) { await mouse('mouseMoved', lamp0.x + 20 * i, lamp0.y + 10 * i); await sleep(16); }
+  const held0 = await evaluate(`document.querySelector('#book-lamp').getAttribute('data-dragging')`);
+  await evaluate(`[...document.querySelectorAll('${DESK_FRAME} .entry-open')].filter((e) => !e.closest('[aria-hidden="true"]'))[2].click(); true`);
+  const shownD = await sheetShown(); await sleep(300);
+  await mouse('mouseMoved', lamp0.x + 120, lamp0.y + 60); await sleep(32);
+  await mouse('mouseReleased', lamp0.x + 120, lamp0.y + 60); await sleep(200);
+  await settleLight(DESK_FRAME);
+  const drag2 = await spot(), dragStore = await deskStore();
+  check('dragging the shade: a word opening doesn\'t move the aim (it ends where the pointer let go)', held0 === 'true' && shownD && dragStore?.bookAim
+    && near(drag2.x, dragStore.bookAim.x * SPREAD.w, 2) && near(drag2.y, dragStore.bookAim.y * SPREAD.h, 2), { held0, shownD, drag2, dragStore });
+  await closeSheet();
+
+  // A related word opened inside the sheet: it moves the pool only if its entry is on the visible page(s).
+  await load(D1440, 20, 'evening', LAMP_B); // page 20 has "accrued", whose similar word "accumulated" is on the spread
+  const visibleHws: string[] = await evaluate(`[...document.querySelectorAll('${DESK_FRAME} .entry-open')].filter((e) => !e.closest('[aria-hidden="true"]')).map((e) => e.textContent.trim())`);
+  let sameWord: { from: string; chip: string } | null = null, elseWord: { from: string; chip: string } | null = null;
+  for (let n = 0; n < visibleHws.length && !(sameWord && elseWord); n++) {
+    await clickWord(DESK_FRAME, n);
+    await sheetShown();
+    await waitFor(`document.querySelectorAll('#word-sheet .word-related .ui-chip').length > 0`, 1200);
+    const chips: string[] = await evaluate(`[...document.querySelectorAll('#word-sheet .word-related .ui-chip')].map((c) => c.textContent)`);
+    for (const chip of chips) {
+      if (visibleHws.includes(chip)) sameWord ??= { from: visibleHws[n], chip }; else elseWord ??= { from: visibleHws[n], chip };
+    }
+    await closeSheet();
+  }
+  console.log(`  related words: same page ${JSON.stringify(sameWord)}, elsewhere ${JSON.stringify(elseWord)}`);
+  const chipClick = (word: string) => evaluate(`(() => { const c = [...document.querySelectorAll('#word-sheet .word-related .ui-chip')].find((c) => c.textContent === ${JSON.stringify(word)}); if (!c) return false; c.click(); return true; })()`);
+  if (sameWord) {
+    await clickWord(DESK_FRAME, visibleHws.indexOf(sameWord.from));
+    await sheetShown(); await settleLight(DESK_FRAME);
+    const first = await spot();
+    await chipClick(sameWord.chip);
+    await waitFor(`document.querySelector('#word-sheet-title')?.textContent === ${JSON.stringify(sameWord.chip)}`, 5000);
+    await sleep(300); await settleLight(DESK_FRAME);
+    const moved = await spot(), want = await lineOf(DESK_FRAME, sameWord.chip);
+    check(`a similar word on the same page moves the pool to it (${sameWord.from} → ${sameWord.chip})`, want && near(moved.x, want.x, 4) && near(moved.y, want.y, 4) && dist(moved, first) > 3, { first, moved, want });
+    await closeSheet();
+  } else check('a similar word on the same page moves the pool (no entry on page 20 has one: pick another page)', false, { visibleHws });
+  if (elseWord) {
+    await clickWord(DESK_FRAME, visibleHws.indexOf(elseWord.from));
+    await sheetShown(); await settleLight(DESK_FRAME);
+    const first = await spot();
+    await chipClick(elseWord.chip);
+    await waitFor(`document.querySelector('#word-sheet-title')?.textContent === ${JSON.stringify(elseWord.chip)}`, 5000);
+    await sleep(800); await settleLight(DESK_FRAME);
+    const stayed = await spot();
+    check(`a related word that isn't on the page leaves the pool where it is (${elseWord.from} → ${elseWord.chip})`, near(stayed.x, first.x, 1) && near(stayed.y, first.y, 1) && dist(stayed, DEF) > 10, { first, stayed });
+    await closeSheet(); await settleLight(DESK_FRAME);
+    check('and closing that sheet returns it to rest', atDefault(await spot()), await spot());
+  } else check('a related word elsewhere leaves the pool alone (no entry on page 20 has one: pick another page)', false, { visibleHws });
+
+  // A page turn alone never moves the pool.
+  await load(D1440, 400, 'evening', LAMP_B);
+  const before = await spot();
+  await watchSpot();
+  await evaluate(`document.querySelector('button[aria-label="Next spread"]').click(); true`);
+  await waitFor(`Boolean(document.querySelector('[data-book-base][data-flipping]'))`, 3000);
+  await sleep(150);
+  const turnLayers = await evaluate(`(() => { const base = [...document.querySelectorAll('[data-book-base] .book-light')];
+    return { base: base.length, shown: base.every((l) => getComputedStyle(l).visibility === 'visible'), onLeaf: document.querySelectorAll('[style*="preserve-3d"] .book-light').length }; })()`);
+  const flipN = await series();
+  await waitFor(`!document.querySelector('[data-book-base][data-flipping]')`, 6000);
+  await sleep(500);
+  const after = await spot(), turned = await series();
+  check('a page turn doesn\'t move the pool (same aim, 0 #book-spot changes)', near(after.x, before.x, 0.2) && near(after.y, before.y, 0.2) && flipN.n === 0 && turned.n === 0, { before, after, flip: flipN.n, all: turned.n });
+  check('during the flip the base-layer light is visible and no light sits on a turning leaf', turnLayers.base === 2 && turnLayers.shown && turnLayers.onLeaf === 0, turnLayers);
+
+  // A search jump that turns pages moves the pool after the turn.
+  await load(D1440, 400, 'evening', LAMP_B);
+  const jumpHw: string = await evaluate(`fetch('/api/page/405').then((r) => r.json()).then((p) => (p.column1[2] ?? p.column1[0]).headword)`);
+  const restJ = await spot();
+  await watchSpot();
+  await evaluate(`(() => { const input = document.querySelector('#lookup-input'); input.focus(); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    set.call(input, ${JSON.stringify(jumpHw)}); input.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
+  await waitFor(`Boolean(document.querySelector('#lookup-panel [role="option"]'))`, 5000);
+  await evaluate(`document.querySelector('#lookup-panel [role="option"]').click(); true`);
+  await waitFor(`Boolean(document.querySelector('[data-book-base][data-flipping]'))`, 5000);
+  await sleep(200);
+  const midFlip = await series();
+  check('a search jump that turns pages: during the flip the pool hasn\'t moved (0 changes)', midFlip.n === 0, midFlip);
+  await waitFor(`!document.querySelector('[data-book-base][data-flipping]')`, 8000);
+  await sleep(300); await settleLight(DESK_FRAME); // a search opens no sheet: the word is underlined in pencil and the light goes to it
+  const lineJ = await lineOf(DESK_FRAME, jumpHw), endJ = await spot();
+  check(`…and after the turn it goes to the entry (${jumpHw})`, lineJ && near(endJ.x, lineJ.x, 4) && near(endJ.y, lineJ.y, 4) && dist(endJ, restJ) > 20, { endJ, lineJ, restJ });
+  await clickWord(DESK_FRAME, 0); // reading another word takes the light over, and closing that sheet puts it back at rest
+  await sheetShown(); await settleLight(DESK_FRAME);
+  await closeSheet(); await settleLight(DESK_FRAME);
+  check('…and after another word has been read and closed it is back at rest', atDefault(await spot()), await spot());
+
+  // Reduced motion: the pool jumps.
+  await reduceMotion(true);
+  await load(D1440, 400, 'evening', LAMP_B);
+  const wr = await entryAt(DESK_FRAME, 2);
+  await mouse('mousePressed', wr.x, wr.y); await mouse('mouseReleased', wr.x, wr.y);
+  await sleep(50);
+  const lineR = await lineOf(DESK_FRAME, wr.hw);
+  const poolR = await evaluate(`(() => { const f = document.querySelector('${DESK_FRAME}'); return { x: parseFloat(f.style.getPropertyValue('--pool-x')), y: parseFloat(f.style.getPropertyValue('--pool-y')) }; })()`);
+  check('reduced motion: the pool jumps (at 50 ms it is already at the word)', lineR && near(poolR.x, lineR.x + POOL.desktop.dx, 3) && near(poolR.y, lineR.y + POOL.desktop.dy, 3), { poolR, lineR });
+  await reduceMotion(false);
+
+  // The phone: the same glide, and the first one is the slow-device check.
+  await load(P412, TALL, 'evening', { noted: true, light: 'B' });
+  const restP = await spot();
+  const wp = await clickWord(PHONE_FRAME, 2);
+  await sheetShown(); await settleLight(PHONE_FRAME);
+  const endP = await spot(), lineP = await lineOf(PHONE_FRAME, wp.hw);
+  check(`phone: opening a word moves the pool to its first line (${wp.hw})`, lineP && lineP.first && near(endP.x, lineP.x, 4) && near(endP.y, lineP.y, 4) && dist(endP, restP) > 20, { endP, lineP, restP });
+  await closeSheet(); await settleLight(PHONE_FRAME);
+  const homeP = await spot(), boxP = await evaluate(`(() => { const p = document.querySelector('#mobile-page'); return { w: p.offsetWidth, h: p.offsetHeight }; })()`);
+  check('phone: closing returns it to PHONE_POOL', near(homeP.x, PHONE_POOL.x * boxP.w, 1.5) && near(homeP.y, PHONE_POOL.y * boxP.h, 1.5), { homeP, boxP });
+
+  await load(P412, TALL, 'evening', { noted: true });
+  await evaluate(`window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 40); true`);
+  await clickWord(PHONE_FRAME, 2);
+  await sheetShown();
+  await sleep(1500);
+  check('phone: a slow first glide (frames 40 ms apart) switches to A and drops the filter', (await deskStore())?.light === 'A'
+    && !(await evaluate(`Boolean(document.querySelector('#book-spot-filter, [filter*="book-spot-filter"]'))`)), await deskStore());
+
 });

@@ -25,6 +25,8 @@ export const BOOK_LIGHT = {
 
 /** A click that moves less than this (screen px) switches the lamp; more is a drag. */
 const TAP_PX = 6;
+/** How long the phone's first glide is timed (ms): about the glide's length, with 8 frames at the least. */
+const GLIDE_TIMING_MS = 700;
 /** The arrow keys aim the light this far (spread units), or the big step with Shift. */
 const KEY_STEP = 20, KEY_STEP_BIG = 60;
 /** The book's leather cover shows this far around the spread (spread units): it is part of the book, so the lamp keeps off it. */
@@ -32,6 +34,25 @@ const COVER = 14;
 /** The clearance the lamp keeps from the book, the header and the arrow (screen px): this much where there is room, else the smaller. */
 const MARGINS_PX = [8, 4];
 const deg = (rad: number) => (rad * 180) / Math.PI;
+
+/**
+ * Where an entry's first line is on the live page(s), as fractions of the frame, or null when it isn't there. Reads the
+ * DOM only: the centre of the headword (which opens the entry's first line) inside `frame`, skipping the aria-hidden
+ * copies (the base layer at rest, page-turn leaves). `scale` is the frame's on-screen scale (1 on a phone).
+ */
+export function entryAim(frame: HTMLElement, headword: string, scale: number): Aim | null {
+  const w = frame.offsetWidth, h = frame.offsetHeight;
+  if (!w || !h) return null;
+  const want = headword.trim();
+  for (const el of frame.querySelectorAll('.entry-headword')) {
+    if (el.textContent?.trim() !== want || el.closest('[aria-hidden="true"]')) continue;
+    const r = el.getClientRects()[0], f = frame.getBoundingClientRect();
+    if (!r || !r.width || !r.height) continue;
+    const k = scale || 1;
+    return { x: (r.left + r.width / 2 - f.left) / k / w, y: (r.top + r.height / 2 - f.top) / k / h };
+  }
+  return null;
+}
 
 export interface BookLight {
   /** Glide to a point (fractions of the frame), or back to the resting aim with null. */
@@ -64,7 +85,7 @@ export function createBookLight(opts: {
   const size = { ...opts.size };
   const pool = phone ? BOOK_LIGHT.pool.phone : BOOK_LIGHT.pool.desktop;
   let target: Aim | null = null; // null = at rest
-  let held = false;
+  let held = false, glideTimer = 0;
   const written = new Map<string, string>();
   const put = (key: string, value: string, write: () => void) => { if (written.get(key) !== value) { written.set(key, value); write(); } };
 
@@ -226,8 +247,21 @@ export function createBookLight(opts: {
 
   return {
     glideTo(t) {
+      if (start) return; // the reader is dragging the shade: the aim is theirs
       target = t;
       loop.setAim(t ? toFrame(t) : restAim(), EASE_GLIDE);
+      // A phone has no drag to time, so the first glide is its slow-device check (and a desktop reader who opens a word before
+      // ever dragging the shade is checked here too): while the flag isn't set and B is in use.
+      if (timing() && !held && !opts.reduced && !glideTimer) {
+        loop.startTiming();
+        glideTimer = window.setTimeout(() => {
+          glideTimer = 0;
+          const avg = loop.stopTiming();
+          if (avg === null || !timing()) return;
+          writeDesk({ light: avg > SLOW_FRAME_MS ? 'A' : 'B' });
+          if (avg > SLOW_FRAME_MS) opts.onSlow();
+        }, GLIDE_TIMING_MS);
+      }
     },
     hold(on) { held = on; loop.hold(on); },
     refresh() {
@@ -239,6 +273,7 @@ export function createBookLight(opts: {
       else if (!held) draw(loop.cur);
     },
     destroy() {
+      window.clearTimeout(glideTimer); loop.stopTiming();
       loop.destroy(); delete frame.dataset.lightMoving;
       if (lamp) {
         lamp.button.removeEventListener('pointerdown', down);

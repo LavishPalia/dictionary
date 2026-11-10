@@ -71,6 +71,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const meta = initialMeta;
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [highlightedWord, setHighlightedWord] = useState<string>(initialEntry?.headword || '');
+  // The word a search (or an address) turned the book to: the Book page's light goes to it once it is on the page.
+  const [jumpWord, setJumpWord] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -388,7 +390,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       }
     };
     if (clampedTarget === currentPage) {
-      if (wordToHighlight) setHighlightedWord(wordToHighlight);
+      if (wordToHighlight) { setHighlightedWord(wordToHighlight); setJumpWord(wordToHighlight); }
       showInAddress(); // e.g. a search from Today for a word on the page the book is already open at
       return;
     }
@@ -413,6 +415,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
     if (wordToHighlight !== undefined) {
       setHighlightedWord(wordToHighlight);
+      setJumpWord(wordToHighlight || null);
     }
 
     setTargetPage(clampedTarget);
@@ -563,6 +566,17 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const [bookLightVersion, bookLightSlow] = useBookLightVersion(reducedMotion, section);
   const bookLampOn = section === 'book' && isBookOpen;
   const lampVersion = bookLampOn ? bookLightVersion : null;
+  // The pool goes to the open word's first line (or, with no sheet, to the word a search just turned the book to) while its
+  // entry is on the visible page(s). A related word opened from the sheet that isn't on them leaves the pool where it is
+  // (the last word stays); closing the sheet, or clicking another entry, clears it (back to rest).
+  const bookFocusRef = useRef<string | null>(null);
+  {
+    const onPage = (norm: string) => [leftPage, rightPage, singleMobilePage].some(p => p && [...p.column1, ...p.column2].some(e => e.normalized === norm));
+    if (showWordDrawer && activeWordEntry) { if (onPage(activeWordEntry.normalized)) bookFocusRef.current = activeWordEntry.headword; }
+    else if (jumpWord && highlightedWord === jumpWord) { if (onPage(jumpWord.toLowerCase().trim())) bookFocusRef.current = jumpWord; }
+    else bookFocusRef.current = null;
+  }
+  const bookFocus = bookFocusRef.current;
   useEffect(() => {
     const tick = () => setClockTick((n) => n + 1);
     const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
@@ -694,6 +708,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Entry click handler -> opens Word Detail Drawer & syncs URL
   const handleEntryClick = (headword: string) => {
     setHighlightedWord(headword);
+    setJumpWord(null);
     const norm = headword.toLowerCase().trim();
     const visible = [leftPage, rightPage, singleMobilePage].flatMap(p => (p ? [...p.column1, ...p.column2] : []));
     const found = visible.find(e => e.normalized === norm);
@@ -1435,7 +1450,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       {bookLampOn && (
         <BookLamp phone={isMobile} light={appliedLight} sw={bookSw} onUseAuto={() => pickLighting('auto', { quick: true })}
           version={bookLightVersion} onSlow={bookLightSlow} reduced={reducedMotion}
-          focusEntry={null} turning={isFlipping || loadingPage !== null}
+          focusEntry={bookFocus} turning={isFlipping || loadingPage !== null}
           frameKey={isMobile ? (singleMobilePage ? 'page' : 'missing') : 'spread'} />
       )}
 

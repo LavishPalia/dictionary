@@ -7,7 +7,7 @@ import type { LampSwitch } from '@/components/desk/useLampSwitch';
 import { LampNote } from '@/components/desk/LampNote';
 import { BookLightFilter } from './BookLightLayer';
 import { BookDesk } from './BookDesk';
-import { createBookLight, type BookLight } from './bookLight';
+import { createBookLight, entryAim, type BookLight } from './bookLight';
 
 /** The spread's own size, in the units the light uses on desktop. */
 const SPREAD = { w: 1120, h: 640 };
@@ -56,7 +56,8 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
   turningRef.current = turning;
   const onSlowRef = useRef(onSlow);
   onSlowRef.current = onSlow;
-  void light; void focusEntry; // Task 5 (the glide to a word) uses focusEntry; the desktop lamp (BookLampArt) gets the light from DictionaryApp
+  void light; // the desktop lamp (BookLampArt) gets the light from DictionaryApp
+  const displaced = useRef(false); // the pool was sent to a word and hasn't gone back to rest
 
   // Before the first paint, so the filter never shows its placeholder aim.
   useLayoutEffect(() => {
@@ -74,6 +75,7 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
     const c = createBookLight({ frame, size, desk, phone, reduced, timed: version === 'B', onSlow: () => onSlowRef.current(), lamp });
     if (turningRef.current) c.hold(true);
     ctl.current = c;
+    displaced.current = false;
     // The page's size (a phone page is as tall as its words) or place changed: re-measure.
     const refresh = () => c.refresh();
     const ro = new ResizeObserver(refresh);
@@ -86,7 +88,22 @@ export function BookLamp({ phone, light, sw, onUseAuto, version, onSlow, reduced
     return () => { ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', refresh); c.destroy(); ctl.current = null; };
   }, [phone, version, reduced, frameKey]);
 
-  useEffect(() => { ctl.current?.hold(turning); }, [turning]);
+  // A turn holds the light; when it lands the pool goes to the open word (if its entry is on the page), and back to rest when
+  // the sheet closes. Runs after the controller is made, so a rebuilt one catches up too. A page turn alone never moves it.
+  useEffect(() => {
+    const c = ctl.current;
+    if (!c) return;
+    c.hold(turning);
+    if (turning) return;
+    if (focusEntry) {
+      const frame = document.getElementById(phone ? 'mobile-page' : 'book-spread-container');
+      const aim = frame ? entryAim(frame, focusEntry, frame.offsetWidth ? frame.getBoundingClientRect().width / frame.offsetWidth : 1) : null;
+      if (aim) { c.glideTo(aim); displaced.current = true; }
+    } else if (displaced.current) {
+      displaced.current = false;
+      c.glideTo(null);
+    }
+  }, [turning, focusEntry, phone, version, reduced, frameKey]);
 
   return (
     <>
