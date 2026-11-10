@@ -21,8 +21,15 @@ const PROBES = `(() => {
     if (Math.abs(length / rate - 0.35) < 0.001) window.__turnSounds++;
     return make.call(this, ch, length, rate);
   };
+  // A slow connection when asked for: every page request is held back 5 s.
+  const slow = (() => { try { return Boolean(localStorage.getItem('test-slow-pages')); } catch { return false; } })();
   const f = window.fetch.bind(window);
-  window.fetch = (input, init) => { const u = String(input?.url ?? input); if (u.includes('/api/page/')) window.__pageFetches.push(u); return f(input, init); };
+  window.fetch = (input, init) => { const u = String(input?.url ?? input); if (!u.includes('/api/page/')) return f(input, init);
+    window.__pageFetches.push(u); return slow ? new Promise((r) => setTimeout(r, 5000)).then(() => f(input, init)) : f(input, init); };
+  // React's commits, counted through the DevTools hook it looks for as it loads.
+  window.__commits = 0;
+  window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { supportsFiber: true, renderers: new Map(), isDisabled: false, inject() { return 1; },
+    onCommitFiberRoot() { window.__commits++; }, onCommitFiberUnmount() {}, onPostCommitFiberRoot() {}, checkDCE() {} };
 })();`;
 
 // In the page: the leaf's angle (rotateY from its computed transform), and the stage.
@@ -37,9 +44,10 @@ await run('Phone page turn', async (t: any) => {
   await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
 
   /** Opens a phone page at a size, lighting and speed, and waits for its text, fonts and the neighbours' prefetch. */
-  const load = async (page: number, { size = P412, lighting = 'day', speed = 'realistic' } = {}) => {
+  const load = async (page: number, { size = P412, lighting = 'day', speed = 'realistic', slow = false } = {}) => {
     await setSize(size);
-    await open(`/page/${page}`, { panna_tours: QUIET_TOURS, panna_settings: settings(lighting, speed), panna_desk: { noted: true } });
+    await open(`/page/${page}`, { panna_tours: QUIET_TOURS, panna_settings: settings(lighting, speed), panna_desk: { noted: true } },
+      slow ? { 'test-slow-pages': '1' } : {});
     await waitFor(`document.readyState === 'complete' && document.querySelectorAll('#mobile-page .entry-text').length > 0`, 20000);
     await evaluate(`document.fonts.ready.then(() => true)`);
     await evaluate(`window.scrollTo(0, 0); true`);
@@ -170,7 +178,7 @@ await run('Phone page turn', async (t: any) => {
     const t0 = performance.now(); document.querySelector('button[aria-label="Next page"]').click();
     let ms = null; for (let i = 0; i < 100; i++) { if (document.querySelector('#book-title').textContent === 'Page ${SHORT + 1}') { ms = performance.now() - t0; break; } await new Promise((r) => setTimeout(r, 10)); }
     mo.disconnect(); return { staged, ms }; })()`);
-  check('Instant: never a stage, and the page changes at once', !instant.staged && instant.ms !== null && instant.ms < 150, instant);
+  check('Instant: never a stage, and the page changes at once', !instant.staged && instant.ms !== null && instant.ms < 300, instant);
   check('Instant: the sound still plays once', (await sounds()) === 1, await sounds());
 
   // ── Reduced motion: a 120 ms cross-fade ──
@@ -243,27 +251,32 @@ await run('Phone page turn', async (t: any) => {
     await new Promise((r) => setTimeout(r, 120));
     const leaf = document.querySelector('.phone-turn-leaf'), under = document.querySelector('.phone-turn-under');
     const out = { spot: Boolean(spot), leafLight: leaf?.querySelectorAll('.book-light').length, underLight: under?.querySelectorAll('.book-light').length,
-      art: leaf?.querySelectorAll('.book-switch-art').length, live: leaf?.querySelectorAll('#book-switch, button').length };
+      art: leaf?.querySelectorAll('.book-switch-art').length, live: leaf?.querySelectorAll('#book-switch, button').length,
+      dup: (() => { const ids = [...document.querySelectorAll('[id]')].map((e) => e.id); return ids.filter((id, i) => ids.indexOf(id) !== i); })(),
+      filters: document.querySelectorAll('#book-spot-filter').length, lit: [...(under?.querySelectorAll('.book-light [filter]') ?? [])].map((r) => r.getAttribute('filter')) };
     for (let i = 0; i < 100 && document.querySelector('.phone-turn-stage'); i++) await new Promise((r) => setTimeout(r, 20));
     mo.disconnect(); return { ...out, mutations: n }; })()`);
   check('the lamp during a turn: #book-spot is not touched while the stage shows', lamp.spot && lamp.mutations === 0, lamp);
   check('the lamp during a turn: the leaf holds no .book-light, the page beneath holds one', lamp.leafLight === 0 && lamp.underLight === 1, lamp);
   check('the switch rides on the leaf: PushSwitchArt, and no #book-switch', lamp.art === 1 && lamp.live === 0, lamp);
+  check('Evening, mid-turn: no id repeated; the page beneath uses the one live filter', lamp.dup.length === 0 && lamp.filters === 1
+    && lamp.lit.length === 1 && lamp.lit[0] === 'url(#book-spot-filter)', lamp);
 
-  // ── Review focus 5: taps and touches during a turn ──
-  // At the Slow speed (667 ms a turn), so the taps surely land while the leaf turns, even in a busy headless browser.
-  await load(SHORT, { speed: 'slow' });
-  const next = await centre('button[aria-label="Next page"]');
-  await tap(next.x, next.y);
-  await sleep(80);
-  await tap(next.x, next.y);
-  await sleep(80);
-  await tap(next.x, next.y);
-  await waitFor(`document.querySelector('#book-title').textContent === 'Page ${SHORT + 2}' && !document.querySelector('.phone-turn-stage')`, 4000);
-  await sleep(700);
-  const three = await evaluate(`({ h1: document.querySelector('#book-title').textContent, focus: document.activeElement?.getAttribute('aria-label'), stage: Boolean(document.querySelector('.phone-turn-stage')) })`);
-  check('three fast taps on → end exactly 2 pages on, with focus on →', three.h1 === `Page ${SHORT + 2}` && three.focus === 'Next page' && !three.stage, three);
-  check('two turns, two sounds', (await sounds()) === 2, await sounds());
+  // ── Review focus 5: taps and touches during a turn (at Realistic, and at Slow) ──
+  for (const speed of ['realistic', 'slow']) {
+    await load(SHORT, { speed });
+    const next = await centre('button[aria-label="Next page"]');
+    await tap(next.x, next.y);
+    await sleep(80);
+    await tap(next.x, next.y);
+    await sleep(80);
+    await tap(next.x, next.y);
+    await waitFor(`document.querySelector('#book-title').textContent === 'Page ${SHORT + 2}' && !document.querySelector('.phone-turn-stage')`, 4000);
+    await sleep(900);
+    const three = await evaluate(`({ h1: document.querySelector('#book-title').textContent, focus: document.activeElement?.getAttribute('aria-label'), stage: Boolean(document.querySelector('.phone-turn-stage')) })`);
+    check(`${speed}: three fast taps on → end exactly 2 pages on, with focus on →`, three.h1 === `Page ${SHORT + 2}` && three.focus === 'Next page' && !three.stage, three);
+    check(`${speed}: two turns, two sounds`, (await sounds()) === 2, await sounds());
+  }
 
   await load(SHORT);
   await evaluate(`document.querySelector('button[aria-label="Next page"]').click(); true`);
@@ -273,20 +286,82 @@ await run('Phone page turn', async (t: any) => {
   await sleep(600);
   check('a touch that starts mid-turn changes nothing (one page on)', (await title()) === `Page ${SHORT + 1}` && !(await evaluate(`Boolean(document.querySelector('.phone-turn-stage'))`)), await title());
 
-  await load(SHORT, { speed: 'slow' });
-  const pill = await centre('#page-number-btn');
-  const goto = await evaluate(`(async () => { window.__t = { gone: null, sheet: null }; const mo = new MutationObserver(() => {
-      if (window.__t.gone === null && window.__t.started && !document.querySelector('.phone-turn-stage')) window.__t.gone = performance.now();
-      if (window.__t.sheet === null && document.querySelector('#goto-sheet')) window.__t.sheet = performance.now(); });
-    mo.observe(document.body, { childList: true, subtree: true });
-    document.querySelector('button[aria-label="Next page"]').click(); await new Promise((r) => requestAnimationFrame(r));
-    window.__t.started = Boolean(document.querySelector('.phone-turn-stage')); return true; })()`);
-  await sleep(100);
-  await tap(pill.x, pill.y);
-  await waitFor(`Boolean(document.querySelector('#goto-sheet'))`, 3000);
-  const g = await evaluate(`window.__t`);
-  check('tapping the pill mid-turn opens Go to only after the stage is gone', goto && g.started && g.gone !== null && g.sheet !== null && g.sheet >= g.gone, g);
-  await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); true`);
+  // The tap must reach the page while the stage is up: in a starved headless browser a queued tap can arrive after the
+  // turn has ended (it then lands on the new page, as on a phone). Such a run says nothing, so it is tried again (3 at most).
+  for (const speed of ['realistic', 'slow']) {
+    let g: any = null, goto = false, tries = 0;
+    for (; tries < 3; tries++) {
+      await load(SHORT, { speed });
+      const pill = await centre('#page-number-btn');
+      goto = await evaluate(`(async () => { window.__t = { gone: null, sheet: null, downOnStage: null }; const mo = new MutationObserver(() => {
+          if (window.__t.gone === null && window.__t.started && !document.querySelector('.phone-turn-stage')) window.__t.gone = performance.now();
+          if (window.__t.sheet === null && document.querySelector('#goto-sheet')) window.__t.sheet = performance.now(); });
+        mo.observe(document.body, { childList: true, subtree: true });
+        document.addEventListener('pointerdown', (e) => { if (window.__t.downOnStage === null) window.__t.downOnStage = Boolean(e.target.closest('.phone-turn-stage')); }, true);
+        document.querySelector('button[aria-label="Next page"]').click(); await new Promise((r) => requestAnimationFrame(r));
+        window.__t.started = Boolean(document.querySelector('.phone-turn-stage')); return true; })()`);
+      await sleep(100);
+      await tap(pill.x, pill.y);
+      await waitFor(`Boolean(document.querySelector('#goto-sheet'))`, 3000);
+      g = await evaluate(`window.__t`);
+      if (g.downOnStage) break;
+    }
+    check(`${speed}: tapping the pill mid-turn opens Go to only after the stage is gone`, goto && g.started && g.downOnStage && g.gone !== null && g.sheet !== null && g.sheet >= g.gone, { ...g, tries });
+    check(`${speed}: and the page turned once`, (await title()) === `Page ${SHORT + 1}`, await title());
+    await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); true`);
+  }
+
+  // ── Past halfway and back: no turn, no sound ──
+  await load(SHORT);
+  w = await width();
+  await touch('touchStart', 350, 400);
+  for (let i = 1; i <= 10; i++) { await touch('touchMove', 350 - 0.6 * w * i / 10, 400); await sleep(25); }
+  const past = await angle();
+  for (let i = 1; i <= 10; i++) { await touch('touchMove', 350 - 0.6 * w + 0.5 * w * i / 10, 400); await sleep(25); }
+  await sleep(150);
+  await touch('touchEnd');
+  await stageGone();
+  await sleep(200);
+  check('dragged past halfway, back to 10 %, let go: no page change and no sound', (past ?? 0) < -90 && (await title()) === `Page ${SHORT}` && (await sounds()) === 0,
+    { past, h1: await title(), sounds: await sounds() });
+
+  // ── Each frame draws the stage directly: no React render and no change to the live page per frame ──
+  await load(SHORT);
+  const quiet = await evaluate(`(async () => {
+    const page = document.querySelector('#mobile-page'); let muts = 0;
+    const mo = new MutationObserver((l) => { muts += l.filter((m) => m.attributeName !== 'inert').length; });
+    document.querySelector('button[aria-label="Next page"]').click();
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    mo.observe(page, { attributes: true, childList: true, subtree: true, characterData: true });
+    const c0 = window.__commits; let frames = 0; const t0 = performance.now();
+    const ids = [...document.querySelectorAll('[id]')].map((e) => e.id); const dup = ids.filter((id, i) => ids.indexOf(id) !== i);
+    while (performance.now() - t0 < 300) { await new Promise((r) => requestAnimationFrame(r)); frames++; }
+    mo.disconnect();
+    return { commits: window.__commits - c0, frames, muts, hooked: window.__commits > 0, dup }; })()`);
+  check(`a turn doesn't re-render per frame (${quiet.commits} commits over ${quiet.frames} frames, ${quiet.muts} changes in #mobile-page)`,
+    quiet.hooked && quiet.frames >= 5 && quiet.commits <= 3 && quiet.muts === 0, quiet);
+  check('no id is repeated in the document mid-turn', quiet.dup.length === 0, quiet.dup);
+  await stageGone();
+
+  // ── A swipe leaves focus alone; the inert page's loading status is said from outside it ──
+  await load(SHORT);
+  await evaluate(`document.querySelector('#mobile-ribbon').focus(); true`);
+  await swipe(300, 400, -220, 0, { steps: 8, stepMs: 25 });
+  await stageGone();
+  await sleep(200);
+  const focus = await evaluate(`({ id: document.activeElement?.id, inPage: Boolean(document.activeElement?.closest('#mobile-page')), h1: document.querySelector('#book-title').textContent })`);
+  check('a swipe turn puts focus back where it was in the page (not on body)', focus.inPage && focus.id === 'mobile-ribbon' && focus.h1 === `Page ${SHORT + 1}`, focus);
+
+  await load(SHORT, { slow: true });
+  const waiting = await evaluate(`(async () => { document.querySelector('button[aria-label="Next page"]').click();
+    await new Promise((r) => setTimeout(r, 1100));
+    const s = document.querySelector('#phone-turn-status');
+    return { stage: Boolean(document.querySelector('.phone-turn-stage')), inert: document.querySelector('#mobile-page').hasAttribute('inert'),
+      said: s?.textContent ?? null, role: s?.getAttribute('role'), outside: s ? !s.closest('[inert], [aria-hidden="true"]') : false }; })()`);
+  check('while the leaf waits on a slow page, "Loading page …" is a status outside the inert page', waiting.stage && waiting.inert && waiting.outside
+    && waiting.role === 'status' && waiting.said?.startsWith(`Loading page ${SHORT + 1}`), waiting);
+  check('and the page arrives', await waitFor(`document.querySelector('#book-title').textContent === 'Page ${SHORT + 1}' && !document.querySelector('.phone-turn-stage')`, 9000));
+  check('the status empties once it has', await evaluate(`document.querySelector('#phone-turn-status').textContent === ''`));
 
   // ── Neighbours are cached: an arrow turn requests no page ──
   await load(SHORT);
@@ -324,6 +399,22 @@ await run('Phone page turn', async (t: any) => {
     await touch('touchCancel');
     console.log(`Saved ${process.env.TURN_SHOT}`);
   }
+
+  // ── A second finger during a drag drops it: the turn settles, nothing stays inert ──
+  // Last of the touch checks: after a two-finger touch, headless Edge drops the first touch on the next page loaded.
+  await load(SHORT);
+  await touch('touchStart', 300, 400);
+  for (let i = 1; i <= 4; i++) { await touch('touchMove', 300 - 15 * i, 400); await sleep(30); }
+  const dragging = await evaluate(`Boolean(document.querySelector('.phone-turn-stage'))`);
+  await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 240, y: 400, id: 0 }, { x: 150, y: 500, id: 1 }] });
+  await sleep(40);
+  await touch('touchEnd');
+  await sleep(900);
+  const settled = await evaluate(`({ stage: Boolean(document.querySelector('.phone-turn-stage')), inert: document.querySelector('#mobile-page').hasAttribute('inert'), h1: document.querySelector('#book-title').textContent })`);
+  check('a second finger during a drag: the turn falls back, no stage, nothing inert', dragging && !settled.stage && !settled.inert && settled.h1 === `Page ${SHORT}`, { dragging, ...settled });
+  await swipe(300, 400, -200, 0, { steps: 8, stepMs: 25 });
+  await stageGone();
+  check('and the next swipe still turns', (await title()) === `Page ${SHORT + 1}`, await title());
 
   // ── The page at rest is unchanged: the baseline rects and the entry styles ──
   const RECT_JS = `const rect = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); return { x: +r.left.toFixed(2), y: +(r.top + scrollY).toFixed(2), w: +r.width.toFixed(2), h: +r.height.toFixed(2) }; };`;

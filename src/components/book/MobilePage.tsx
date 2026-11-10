@@ -53,6 +53,8 @@ const SLIDE_MS = 180;
 // Past the first or last page the page moves (or lifts) a quarter as far as the finger.
 const RESISTANCE = 0.25;
 const FADE_MS = 120;
+// A tap that moves further than this between down and up is a drag, not a tap.
+const TAP_SLOP = 10;
 // After the leaf lands, how long to wait for a page change before taking the turn as refused (nothing loading).
 const REFUSED_MS = 400;
 
@@ -73,7 +75,11 @@ interface Turn {
   end: number;
   /** 'drag': following the finger; 'run': animating; 'landed': waiting for the page to change. */
   phase: 'drag' | 'run' | 'landed';
+  /** The turn will complete (an arrow, or a swipe let go far enough): only then does it make its sound. */
+  committed: boolean;
   sounded: boolean;
+  /** A swipe: what had focus inside the page as it began (inert takes focus away; it comes back when the turn ends). */
+  focused: Element | null;
 }
 
 export const MobilePage: React.FC<MobilePageProps> = ({
@@ -112,8 +118,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   // ── The leaf turn ──
   const [turn, setTurn] = useState<Turn | null>(null);
   const turnRef = useRef<Turn | null>(null);
-  const [angle, setAngleState] = useState(0);
+  // The leaf's angle lives outside React state: each frame draws the stage directly (drawRef), so nothing re-renders.
   const angleRef = useRef(0);
+  const drawRef = useRef<((a: number) => void) | null>(null);
   const rafRef = useRef(0);
   const [minHeight, setMinHeight] = useState<number | null>(null);
   // One arrow tap during a turn is kept for after it; the page number's tap waits for the stage to go.
@@ -125,6 +132,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   // The arrow to focus once the turn's page is in (a swipe leaves focus alone).
   const focusRef = useRef<1 | -1 | null>(null);
   const landedAtRef = useRef(0);
+  const landTimerRef = useRef(0);
+  // A tap the stage acted on as the finger lifted: the browser's own click that follows is swallowed.
+  const swallowRef = useRef<{ x: number; y: number; until: number } | null>(null);
   const pageRef = useRef(page);
   pageRef.current = page;
   const loadingRef = useRef(loadingPage);
@@ -152,16 +162,14 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   const bookmarkedOf = useCallback((n: number) => (n === page?.page_number ? isBookmarked : Boolean(isPageBookmarked?.(n))),
     [page?.page_number, isBookmarked, isPageBookmarked]);
 
-  /** Moves the leaf; the page-turn sound plays once, as the leaf crosses −90° (its midpoint). */
+  /** Moves the leaf; a committed turn's sound plays once, as the leaf crosses −90° (its midpoint). */
   const setAngle = (a: number) => {
     const t = turnRef.current;
-    if (t && !t.sounded && !t.blocked && (angleRef.current > -90) !== (a > -90)) {
-      t.sounded = true;
-      soundEngine.playPageTurn();
-    }
+    if (t && t.committed && !t.sounded && (angleRef.current > -90) !== (a > -90)) sound(t);
     angleRef.current = a;
-    setAngleState(a);
+    drawRef.current?.(a);
   };
+  const sound = (t: Turn) => { t.sounded = true; soundEngine.playPageTurn(); };
 
   const run = (to: number, ms: number, done: () => void) => {
     cancelAnimationFrame(rafRef.current);
@@ -180,6 +188,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   const finish = () => {
     cancelAnimationFrame(rafRef.current);
     rafRef.current = 0;
+    window.clearTimeout(landTimerRef.current);
     turnRef.current = null;
     setTurn(null);
     setMinHeight(null);
@@ -199,9 +208,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
     const check = () => {
       if (turnRef.current !== t) return;
       if (performance.now() - landedAtRef.current >= REFUSED_MS && loadingRef.current === null) { finish(); return; }
-      window.setTimeout(check, 100);
+      landTimerRef.current = window.setTimeout(check, 100);
     };
-    window.setTimeout(check, 100);
+    landTimerRef.current = window.setTimeout(check, 100);
   };
 
   const begin = (dir: 1 | -1, source: Turn['source']): Turn | null => {
@@ -210,7 +219,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
     if (blocked && source === 'arrow') return null;
     const t: Turn = {
       dir, blocked, source, from: page.page_number, fromPage: page, other: blocked ? null : (dir > 0 ? nextPage : prevPage),
-      start: blocked || dir > 0 ? 0 : -180, end: blocked ? 0 : dir > 0 ? -180 : 0, phase: source === 'swipe' ? 'drag' : 'run', sounded: false,
+      start: blocked || dir > 0 ? 0 : -180, end: blocked ? 0 : dir > 0 ? -180 : 0, phase: source === 'swipe' ? 'drag' : 'run',
+      committed: source === 'arrow', sounded: false,
+      focused: source === 'swipe' && cardRef.current?.contains(document.activeElement) ? document.activeElement : null,
     };
     // The neighbour must be the page next to this one (the cache may still hold an older one).
     if (t.other && t.other.page_number !== t.from + dir) t.other = null;
@@ -222,7 +233,6 @@ export const MobilePage: React.FC<MobilePageProps> = ({
     queueUsedRef.current = false;
     focusRef.current = null;
     angleRef.current = t.start;
-    setAngleState(t.start);
     setTurn(t);
     return t;
   };
@@ -248,13 +258,36 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
   // A tap on the stage. The leaf moves away under a quick second tap, so where no copy's control is under the finger, the
   // tap goes to the live page's control at that spot (inert, under the stage), where the reader last saw it.
-  const onControl = (hit: TurnControl | null, x: number, y: number) => {
+  const onControl = (hit: TurnControl | null, x: number, y: number, by: 'pointerup' | 'click') => {
+    // Acted on as the finger lifted: the click the browser sends after it is not a second tap.
+    if (by === 'pointerup') swallowRef.current = { x, y, until: performance.now() + 800 };
     const c = hit ?? controlsRef.current.find(({ r }) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)?.c ?? null;
-    if (c === 'next') queue(1);
-    else if (c === 'prev') queue(-1);
-    else if (c === 'goto') gotoRef.current = true;
+    // The turn may have ended while the finger was down: then the tap acts as it would have on the page.
+    const during = turnRef.current !== null;
+    if (c === 'next') { if (during) queue(1); else turnByArrow(1); }
+    else if (c === 'prev') { if (during) queue(-1); else turnByArrow(-1); }
+    else if (c === 'goto') { if (during) gotoRef.current = true; else onOpenGoTo?.(); }
     else if (c === 'switch') onToggleLamp?.();
   };
+
+  // A tap that went down on the stage is acted on as it lifts (not at the click that comes later), if it moved under
+  // TAP_SLOP. The lift is heard on the window, so a stage that went away meanwhile doesn't lose it.
+  const tapRef = useRef<{ id: number; x: number; y: number; c: TurnControl | null } | null>(null);
+  const onTapStart = (c: TurnControl | null, x: number, y: number, id: number) => { tapRef.current = { id, x, y, c }; };
+  const controlRef = useRef(onControl);
+  controlRef.current = onControl;
+  useEffect(() => {
+    const up = (e: PointerEvent) => {
+      const d = tapRef.current;
+      if (!d || d.id !== e.pointerId) return;
+      tapRef.current = null;
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) <= TAP_SLOP) controlRef.current(d.c, d.x, d.y, 'pointerup');
+    };
+    const cancel = (e: PointerEvent) => { if (tapRef.current?.id === e.pointerId) tapRef.current = null; };
+    window.addEventListener('pointerup', up, true);
+    window.addEventListener('pointercancel', cancel, true);
+    return () => { window.removeEventListener('pointerup', up, true); window.removeEventListener('pointercancel', cancel, true); };
+  }, []);
 
   const startFade = (from: BookPage) => {
     window.clearTimeout(fadeTimerRef.current);
@@ -273,12 +306,23 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
   // After the stage goes: the pressed arrow takes focus, then a queued tap turns again, or Go to opens.
   const busy = turn !== null;
+  const lastTurnRef = useRef<Turn | null>(null);
+  if (turn) lastTurnRef.current = turn;
   useEffect(() => {
     onTurning?.(busy);
     if (busy) return;
-    const queued = queuedRef.current, focus = focusRef.current;
+    const queued = queuedRef.current, focus = focusRef.current, ended = lastTurnRef.current;
     queuedRef.current = null;
     focusRef.current = null;
+    lastTurnRef.current = null;
+    // A swipe leaves focus where it was: inert took it from the page, so it goes back (to the same control if it is still
+    // there, else to the page's first control).
+    if (ended?.focused && document.activeElement === document.body) {
+      const card = cardRef.current;
+      const back = ended.focused.isConnected && card?.contains(ended.focused) ? ended.focused
+        : card?.querySelector('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
+      (back as HTMLElement | null | undefined)?.focus({ preventScroll: true });
+    }
     if (gotoRef.current) { gotoRef.current = false; onOpenGoTo?.(); return; }
     if (queued) { turnByArrow(queued); return; }
     if (focus) (focus > 0 ? nextRef : prevRef).current?.focus({ preventScroll: true });
@@ -288,15 +332,44 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   useEffect(() => () => {
     cancelAnimationFrame(rafRef.current);
     window.clearTimeout(fadeTimerRef.current);
+    window.clearTimeout(landTimerRef.current);
     onTurning?.(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The click that follows a tap the stage already acted on (on pointerup) must not act again, on whatever is there now.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const w = swallowRef.current;
+      if (!w) return;
+      if (performance.now() > w.until) { swallowRef.current = null; return; }
+      if (Math.hypot(e.clientX - w.x, e.clientY - w.y) > 24) return;
+      swallowRef.current = null;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    window.addEventListener('click', onClick, true);
+    return () => window.removeEventListener('click', onClick, true);
+  }, []);
+
+  // The live page's arrows: stable handlers, so the memoised page doesn't re-render for them.
+  const arrowRef = useRef(turnByArrow);
+  arrowRef.current = turnByArrow;
+  const onPrev = useCallback(() => arrowRef.current(-1), []);
+  const onNext = useCallback(() => arrowRef.current(1), []);
+
   // ── Swipes ──
+  /** A drag in progress goes back flat (no page change, no sound). */
+  const fallBack = (t: Turn) => {
+    t.phase = 'run';
+    run(t.start, (turnMs * Math.abs(t.start - angleRef.current)) / 180, finish);
+  };
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (turnRef.current) { ignoreTouchRef.current = true; touchRef.current = null; return; }
+    const t = turnRef.current;
+    // A touch during a turn is ignored until every finger is up; a second finger during a drag drops the drag.
+    if (t) { if (t.phase === 'drag') fallBack(t); ignoreTouchRef.current = true; touchRef.current = null; return; }
     ignoreTouchRef.current = false;
-    if (e.touches.length !== 1) return;
+    if (e.touches.length !== 1) { touchRef.current = null; return; }
     touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now(), axis: null };
   };
 
@@ -328,7 +401,12 @@ export const MobilePage: React.FC<MobilePageProps> = ({
   const handleTouchEnd = (e: React.TouchEvent) => {
     const start = touchRef.current;
     touchRef.current = null;
-    if (ignoreTouchRef.current) { ignoreTouchRef.current = false; return; }
+    if (ignoreTouchRef.current) {
+      const t = turnRef.current;
+      if (t?.phase === 'drag') fallBack(t);
+      if (e.touches.length === 0) ignoreTouchRef.current = false;
+      return;
+    }
     if (!start || start.axis !== 'x') return;
     const dx = e.changedTouches[0].clientX - start.x;
     const speed = Math.abs(dx) / Math.max(1, performance.now() - start.t);
@@ -340,6 +418,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
       const go = far && !t.blocked && (t.dir > 0 ? dx < 0 : dx > 0);
       const to = go ? t.end : t.start;
       t.phase = 'run';
+      // Committed: its sound plays as the leaf crosses its midpoint, or now if the finger took it past already.
+      if (go) { t.committed = true; if ((t.start > -90) !== (angleRef.current > -90)) sound(t); }
       run(to, (turnMs * Math.abs(to - angleRef.current)) / 180, go ? land : finish);
       return;
     }
@@ -354,9 +434,9 @@ export const MobilePage: React.FC<MobilePageProps> = ({
 
   const handleTouchCancel = () => {
     touchRef.current = null;
-    if (ignoreTouchRef.current) { ignoreTouchRef.current = false; return; }
+    ignoreTouchRef.current = false;
     const t = turnRef.current;
-    if (t && t.phase === 'drag') { t.phase = 'run'; run(t.start, (turnMs * Math.abs(t.start - angleRef.current)) / 180, finish); return; }
+    if (t && t.phase === 'drag') { fallBack(t); return; }
     if (mode !== 'leaf') slideTo(0);
   };
 
@@ -400,7 +480,8 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         under={turn.blocked ? null : turn.dir < 0 ? turn.fromPage : neighbour}
         leaf={turn.blocked || turn.dir > 0 ? turn.fromPage : neighbour}
         blank={turn.blocked}
-        angle={angle}
+        angle={angleRef.current}
+        drawRef={drawRef}
         version={lampVersion}
         light={light}
         highlightedWord={highlightedWord}
@@ -408,6 +489,7 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         isBookmarked={bookmarkedOf}
         canTurn={canTurn}
         onHeight={setMinHeight}
+        onTapStart={onTapStart}
         onControl={onControl}
       />
     );
@@ -442,14 +524,18 @@ export const MobilePage: React.FC<MobilePageProps> = ({
         canNext={canNext}
         onToggleBookmark={onToggleBookmark}
         onSelectWord={onSelectWord}
-        onPrev={() => turnByArrow(-1)}
-        onNext={() => turnByArrow(1)}
+        onPrev={onPrev}
+        onNext={onNext}
         onOpenGoTo={onOpenGoTo}
         onSelectLetter={onSelectLetter}
         onToggleLamp={onToggleLamp}
         loadingPage={loadingPage}
       />
       {stage}
+      {/* While a leaf waits on a slow page, the live page (and its own loading status) is inert: say it from here. */}
+      <p className="ui-visually-hidden" id="phone-turn-status" role="status" aria-live="polite">
+        {turn && loadingPage !== null ? `Loading page ${loadingPage}…` : ''}
+      </p>
       {fade && (
         <div key={fade.key} ref={fadeRef} className="phone-turn-fade" aria-hidden="true">
           <PhonePageBody page={fade.page} live={false} highlightedWord={highlightedWord} isBookmarked={bookmarkedOf(fade.page.page_number)}
