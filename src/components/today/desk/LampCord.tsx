@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import type { Light } from '@/lib/lighting';
-import { lampLabel } from './DeskLamp';
+import { lampLabel } from '@/components/desk/LampArt';
 
 /** A pull longer than this switches the lamp when let go. */
 export const PULL_SWITCH_PX = 12;

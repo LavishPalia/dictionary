@@ -9,6 +9,7 @@ import '@/styles/saved.css';
 import '@/styles/review.css';
 import '@/styles/today.css';
 import '@/styles/desk.css';
+import '@/styles/book-lamp.css';
 import '@/styles/bookplate.css';
 import '@/styles/tour.css';
 import '@/styles/learn.css';

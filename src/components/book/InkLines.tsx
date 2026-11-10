@@ -8,10 +8,11 @@ import React from 'react';
 // then its definition lines.
 const ENTRIES: [number, number[]][] = [[42, [96, 70]], [34, [92, 98, 44]], [48, [94, 60]], [30, [98, 76]], [40, [90, 54]], [36, [96, 66]]];
 
-export function InkLines({ page, pages = 1, columns = 1 }: { page: number; pages?: number; columns?: number }) {
+// `copy`: drawn on a phone page-turn copy (aria-hidden), so it has no id and says nothing.
+export function InkLines({ page, pages = 1, columns = 1, copy = false }: { page: number; pages?: number; columns?: number; copy?: boolean }) {
   return (
-    <div className={`ink-lines ink-lines--${pages}`} id="page-loading" role="status" aria-live="polite">
-      <span className="ui-visually-hidden">Loading page {page}…</span>
+    <div className={`ink-lines ink-lines--${pages}`} {...(copy ? { 'aria-hidden': true } : { id: 'page-loading', role: 'status', 'aria-live': 'polite' as const })}>
+      {!copy && <span className="ui-visually-hidden">Loading page {page}…</span>}
       {Array.from({ length: pages }, (_, p) => (
         <div className="ink-lines-page" key={p} aria-hidden="true">
           {Array.from({ length: columns }, (_, c) => {

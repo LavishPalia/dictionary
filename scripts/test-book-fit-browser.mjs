@@ -1,5 +1,6 @@
-// Step 5: the desktop spread fits smaller windows (scaled, never clipped), and on phones the page follows the
-// finger when swiped, springs back from a short drag, and turns on a long swipe or a flick.
+// Step 5: the desktop spread fits smaller windows (scaled, never clipped), and on phones a swipe follows the finger (a
+// leaf turning from the spine; under reduced motion the page itself), falls back from a short drag, and turns on a long
+// swipe or a flick.
 // Usage: node scripts/test-book-fit-browser.mjs   (needs the app running on localhost:3000)
 import { spawn, spawnSync } from 'child_process';
 import fs from 'fs';
@@ -130,6 +131,13 @@ async function main() {
     await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
     const touch = (type, x, y) => send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
     const offset = () => evaluate(`(() => { const el = document.querySelector('#mobile-page'); if (!el) return null; const t = getComputedStyle(el).transform; return t === 'none' ? 0 : Math.round(new DOMMatrix(t).m41); })()`);
+    // The turning leaf's angle (rotateY, degrees), or null when no leaf is turning; and the page's width.
+    const leaf = () => evaluate(`(() => { const l = document.querySelector('.phone-turn-leaf'); if (!l) return null; const t = getComputedStyle(l).transform;
+      if (t === 'none') return 0; const m = new DOMMatrix(t); return Math.atan2(-m.m13, m.m11) * 180 / Math.PI; })()`);
+    const pageWidth = () => evaluate(`document.querySelector('#mobile-page').getBoundingClientRect().width`);
+    // Where the swipe shows: the leaf's angle as it would be for dx (leaf turn), or the page's offset (reduced motion).
+    const follows = async (reduce, dx) => reduce ? Math.abs((await offset()) - dx) <= 2 : Math.abs((await leaf()) - (dx / (await pageWidth())) * 180) <= 3;
+    const atRest = async () => (await offset()) === 0 && !(await evaluate(`Boolean(document.querySelector('.phone-turn-stage'))`));
     // Drag from x0 to x1 in steps; keep the finger down unless lift is set.
     const drag = async (x0, x1, { y0 = 420, y1 = 420, steps = 8, stepMs = 16, lift = true } = {}) => {
       await touch('touchStart', x0, y0);
@@ -144,18 +152,18 @@ async function main() {
       await sleep(600);
       await drag(300, 200, { lift: false });
       await sleep(50);
-      check(`${label}: the page follows the finger`, Math.abs((await offset()) + 100) <= 2, await offset());
+      check(`${label}: the ${reduce ? 'page' : 'leaf'} follows the finger`, await follows(reduce, -100), { offset: await offset(), leaf: await leaf() });
       await touch('touchMove', 250, 420);
       await sleep(50);
-      check(`${label}: and comes back with it`, Math.abs((await offset()) + 50) <= 2, await offset());
+      check(`${label}: and comes back with it`, await follows(reduce, -50), { offset: await offset(), leaf: await leaf() });
       await touch('touchEnd');
       await sleep(400);
-      check(`${label}: a short drag springs back without turning`, (await offset()) === 0 && (await where()) === `/page/${CALM_PAGE}`, { offset: await offset(), path: await where() });
+      check(`${label}: a short drag springs back without turning`, (await atRest()) && (await where()) === `/page/${CALM_PAGE}`, { offset: await offset(), leaf: await leaf(), path: await where() });
 
       await drag(320, 100, { steps: 10, stepMs: 30 });
       check(`${label}: a long swipe left turns to the next page`, (await waitFor(`/page/${CALM_PAGE + 1}`)) === `/page/${CALM_PAGE + 1}`, await where());
       await sleep(600);
-      check(`${label}: the new page settles in place`, (await offset()) === 0, await offset());
+      check(`${label}: the new page settles in place`, await atRest(), { offset: await offset(), leaf: await leaf() });
 
       await drag(80, 300, { steps: 10, stepMs: 30 });
       check(`${label}: a long swipe right turns back`, (await waitFor(`/page/${CALM_PAGE}`)) === `/page/${CALM_PAGE}`, await where());
@@ -177,7 +185,7 @@ async function main() {
 
       const at = await where();
       await drag(200, 215, { y0: 600, y1: 300, lift: false });
-      check(`${label}: an up-and-down drag does not move the page sideways`, (await offset()) === 0, await offset());
+      check(`${label}: an up-and-down drag does not move the page sideways`, await atRest(), { offset: await offset(), leaf: await leaf() });
       await touch('touchEnd');
       await sleep(300);
       check(`${label}: nor turn it`, (await where()) === at, await where());
@@ -185,11 +193,13 @@ async function main() {
       await open('/page/1', phone);
       await sleep(500);
       await drag(80, 280, { lift: false });
-      const resisted = await offset();
-      check(`${label}: on page 1 the page resists a swipe back`, resisted > 20 && resisted <= 60, resisted);
+      // The page moves (reduced motion), or lifts (the leaf), a quarter as far as the finger.
+      const resisted = reduce ? await offset() : Math.abs((await leaf()) ?? 0);
+      const quarter = reduce ? 50 : (200 / (await pageWidth())) * 180 * 0.25;
+      check(`${label}: on page 1 the page resists a swipe back`, resisted > quarter * 0.4 && resisted <= quarter + 1, { resisted, quarter });
       await touch('touchEnd');
       await sleep(500);
-      check(`${label}: and stays on page 1`, (await where()) === '/page/1' && (await offset()) === 0, { path: await where(), offset: await offset() });
+      check(`${label}: and stays on page 1`, (await where()) === '/page/1' && (await atRest()), { path: await where(), offset: await offset(), leaf: await leaf() });
     }
     await send('Emulation.setEmulatedMedia', { features: [] });
     // The buttons still turn pages.

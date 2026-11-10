@@ -16,6 +16,9 @@ import type { Section } from '@/components/shell/AppChrome';
 import { ANCHORS_KEY, anchorWords, emptyAnchors, noteAnchor, pageAnchor, relocateMarks, type MarkAnchors } from '@/lib/marks';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { CoverCinematic } from '@/components/book/CoverCinematic';
+import { BookLamp, useBookLightVersion } from '@/components/book/lamp/BookLamp';
+import { BookLampArt } from '@/components/book/lamp/BookLampArt';
+import { useLampSwitch } from '@/components/desk/useLampSwitch';
 import { AppHeader, BottomNav } from '@/components/shell/AppChrome';
 import { useDuelVisible } from '@/components/today/DuelCard';
 import { ReadingMenu } from '@/components/shell/ReadingMenu';
@@ -71,6 +74,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const meta = initialMeta;
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [highlightedWord, setHighlightedWord] = useState<string>(initialEntry?.headword || '');
+  // The word a search (or an address) turned the book to: the Book page's light goes to it once it is on the page.
+  const [jumpWord, setJumpWord] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isBookOpen, setIsBookOpen] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -417,7 +422,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   // Trigger 3D Page Turn / Multi-Page Riffle with URL sync. The target pages are loaded before the flip
   // starts, so the leaf never lands on a blank page.
-  const turnToPage = useCallback(async (newTarget: number, wordToHighlight?: string) => {
+  // `quiet`: the phone's leaf turn played the page-turn sound already, at its midpoint.
+  const turnToPage = useCallback(async (newTarget: number, wordToHighlight?: string, opts?: { quiet?: boolean }) => {
     if (isFlipping || loadingTargetRef.current) return;
 
     const clampedTarget = Math.max(1, Math.min(meta.total_pages, newTarget));
@@ -431,7 +437,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       }
     };
     if (clampedTarget === currentPage) {
-      if (wordToHighlight) setHighlightedWord(wordToHighlight);
+      if (wordToHighlight) { setHighlightedWord(wordToHighlight); setJumpWord(wordToHighlight); }
       showInAddress(); // e.g. a search from Today for a word on the page the book is already open at
       return;
     }
@@ -456,6 +462,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
     if (wordToHighlight !== undefined) {
       setHighlightedWord(wordToHighlight);
+      setJumpWord(wordToHighlight || null);
     }
 
     setTargetPage(clampedTarget);
@@ -480,7 +487,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
       // Nothing to animate: apply the page change immediately, and never latch
       // isFlipping (desktop parity for the paper sound is kept here instead of
       // in the flip midpoint callback).
-      soundEngine.playPageTurn();
+      if (!opts?.quiet) soundEngine.playPageTurn();
       setCurrentPage(clampedTarget);
       setIsFlipping(false);
       return;
@@ -602,6 +609,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     quickPickRef.current = Boolean(opts?.quick);
     setLighting(next);
   }, [lighting]);
+  // The lamp on the Book page: its switch (the desktop lamp and the phone's push-switch both use it; one note, shared
+  // with Today through the `noted` flag) and the light it draws. It is mounted only while the open book shows.
+  const bookSw = useLampSwitch({ light: appliedLight, onSetLight: (next) => pickLighting(next, { quick: true }) });
+  const [bookLightVersion, bookLightSlow] = useBookLightVersion(reducedMotion, section);
+  const bookLampOn = section === 'book' && isBookOpen;
+  const lampVersion = bookLampOn ? bookLightVersion : null;
+  // The pool goes to the open word's first line (or, with no sheet, to the word a search just turned the book to) while its
+  // entry is on the visible page(s). A related word opened from the sheet that isn't on them leaves the pool where it is
+  // (the last word stays); closing the sheet, or clicking another entry, clears it (back to rest).
+  const bookFocusRef = useRef<string | null>(null);
+  {
+    const onPage = (norm: string) => [leftPage, rightPage, singleMobilePage].some(p => p && [...p.column1, ...p.column2].some(e => e.normalized === norm));
+    if (showWordDrawer && activeWordEntry) { if (onPage(activeWordEntry.normalized)) bookFocusRef.current = activeWordEntry.headword; }
+    else if (jumpWord && highlightedWord === jumpWord) { if (onPage(jumpWord.toLowerCase().trim())) bookFocusRef.current = jumpWord; }
+    else bookFocusRef.current = null;
+  }
+  const bookFocus = bookFocusRef.current;
   useEffect(() => {
     const tick = () => setClockTick((n) => n + 1);
     const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
@@ -734,6 +758,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Entry click handler -> opens Word Detail Drawer & syncs URL
   const handleEntryClick = (headword: string) => {
     setHighlightedWord(headword);
+    setJumpWord(null);
     const norm = headword.toLowerCase().trim();
     const visible = [leftPage, rightPage, singleMobilePage].flatMap(p => (p ? [...p.column1, ...p.column2] : []));
     const found = visible.find(e => e.normalized === norm);
@@ -1334,13 +1359,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
 
   // ── Mobile single-page stepping ─────────────────────────────────────────
   // The mobile view shows one page, so it steps one page at a time (92 → 93 → 94).
-  const handleMobilePrev = useCallback(() => {
-    if (currentPage > 1) turnToPage(currentPage - 1);
+  const handleMobilePrev = useCallback((opts?: { quiet?: boolean }) => {
+    if (currentPage > 1) turnToPage(currentPage - 1, undefined, opts);
   }, [currentPage, turnToPage]);
 
-  const handleMobileNext = useCallback(() => {
-    if (currentPage < meta.total_pages) turnToPage(currentPage + 1);
+  const handleMobileNext = useCallback((opts?: { quiet?: boolean }) => {
+    if (currentPage < meta.total_pages) turnToPage(currentPage + 1, undefined, opts);
   }, [currentPage, meta.total_pages, turnToPage]);
+
+  // The phone's leaf turns onto the pages either side, which the prefetch above (the spread ± 2 pages) already loads.
+  const prevMobilePage = useMemo(() => getCachedPage(currentPage - 1), [getCachedPage, currentPage]);
+  const nextMobilePage = useMemo(() => getCachedPage(currentPage + 1), [getCachedPage, currentPage]);
+  // A one-page step on a phone: a leaf turning from the spine; Instant changes the page at once, reduced motion cross-fades.
+  const mobileTurn = speedMode === 'instant' ? 'instant' : reducedMotion ? 'fade' : 'leaf';
+  // About 0.5 s at Realistic, and in proportion at Slow and Brisk.
+  const mobileTurnMs = Math.round((500 * flipDuration) / 1050);
+  const [phoneTurning, setPhoneTurning] = useState(false);
+  const isPageBookmarked = useCallback((n: number) => bookmarkedPages.includes(spreadLeftOf(n)), [bookmarkedPages]);
 
   const canPrevMobile = currentPage > 1;
   const canNextMobile = currentPage < meta.total_pages;
@@ -1411,6 +1446,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   return (
     <main
       className="app-main"
+      data-book-lamp={bookLampOn ? '' : undefined}
       style={{
         minHeight: '100vh',
         width: '100vw',
@@ -1485,6 +1521,13 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           </div>
         )}
 
+      {bookLampOn && (
+        <BookLamp phone={isMobile} light={appliedLight} sw={bookSw} onUseAuto={() => pickLighting('auto', { quick: true })}
+          version={bookLightVersion} onSlow={bookLightSlow} reduced={reducedMotion}
+          focusEntry={bookFocus} turning={isFlipping || loadingPage !== null || phoneTurning}
+          frameKey={isMobile ? (singleMobilePage ? 'page' : 'missing') : 'spread'} />
+      )}
+
       {/* Main Reading Canvas */}
       {!isBookOpen ? (
         /* VINTAGE HARDCOVER PRESENTATION WITH 3D OPENING CINEMATIC */
@@ -1498,15 +1541,23 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         <MobilePage
           page={singleMobilePage}
           loadingPage={loadingPage}
+          lampVersion={lampVersion}
+          light={appliedLight}
+          onToggleLamp={bookSw.toggle}
           highlightedWord={highlightedWord}
           isBookmarked={isSpreadBookmarked}
           onToggleBookmark={handleToggleSpreadBookmark}
           onSelectWord={handleEntryClick}
           onPrevPage={handleMobilePrev}
           onNextPage={handleMobileNext}
+          prevPage={prevMobilePage}
+          nextPage={nextMobilePage}
+          isPageBookmarked={isPageBookmarked}
           canPrev={canPrevMobile}
           canNext={canNextMobile}
-          animate={!reducedMotion && speedMode !== 'instant'}
+          turn={mobileTurn}
+          turnMs={mobileTurnMs}
+          onTurning={setPhoneTurning}
           onOpenGoTo={() => setGoToOpen(true)}
           thumbIndex={meta.thumb_index}
           // Through the Go to queue, as the panel's letters: a jump made while a page loads is made after it.
@@ -1521,6 +1572,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             targetLeftPage={targetLeftPage}
             targetRightPage={targetRightPage}
             loadingPage={loadingPage}
+            lampVersion={lampVersion}
             highlightedWord={highlightedWord}
             activeLetter={activeLetter}
             thumbMap={meta.thumb_index}
@@ -1547,6 +1599,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
             onPrevPage={handlePrevSpread}
             onNextPage={handleNextSpread}
           />
+          {/* The desk lamp leaning in from the top-left, drawn in the spread's units (only while the Book page shows). */}
+          {section === 'book' && <BookLampArt light={appliedLight} onToggle={bookSw.toggle} />}
         </ScaledSpread>
       )}
       {isBookOpen && !isMobile && (

@@ -41,6 +41,8 @@
     "test:learn-ui": "node scripts/test-learn-browser.mjs",
     "test:evening-ui": "node scripts/test-evening-browser.mjs",
     "test:desk-ui": "tsx scripts/test-desk-browser.mts",
+    "test:book-lamp-ui": "tsx scripts/test-book-lamp-browser.mts",
+    "test:phone-turn-ui": "tsx scripts/test-phone-turn-browser.mts",
     "test:review": "tsx scripts/test-review.ts",
     "test:learn": "tsx scripts/test-learn.ts",
     "test:marks": "tsx scripts/test-marks.ts",

@@ -22,6 +22,8 @@ import { BookPage } from '@/lib/types';
 import { GuideWords } from './GuideWords';
 import { PageColumn } from './PageColumn';
 import { PronunciationFooter } from './PronunciationFooter';
+import { BookLightLayer } from './lamp/BookLightLayer';
+import type { LightVersion } from '@/lib/desk';
 
 const PAGE_W = 560;
 const PAGE_H = 640;
@@ -34,6 +36,8 @@ interface PageFaceProps {
   isLeftPage: boolean;
   highlightedWord?: string;
   style?: CSSProperties;
+  /** The lamp's light under the ink, for the spread's base-layer copies only (the turning leaves never get it). */
+  lampVersion?: LightVersion | null;
 }
 
 export const PageFace: React.FC<PageFaceProps> = ({
@@ -41,6 +45,7 @@ export const PageFace: React.FC<PageFaceProps> = ({
   isLeftPage,
   highlightedWord,
   style,
+  lampVersion = null,
 }) => {
   const bg = isLeftPage
     ? 'linear-gradient(to right, var(--parch) 0%, var(--parch-2) 85%, var(--page-gutter) 100%)'
@@ -48,7 +53,7 @@ export const PageFace: React.FC<PageFaceProps> = ({
 
   return (
     <div
-      className="page-inset"
+      className={lampVersion ? 'page-inset book-lit' : 'page-inset'}
       style={{
         position: 'absolute',
         inset: 0,
@@ -61,6 +66,7 @@ export const PageFace: React.FC<PageFaceProps> = ({
         ...style,
       }}
     >
+      {lampVersion && <BookLightLayer originX={isLeftPage ? 0 : PAGE_W} width={PAGE_W} height={PAGE_H} version={lampVersion} />}
       {page ? (
         <>
           <GuideWords
