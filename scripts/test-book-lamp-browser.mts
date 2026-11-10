@@ -841,4 +841,34 @@ await run('Book lamp', async (t: any) => {
   await clickWord(DESK_FRAME, 2);
   await sheetShown(); await settleLight(DESK_FRAME); await sleep(1200);
   check('desktop: a first word glide does not write the light flag', (await deskStore())?.light === undefined, await deskStore());
+  // ── axe in every light and size: desktop and phone × Day and Evening × the lamp shown and the lamp hidden ──
+  // Desktop "hidden": the first tested size at 1024 px or wider where the fit check leaves the lamp out. If none hides it,
+  // the fit check's own result is forced: `hidden` goes on the lamp's button and art, as bookLight.ts puts it there. The phone has no fit check, so its "hidden" is the first visit too.
+  const HIDE_TRY = [{ width: 1024, height: 360 }, { width: 1024, height: 420 }, { width: 1024, height: 480 }, { width: 1024, height: 540 }, { width: 1024, height: 600 }].map((z) => ({ ...z, mobile: false }));
+  let hideSize: any = null;
+  for (const z of HIDE_TRY) { await load(z, 400, 'evening', LAMP_B); if (!(await lampShown())) { hideSize = z; break; } }
+  console.log(hideSize ? `  axe, desktop "lamp hidden": ${hideSize.width} × ${hideSize.height}, where the fit check leaves the lamp out`
+    : '  axe, desktop "lamp hidden": no tested size hides the lamp, so the fit result is forced (hidden on the button and art)');
+  for (const lighting of ['day', 'evening']) {
+    const L = lighting === 'day' ? 'Day' : 'Evening';
+    await load(D1440, 400, lighting, LAMP_B);
+    check(`axe desktop ${L}: the lamp is shown`, await lampShown());
+    await t.axe(`desktop, lamp shown, ${L}`);
+    if (hideSize) {
+      await load(hideSize, 400, lighting, LAMP_B);
+      check(`axe desktop ${L}: the lamp is hidden at ${hideSize.width} × ${hideSize.height}`, !(await lampShown()));
+      await t.axe(`desktop, lamp hidden (${hideSize.width} × ${hideSize.height}), ${L}`);
+    } else {
+      await load(D1440, 400, lighting, LAMP_B);
+      await evaluate(`document.querySelector('#book-lamp').hidden = true; document.querySelector('.book-lamp-art').setAttribute('hidden', ''); true`);
+      check(`axe desktop ${L}: the lamp is forced hidden`, !(await lampShown()));
+      await t.axe(`desktop, lamp hidden (forced), ${L}`);
+    }
+    for (const size of PHONE_SIZES) {
+      await load(size, TALL, lighting, LAMP_B);
+      await t.axe(`phone ${size.width}, switch shown, ${L}`);
+      await load(size, TALL, lighting, null);
+      await t.axe(`phone ${size.width}, first visit, ${L}`);
+    }
+  }
 });
