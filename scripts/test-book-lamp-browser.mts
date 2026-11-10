@@ -683,7 +683,7 @@ await run('Book lamp', async (t: any) => {
     ser3.ser.some((r: number[]) => dist({ x: r[1], y: r[2] }, rest0) > 3 && dist({ x: r[1], y: r[2] }, end3) > 3) && ser3.ser.every((r: number[]) => inBetween({ x: r[1], y: r[2] })),
     { n: ser3.ser.length, first: ser3.ser[0], last: ser3.ser.at(-1) });
   const at300 = [...ser3.ser].filter((r: number[]) => r[0] <= clickedAt + 300).pop();
-  check('its value at 300 ms is between the start and the end', !at300 || inBetween({ x: at300[1], y: at300[2] }), at300);
+  check('its value at 300 ms is between the start and the end (a frame was seen by then)', Boolean(at300) && inBetween({ x: at300[1], y: at300[2] }), at300);
   check('nothing is announced for a glide (#book-live unchanged)', (await liveText()) === liveBefore, { before: liveBefore, now: await liveText() });
   check('the glide never overwrites bookAim', (await deskStore())?.bookAim === undefined, await deskStore());
   await closeSheet();
@@ -831,8 +831,14 @@ await run('Book lamp', async (t: any) => {
   await evaluate(`window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 40); true`);
   await clickWord(PHONE_FRAME, 2);
   await sheetShown();
-  await sleep(1500);
+  await waitFor(`JSON.parse(localStorage.getItem('panna_desk') ?? '{}').light === 'A'`, 8000);
   check('phone: a slow first glide (frames 40 ms apart) switches to A and drops the filter', (await deskStore())?.light === 'A'
     && !(await evaluate(`Boolean(document.querySelector('#book-spot-filter, [filter*="book-spot-filter"]'))`)), await deskStore());
 
+
+  // Desktop is timed by the first shade drag, never by a word's glide: the flag stays unset.
+  await load(D1440, 400, 'evening', { noted: true });
+  await clickWord(DESK_FRAME, 2);
+  await sheetShown(); await settleLight(DESK_FRAME); await sleep(1200);
+  check('desktop: a first word glide does not write the light flag', (await deskStore())?.light === undefined, await deskStore());
 });

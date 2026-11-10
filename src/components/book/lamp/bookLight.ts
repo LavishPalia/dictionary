@@ -27,6 +27,8 @@ export const BOOK_LIGHT = {
 const TAP_PX = 6;
 /** How long the phone's first glide is timed (ms): about the glide's length, with 8 frames at the least. */
 const GLIDE_TIMING_MS = 700;
+/** The longest the first glide waits for the sheet's opening animation to end before it is timed anyway (ms). */
+const GLIDE_WAIT_MS = 1500;
 /** The arrow keys aim the light this far (spread units), or the big step with Shift. */
 const KEY_STEP = 20, KEY_STEP_BIG = 60;
 /** The book's leather cover shows this far around the spread (spread units): it is part of the book, so the lamp keeps off it. */
@@ -250,17 +252,25 @@ export function createBookLight(opts: {
       if (start) return; // the reader is dragging the shade: the aim is theirs
       target = t;
       loop.setAim(t ? toFrame(t) : restAim(), EASE_GLIDE);
-      // A phone has no drag to time, so the first glide is its slow-device check (and a desktop reader who opens a word before
-      // ever dragging the shade is checked here too): while the flag isn't set and B is in use.
-      if (timing() && !held && !opts.reduced && !glideTimer) {
-        loop.startTiming();
-        glideTimer = window.setTimeout(() => {
-          glideTimer = 0;
-          const avg = loop.stopTiming();
-          if (avg === null || !timing()) return;
-          writeDesk({ light: avg > SLOW_FRAME_MS ? 'A' : 'B' });
-          if (avg > SLOW_FRAME_MS) opts.onSlow();
-        }, GLIDE_TIMING_MS);
+      // A phone has no drag to time, so its first glide is the slow-device check (desktop is timed by the first shade drag):
+      // while the flag isn't set and B is in use. Frames are counted only once the sheet's opening animation has finished,
+      // so its slide-in can't make a healthy device look slow.
+      if (phone && timing() && !held && !opts.reduced && !glideTimer) {
+        let waited = 0;
+        const begin = () => {
+          if (held || !timing()) { glideTimer = 0; return; }
+          const busy = document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getTiming().iterations !== Infinity);
+          if (busy && waited < GLIDE_WAIT_MS) { waited += 50; glideTimer = window.setTimeout(begin, 50); return; }
+          loop.startTiming();
+          glideTimer = window.setTimeout(() => {
+            glideTimer = 0;
+            const avg = loop.stopTiming();
+            if (avg === null || !timing()) return;
+            writeDesk({ light: avg > SLOW_FRAME_MS ? 'A' : 'B' });
+            if (avg > SLOW_FRAME_MS) opts.onSlow();
+          }, GLIDE_TIMING_MS);
+        };
+        glideTimer = window.setTimeout(begin, 0);
       }
     },
     hold(on) { held = on; loop.hold(on); },
