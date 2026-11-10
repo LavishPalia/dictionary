@@ -13,8 +13,8 @@ export REPORTS_FILE=$PWD/scratch/reports-test.jsonl
 export NEXT_PUBLIC_REPORTS=1
 
 # Parts of about 6.5 minutes each on a GitHub runner (seconds in brackets, from a CI log, 2026-10-31).
-PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:saved test:word test:desk-ui"  # 139 82 70 55 23 19
-PART_2="test:learn-ui test:reach-ui test:history-ui test:goto-ui test:review-ui test:book-fit-ui test:backup-ui"  # 116 78 69 44 27 25 24
+PART_1="test:a11y test:evening-ui test:offline-ui test:today-ui test:saved test:word test:desk-ui test:analytics-ui"  # 139 82 70 55 23 19, desk-ui and analytics-ui new
+PART_2="test:learn-ui test:reach-ui test:history-ui test:goto-ui test:review-ui test:book-fit-ui test:backup-ui test:bookplate-ui"  # 116 78 69 44 27 25 24, bookplate-ui new
 # The Duel's own part (from 4 Nov): it had made part 2 the slowest by about 3 minutes.
 PART_4="test:duel-ui test:duel-sim test:duel-entry-ui test:duel-home-ui test:duel-end-ui test:duel-ranks-ui test:duel-guide-ui test:duel-offline-ui test:duel-sound test:duel-pace test:duel-pace-ui test:duel-a11y-ui test:duel-content test:duel-purity test:duel-engine test:duel-controller test:duel-help test:duel-progress test:duel-schedule test:duel-api test:duel-outbox"  # duel-ui ~230 locally, sim ~60
 PART_3="test:tour-ui test:quiz test:search test:motion test:related-ui test:report-ui test:saved-search-ui
@@ -22,7 +22,7 @@ PART_3="test:tour-ui test:quiz test:search test:motion test:related-ui test:repo
   test:learn test:highlight test:pos test:review test:related test:hinglish test:report test:progress
   test:marks test:backup test:pagination test:phonetics test:search-distance test:phase4-pipeline test:sentence test:quick
   test:history test:saved-search test:letters test:lighting test:today-words test:desk test:related-gemini test:examples test:gemini-client
-  test:corrections test:api"  # 112 61, the rest under 25 each
+  test:corrections test:api test:analytics test:bookplate"  # 112 61, the rest under 25 each
 
 # Every test:* script in package.json must be in a part, so a new test can't be left out of CI by accident.
 missing=$(node -e '

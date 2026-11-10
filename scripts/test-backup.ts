@@ -44,6 +44,12 @@ check('rejects a backup from a newer Panna', (() => { const r = parseBackup(JSON
 check('rejects a damaged backup', (() => { const r = parseBackup(JSON.stringify({ ...backup, data: { ...backup.data, panna_bookmarks: ['x'] } })); return !r.ok && r.error.includes('damaged'); })());
 
 const book = { dataVersion: 'v1', totalPages: 95 };
+{
+  const off = { ...laptop, panna_settings: { ...(laptop.panna_settings as object), analytics: false } };
+  const out = restoreData(off, backup, 'replace', book).panna_settings as Record<string, unknown>;
+  check('replace keeps Usage counts off when this device switched it off', out.analytics === false && out.lighting === (phone.panna_settings as Record<string, unknown>)?.lighting, out);
+  check('replace leaves Usage counts as the backup has it otherwise', !('analytics' in (restoreData(laptop, backup, 'replace', book).panna_settings as object)));
+}
 const replaced = restoreData(laptop, backup, 'replace', book);
 check('replace makes this browser match the backup', JSON.stringify(replaced.panna_saved_words) === JSON.stringify(phone.panna_saved_words)
   && JSON.stringify(replaced.panna_settings) === JSON.stringify(phone.panna_settings) && JSON.stringify(replaced.panna_bookmarks) === '[16]');

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { IOS_DEVICE } from '@/lib/ios-shortcut';
+import { track } from '@/lib/analytics';
 import { formatBytes, pageUrl, registerServiceWorker, saveBook, savedBook, type SavedBook } from '@/lib/offline';
 
 interface InstallPromptEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
@@ -31,7 +32,7 @@ export function useOffline(meta: { total_pages: number; data_version: string }, 
     // Chrome, Edge and Android offer an install prompt; iOS Safari only has Share → Add to Home Screen.
     const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     const onPrompt = (e: Event) => { e.preventDefault(); if (!standalone) setInstallEvent(e as InstallPromptEvent); };
-    const onInstalled = () => setInstallEvent(null);
+    const onInstalled = () => { setInstallEvent(null); track('app_installed'); };
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
     if (!standalone && IOS_DEVICE.test(navigator.userAgent)) setInstallHint('ios');

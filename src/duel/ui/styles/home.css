@@ -55,7 +55,7 @@ html[data-light="evening"] .duel-page {
 .coin.blank { pointer-events: none; }
 .coin.open, .coin.latest-open { background: #efe3c0; border: 1px solid var(--pg-line); }
 .coin.latest-open { box-shadow: 0 0 0 2px var(--brass); }
-.coin.future { color: var(--pg-muted); opacity: .62; }
+.coin.future { color: var(--pg-muted); } /* no opacity: a later day is a button, and its number must keep 4.5:1 */
 .coin.today { font-weight: bold; color: var(--crimson); box-shadow: inset 0 0 0 2px var(--crimson); animation: coin-pulse 2.4s ease-in-out infinite; }
 @keyframes coin-pulse { 50% { box-shadow: inset 0 0 0 2px var(--crimson), 0 0 0 4px rgba(122, 43, 34, .16); } }
 .coin.won { background: radial-gradient(circle at 35% 30%, #f3dc98, #c9a24a); border: 1px solid #94722a; color: #3a2a10; }

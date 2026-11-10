@@ -3,6 +3,8 @@
 import { Segmented, Sheet, Switch } from '@/components/ui';
 import { BookIcon, ChevronIcon, CompassIcon, DiceIcon } from '@/components/ui/icons';
 import type { Lighting } from '@/lib/lighting';
+import type { Bookplate } from '@/lib/bookplate';
+import { MiniPlate } from '@/components/bookplate/Bookplate';
 
 export type PageTurnSpeed = 'slow' | 'realistic' | 'brisk' | 'instant';
 
@@ -36,6 +38,13 @@ interface ReadingMenuProps {
   iosShortcut: string;
   /** e.g. "Last backup 3 days ago". */
   backupLabel: string;
+  /** Usage counts (src/lib/analytics.ts): on, and whether the browser's Do Not Track / GPC keeps it off. */
+  usageCounts: boolean;
+  usageCountsBlocked: boolean;
+  onUsageCountsChange: (on: boolean) => void;
+  /** The reader's bookplate, or null before one is written. */
+  bookplate: Bookplate | null;
+  onOpenBookplate: () => void;
 }
 
 // Everything that used to crowd the top of the screen: reading preferences and the less frequent actions.
@@ -46,7 +55,19 @@ export function ReadingMenu(props: ReadingMenuProps) {
   const thenClose = (action: () => void) => () => { onClose(); action(); };
 
   return (
-    <Sheet open={open} onClose={onClose} title="Reading settings" id="reading-menu" returnFocusTo={() => document.getElementById('menu-btn')}>
+    <Sheet open={open} onClose={onClose} labelledBy="reading-menu-title" id="reading-menu" returnFocusTo={() => document.getElementById('menu-btn')}>
+      {/* The title shares its line with the bookplate, so the whole menu still fits on a phone screen. */}
+      <div className="menu-head">
+        <h2 id="reading-menu-title" className="ui-sheet-title">Reading settings</h2>
+        <button type="button" className="menu-plate-chip" id="bookplate-btn" onClick={thenClose(props.onOpenBookplate)}
+          aria-label={props.bookplate
+            ? `Your bookplate: ${props.bookplate.name}, ${props.bookplate.share && props.usageCounts ? 'shared' : 'not shared'}`
+            : 'Your bookplate: write your name in the book'}>
+          <MiniPlate plate={props.bookplate} />
+          <span className="menu-plate-chip-name" id="bookplate-sub" aria-hidden="true">{props.bookplate ? props.bookplate.name : 'Your bookplate'}</span>
+          <ChevronIcon />
+        </button>
+      </div>
       {/* First, so anyone opening the menu finds the tours. */}
       <button type="button" className="menu-row menu-link menu-tours" id="guided-tours-btn" onClick={thenClose(props.onOpenTours)}>
         <span className="menu-tours-icon" aria-hidden="true"><CompassIcon /></span>
@@ -144,6 +165,16 @@ export function ReadingMenu(props: ReadingMenuProps) {
           Restore
         </button>
       </div>
+      <label className="menu-row" htmlFor="usage-counts-switch">
+        <div>
+          <div className="menu-title">Usage counts</div>
+          <div className="menu-sub" id="usage-counts-sub">
+            {props.usageCountsBlocked ? 'Off: your browser asks sites not to track it' : 'Anonymous counts of visits, never which words'}
+          </div>
+        </div>
+        <Switch id="usage-counts-switch" checked={props.usageCounts} onChange={props.onUsageCountsChange} label="Usage counts"
+          disabled={props.usageCountsBlocked} describedBy="usage-counts-sub" />
+      </label>
       <button type="button" className="menu-foot" id="open-credits-btn" onClick={thenClose(props.onOpenCredits)}>
         Sources &amp; credits ›
       </button>

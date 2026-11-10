@@ -1,5 +1,6 @@
 'use client';
 
+import { track } from '@/lib/analytics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DictionaryEntry } from '@/lib/types';
 import { localDate } from '@/lib/review';
@@ -131,7 +132,7 @@ export function useTours(app: TourApp) {
     const t = tourRef.current;
     if (!t) return;
     if (t.step + 1 < tourById(t.id).steps.length) setTour({ ...t, step: t.step + 1, dir: 1 });
-    else endTour();
+    else { track('tour_finished', { tour: t.id }); endTour(); } // finished, not skipped
   }, [endTour]);
   const back = useCallback(() => {
     const t = tourRef.current;
