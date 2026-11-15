@@ -22,7 +22,7 @@ PART_3="test:tour-ui test:phone-turn-ui test:quiz test:search test:motion test:r
   test:learn test:highlight test:pos test:review test:related test:hinglish test:report test:progress
   test:marks test:backup test:pagination test:phonetics test:search-distance test:phase4-pipeline test:sentence test:quick
   test:history test:saved-search test:letters test:lighting test:today-words test:desk test:related-gemini test:examples test:gemini-client
-  test:corrections test:api test:analytics test:bookplate"  # 112 61, the rest under 25 each
+  test:corrections test:api test:analytics test:bookplate test:offers"  # 112 61, the rest under 25 each
 
 # Every test:* script in package.json must be in a part, so a new test can't be left out of CI by accident.
 missing=$(node -e '

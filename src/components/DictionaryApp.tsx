@@ -44,7 +44,7 @@ import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { browserBlocksCounting, pageview, setUsageCounts, startAnalytics, syncBookplate, track, usageCountsChosen } from '@/lib/analytics';
-import { bookplateOfferDone, endBookplateOffer, loadBookplate, offerBookplate, storeBookplate, unshareBookplate, type Bookplate } from '@/lib/bookplate';
+import { bookplateOfferDone, endBookplateOffer, loadBookplate, storeBookplate, unshareBookplate, type Bookplate } from '@/lib/bookplate';
 import { BookplateSheet } from '@/components/bookplate/Bookplate';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
@@ -1072,7 +1072,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   savedCountRef.current = bookmarkedWords.length;
   useEffect(() => {
     if (section !== 'today' || !savedLoaded || !toursLoaded || !bookplateLoaded) return;
-    setBookplateOffer(offerBookplate({ savedWords: savedCountRef.current, plate: loadBookplate(), offerDone: bookplateOfferDone(), welcomeShowing: tours.showWelcome }));
+    setBookplateOffer(false); // replaced by the offer dock (src/lib/offers.ts)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section, savedLoaded, toursLoaded, bookplateLoaded]);
   useEffect(() => {
