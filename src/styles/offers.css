@@ -1,0 +1,22 @@
+/* A first visit and the offer dock (src/components/shell/OfferDock.tsx). */
+
+/* Set before first paint on a first visit to the front page (src/lib/first-visit.ts): Today stays unpainted until
+   the app has swapped to the book. */
+html[data-first-visit] #today-screen { visibility: hidden; }
+
+/* One card at a time, over the screen: bottom right on desktop, above the bottom bar on phones. */
+.offer-dock {
+  position: fixed; right: 24px; bottom: 24px; z-index: 55; width: min(420px, calc(100vw - 48px));
+  animation: offer-in 240ms ease-out;
+}
+.offer-card { box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3); }
+.offer-card .today-actions { flex-wrap: wrap; }
+@keyframes offer-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .offer-dock { animation: none; } }
+
+@media (max-width: 1023px) {
+  .offer-dock { left: 16px; right: 16px; width: auto; bottom: calc(62px + env(safe-area-inset-bottom) + 12px); }
+}
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 500px) {
+  .offer-dock { bottom: calc(44px + env(safe-area-inset-bottom) + 8px); left: auto; width: min(420px, calc(100vw - 32px)); }
+}

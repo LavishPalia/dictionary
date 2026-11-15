@@ -21,7 +21,7 @@ import { GoalEditor } from './desk/GoalEditor';
 import { DeskBook } from './desk/DeskBook';
 import { IntroFilm } from './desk/IntroFilm';
 import type { TodayWord } from '@/lib/today-words';
-import { BookplateGreeting, BookplateOffer } from '@/components/bookplate/Bookplate';
+import { BookplateGreeting } from '@/components/bookplate/Bookplate';
 import type { Bookplate } from '@/lib/bookplate';
 import { track } from '@/lib/analytics';
 
@@ -66,11 +66,8 @@ interface TodayScreenProps {
   todaysWords: TodayWord[];
   dailyGoal: number;
   onSetGoal: (goal: number) => void;
-  /** The reader's bookplate (a greeting with their name), and the one-time offer to write one. */
+  /** The reader's bookplate: a greeting with their name. (Its offer is in the offer dock.) */
   bookplate: Bookplate | null;
-  offerBookplate: boolean;
-  onWriteBookplate: () => void;
-  onDismissBookplate: () => void;
 }
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
@@ -160,10 +157,6 @@ export function TodayScreen(props: TodayScreenProps) {
             <IntroFilm onPlayingChange={liftFilm} />
           </div>
         </Card>
-      )}
-
-      {props.offerBookplate && !props.showWelcome && (
-        <BookplateOffer onWrite={props.onWriteBookplate} onNotNow={props.onDismissBookplate} />
       )}
 
       <DuelCard />

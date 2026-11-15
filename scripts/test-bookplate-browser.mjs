@@ -1,4 +1,4 @@
-// The bookplate in the browser: Today's one-time offer (after the first saved word, never again after Not now), the
+// The bookplate in the browser: the one-time offer in the offer dock (after the first lookup, never again after Not now), the
 // sheet (Save and Cancel, the 30-character limit, Hindi names, Remove), the greeting and the ⋯ row, and the share tick
 // sending and taking back the name, against a fake PostHog that answers every /relay request here. Also axe (contrast
 // included) on the offer, the sheet and the menu row, in Day and Evening, on desktop and phone.
@@ -131,20 +131,21 @@ async function main() {
     await send('Page.enable');
     await send('Runtime.enable');
 
-    // ── 1. The offer: not before a saved word, not under the reader's finger, once after ──
+    // ── 1. The offer: not before a lookup, not over the word card, once after; in the offer dock, not on Today ──
     check('desktop: app hydrates', await open('/', DESKTOP));
-    await evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', JSON.stringify({ welcomeDone: true, tipsOff: true })); localStorage.setItem('panna_analytics_test', '1'); localStorage.setItem('panna_settings', JSON.stringify({ lighting: 'day' })); true`);
+    await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', JSON.stringify({ welcomeDone: true, tipsOff: true })); localStorage.setItem('panna_analytics_test', '1'); localStorage.setItem('panna_settings', JSON.stringify({ lighting: 'day' })); true`);
     await open('/', DESKTOP);
-    check('no saved word: no offer on Today', !(await exists('#today-bookplate')));
+    check('no lookup yet: no offer', !(await exists('#today-bookplate')));
     check('no plate: no greeting', !(await exists('#today-greeting')));
     check("the ⋯ menu's bookplate chip invites a plate before there is one", await (async () => { await click('#menu-btn'); await sleep(500); const t = await text('#bookplate-sub'); await key('Escape'); await sleep(400); return t === 'Your bookplate'; })());
-    await waitFor(() => exists('#today-word-save'));
-    await click('#today-word-save');
+    await open('/word/camel', DESKTOP); // a lookup, with its card open
     await sleep(800);
-    check('saving the word of the day on Today doesn\'t pop the offer up there and then', !(await exists('#today-bookplate')));
-    await open('/', DESKTOP);
-    check('the next time Today opens, the offer shows', await waitFor(() => exists('#today-bookplate'), 4000));
+    check('the first lookup: no offer over the open word card', await exists('#word-sheet') && !(await exists('#today-bookplate')));
+    await key('Escape');
+    check('closing the card: the offer shows, in the offer dock', await waitFor(() => exists('#offer-dock #today-bookplate'), 4000));
     check('…with its Hindi line', /अपना नाम/.test((await text('#today-bookplate')) ?? ''));
+    await open('/', DESKTOP);
+    check('Today shows it in the dock too, never as one of its own cards', await waitFor(() => exists('#offer-dock #today-bookplate'), 4000) && !(await exists('#today-screen #today-bookplate')));
     await click('#bookplate-not-now');
     await sleep(300);
     check('Not now hides it', !(await exists('#today-bookplate')));

@@ -75,7 +75,7 @@ async function main() {
       for (let i = 0; i < 40; i++) { if (await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return false; el.click(); return true; })()`)) return true; await sleep(100); }
       return false;
     };
-    const quiet = () => evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', JSON.stringify({ seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true })); true`);
+    const quiet = () => evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', JSON.stringify({ seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true })); true`);
     const where = () => evaluate('location.pathname');
     // A real mouse click at the middle of an element, so hit testing goes through the scaled spread.
     const mouseClick = async (expr) => {

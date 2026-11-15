@@ -81,7 +81,7 @@ async function main() {
     // 10 saved words: Camel and Ceremony mastered, four being learned, four new; 16 review days in the last 30,
     // the longest run 5 days (9–13 days ago), the current one 4 days.
     const seed = (withWords = true, mastered = true) => evaluate(`(async () => {
-      localStorage.clear();
+      localStorage.clear(); localStorage.setItem('panna_visited', '1');
       localStorage.setItem('panna_tours', JSON.stringify({ seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true }));
       if (!${withWords}) return true;
       const words = ['camel', 'ceremony', 'abandon', 'calm', 'camera', 'canal', 'candle', 'captain', 'card', 'care'];
@@ -143,7 +143,7 @@ async function main() {
       await filter('Mastered');
       check(`${sizeName}: an empty filter explains how a word is mastered`, (await evaluate(`document.querySelector('#saved-filter-empty')?.innerText ?? ''`)).includes('four right answers in a row'));
     }
-    await evaluate(`localStorage.clear(); true`);
+    await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

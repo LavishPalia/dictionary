@@ -212,5 +212,7 @@ export function useTours(app: TourApp) {
     markGuideOpened: () => { if (!stateRef.current.guideOpened) update((s) => ({ ...s, guideOpened: true })); },
     tipsAgain: () => update((s) => ({ ...s, tips: {}, tipsOff: false })),
     tipsOff: () => update((s) => ({ ...s, tipsOff: true })),
+    /** A tip whose job something else has done (the first-visit card covers the book's tip). */
+    markTipSeen: (id: TipId) => update((s) => ({ ...s, tips: { ...s.tips, [id]: Date.now() } })),
   };
 }

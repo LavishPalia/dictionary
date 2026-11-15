@@ -94,7 +94,7 @@ async function main() {
     // count words saved `savedAgo` ms ago; `due`: their reviews are due now (else in 5 days); `backupAgo`: the last
     // backup that long ago (null: never).
     const seed = ({ count = 0, savedAgo = 3 * DAY, due = false, backupAgo = null, lastPage = null, tours = quiet } = {}) => evaluate(`(async () => {
-      localStorage.clear();
+      localStorage.clear(); localStorage.setItem('panna_visited', '1');
       localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))});
       if (${lastPage !== null}) localStorage.setItem('panna_last_page', ${JSON.stringify(String(lastPage))});
       if (${backupAgo !== null}) localStorage.setItem('panna_last_backup', String(Date.now() - ${backupAgo ?? 0}));
@@ -354,7 +354,7 @@ async function main() {
         check(`${sizeName}: focus after the tour is on the guide's title or the tour button${how}`, after === 'learn-title' || /learn-btn.*Take the word card tour/.test(after ?? ''), after);
       }
     }
-    await evaluate(`localStorage.clear(); true`);
+    await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

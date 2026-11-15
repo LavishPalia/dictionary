@@ -144,7 +144,7 @@ async function main() {
     };
     // Loads /page/16 with the given stored settings (undefined: none) at the given time ([h, m, s] or an hour).
     const load = async (settings, time, url) => {
-      await evaluate(`(() => { localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(QUIET_TOURS))});
+      await evaluate(`(() => { localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(QUIET_TOURS))});
         ${settings === undefined ? '' : `localStorage.setItem('panna_settings', ${JSON.stringify(settings)});`} return true; })()`);
       await register(Array.isArray(time) ? time : [time]);
       return navigate(url);

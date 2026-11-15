@@ -97,7 +97,7 @@ async function main() {
       if (!reportsOn) {
         console.log('Reports are switched off in this build (NEXT_PUBLIC_REPORTS is not 1).');
         for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
-          await evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
+          await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
           check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
           await openCard('Calm');
           check(`${sizeName}: the word card opens`, await evaluate(`document.querySelector('#word-sheet-title')?.textContent === 'Calm'`));
@@ -109,7 +109,7 @@ async function main() {
       for (const [sizeName, size] of reportsOn ? [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]] : []) {
         await setOffline(false);
         check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
-        await evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
+        await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
         await open(`/page/${CALM_PAGE}`, size);
         const version = (await evaluate(`fetch('/api/meta').then((r) => r.json())`)).data_version;
 
@@ -189,7 +189,7 @@ async function main() {
         fs.writeFileSync(REPORTS, keep.length ? `${keep.join('\n')}\n` : '');
       }
     }
-    await evaluate(`localStorage.clear(); true`);
+    await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

@@ -69,7 +69,7 @@ async function main() {
     await send('Runtime.enable');
 
     const ALL_DONE = { seen: {}, tips: {}, welcomeDone: true, tipsOff: true };
-    const reset = (tours, extra = {}) => evaluate(`(() => { localStorage.clear(); ${tours ? `localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))});` : ''}
+    const reset = (tours, extra = {}) => evaluate(`(() => { localStorage.clear(); localStorage.setItem('panna_visited', '1'); ${tours ? `localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))});` : ''}
       ${Object.entries(extra).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(typeof v === 'string' ? v : JSON.stringify(v))});`).join('')} return true; })()`);
     const tours = () => evaluate(`JSON.parse(localStorage.getItem('panna_tours') || 'null')`);
     const where = () => evaluate(`({ path: location.pathname, screen: document.querySelector('#today-screen') ? 'today' : document.querySelector('#review-screen') ? 'review' : document.querySelector('#saved-screen') ? 'saved' : 'book' })`);
@@ -430,7 +430,7 @@ async function main() {
       && [still.spot, still.tip].every((t) => t.split(',').every((d) => parseFloat(d) < 0.001)), still);
     await key('Escape');
     await send('Emulation.setEmulatedMedia', { features: [] });
-    await evaluate(`localStorage.clear(); true`);
+    await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

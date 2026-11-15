@@ -71,7 +71,7 @@ async function main() {
 
     const DAY = 24 * 60 * 60 * 1000;
     const seed = (data) => evaluate(`(async () => {
-      localStorage.clear();
+      localStorage.clear(); localStorage.setItem('panna_visited', '1');
       const d = ${JSON.stringify(data)};
       if (d.words) {
         const list = [];
@@ -223,7 +223,7 @@ async function main() {
       check(`${sizeName}: no streak is shown without one`, !first.includes('in a row'));
       check(`${sizeName}: no Today line without lookups today`, !(await evaluate(`Boolean(document.querySelector('#today-lookups'))`)));
     }
-    await evaluate(`localStorage.clear(); true`);
+    await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

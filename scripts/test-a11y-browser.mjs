@@ -104,7 +104,7 @@ async function main() {
       await sleep(1200);
     };
     const quiet = { seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true };
-    const seed = (tours, extra = '') => evaluate(`(async () => { localStorage.clear(); ${tours ? `localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))});` : ''} ${extra}; return true; })()`);
+    const seed = (tours, extra = '') => evaluate(`(async () => { localStorage.clear(); localStorage.setItem('panna_visited', '1'); ${tours ? `localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))});` : ''} ${extra}; return true; })()`);
     const saveWords = `{ const list = []; for (const h of ['camel', 'ceremony', 'abandon', 'calm']) list.push({ ...(await (await fetch('/api/word/' + h)).json()).entry, saved_at: Date.now() });
       localStorage.setItem('panna_saved_words', JSON.stringify(list));
       localStorage.setItem('panna_review', JSON.stringify(Object.fromEntries(list.map((e) => [e.normalized, { box: 1, due_at: 0, right: 1, wrong: 0 }])))); }`;
@@ -291,7 +291,7 @@ async function main() {
         check('phone: page arrows are 44 px', await evaluate(`[...document.querySelectorAll('button[aria-label="Previous page"], button[aria-label="Next page"]')].every((b) => b.getBoundingClientRect().height >= 44 && b.getBoundingClientRect().width >= 44)`));
       }
     }
-    await evaluate(`localStorage.clear(); true`);
+    await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }
     if (edge.pid) spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });

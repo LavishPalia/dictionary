@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { BookSpread } from '@/components/book/BookSpread';
 import { ScaledSpread } from '@/components/book/ScaledSpread';
 import { MobilePage } from '@/components/book/MobilePage';
@@ -44,8 +44,12 @@ import type { LearnAction } from '@/lib/learn-content';
 import { iosShortcutLink } from '@/lib/ios-shortcut';
 import { readLaunch } from '@/lib/launch';
 import { browserBlocksCounting, pageview, setUsageCounts, startAnalytics, syncBookplate, track, usageCountsChosen } from '@/lib/analytics';
+import { VISITED_KEY } from '@/lib/first-visit';
+import { OfferDock, FirstVisitHint } from '@/components/shell/OfferDock';
 import { bookplateOfferDone, endBookplateOffer, loadBookplate, storeBookplate, unshareBookplate, type Bookplate } from '@/lib/bookplate';
-import { BookplateSheet } from '@/components/bookplate/Bookplate';
+import { BookplateOffer, BookplateSheet } from '@/components/bookplate/Bookplate';
+import { InstallOffer } from '@/components/shell/InstallOffer';
+import { nextOffer, noteInstallOffer, readInstallOffer, type Offer } from '@/lib/offers';
 import { cleanShared, cutText, tokenize } from '@/lib/sentence';
 import { SentenceSheet } from '@/components/share/SentenceSheet';
 import { loadHistory, markNudged, mergeHistory, recentWords, recordLookup, removeWord, saveHistory, clearHistory, shouldNudge, touchWord, type HistoryWord, type LookupSource, type LookupWord } from '@/lib/history';
@@ -146,7 +150,6 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const saveBookplate = (plate: Bookplate) => {
     storeBookplate(plate);
     setBookplate(loadBookplate());
-    setBookplateOffer(false);
     setShowBookplate(false);
     syncBookplate();
   };
@@ -956,6 +959,27 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
     setHomeSection(target);
     setSection(target);
   };
+  // A first visit to the front page (src/lib/first-visit.ts; the head script marked it before first paint, and CSS
+  // keeps Today unpainted): show the book at its page 1 instead, in place of "/" (no history entry is added, so Back
+  // leaves rather than finding a Today), with the "tap any word" card over it. Before the first effects run, so the
+  // front page's Today is never counted as seen.
+  const firstVisitRef = useRef(false);
+  const [firstVisitHint, setFirstVisitHint] = useState(false);
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    if (html.getAttribute('data-first-visit') !== '1') return;
+    html.removeAttribute('data-first-visit');
+    if (initialSection !== 'today') return;
+    firstVisitRef.current = true;
+    try { localStorage.setItem(VISITED_KEY, '1'); } catch {}
+    window.history.replaceState(stripSection(), '', `/page/${currentPage}`);
+    sectionEntryRef.current = false;
+    setHomeSection('book');
+    setSection('book');
+    setFirstVisitHint(true);
+  // once, on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Leave Saved / Review / Today for the book because the caller is about to turn to a page (which adds its own
   // history entry): no Back step is spent on the screen being left.
   const showBookForNavigation = () => {
@@ -1013,15 +1037,16 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const { offerTip } = tours;
   // Page views: one per screen opened (and per word card opened), never per page turn. A tour walking through screens
   // is not the reader opening them.
-  useEffect(() => { if (!tours.active) pageview(section); }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A first visit's front page was the book from the start: its Today, swapped out before paint, is not a view.
+  useEffect(() => { if (!tours.active && !(firstVisitRef.current && section === 'today')) pageview(section); }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
   const cardOpen = showWordDrawer && activeWordEntry !== null;
   useEffect(() => { if (cardOpen && !tours.active) pageview('word'); }, [cardOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   // One-time tips, the first time each thing is used (never during a tour; the layer waits for its target).
   useEffect(() => {
-    if (section !== 'book' || showWordDrawer || showMenu || !isBookOpen) return;
+    if (section !== 'book' || showWordDrawer || showMenu || !isBookOpen || firstVisitHint) return; // the first-visit card says it
     const timer = setTimeout(() => offerTip('book'), 900);
     return () => clearTimeout(timer);
-  }, [section, showWordDrawer, showMenu, isBookOpen, offerTip]);
+  }, [section, showWordDrawer, showMenu, isBookOpen, offerTip, firstVisitHint]);
   useEffect(() => {
     if (!showWordDrawer) return;
     const timer = setTimeout(() => offerTip('word-card'), 500);
@@ -1067,14 +1092,44 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Opening it is remembered (Today then shows a small link instead of its card); wait for the saved state to load,
   // so this does not write over it.
   const { loaded: toursLoaded, markGuideOpened } = tours;
-  const [bookplateOffer, setBookplateOffer] = useState(false);
-  const savedCountRef = useRef(0);
-  savedCountRef.current = bookmarkedWords.length;
+  // ── The offer dock (src/lib/offers.ts): the first-visit card, then the bookplate after the first lookup, then
+  // installing after the second; one at a time, over any screen but Review and the study guide. ──
+  const lookupCount = useMemo(() => history.reduce((n, w) => n + w.lookups.length, 0), [history]);
+  // Bumped when an offer is answered, so the next one is worked out from storage again.
+  const [offersAnswered, setOffersAnswered] = useState(0);
+  const installPlatform: 'prompt' | 'ios' = offline.install ? 'prompt' : 'ios';
+  const offer = useMemo<Offer | null>(() => {
+    if (!savedLoaded || !toursLoaded || !bookplateLoaded) return null;
+    return nextOffer({
+      hint: firstVisitHint, lookups: lookupCount, plate: Boolean(bookplate), bookplateDone: bookplateOfferDone(),
+      install: { possible: Boolean(offline.install) || offline.installHint === 'ios', ...readInstallOffer() }, now: Date.now(),
+    });
+  // offersAnswered: storage changed
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedLoaded, toursLoaded, bookplateLoaded, firstVisitHint, lookupCount, bookplate, offline.install, offline.installHint, offersAnswered]);
+  const dockHidden = tours.active || tours.sheetOpen || showWordDrawer || showMenu || showBookplate || showCreditsModal || goToOpen
+    || shareText !== null || section === 'review' || section === 'learn'
+    || (section === 'today' && tours.showWelcome); // Today's own welcome card is up: one card at a time
+  // Each card is counted once per open, when it first shows.
+  const offersShownRef = useRef(new Set<Offer>());
   useEffect(() => {
-    if (section !== 'today' || !savedLoaded || !toursLoaded || !bookplateLoaded) return;
-    setBookplateOffer(false); // replaced by the offer dock (src/lib/offers.ts)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section, savedLoaded, toursLoaded, bookplateLoaded]);
+    if (dockHidden || !offer || offer === 'hint' || offersShownRef.current.has(offer)) return;
+    offersShownRef.current.add(offer);
+    if (offer === 'bookplate') track('bookplate_offer', { action: 'shown' });
+    else track('install_offer', { action: 'shown', platform: installPlatform });
+  }, [offer, dockHidden, installPlatform]);
+  // The first-visit card ends with Got it, the tour, or the first word looked up (it has done its job then).
+  const endFirstVisitHint = (action: 'dismiss' | 'tour' | 'used') => {
+    setFirstVisitHint(false);
+    track('first_visit_hint', { action });
+    tours.markTipSeen('book');
+    if (action === 'tour') tours.startTour('start');
+    else tours.dismissWelcome();
+  };
+  useEffect(() => {
+    if (firstVisitHint && lookupCount > 0) endFirstVisitHint('used');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookupCount]);
   useEffect(() => {
     if (section === 'learn' && toursLoaded) markGuideOpened();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1665,7 +1720,7 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           onContinueReading={(page) => { showBookForNavigation(); setHighlightedWord(''); turnToPage(page); }}
           onOpenWord={(entry) => { recordEntry(entry, 'other'); setActiveWordEntry(entry); setShowWordDrawer(true); }}
           onToggleSave={handleToggleWordBookmark}
-          showWelcome={tours.showWelcome}
+          showWelcome={tours.showWelcome && !firstVisitHint}
           onTakeTour={() => tours.startTour('start')}
           onDismissWelcome={tours.dismissWelcome}
           guideOpened={tours.loaded ? tours.guideOpened : null}
@@ -1679,9 +1734,6 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
           dailyGoal={dailyGoal}
           onSetGoal={(g) => setDailyGoal(clampGoal(g))}
           bookplate={bookplate}
-          offerBookplate={bookplateOffer}
-          onWriteBookplate={() => openBookplate('bookplate-write')}
-          onDismissBookplate={() => { endBookplateOffer(); setBookplateOffer(false); }}
         />
       )}
 
@@ -1796,6 +1848,20 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         bookplate={bookplate}
         onOpenBookplate={() => openBookplate('menu-btn')}
       />
+
+      <OfferDock offer={offer} hidden={dockHidden}>
+        {offer === 'hint' && <FirstVisitHint onTour={() => endFirstVisitHint('tour')} onDismiss={() => endFirstVisitHint('dismiss')} />}
+        {offer === 'bookplate' && (
+          <BookplateOffer
+            onWrite={() => { track('bookplate_offer', { action: 'write' }); openBookplate('bookplate-write'); }}
+            onNotNow={() => { track('bookplate_offer', { action: 'dismiss' }); endBookplateOffer(); setOffersAnswered((n) => n + 1); }} />
+        )}
+        {offer === 'install' && (
+          <InstallOffer platform={installPlatform}
+            onInstall={() => { track('install_offer', { action: 'install', platform: installPlatform }); noteInstallOffer('installed', Date.now()); setOffersAnswered((n) => n + 1); void offline.install?.(); }}
+            onDismiss={() => { track('install_offer', { action: 'dismiss', platform: installPlatform }); noteInstallOffer('dismissed', Date.now()); setOffersAnswered((n) => n + 1); }} />
+        )}
+      </OfferDock>
 
       <BookplateSheet
         open={showBookplate}
