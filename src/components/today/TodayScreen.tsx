@@ -21,8 +21,12 @@ import { GoalEditor } from './desk/GoalEditor';
 import { DeskBook } from './desk/DeskBook';
 import { IntroFilm } from './desk/IntroFilm';
 import type { TodayWord } from '@/lib/today-words';
-import { BookplateGreeting, BookplateOffer } from '@/components/bookplate/Bookplate';
+import { BookplateGreeting } from '@/components/bookplate/Bookplate';
 import type { Bookplate } from '@/lib/bookplate';
+import { track } from '@/lib/analytics';
+
+/** Today's buttons, counted by which card (never which word). */
+const clicked = (card: string, then: () => void) => () => { track('today_card_clicked', { card }); then(); };
 
 interface TodayScreenProps {
   dueCount: number;
@@ -62,11 +66,8 @@ interface TodayScreenProps {
   todaysWords: TodayWord[];
   dailyGoal: number;
   onSetGoal: (goal: number) => void;
-  /** The reader's bookplate (a greeting with their name), and the one-time offer to write one. */
+  /** The reader's bookplate: a greeting with their name. (Its offer is in the offer dock.) */
   bookplate: Bookplate | null;
-  offerBookplate: boolean;
-  onWriteBookplate: () => void;
-  onDismissBookplate: () => void;
 }
 
 // The first screen: today's review, where you left off in the book, and a word of the day.
@@ -114,8 +115,8 @@ export function TodayScreen(props: TodayScreenProps) {
       <p className="tour-hi" lang="hi">नए हैं? एक मिनट का टूर देखें।</p>
       <p className="today-muted">Find words, save them, and remember them. Any time later: ⋯ → Guided tours.</p>
       <div className="today-actions">
-        <Button variant="primary" id="today-take-tour" onClick={props.onTakeTour}>Take the tour</Button>
-        <Button id="today-not-now" onClick={props.onDismissWelcome}>Not now</Button>
+        <Button variant="primary" id="today-take-tour" onClick={clicked('tour', props.onTakeTour)}>Take the tour</Button>
+        <Button id="today-not-now" onClick={clicked('tour-not-now', props.onDismissWelcome)}>Not now</Button>
       </div>
     </>
   );
@@ -133,7 +134,7 @@ export function TodayScreen(props: TodayScreenProps) {
 
       <DeskScene wide={wide} light={light} onToggleLamp={sw.toggle}
         book={<DeskBook page={pageData?.page_number === page ? pageData : null} pageNumber={page} started={lastPage !== null}
-          onOpen={() => props.onContinueReading(page)} onAnnounce={sw.say}
+          onOpen={clicked('continue', () => props.onContinueReading(page))} onAnnounce={sw.say}
           welcome={props.showWelcome ? <div className="desk-welcome" id="today-welcome" role="group" aria-labelledby="today-welcome-title">{welcomeBody}</div> : undefined}
           film={props.showWelcome ? <IntroFilm /> : undefined} />}
         notebook={<GoalNotebook words={props.todaysWords} goal={props.dailyGoal} editing={editing}
@@ -158,10 +159,6 @@ export function TodayScreen(props: TodayScreenProps) {
         </Card>
       )}
 
-      {props.offerBookplate && !props.showWelcome && (
-        <BookplateOffer onWrite={props.onWriteBookplate} onNotNow={props.onDismissBookplate} />
-      )}
-
       <DuelCard />
 
       <Card className="today-card" id="today-review">
@@ -173,7 +170,7 @@ export function TodayScreen(props: TodayScreenProps) {
           <>
             <p className="today-big">{dueCount} word{dueCount === 1 ? ' is' : 's are'} due</p>
             <p className="today-muted">About {minutes} minute{minutes === 1 ? '' : 's'} · from words you saved</p>
-            <Button variant="primary" full id="today-start-review" onClick={props.onStartReview}>Start review</Button>
+            <Button variant="primary" full id="today-start-review" onClick={clicked('review', props.onStartReview)}>Start review</Button>
           </>
         ) : savedWords > 0 ? (
           <>
@@ -196,14 +193,14 @@ export function TodayScreen(props: TodayScreenProps) {
             <p className="today-mid">Page {page.toLocaleString('en-IN')}</p>
             <p className="today-muted today-tight">{lastLabel ?? ' '}</p>
           </div>
-          <Button id="today-continue-btn" onClick={() => props.onContinueReading(page)}>Open book ›</Button>
+          <Button id="today-continue-btn" onClick={clicked('continue', () => props.onContinueReading(page))}>Open book ›</Button>
         </div>
       </Card>
       )}
 
       {props.lookedUpToday.total > 0 && (
         // On the desk, like the study guide's link.
-        <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-lookups" id="today-lookups" onClick={props.onOpenHistory}>
+        <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-lookups" id="today-lookups" onClick={clicked('lookups', props.onOpenHistory)}>
           {`${props.lookedUpToday.total} word${props.lookedUpToday.total === 1 ? '' : 's'} looked up today${props.lookedUpToday.unsaved > 0 ? ` · ${props.lookedUpToday.unsaved} not saved` : ''} ›`}
         </button>
       )}
@@ -230,8 +227,8 @@ export function TodayScreen(props: TodayScreenProps) {
           <p className="today-hi" lang="hi">{word.meaning_hi}</p>
           <p className="today-def">{word.definition_en}</p>
           <div className="today-actions">
-            <Button size="small" id="today-word-open" onClick={() => props.onOpenWord(word)}>Open</Button>
-            <Button size="small" id="today-word-save" variant={saved ? 'primary' : 'paper'} aria-pressed={saved} onClick={() => props.onToggleSave(word)}>
+            <Button size="small" id="today-word-open" onClick={clicked('word-open', () => props.onOpenWord(word))}>Open</Button>
+            <Button size="small" id="today-word-save" variant={saved ? 'primary' : 'paper'} aria-pressed={saved} onClick={clicked('word-save', () => props.onToggleSave(word))}>
               <StarIcon />{saved ? 'Saved' : 'Save word'}
             </Button>
           </div>
@@ -240,10 +237,10 @@ export function TodayScreen(props: TodayScreenProps) {
 
       {props.guideOpened === null ? null : props.guideOpened ? (
         // On the desk, like Saved's link: the plain link colour is too dark there.
-        <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-learn-link" id="today-learn-link" onClick={props.onOpenGuide}>How to learn with Panna ›</button>
+        <button type="button" className="lookup-link tour-howlink tour-howlink--desk today-learn-link" id="today-learn-link" onClick={clicked('learn', props.onOpenGuide)}>How to learn with Panna ›</button>
       ) : (
         <Card className="today-card today-learn" id="today-learn">
-          <button type="button" className="today-learn-btn" onClick={props.onOpenGuide}>
+          <button type="button" className="today-learn-btn" onClick={clicked('learn', props.onOpenGuide)}>
             <span className="today-mid">How to learn with Panna ›</span>
             <span className="today-muted today-tight">A 15-minute routine that makes words stick.</span>
           </button>

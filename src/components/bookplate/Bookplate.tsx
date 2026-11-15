@@ -114,7 +114,7 @@ export function BookplateSheet({ open, plate, canShare, onSave, onRemove, onClos
 /** Today's one-time offer, after the first saved word. */
 export function BookplateOffer({ onWrite, onNotNow }: { onWrite: () => void; onNotNow: () => void }) {
   return (
-    <Card className="today-card bp-offer" id="today-bookplate" aria-labelledby="today-bookplate-title">
+    <Card className="today-card offer-card bp-offer" id="today-bookplate" aria-labelledby="today-bookplate-title">
       <div className="bp-offer-text">
         <span className="ui-label">Your bookplate</span>
         <p className="today-big" id="today-bookplate-title">Make this book yours</p>

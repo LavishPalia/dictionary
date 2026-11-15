@@ -578,7 +578,7 @@ await run('Desk scene', async (t: any) => {
 await run('Desk film and the service worker', async (t: any) => {
   const { check, evaluate, waitFor, open, go, send } = t;
   await t.setSize(DESKTOP);
-  await open('/', { panna_desk: { noted: true } });
+  await open('/', { panna_visited: '1', panna_desk: { noted: true } }); // Today's welcome film, not a first visit's book
   await waitFor(`navigator.serviceWorker?.controller !== null && navigator.serviceWorker?.controller !== undefined`, 15000) || (await go('/'), await waitFor(`Boolean(navigator.serviceWorker?.controller)`, 15000));
   const ready = await waitFor(`Boolean(document.querySelector('#desk-film-play'))`, 20000);
   check('sw: the first-visit film shows with the service worker in charge', ready, await evaluate(`document.querySelector('#today-screen')?.innerText.slice(0, 200) ?? location.href`));

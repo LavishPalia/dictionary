@@ -3,7 +3,7 @@
 // Usage: npx tsx scripts/test-bookplate.ts
 import {
   cleanName, DEFAULT_EMBLEM, EMBLEMS, greetingFor, initialOf, isDevanagari, limitName, NAME_MAX, nameLength,
-  offerBookplate, personName, readBookplate,
+  personName, readBookplate,
 } from '../src/lib/bookplate';
 import { createBackup, parseBackup, restoreData, type BackupData } from '../src/lib/backup';
 
@@ -45,15 +45,9 @@ check('unticked: the nickname', personName('Indigo Owl 3f2', { ...plate, share: 
 check('Usage counts off: the nickname', personName('Indigo Owl 3f2', plate, false) === 'Indigo Owl 3f2');
 check('no plate: the nickname', personName('Indigo Owl 3f2', null, true) === 'Indigo Owl 3f2');
 
-// ── Greeting and offer ──
+// ── Greeting (the offer's rule is in test-offers.ts) ──
 check('morning, afternoon, evening by the clock', greetingFor(5) === 'Good morning' && greetingFor(11) === 'Good morning' && greetingFor(12) === 'Good afternoon'
   && greetingFor(16) === 'Good afternoon' && greetingFor(17) === 'Good evening' && greetingFor(23) === 'Good evening' && greetingFor(2) === 'Good evening');
-const base = { savedWords: 1, plate: null, offerDone: false, welcomeShowing: false };
-check('offered after the first saved word', offerBookplate(base));
-check('not before any word is saved (so never on a first visit)', !offerBookplate({ ...base, savedWords: 0 }));
-check('not after Not now', !offerBookplate({ ...base, offerDone: true }));
-check('not once there is a plate', !offerBookplate({ ...base, plate }));
-check('not beside the tour\'s welcome card', !offerBookplate({ ...base, welcomeShowing: true }));
 
 // ── Backups ──
 const book = { dataVersion: 'v1', totalPages: 95 };

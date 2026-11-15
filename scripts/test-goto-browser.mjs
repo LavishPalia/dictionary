@@ -75,7 +75,7 @@ async function main() {
     const sheetOpen = () => evaluate(`Boolean(document.querySelector('#goto-sheet[role="dialog"]'))`);
     const openGoTo = async () => { await evaluate(`document.querySelector('#page-number-btn')?.click(); true`); await sleep(300); };
     const typePage = (text) => evaluate(`(() => { const input = document.querySelector('#goto-page-input'); if (!input) return false; const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ${JSON.stringify(text)}); input.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
-    const quiet = () => evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', JSON.stringify({ seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true })); true`);
+    const quiet = () => evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', JSON.stringify({ seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true })); true`);
     await send('Page.enable');
     await send('Runtime.enable');
 

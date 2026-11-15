@@ -10,7 +10,7 @@
 .app-search { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .app-count { font: 13px var(--font-fell); color: var(--brass-muted); }
 .app-count::before { content: '· '; }
-#open-today-btn[aria-pressed='true'], #open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass-soft); }
+#open-book-btn[aria-pressed='true'], #open-today-btn[aria-pressed='true'], #open-bookmarks-btn[aria-pressed='true'], #open-review-btn[aria-pressed='true'] { background: rgba(201, 162, 74, 0.16); border-color: var(--brass); color: var(--brass-soft); }
 
 /* Search field in the header (the results list is styled by LookupBar). */
 .app-lookup {
@@ -27,6 +27,12 @@
 .app-lookup input::placeholder { color: var(--ink-soft); opacity: 0.85; }
 .app-lookup-key { font: 13px var(--font-fell-sc); color: var(--page-muted); white-space: nowrap; }
 .app-lookup-key kbd { font: inherit; padding: 0 5px; border: 1px solid var(--rule); border-radius: var(--radius-sm); }
+
+/* Narrow desktops: the header's six buttons leave the search too little room, so the wordmark's "English → हिंदी"
+   and the "Press /" hint give way. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .app-wordmark-en, .app-lookup-key { display: none; }
+}
 
 /* Phone bottom bar */
 .app-bottomnav { display: none; }

@@ -11,6 +11,7 @@ import '@/styles/today.css';
 import '@/styles/desk.css';
 import '@/styles/book-lamp.css';
 import '@/styles/bookplate.css';
+import '@/styles/offers.css';
 import '@/styles/tour.css';
 import '@/styles/learn.css';
 import '@/styles/progress.css';
@@ -18,6 +19,7 @@ import '@/styles/motion.css';
 import '@/styles/color-mix-fallback.css'; // last, so its rules win where color-mix() is unsupported
 import { Caveat, IM_Fell_English, IM_Fell_English_SC, Tiro_Devanagari_Hindi } from 'next/font/google';
 import { PRE_PAINT_SCRIPT } from '@/lib/lighting';
+import { FIRST_VISIT_PRE_PAINT } from '@/lib/first-visit';
 
 // Self-hosted at build time: no request to Google at runtime, and fallback metrics are adjusted so text
 // does not jump when the real font arrives. Components use the --font-* tokens from globals.css, never
@@ -57,6 +59,7 @@ export default function RootLayout({
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: PRE_PAINT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: FIRST_VISIT_PRE_PAINT }} />
       </head>
       <body>{children}</body>
     </html>

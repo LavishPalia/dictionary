@@ -98,7 +98,7 @@ async function main() {
       panna_duel_week: { week: 'cached' },
     };
     const seed = (words, extra = {}) => evaluate(`(async () => {
-      localStorage.clear();
+      localStorage.clear(); localStorage.setItem('panna_visited', '1');
       const list = [];
       for (const h of ${JSON.stringify(words)}) list.push({ ...(await (await fetch('/api/word/' + h)).json()).entry, saved_at: Date.now() });
       localStorage.setItem('panna_saved_words', JSON.stringify(list));
@@ -146,7 +146,7 @@ async function main() {
       await key('Escape');
 
       // Lose everything, then restore by merging.
-      await evaluate(`localStorage.clear(); location.reload(); true`);
+      await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); location.reload(); true`);
       await waitHydrated();
       check(`${sizeName}: a cleared browser has nothing saved`, (await state()).words === '');
       await evaluate(`document.querySelector('#menu-btn').click(); true`);
@@ -222,7 +222,7 @@ async function main() {
       check(`${sizeName}: a wrong file is refused with a plain explanation`, err === 'This file isn’t a Panna backup.', err);
       check(`${sizeName}: and nothing changes`, JSON.stringify(await state()) === JSON.stringify(beforeBad));
       await key('Escape');
-      await evaluate(`localStorage.clear(); true`);
+      await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
     }
     fs.rmSync(DOWNLOADS, { recursive: true, force: true });
   } finally {

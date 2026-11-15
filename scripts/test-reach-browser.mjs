@@ -152,7 +152,7 @@ async function main() {
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       const { identifier: fake } = await send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_SPEECH });
       check(`${sizeName}: app hydrates`, await open(`/page/${CALM_PAGE}`, size));
-      await evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
+      await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(quiet))}); true`);
       await open(`/page/${CALM_PAGE}`, size);
 
       const mic = await evaluate(`(() => { const b = document.querySelector('#voice-btn'); if (!b) return null; const r = b.getBoundingClientRect(); return { label: b.getAttribute('aria-label'), w: r.width, h: r.height, inBox: Boolean(b.closest('.app-lookup')) }; })()`);

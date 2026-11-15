@@ -73,7 +73,7 @@ async function main() {
       // A first visit (the welcome card shows on Today) with one-time tips off, so they cannot land in other views.
       await send('Page.navigate', { url: `${BASE}/page/1` });
       await sleep(1500);
-      await evaluate(`(() => { localStorage.clear(); localStorage.setItem('panna_tours', JSON.stringify({ seen: {}, tips: {}, tipsOff: true })); return true; })()`);
+      await evaluate(`(() => { localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', JSON.stringify({ seen: {}, tips: {}, tipsOff: true })); return true; })()`);
       for (const view of VIEWS) {
         await send('Page.navigate', { url: `${BASE}${view.path}` });
         let ready = false;

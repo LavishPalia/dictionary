@@ -73,7 +73,7 @@ async function main() {
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       check(`${sizeName}: app hydrates`, await open('/page/1', size));
-      await evaluate(`localStorage.clear(); true`);
+      await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
 
       // From the book: Above has an opposite and no similar words.
       const abovePage = await pageOf('Above');
@@ -178,7 +178,7 @@ async function main() {
         const feedback = await evaluate(`document.querySelector('.review-feedback')?.innerText ?? ''`);
         check(`${sizeName}: a right answer says what the opposite is`, feedback.startsWith('Right!') && feedback.includes(`opposite of ${seen.word}`) && feedback.includes(answer), feedback);
       }
-      await evaluate(`localStorage.clear(); true`);
+      await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); true`);
     }
   } finally {
     if (socket) { try { socket.send(JSON.stringify({ id: 999999, method: 'Browser.close' })); } catch {} socket.close(); }

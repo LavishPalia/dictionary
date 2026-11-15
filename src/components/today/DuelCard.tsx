@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui';
+import { track } from '@/lib/analytics';
 import { duelAction, duelEntryVisible, duelLine, duelSubLine, todayDuel, type TodayDuel } from '@/duel/platform/web/entry';
 import { OUTBOX_KEY, readOutbox } from '@/duel/net-rules';
 import { webNet } from '@/duel/platform/web/net';
@@ -55,7 +56,7 @@ export function DuelCard() {
           {sub && <p className="today-muted today-tight">{sub}</p>}
         </div>
       </div>
-      {action && <a className="ui-btn ui-btn--primary ui-btn--full today-duel-btn" id="today-duel-btn" href={action.href}>{action.label}</a>}
+      {action && <a className="ui-btn ui-btn--primary ui-btn--full today-duel-btn" id="today-duel-btn" href={action.href} onClick={() => track('today_card_clicked', { card: 'duel' })}>{action.label}</a>}
     </Card>
   );
 }

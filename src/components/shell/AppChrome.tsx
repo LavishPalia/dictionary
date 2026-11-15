@@ -4,12 +4,13 @@ import type { ReactNode } from 'react';
 import { Button, IconButton } from '@/components/ui';
 import { BookIcon, CardsIcon, MoreIcon, PlayIcon, StarIcon, SunIcon } from '@/components/ui/icons';
 
-// Top bar. Desktop: wordmark, search, Saved, ⋯. Phones: search and ⋯ only (Saved lives in the bottom bar).
+// Top bar. Desktop: wordmark, search, Book, Today, Saved, Review, Play, ⋯. Phones: search and ⋯ only (Saved lives in the bottom bar).
 // Which layout shows is decided in CSS at the same 1024px breakpoint the book uses.
-export function AppHeader({ search, savedCount, onOpenToday, onOpenSaved, onOpenReview, section, dueCount, onOpenMenu, menuOpen, showPlay }: {
+export function AppHeader({ search, savedCount, onOpenBook, onOpenToday, onOpenSaved, onOpenReview, section, dueCount, onOpenMenu, menuOpen, showPlay }: {
   search: ReactNode;
   /** The way into Panna Duel (a page of its own at /play), hidden on production until launch. */
   showPlay: boolean;
+  onOpenBook: () => void;
   onOpenToday: () => void;
   savedCount: number;
   onOpenSaved: () => void;
@@ -26,6 +27,9 @@ export function AppHeader({ search, savedCount, onOpenToday, onOpenSaved, onOpen
         <span className="app-wordmark-en">English → हिंदी</span>
       </div>
       <div className="app-search">{search}</div>
+      <Button variant="desk" id="open-book-btn" className="app-desktop-only" onClick={onOpenBook} aria-pressed={section === 'book'}>
+        <BookIcon /> Book
+      </Button>
       <Button variant="desk" id="open-today-btn" className="app-desktop-only" onClick={onOpenToday} aria-pressed={section === 'today'}>
         <SunIcon /> Today
       </Button>

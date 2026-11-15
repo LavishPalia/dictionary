@@ -62,11 +62,13 @@ export function useOffline(meta: { total_pages: number; data_version: string }, 
     }
   }, [meta]);
 
-  const install = useCallback(async () => {
-    if (!installEvent) return;
+  /** Shows the browser's install dialog; resolves to the reader's answer ('accepted' or 'dismissed'), or null. */
+  const install = useCallback(async (): Promise<string | null> => {
+    if (!installEvent) return null;
     await installEvent.prompt();
-    await installEvent.userChoice.catch(() => null);
+    const choice = await installEvent.userChoice.catch(() => null);
     setInstallEvent(null);
+    return choice?.outcome ?? null;
   }, [installEvent]);
 
   const current = saved?.data_version === meta.data_version;

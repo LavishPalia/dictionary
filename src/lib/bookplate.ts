@@ -72,11 +72,6 @@ export function personName(nickname: string, plate: Bookplate | null, countsOn: 
   return plate && plate.share && countsOn ? `${plate.name} · ${nickname}` : nickname;
 }
 
-/** Whether Today offers the bookplate: after the first saved word, once, never beside the tour's welcome card. */
-export function offerBookplate(s: { savedWords: number; plate: Bookplate | null; offerDone: boolean; welcomeShowing: boolean }): boolean {
-  return s.savedWords > 0 && !s.plate && !s.offerDone && !s.welcomeShowing;
-}
-
 // ── Storage (browser only) ──
 
 function readSettings(): Record<string, unknown> {

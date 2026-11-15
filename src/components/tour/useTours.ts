@@ -97,6 +97,7 @@ export function useTours(app: TourApp) {
 
   /** Starts a tour; `demo` is the word the word card tour shows (the open card's word when started from it). */
   const startTour = useCallback(async (id: TourId, demoWord?: DictionaryEntry) => {
+    track('tour_started', { tour: id });
     const a = appRef.current;
     // A click that does not focus its button (Safari) leaves focus on <body>: no opener then.
     const active = document.activeElement as HTMLElement | null;
@@ -211,5 +212,7 @@ export function useTours(app: TourApp) {
     markGuideOpened: () => { if (!stateRef.current.guideOpened) update((s) => ({ ...s, guideOpened: true })); },
     tipsAgain: () => update((s) => ({ ...s, tips: {}, tipsOff: false })),
     tipsOff: () => update((s) => ({ ...s, tipsOff: true })),
+    /** A tip whose job something else has done (the first-visit card covers the book's tip). */
+    markTipSeen: (id: TipId) => update((s) => ({ ...s, tips: { ...s.tips, [id]: Date.now() } })),
   };
 }

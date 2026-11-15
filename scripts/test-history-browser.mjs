@@ -98,7 +98,7 @@ async function main() {
     const title = () => evaluate(`document.querySelector('#word-sheet-title')?.textContent`);
     const closeCard = async () => { await click('#close-word-drawer'); await sleep(400); };
     const quiet = { seen: { start: 1, word: 1, review: 1, settings: 1 }, tips: {}, welcomeDone: true, tipsOff: true, listOpened: true };
-    const reset = (tours = quiet) => evaluate(`localStorage.clear(); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))}); true`);
+    const reset = (tours = quiet) => evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); localStorage.setItem('panna_tours', ${JSON.stringify(JSON.stringify(tours))}); true`);
     await send('Page.enable');
     await send('Runtime.enable');
     // Headless Edge can lose window focus, and then focus events never fire (the search box's panel opens on focus).

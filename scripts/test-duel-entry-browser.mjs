@@ -88,7 +88,7 @@ async function main() {
     const today = async (store = {}, { card = true } = {}) => {
       await send('Page.navigate', { url: `${BASE}/icon.svg` });
       await waitFor(`location.pathname === '/icon.svg' && document.readyState === 'complete'`);
-      await evaluate(`localStorage.clear(); ${Object.entries(store).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(JSON.stringify(v))});`).join(' ')} true`);
+      await evaluate(`localStorage.clear(); localStorage.setItem('panna_visited', '1'); ${Object.entries(store).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(JSON.stringify(v))});`).join(' ')} true`);
       await send('Page.navigate', { url: `${BASE}/` });
       await waitFor(`Boolean(document.querySelector('#today-screen'))`, 20000);
       return card ? waitFor(`Boolean(document.querySelector('#today-duel'))`) : true;
