@@ -6,7 +6,8 @@ html[data-first-visit] #today-screen { visibility: hidden; }
 
 /* One card at a time, over the screen: bottom right on desktop, above the bottom bar on phones. */
 .offer-dock {
-  position: fixed; right: 24px; bottom: 24px; z-index: 55; width: min(420px, calc(100vw - 48px));
+  /* Under the header (40, and so under its search results) and the phone bottom bar (60); over the book (30s). */
+  position: fixed; right: 24px; bottom: 24px; z-index: 39; width: min(420px, calc(100vw - 48px));
   animation: offer-in 240ms ease-out;
 }
 .offer-card { box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3); }

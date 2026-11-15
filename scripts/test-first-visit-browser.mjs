@@ -146,6 +146,11 @@ async function main() {
     const bookShowing = () => evaluate(`[...document.querySelectorAll('.entry-headword')].some((el) => el.getBoundingClientRect().width > 0) && !document.querySelector('#today-screen')`);
     const visible = (sel) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; })()`);
     const tours = () => evaluate(`JSON.parse(localStorage.getItem('panna_tours') || '{}')`);
+    const type = async (value) => {
+      await evaluate(`(() => { const input = document.querySelector('#lookup-input'); input.focus(); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ${JSON.stringify(value)}); input.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
+      for (let i = 0; i < 30; i++) { await sleep(150); if (await evaluate(`document.querySelectorAll('#lookup-panel [role="option"]').length > 3`)) break; }
+      await sleep(200);
+    };
 
     for (const [sizeName, size] of [['desktop', DESKTOP], ['phone', PHONE]]) {
       // ── 1. A first visit to the front page opens the book, with the hint ──
@@ -165,6 +170,16 @@ async function main() {
       check(`${sizeName}: the book's one-time tip does not show beside the hint`, !(await visible('#tip-card')));
       check(`${sizeName}: no Today page view was counted, the book's was`, await waitFor(() => named('$pageview', runMark).some((e) => e.properties?.$pathname === '/page/[n]'))
         && !named('$pageview', runMark).some((e) => e.properties?.$pathname === '/'), named('$pageview', runMark).map((e) => e.properties?.$pathname));
+      check(`${sizeName}: the hint is counted as shown`, await waitFor(() => named('first_visit_hint', runMark).some((e) => e.properties?.action === 'shown')));
+      // A visitor who searches instead of tapping: the results list is above the card, never under it.
+      await type('ca');
+      const covered = await evaluate(`(() => { const p = document.querySelector('#lookup-panel').getBoundingClientRect();
+        // the results shown: inside the list's own box (it scrolls) and on screen
+        const opts = [...document.querySelectorAll('#lookup-panel [role="option"]')].filter((o) => { const r = o.getBoundingClientRect(); const y = r.top + r.height / 2; return r.height > 0 && y > p.top && y < p.bottom && y < innerHeight; });
+        return opts.filter((o) => { const r = o.getBoundingClientRect(); const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !top || !document.querySelector('#lookup-panel').contains(top); }).map((o) => o.textContent.slice(0, 20)); })()`);
+      check(`${sizeName}: every search result on screen is above the hint card`, Array.isArray(covered) && covered.length === 0, covered);
+      await key('Escape'); await sleep(300);
+      await evaluate(`document.activeElement?.blur(); true`);
       for (const light of ['day', 'evening']) {
         await evaluate(`document.documentElement.setAttribute('data-light', '${light}'); true`);
         await sleep(300);
@@ -180,6 +195,9 @@ async function main() {
       check(`${sizeName}: …and is counted`, await waitFor(() => named('first_visit_hint', mark).some((e) => e.properties?.action === 'dismiss')));
       await sleep(1500);
       check(`${sizeName}: the book's tip does not follow it`, !/Tap any word/.test((await text('#tip-card')) ?? ''), await text('#tip-card'));
+      mark = events().length;
+      await click(sizeName === 'phone' ? '#nav-today-btn' : '#open-today-btn');
+      check(`${sizeName}: opening Today later in the first visit counts a Today page view`, await waitFor(() => named('$pageview', mark).some((e) => e.properties?.$pathname === '/')), named('$pageview', mark).map((e) => e.properties?.$pathname));
       // The next open of the front page is Today, with no welcome card.
       await open('/', size);
       check(`${sizeName}: the next open of / is Today`, await exists('#today-screen') && await evaluate('location.pathname') === '/');
@@ -202,6 +220,9 @@ async function main() {
       await open('/', size);
       check(`${sizeName}: an existing reader (saved words, no visited mark) gets Today`, await exists('#today-screen') && !(await exists('#first-visit-hint')) && await evaluate('location.pathname') === '/');
       await fresh();
+      await open('/?utm_source=instagram&fbclid=abc', size);
+      check(`${sizeName}: a link with tracking parameters is still a first visit`, await waitFor(() => exists('#first-visit-hint'), 4000) && await evaluate('location.pathname') === '/page/1', await evaluate('location.pathname'));
+      await fresh();
       await open('/?share_text=camel', size);
       await sleep(800);
       check(`${sizeName}: a share launch on / is not a first visit`, !(await exists('#first-visit-hint')) && await evaluate('location.pathname') !== '/page/1', await evaluate('location.pathname'));
@@ -215,7 +236,7 @@ async function main() {
       const { identifier: fakePrompt } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `
         window.addEventListener('beforeinstallprompt', (e) => { if (!e.__fake) e.stopImmediatePropagation(); }, true);
         window.__fire = () => { const e = new Event('beforeinstallprompt'); e.__fake = true; e.prompt = async () => { window.__prompted = true; };
-          e.userChoice = Promise.resolve({ outcome: 'dismissed' }); window.dispatchEvent(e); };
+          Object.defineProperty(e, 'userChoice', { get: () => Promise.resolve({ outcome: window.__outcome || 'dismissed' }) }); window.dispatchEvent(e); };
         window.addEventListener('load', () => { for (const t of [300, 1500, 3000]) setTimeout(window.__fire, t); });` });
       const openWord = (n) => evaluate(`(() => { const el = [...document.querySelectorAll('.entry-text')].filter((el) => { const r = el.getBoundingClientRect(); return el.style.cursor === 'pointer' && r.width > 0 && r.top < innerHeight && r.bottom > 0; })[${n}]; if (!el) return false; el.click(); return true; })()`);
       const axeBoth = async (sel, what) => {
@@ -275,11 +296,22 @@ async function main() {
       await setSettings({ installOffer: { times: 1, lastAt: Date.now() - 8 * 24 * 60 * 60 * 1000 } });
       await open('/', size);
       check(`${sizeName}: a week later it comes back once`, await waitFor(() => exists('#install-offer'), 5000));
+      await evaluate(`window.__outcome = 'dismissed'; true`);
       await click('#install-offer-install');
       await sleep(600);
       check(`${sizeName}: Install opens the browser's install prompt`, await evaluate('window.__prompted === true'));
-      check(`${sizeName}: …and the offer never comes again`, (await settings()).installOffer?.times === 2 && !(await exists('#install-offer')), (await settings()).installOffer);
-      check(`${sizeName}: …counted`, await waitFor(() => named('install_offer', mark).some((e) => e.properties?.action === 'install')));
+      check(`${sizeName}: cancelling the browser's dialog counts as the second Not now: never again`, (await settings()).installOffer?.times === 2 && !(await exists('#install-offer')), (await settings()).installOffer);
+      check(`${sizeName}: …counted as cancel`, await waitFor(() => named('install_offer', mark).some((e) => e.properties?.action === 'cancel')));
+      // Accepted on its first showing: never offered again, counted as install.
+      await fresh({ panna_visited: '1', panna_tours: { welcomeDone: true, tipsOff: true }, panna_history: (() => { const t = Date.now() - 60000; return [{ normalized: 'calm', headword: 'Calm', meaning_hi: 'शांत', first_at: t, last_at: t, count: 2, lookups: [t, t + 1000], source: 'search', page: null }]; })(), panna_settings: { bookplateOffer: 'done' } });
+      await open('/', size);
+      check(`${sizeName}: the install offer shows for a reader with two lookups`, await waitFor(() => exists('#install-offer'), 5000));
+      mark = events().length;
+      await evaluate(`window.__outcome = 'accepted'; true`);
+      await click('#install-offer-install');
+      await sleep(600);
+      check(`${sizeName}: accepting the browser's dialog: never offered again`, (await settings()).installOffer?.times === 2 && !(await exists('#install-offer')), (await settings()).installOffer);
+      check(`${sizeName}: …counted as install`, await waitFor(() => named('install_offer', mark).some((e) => e.properties?.action === 'install')));
       await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: fakePrompt });
 
       // A browser that can't install (no prompt, not an iPhone): no install offer, whatever the lookups.

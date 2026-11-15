@@ -278,7 +278,7 @@ async function main() {
     check('no payload holds a headword, the search text, Hindi typed, a page address or the share text', leaks.length === 0 && pagePaths.length === 0, { leaks, pagePaths });
     check('no payload carries a page title', !/"\$?title"\s*:/.test(everything));
     check('every payload decoded', requests.every((r) => !r.body.startsWith('UNDECODABLE')), requests.filter((r) => r.body.startsWith('UNDECODABLE')).map((r) => r.body));
-    check('only the events of the plan are sent', events().every((e) => ['$pageview', '$pageleave', 'word_looked_up', 'word_saved', 'word_unsaved', 'review_finished', 'today_card_clicked', 'tour_started', '$set', '$identify'].includes(e.event)), [...new Set(events().map((e) => e.event))]);
+    check('only the events of the plan are sent', events().every((e) => ['$pageview', '$pageleave', 'word_looked_up', 'word_saved', 'word_unsaved', 'review_finished', 'today_card_clicked', 'tour_started', 'first_visit_hint', 'bookplate_offer', 'install_offer', '$set', '$identify'].includes(e.event)), [...new Set(events().map((e) => e.event))]);
 
     // ── 6. The Usage counts switch ──
     for (const [sizeName, size] of [['desktop', DESKTOP], ['phone', PHONE]]) {

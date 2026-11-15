@@ -18,21 +18,27 @@ check('no Panna storage, no query: first visit', isFirstVisit(none, ''));
 check('visited before: not first', !isFirstVisit(has('panna_visited', '1'), ''));
 for (const k of READER_KEYS) check(`existing reader (${k}): not first`, !isFirstVisit(has(k, k === 'panna_saved_words' ? '[{"normalized":"a"}]' : '{}'), ''));
 check('an empty saved list still counts as first', isFirstVisit(has('panna_saved_words', '[]'), ''));
-check('a launch query: not first', !isFirstVisit(none, '?share=hello'));
+for (const q of ['?share_text=hello', '?share_title=a', '?share_url=https%3A%2F%2Fx.in', '?voice=1', '?open=review', '?missing=%2Fpage%2F80'])
+  check(`a launch (${q}): not first`, !isFirstVisit(none, q));
+for (const q of ['?utm_source=instagram', '?fbclid=abc', '?gclid=1&utm_medium=cpc'])
+  check(`a tracking query (${q}) is still a first visit`, isFirstVisit(none, q));
 check('storage throws: not first', !isFirstVisit(() => { throw new Error('blocked'); }, ''));
 
 // The head script follows the same rule (run with a fake page).
-function prePaint(path: string, search: string, store: Record<string, string>, throws = false): boolean {
+function prePaint(path: string, search: string, store: Record<string, string>, throws = false, userAgent = 'Mozilla/5.0 (Linux; Android 14) Chrome/150 Mobile Safari/537.36'): boolean {
   let marked = false;
   const localStorage = { getItem: (k: string) => { if (throws) throw new Error('blocked'); return store[k] ?? null; } };
   const document = { documentElement: { setAttribute: (n: string, v: string) => { if (n === 'data-first-visit' && v === '1') marked = true; } } };
-  new Function('location', 'localStorage', 'document', FIRST_VISIT_PRE_PAINT)({ pathname: path, search }, localStorage, document);
+  new Function('location', 'localStorage', 'document', 'navigator', 'URLSearchParams', FIRST_VISIT_PRE_PAINT)({ pathname: path, search }, localStorage, document, { userAgent }, URLSearchParams);
   return marked;
 }
 check('head script: marks a first visit to /', prePaint('/', '', {}));
 check('head script: an empty saved list still marks', prePaint('/', '', { panna_saved_words: '[]' }));
 check('head script: not on another address', !prePaint('/page/4', '', {}) && !prePaint('/word/a', '', {}));
-check('head script: not with a launch query', !prePaint('/', '?share=hello', {}));
+check('head script: not with a launch query', !prePaint('/', '?share_text=hello', {}) && !prePaint('/', '?voice=1', {}) && !prePaint('/', '?open=review', {}));
+check('head script: a tracking query still marks', prePaint('/', '?utm_source=instagram&fbclid=abc', {}));
+for (const ua of ['Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', 'Mozilla/5.0 (compatible; bingbot/2.0)', 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) Chrome/120 Mobile Safari/537.36 Chrome-Lighthouse'])
+  check(`head script: a crawler (${ua.slice(0, 40)}…) keeps the home page`, !prePaint('/', '', {}, false, ua));
 check('head script: not for a visited or existing reader', !prePaint('/', '', { panna_visited: '1' }) && !prePaint('/', '', { panna_settings: '{}' }));
 check('head script: blocked storage, no mark and no throw', !prePaint('/', '', {}, true));
 

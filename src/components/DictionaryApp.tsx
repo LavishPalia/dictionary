@@ -1037,8 +1037,12 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   const { offerTip } = tours;
   // Page views: one per screen opened (and per word card opened), never per page turn. A tour walking through screens
   // is not the reader opening them.
-  // A first visit's front page was the book from the start: its Today, swapped out before paint, is not a view.
-  useEffect(() => { if (!tours.active && !(firstVisitRef.current && section === 'today')) pageview(section); }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A first visit's front page was the book from the start: its Today, swapped out before paint, is not a view (once:
+  // a Today opened later in the visit is).
+  useEffect(() => {
+    if (firstVisitRef.current && section === 'today') { firstVisitRef.current = false; return; }
+    if (!tours.active) pageview(section);
+  }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
   const cardOpen = showWordDrawer && activeWordEntry !== null;
   useEffect(() => { if (cardOpen && !tours.active) pageview('word'); }, [cardOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   // One-time tips, the first time each thing is used (never during a tour; the layer waits for its target).
@@ -1113,9 +1117,10 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
   // Each card is counted once per open, when it first shows.
   const offersShownRef = useRef(new Set<Offer>());
   useEffect(() => {
-    if (dockHidden || !offer || offer === 'hint' || offersShownRef.current.has(offer)) return;
+    if (dockHidden || !offer || offersShownRef.current.has(offer)) return;
     offersShownRef.current.add(offer);
-    if (offer === 'bookplate') track('bookplate_offer', { action: 'shown' });
+    if (offer === 'hint') track('first_visit_hint', { action: 'shown' });
+    else if (offer === 'bookplate') track('bookplate_offer', { action: 'shown' });
     else track('install_offer', { action: 'shown', platform: installPlatform });
   }, [offer, dockHidden, installPlatform]);
   // The first-visit card ends with Got it, the tour, or the first word looked up (it has done its job then).
@@ -1858,7 +1863,14 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         )}
         {offer === 'install' && (
           <InstallOffer platform={installPlatform}
-            onInstall={() => { track('install_offer', { action: 'install', platform: installPlatform }); noteInstallOffer('installed', Date.now()); setOffersAnswered((n) => n + 1); void offline.install?.(); }}
+            onInstall={async () => {
+              // The browser's own dialog decides: accepted is installed; cancelled counts as a Not now.
+              const outcome = await (offline.install?.() ?? Promise.resolve(null)).catch(() => null);
+              const accepted = outcome === 'accepted';
+              track('install_offer', { action: accepted ? 'install' : 'cancel', platform: installPlatform });
+              noteInstallOffer(accepted ? 'installed' : 'dismissed', Date.now());
+              setOffersAnswered((n) => n + 1);
+            }}
             onDismiss={() => { track('install_offer', { action: 'dismiss', platform: installPlatform }); noteInstallOffer('dismissed', Date.now()); setOffersAnswered((n) => n + 1); }} />
         )}
       </OfferDock>
