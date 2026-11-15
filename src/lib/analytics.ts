@@ -135,7 +135,7 @@ async function load() {
       person_profiles: 'always', // anonymous readers get profiles; identify() is never called
       autocapture: false,
       capture_pageview: false,
-      capture_pageleave: false,
+      capture_pageleave: true, // how long the last screen was open; its address is scrubbed like every other
       rageclick: false,
       capture_dead_clicks: false,
       capture_heatmaps: false,

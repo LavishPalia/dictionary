@@ -208,6 +208,27 @@ async function main() {
     await sleep(400);
     await evaluate(`document.querySelector('#save-word-btn').click(); true`);
     check('unsaving sends word_unsaved', await waitFor(() => named('word_unsaved', mark).length === 1));
+    await settle();
+
+    // ── 3b. Leaving a screen sends $pageleave (scrubbed); Today's buttons and tour starts are counted ──
+    mark = events().length;
+    await setStorage({ panna_tours: JSON.stringify({ tipsOff: true }) }); // the welcome card shows on Today
+    await open('/', DESKTOP);
+    const leave = await waitFor(() => named('$pageleave', mark).length > 0) ? named('$pageleave', mark)[0] : null;
+    check('leaving the word card sends $pageleave, at /word/[word]', leave?.properties?.$pathname === '/word/[word]' && new URL(leave?.properties?.$current_url).pathname === '/word/[word]', leave?.properties);
+    await waitFor(() => named('$pageview', mark).some((e) => e.properties?.screen === 'today'));
+    await settle();
+    mark = events().length;
+    await evaluate(`document.querySelector('#today-take-tour').click(); true`);
+    check('Take the tour sends tour_started for the start tour', await waitFor(() => named('tour_started', mark).some((e) => e.properties?.tour === 'start')), named('tour_started', mark).map((e) => e.properties));
+    check('…and today_card_clicked with card: tour', await waitFor(() => named('today_card_clicked', mark).some((e) => e.properties?.card === 'tour')), named('today_card_clicked', mark).map((e) => e.properties));
+    await setStorage({ panna_tours: JSON.stringify({ welcomeDone: true, tipsOff: true }) });
+    await open('/', DESKTOP);
+    await settle();
+    mark = events().length;
+    await evaluate(`document.querySelector('#today-continue-btn').click(); true`);
+    check('the desk book (Open book) on Today sends today_card_clicked with card: continue', await waitFor(() => named('today_card_clicked', mark).some((e) => e.properties?.card === 'continue')), named('today_card_clicked', mark).map((e) => e.properties));
+    await settle();
 
     // ── 4. Phone: the book once, page turns nothing ──
     check('phone: app hydrates', await open(`/page/${CAMEL_PAGE}`, PHONE));
@@ -257,7 +278,7 @@ async function main() {
     check('no payload holds a headword, the search text, Hindi typed, a page address or the share text', leaks.length === 0 && pagePaths.length === 0, { leaks, pagePaths });
     check('no payload carries a page title', !/"\$?title"\s*:/.test(everything));
     check('every payload decoded', requests.every((r) => !r.body.startsWith('UNDECODABLE')), requests.filter((r) => r.body.startsWith('UNDECODABLE')).map((r) => r.body));
-    check('only the events of the plan are sent', events().every((e) => ['$pageview', 'word_looked_up', 'word_saved', 'word_unsaved', 'review_finished', '$set', '$identify'].includes(e.event)), [...new Set(events().map((e) => e.event))]);
+    check('only the events of the plan are sent', events().every((e) => ['$pageview', '$pageleave', 'word_looked_up', 'word_saved', 'word_unsaved', 'review_finished', 'today_card_clicked', 'tour_started', '$set', '$identify'].includes(e.event)), [...new Set(events().map((e) => e.event))]);
 
     // ── 6. The Usage counts switch ──
     for (const [sizeName, size] of [['desktop', DESKTOP], ['phone', PHONE]]) {
@@ -304,6 +325,8 @@ async function main() {
     // ── 7. Do Not Track ──
     await settle();
     const { identifier } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `Object.defineProperty(Navigator.prototype, 'doNotTrack', { get: () => '1' });` });
+    // Leave the counted page first: its $pageleave is sent as it goes, and belongs to it, not to the Do Not Track open.
+    await send('Page.navigate', { url: 'about:blank' }); await sleep(1500);
     count = requests.length;
     await open('/', DESKTOP);
     await sleep(6500);
