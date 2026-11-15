@@ -1480,7 +1480,8 @@ export default function DictionaryApp({ initialMeta, initialPages, initialPage, 
         savedCount={savedCount}
         onOpenSaved={() => goTo(section === 'saved' ? homeSection : 'saved')}
         onOpenReview={() => goTo(section === 'review' ? homeSection : 'review')}
-        onOpenToday={() => (section === 'today' ? openBook() : goTo('today'))}
+        onOpenBook={openBook}
+        onOpenToday={() => goTo('today')}
         section={section}
         dueCount={dueCount}
         onOpenMenu={() => setShowMenu(true)}

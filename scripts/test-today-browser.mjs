@@ -98,7 +98,7 @@ async function main() {
 
     for (const [sizeName, size] of [['desktop', { width: 1440, height: 900, mobile: false }], ['phone', { width: 390, height: 844, mobile: true }]]) {
       const todayBtn = sizeName === 'phone' ? '#nav-today-btn' : '#open-today-btn';
-      const bookBtn = sizeName === 'phone' ? '#nav-book-btn' : '#open-today-btn'; // desktop: the Today button toggles back
+      const bookBtn = sizeName === 'phone' ? '#nav-book-btn' : '#open-book-btn';
       check(`${sizeName}: app hydrates`, await open(`/page/${CAMEL_PAGE}`, size));
       // A returning reader (the welcome done, else the desk's book would be the welcome card).
       await seed({ words: ['Camel', 'Ceremony', 'Abandon'], raw: { panna_last_page: '40', panna_review_days: [await day(-2), await day(-1)], panna_tours: { welcomeDone: true } } });
@@ -124,6 +124,15 @@ async function main() {
       check(`${sizeName}: Today shows the word of the day`, (await evaluate(`document.querySelector('#today-word')?.innerText ?? ''`)).includes(wod), wod);
       check(`${sizeName}: Today is the current tab`, await evaluate(`document.querySelector('${todayBtn}').getAttribute(${JSON.stringify(sizeName === 'phone' ? 'aria-current' : 'aria-pressed')}) === ${JSON.stringify(sizeName === 'phone' ? 'page' : 'true')}`));
       check(`${sizeName}: nothing overflows sideways`, await evaluate(`document.documentElement.scrollWidth <= innerWidth`));
+      // Desktop has a Book button, first in the header; phones have the Book tab instead.
+      if (sizeName === 'desktop') {
+        check('desktop: the Book button is the first in the header', await evaluate(`(() => { const b = [...document.querySelectorAll('.app-header > button, .app-header > a.ui-btn')].filter((el) => el.getBoundingClientRect().width > 0 && el.id !== 'menu-btn'); return b[0]?.id === 'open-book-btn' && b[0].textContent.trim() === 'Book'; })()`));
+        check('desktop: the Book button is not pressed on Today', await evaluate(`document.querySelector('#open-book-btn').getAttribute('aria-pressed') === 'false'`));
+        w = await go(`document.querySelector('#open-today-btn').click()`);
+        check('desktop: the Today button on Today stays on Today (it no longer opens the book)', w.screen === 'today' && w.path === '/', w);
+      } else {
+        check('phone: no header Book button (the Book tab does it)', !(await visible('#open-book-btn')));
+      }
 
       // The study guide: a card on Today until it has been opened, then a quiet link.
       check(`${sizeName}: Today shows the study guide card before it is opened`, await visible('#today-learn') && !(await evaluate(`Boolean(document.querySelector('#today-learn-link'))`)));
@@ -161,16 +170,17 @@ async function main() {
       check(`${sizeName}: Back from Saved returns to Today`, w.screen === 'today', w);
 
       // Book ↔ Today with tabs and Back.
-      w = await go(`document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#nav-book-btn' : '#open-today-btn')}).click()`);
+      w = await go(`document.querySelector(${JSON.stringify(bookBtn)}).click()`);
       check(`${sizeName}: the Book ${sizeName === 'phone' ? 'tab' : 'button'} shows the book with its page in the address`, w.screen === 'book' && w.path.startsWith('/page/'), w);
       const bookPath = w.path;
+      if (sizeName === 'desktop') check('desktop: the Book button is pressed on the book', await evaluate(`document.querySelector('#open-book-btn').getAttribute('aria-pressed') === 'true'`));
       w = await go(`document.querySelector('${todayBtn}').click()`);
       check(`${sizeName}: Today from the book`, w.screen === 'today' && w.path === '/', w);
       w = await go(`history.back()`);
       check(`${sizeName}: Back from Today returns to the same page of the book`, w.screen === 'book' && w.path === bookPath, { w, bookPath });
       w = await go(`document.querySelector('${todayBtn}').click()`);
       w = await go(`document.querySelector(${JSON.stringify(bookBtn)}).click()`);
-      check(`${sizeName}: and the ${sizeName === 'phone' ? 'Book tab' : 'Today button again'} returns to the book`, w.screen === 'book' && w.path === bookPath, w);
+      check(`${sizeName}: and the Book ${sizeName === 'phone' ? 'tab' : 'button'} again returns to the book`, w.screen === 'book' && w.path === bookPath, w);
       w = await go(`document.querySelector(${JSON.stringify(sizeName === 'phone' ? '#nav-review-btn' : '#open-review-btn')}).click()`);
       w = await go(`document.querySelector('#close-review-btn').click()`);
       check(`${sizeName}: Review opened from the book closes back to the book`, w.screen === 'book' && w.path === bookPath, w);
